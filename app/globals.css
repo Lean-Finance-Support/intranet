@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors */
+  --color-brand-teal: #00B0B7;
+  --color-brand-navy: #0B1333;
+  --color-brand-blue: #005175;
+
+  /* Surface colors */
+  --color-surface-white: #FFFFFF;
+  --color-surface-gray: #F9FAFB;
+
+  /* Text colors */
+  --color-text-body: #333333;
+  --color-text-muted: #54595F;
+
+  /* Typography */
+  --font-heading: "Carmen Sans", "Lato", sans-serif;
+  --font-body: "Lato", system-ui, sans-serif;
+}
+
+body {
+  background: #FFFFFF;
+  color: #333333;
+  font-family: "Lato", system-ui, sans-serif;
+}

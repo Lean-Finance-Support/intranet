@@ -1,0 +1,1109 @@
+From c2d76c1d22def535941a01a7efb01887653c369f Mon Sep 17 00:00:00 2001
+From: Tech LeanFinance <tech@leanfinance.es>
+Date: Fri, 13 Mar 2026 11:47:17 +0100
+Subject: [PATCH] feat: two-space architecture (app + admin) with Google OAuth
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Add /app/login and /admin/login with Google-only authentication
+- Add /auth/callback OAuth handler with role-based redirect
+- Add /unauthorized page for users without a profile
+- Add /app/dashboard and /admin/dashboard placeholder pages
+- Update middleware for domain-based routing (app.leanfinance.es / admin.leanfinance.es)
+  and role enforcement — wrong-domain access auto-redirects to correct space
+- Update docs/architecture.md to reflect current structure
+- Add CLAUDE.md project memory file
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+---
+ CLAUDE.md                           |  99 ++++++++++++++++++++
+ app/admin/dashboard/page.tsx        |  51 ++++++++++
+ app/admin/login/page.tsx            |  86 +++++++++++++++++
+ app/app/dashboard/page.tsx          |  48 ++++++++++
+ app/app/login/page.tsx              |  86 +++++++++++++++++
+ app/auth/callback/route.ts          |  71 ++++++++++++++
+ app/dashboard/page.tsx              |  21 +----
+ app/login/page.tsx                  | 116 +----------------------
+ app/unauthorized/page.tsx           |  58 ++++++++++++
+ docs/architecture.md                | 140 ++++++++++++++++++++++++++++
+ docs/plans/2026-03-11-login-page.md | 102 ++++++++++++++++++++
+ middleware.ts                       |  95 +++++++++++++++++--
+ 12 files changed, 834 insertions(+), 139 deletions(-)
+ create mode 100644 CLAUDE.md
+ create mode 100644 app/admin/dashboard/page.tsx
+ create mode 100644 app/admin/login/page.tsx
+ create mode 100644 app/app/dashboard/page.tsx
+ create mode 100644 app/app/login/page.tsx
+ create mode 100644 app/auth/callback/route.ts
+ create mode 100644 app/unauthorized/page.tsx
+ create mode 100644 docs/architecture.md
+ create mode 100644 docs/plans/2026-03-11-login-page.md
+
+diff --git a/CLAUDE.md b/CLAUDE.md
+new file mode 100644
+index 0000000..a180475
+--- /dev/null
++++ b/CLAUDE.md
+@@ -0,0 +1,99 @@
++# Memoria del Proyecto — Intranet LeanFinance
++
++## Qué es este proyecto
++
++Plataforma web con dos espacios diferenciados para LeanFinance (asesoría):
++
++- **Portal de clientes** → `app.leanfinance.es` — acceso de empresas clientes y sus empleados
++- **Portal de empleados** → `admin.leanfinance.es` — acceso del equipo interno de LeanFinance
++
++Una única app Next.js sirve ambos dominios. El middleware detecta el host (`admin.` vs `app.`) y hace rewrite interno a `/admin/*` o `/app/*`.
++
++---
++
++## Stack
++
++- Next.js 15 (App Router) + TypeScript + Tailwind CSS 4
++- Supabase (Auth + PostgreSQL) — proyecto ID: `wgxugccbatusioubnsfl`, región `eu-west-1`
++- Vercel para despliegue — proyecto: `intranet` (team: `tech-2608s-projects`)
++- GitHub: `Lean-Finance-Support/intranet`
++
++---
++
++## Autenticación
++
++- **Solo Google OAuth** — no hay registro ni email/contraseña
++- Los usuarios los crea manualmente un admin desde el panel de Supabase
++- El `/auth/callback` comprueba si existe `public.profiles` para el usuario:
++  - Sin perfil → `/unauthorized`
++  - role `admin` → `admin.leanfinance.es/dashboard`
++  - role `client` → `app.leanfinance.es/dashboard`
++
++---
++
++## Base de datos (schema public)
++
++### `public.profiles` — vinculada a auth.users (trigger automático al crear usuario)
++- `id` uuid PK FK → auth.users.id
++- `email` text
++- `full_name` text (nullable)
++- `role` enum('client','admin')
++- `department` text (nullable — para admins)
++- `company_id` uuid (nullable — FK → companies.id, para clientes)
++- `created_at`, `updated_at` (timestamptz)
++
++### `public.companies` — empresa cliente (N usuarios pueden pertenecer a una empresa)
++- `id` uuid PK (gen_random_uuid)
++- `company_name`, `nif`, `phone`, `address` (todos nullable)
++- `created_at`, `updated_at`
++
++### `public.admin_profiles` — extensión 1:1 con profiles para admins
++- `id` uuid PK FK → profiles.id
++- `created_at`, `updated_at`
++- (campo `department` se eliminó — ahora vive en `profiles.department`)
++
++---
++
++## Estructura de rutas
++
++```
++app/app/login/page.tsx          → Login clientes (Google)
++app/app/dashboard/page.tsx      → Dashboard clientes
++app/admin/login/page.tsx        → Login empleados (Google)
++app/admin/dashboard/page.tsx    → Dashboard empleados
++app/auth/callback/route.ts      → OAuth callback (NO se reescribe por middleware)
++app/unauthorized/page.tsx       → Sin acceso
++middleware.ts                   → Routing por dominio + guard de auth + control de rol
++lib/supabase/server.ts          → Cliente Supabase SSR
++lib/supabase/client.ts          → Cliente Supabase browser
++```
++
++---
++
++## Diseño visual
++
++- Portal clientes: fondo `bg-surface-gray`, acentos `brand-teal`, tipografía `brand-navy`
++- Portal admins: fondo `bg-brand-navy`, card blanca encima
++- Logo: `https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png`
++- En el portal admin el logo va con `brightness-0 invert` para que sea blanco
++
++---
++
++## Variables de entorno necesarias
++
++```
++NEXT_PUBLIC_SUPABASE_URL
++NEXT_PUBLIC_SUPABASE_ANON_KEY
++NEXT_PUBLIC_APP_URL=https://app.leanfinance.es
++NEXT_PUBLIC_ADMIN_URL=https://admin.leanfinance.es
++```
++
++---
++
++## Pendiente / próximos pasos
++
++- Activar Google provider en Supabase (Client ID + Secret de Google Cloud)
++- Añadir redirect URLs en Supabase: `https://app.leanfinance.es/auth/callback` y `https://admin.leanfinance.es/auth/callback`
++- Añadir dominio `admin.leanfinance.es` en Vercel + CNAME en Dinahosting
++- Añadir variables de entorno en Vercel
++- Construir dashboards reales para ambos espacios
+diff --git a/app/admin/dashboard/page.tsx b/app/admin/dashboard/page.tsx
+new file mode 100644
+index 0000000..48a68ec
+--- /dev/null
++++ b/app/admin/dashboard/page.tsx
+@@ -0,0 +1,51 @@
++import { createClient } from "@/lib/supabase/server";
++import { redirect } from "next/navigation";
++
++export default async function AdminDashboardPage() {
++  const supabase = await createClient();
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  if (!user) redirect("/login");
++
++  const { data: profile } = await supabase
++    .from("profiles")
++    .select("full_name, email, department")
++    .eq("id", user.id)
++    .single();
++
++  return (
++    <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
++      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
++        <div className="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
++          <svg
++            className="w-6 h-6 text-brand-teal"
++            fill="none"
++            viewBox="0 0 24 24"
++            stroke="currentColor"
++            strokeWidth={2}
++          >
++            <path
++              strokeLinecap="round"
++              strokeLinejoin="round"
++              d="M5 13l4 4L19 7"
++            />
++          </svg>
++        </div>
++        <p className="text-brand-teal text-sm font-medium mb-1">
++          Portal de empleados
++        </p>
++        <h1 className="text-2xl font-bold font-heading text-brand-navy mt-1 mb-2">
++          Bienvenido
++        </h1>
++        <p className="text-text-muted text-sm">
++          {profile?.full_name ?? profile?.email ?? user.email}
++        </p>
++        {profile?.department && (
++          <p className="text-text-muted text-xs mt-1">{profile.department}</p>
++        )}
++      </div>
++    </main>
++  );
++}
+diff --git a/app/admin/login/page.tsx b/app/admin/login/page.tsx
+new file mode 100644
+index 0000000..4e11f05
+--- /dev/null
++++ b/app/admin/login/page.tsx
+@@ -0,0 +1,86 @@
++"use client";
++
++import { useState } from "react";
++import { createClient } from "@/lib/supabase/client";
++
++export default function AdminLoginPage() {
++  const [loading, setLoading] = useState(false);
++
++  async function handleGoogleLogin() {
++    setLoading(true);
++    const supabase = createClient();
++    await supabase.auth.signInWithOAuth({
++      provider: "google",
++      options: {
++        redirectTo: `${window.location.origin}/auth/callback`,
++      },
++    });
++  }
++
++  return (
++    <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
++      <div className="w-full max-w-md">
++        {/* Logo */}
++        <div className="text-center mb-8">
++          <img
++            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
++            alt="LeanFinance"
++            className="h-20 w-auto mx-auto brightness-0 invert"
++          />
++        </div>
++
++        {/* Card */}
++        <div className="bg-white rounded-2xl shadow-lg p-8">
++          <p className="text-brand-teal text-sm font-medium mb-1">
++            Portal de empleados
++          </p>
++          <h1 className="text-2xl font-bold font-heading text-brand-navy mb-2">
++            Acceso interno
++          </h1>
++          <p className="text-text-muted text-sm mb-8">
++            Usa tu cuenta de Google corporativa para acceder.
++          </p>
++
++          <div className="w-10 h-1 bg-brand-teal rounded-full mb-8" />
++
++          <button
++            onClick={handleGoogleLogin}
++            disabled={loading}
++            className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl px-5 py-3.5 text-text-body text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
++          >
++            {/* Google icon */}
++            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
++              <path
++                fill="#4285F4"
++                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
++              />
++              <path
++                fill="#34A853"
++                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
++              />
++              <path
++                fill="#FBBC05"
++                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
++              />
++              <path
++                fill="#EA4335"
++                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
++              />
++            </svg>
++            {loading ? "Redirigiendo..." : "Continuar con Google"}
++          </button>
++        </div>
++
++        <p className="text-center text-white/40 text-xs mt-6">
++          ¿Problemas para acceder?{" "}
++          <a
++            href="mailto:info@leanfinance.es"
++            className="text-white/70 hover:text-white transition-colors"
++          >
++            Contacta con soporte
++          </a>
++        </p>
++      </div>
++    </main>
++  );
++}
+diff --git a/app/app/dashboard/page.tsx b/app/app/dashboard/page.tsx
+new file mode 100644
+index 0000000..e8c6ff6
+--- /dev/null
++++ b/app/app/dashboard/page.tsx
+@@ -0,0 +1,48 @@
++import { createClient } from "@/lib/supabase/server";
++import { redirect } from "next/navigation";
++
++export default async function ClientDashboardPage() {
++  const supabase = await createClient();
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  if (!user) redirect("/login");
++
++  const { data: profile } = await supabase
++    .from("profiles")
++    .select("full_name, email")
++    .eq("id", user.id)
++    .single();
++
++  return (
++    <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
++      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full text-center">
++        <div className="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
++          <svg
++            className="w-6 h-6 text-brand-teal"
++            fill="none"
++            viewBox="0 0 24 24"
++            stroke="currentColor"
++            strokeWidth={2}
++          >
++            <path
++              strokeLinecap="round"
++              strokeLinejoin="round"
++              d="M5 13l4 4L19 7"
++            />
++          </svg>
++        </div>
++        <p className="text-brand-teal text-sm font-medium mb-1">
++          Portal de clientes
++        </p>
++        <h1 className="text-2xl font-bold font-heading text-brand-navy mt-1 mb-2">
++          Bienvenido
++        </h1>
++        <p className="text-text-muted text-sm">
++          {profile?.full_name ?? profile?.email ?? user.email}
++        </p>
++      </div>
++    </main>
++  );
++}
+diff --git a/app/app/login/page.tsx b/app/app/login/page.tsx
+new file mode 100644
+index 0000000..38f24e8
+--- /dev/null
++++ b/app/app/login/page.tsx
+@@ -0,0 +1,86 @@
++"use client";
++
++import { useState } from "react";
++import { createClient } from "@/lib/supabase/client";
++
++export default function ClientLoginPage() {
++  const [loading, setLoading] = useState(false);
++
++  async function handleGoogleLogin() {
++    setLoading(true);
++    const supabase = createClient();
++    await supabase.auth.signInWithOAuth({
++      provider: "google",
++      options: {
++        redirectTo: `${window.location.origin}/auth/callback`,
++      },
++    });
++  }
++
++  return (
++    <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
++      <div className="w-full max-w-md">
++        {/* Logo */}
++        <div className="text-center mb-8">
++          <img
++            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
++            alt="LeanFinance"
++            className="h-24 w-auto mx-auto"
++          />
++        </div>
++
++        {/* Card */}
++        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
++          <p className="text-brand-teal text-sm font-medium mb-1">
++            Portal de clientes
++          </p>
++          <h1 className="text-2xl font-bold font-heading text-brand-navy mb-2">
++            Accede a tu área
++          </h1>
++          <p className="text-text-muted text-sm mb-8">
++            Usa tu cuenta de Google para acceder al portal.
++          </p>
++
++          <div className="w-10 h-1 bg-brand-teal rounded-full mb-8" />
++
++          <button
++            onClick={handleGoogleLogin}
++            disabled={loading}
++            className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl px-5 py-3.5 text-text-body text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
++          >
++            {/* Google icon */}
++            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
++              <path
++                fill="#4285F4"
++                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
++              />
++              <path
++                fill="#34A853"
++                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
++              />
++              <path
++                fill="#FBBC05"
++                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
++              />
++              <path
++                fill="#EA4335"
++                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
++              />
++            </svg>
++            {loading ? "Redirigiendo..." : "Continuar con Google"}
++          </button>
++        </div>
++
++        <p className="text-center text-text-muted text-xs mt-6">
++          ¿Problemas para acceder?{" "}
++          <a
++            href="mailto:info@leanfinance.es"
++            className="text-brand-teal hover:underline"
++          >
++            Contacta con nosotros
++          </a>
++        </p>
++      </div>
++    </main>
++  );
++}
+diff --git a/app/auth/callback/route.ts b/app/auth/callback/route.ts
+new file mode 100644
+index 0000000..23f8002
+--- /dev/null
++++ b/app/auth/callback/route.ts
+@@ -0,0 +1,71 @@
++import { createServerClient } from "@supabase/ssr";
++import { cookies } from "next/headers";
++import { NextResponse } from "next/server";
++import type { NextRequest } from "next/server";
++
++const APP_URL =
++  process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/app";
++const ADMIN_URL =
++  process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3000/admin";
++
++export async function GET(request: NextRequest) {
++  const requestUrl = new URL(request.url);
++  const code = requestUrl.searchParams.get("code");
++  const origin = requestUrl.origin;
++
++  if (!code) {
++    return NextResponse.redirect(new URL("/unauthorized", origin));
++  }
++
++  const cookieStore = await cookies();
++  const supabase = createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return cookieStore.getAll();
++        },
++        setAll(cookiesToSet) {
++          cookiesToSet.forEach(({ name, value, options }) =>
++            cookieStore.set(name, value, options)
++          );
++        },
++      },
++    }
++  );
++
++  const { error } = await supabase.auth.exchangeCodeForSession(code);
++
++  if (error) {
++    return NextResponse.redirect(new URL("/unauthorized", origin));
++  }
++
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  if (!user) {
++    return NextResponse.redirect(new URL("/unauthorized", origin));
++  }
++
++  // Comprobar si el usuario tiene perfil creado (no es auto-registro)
++  const { data: profile } = await supabase
++    .from("profiles")
++    .select("role")
++    .eq("id", user.id)
++    .single();
++
++  if (!profile) {
++    // Usuario sin perfil → no está dado de alta en el sistema
++    await supabase.auth.signOut();
++    return NextResponse.redirect(new URL("/unauthorized", origin));
++  }
++
++  // Redirigir al espacio correcto según el rol
++  if (profile.role === "admin") {
++    return NextResponse.redirect(`${ADMIN_URL}/dashboard`);
++  } else {
++    return NextResponse.redirect(`${APP_URL}/dashboard`);
++  }
++}
+diff --git a/app/dashboard/page.tsx b/app/dashboard/page.tsx
+index 0f81706..082c9dc 100644
+--- a/app/dashboard/page.tsx
++++ b/app/dashboard/page.tsx
+@@ -1,21 +1,6 @@
+-import { createClient } from "@/lib/supabase/server";
+ import { redirect } from "next/navigation";
+ 
+-export default async function DashboardPage() {
+-  const supabase = await createClient();
+-  const { data: { user } } = await supabase.auth.getUser();
+-
+-  if (!user) redirect("/login");
+-
+-  return (
+-    <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
+-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full text-center">
+-        <span className="text-brand-teal text-4xl">✓</span>
+-        <h1 className="text-2xl font-bold font-heading text-brand-navy mt-4 mb-2">
+-          Bienvenido
+-        </h1>
+-        <p className="text-text-muted text-sm">{user.email}</p>
+-      </div>
+-    </main>
+-  );
++// Ruta legacy → redirige al dashboard de clientes
++export default function LegacyDashboardPage() {
++  redirect("/app/dashboard");
+ }
+diff --git a/app/login/page.tsx b/app/login/page.tsx
+index 783a209..eb92bb8 100644
+--- a/app/login/page.tsx
++++ b/app/login/page.tsx
+@@ -1,114 +1,6 @@
+-"use client";
++import { redirect } from "next/navigation";
+ 
+-import { useState } from "react";
+-import { signIn } from "./actions";
+-
+-export default function LoginPage() {
+-  const [error, setError] = useState<string | null>(null);
+-  const [loading, setLoading] = useState(false);
+-
+-  async function handleSubmit(formData: FormData) {
+-    setError(null);
+-    setLoading(true);
+-    const result = await signIn(formData);
+-    if (result?.error) {
+-      setError(result.error);
+-      setLoading(false);
+-    }
+-  }
+-
+-  return (
+-    <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
+-      <div className="w-full max-w-md">
+-        {/* Logo */}
+-        <div className="text-center mb-8">
+-          <img
+-            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
+-            alt="LeanFinance"
+-            className="h-24 w-auto mx-auto"
+-          />
+-        </div>
+-
+-        {/* Card */}
+-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+-          {/* Eyebrow + título */}
+-          <p className="text-brand-teal text-sm font-medium mb-1">Portal de clientes</p>
+-          <h1 className="text-2xl font-bold font-heading text-brand-navy mb-2">
+-            Accede a tu área
+-          </h1>
+-          <p className="text-text-muted text-sm mb-8">
+-            Introduce tu email y CIF/NIF para acceder.
+-          </p>
+-
+-          {/* Separador decorativo */}
+-          <div className="w-10 h-1 bg-brand-teal rounded-full mb-8" />
+-
+-          {/* Formulario */}
+-          <form action={handleSubmit} className="space-y-5">
+-            <div>
+-              <label
+-                htmlFor="email"
+-                className="block text-sm font-medium text-text-body mb-1.5"
+-              >
+-                Email
+-              </label>
+-              <input
+-                id="email"
+-                name="email"
+-                type="email"
+-                required
+-                autoComplete="email"
+-                placeholder="empresa@ejemplo.com"
+-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-body text-sm placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent transition"
+-              />
+-            </div>
+-
+-            <div>
+-              <label
+-                htmlFor="cifNif"
+-                className="block text-sm font-medium text-text-body mb-1.5"
+-              >
+-                CIF / NIF
+-              </label>
+-              <input
+-                id="cifNif"
+-                name="cifNif"
+-                type="text"
+-                required
+-                autoComplete="off"
+-                placeholder="B12345678"
+-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-body text-sm placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent transition uppercase"
+-              />
+-            </div>
+-
+-            {/* Error */}
+-            {error && (
+-              <p className="text-sm text-red-500 bg-red-50 px-4 py-3 rounded-xl">
+-                {error}
+-              </p>
+-            )}
+-
+-            <button
+-              type="submit"
+-              disabled={loading}
+-              className="w-full bg-brand-teal text-white font-body font-medium px-6 py-3 rounded-full hover:bg-opacity-90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+-            >
+-              {loading ? "Accediendo..." : "Acceder"}
+-            </button>
+-          </form>
+-        </div>
+-
+-        {/* Footer */}
+-        <p className="text-center text-text-muted text-xs mt-6">
+-          ¿Problemas para acceder?{" "}
+-          <a
+-            href="mailto:info@leanfinance.es"
+-            className="text-brand-teal hover:underline"
+-          >
+-            Contacta con nosotros
+-          </a>
+-        </p>
+-      </div>
+-    </main>
+-  );
++// Ruta legacy → redirige al espacio de clientes
++export default function LegacyLoginPage() {
++  redirect("/app/login");
+ }
+diff --git a/app/unauthorized/page.tsx b/app/unauthorized/page.tsx
+new file mode 100644
+index 0000000..cdc40f0
+--- /dev/null
++++ b/app/unauthorized/page.tsx
+@@ -0,0 +1,58 @@
++export default function UnauthorizedPage() {
++  return (
++    <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
++      <div className="w-full max-w-md text-center">
++        <div className="text-center mb-8">
++          <img
++            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
++            alt="LeanFinance"
++            className="h-20 w-auto mx-auto"
++          />
++        </div>
++
++        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10">
++          <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5">
++            <svg
++              className="w-7 h-7 text-red-400"
++              fill="none"
++              viewBox="0 0 24 24"
++              stroke="currentColor"
++              strokeWidth={1.8}
++            >
++              <path
++                strokeLinecap="round"
++                strokeLinejoin="round"
++                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
++              />
++            </svg>
++          </div>
++
++          <h1 className="text-2xl font-bold font-heading text-brand-navy mb-3">
++            Sin acceso
++          </h1>
++          <p className="text-text-muted text-sm leading-relaxed mb-8">
++            Tu cuenta de Google no está registrada en la plataforma. Si crees
++            que es un error, contacta con tu asesor de LeanFinance.
++          </p>
++
++          <a
++            href="mailto:info@leanfinance.es"
++            className="inline-block bg-brand-teal text-white font-medium text-sm px-6 py-3 rounded-full hover:bg-opacity-90 transition-colors"
++          >
++            Contactar con soporte
++          </a>
++        </div>
++
++        <p className="text-text-muted text-xs mt-6">
++          ¿Tienes otra cuenta de Google?{" "}
++          <a
++            href="/"
++            className="text-brand-teal hover:underline"
++          >
++            Intentar de nuevo
++          </a>
++        </p>
++      </div>
++    </main>
++  );
++}
+diff --git a/docs/architecture.md b/docs/architecture.md
+new file mode 100644
+index 0000000..991f081
+--- /dev/null
++++ b/docs/architecture.md
+@@ -0,0 +1,140 @@
++# Arquitectura del Proyecto — Intranet LeanFinance
++
++## Visión general
++
++Plataforma con dos espacios diferenciados:
++- **Portal de clientes** → `app.leanfinance.es` — empresas clientes y sus empleados
++- **Portal de empleados** → `admin.leanfinance.es` — equipo interno de LeanFinance
++
++Una única aplicación Next.js sirve ambos dominios. El middleware detecta el host y enruta internamente a `/app/*` o `/admin/*` según corresponda.
++
++---
++
++## Stack tecnológico
++
++| Rol | Tecnología |
++|-----|-----------|
++| Framework | Next.js 15.x (App Router) |
++| Lenguaje | TypeScript 5.x |
++| Estilos | Tailwind CSS 4.x |
++| Autenticación | Supabase Auth — Google OAuth exclusivamente |
++| Base de datos | Supabase (PostgreSQL) |
++| Despliegue | Vercel |
++| CI/CD | Vercel Git Integration (auto-deploy en push a main) |
++
++---
++
++## Estructura de rutas
++
++```
++app/
++├── app/                    # Rutas del portal de clientes (app.leanfinance.es)
++│   ├── login/page.tsx
++│   └── dashboard/page.tsx
++├── admin/                  # Rutas del portal de empleados (admin.leanfinance.es)
++│   ├── login/page.tsx
++│   └── dashboard/page.tsx
++├── auth/
++│   └── callback/route.ts   # Handler OAuth — intercambia código, comprueba perfil, redirige
++├── unauthorized/
++│   └── page.tsx            # Pantalla "sin acceso" para usuarios sin perfil
++└── layout.tsx / globals.css
++```
++
++### Routing por dominio (middleware.ts)
++
++En **producción** el middleware detecta el host:
++- `app.leanfinance.es/*`   → rewrite interno a `/app/*`
++- `admin.leanfinance.es/*` → rewrite interno a `/admin/*`
++
++En **local** las rutas se acceden directamente:
++- `localhost:3000/app/login`
++- `localhost:3000/admin/login`
++
++---
++
++## Flujo de autenticación (Google OAuth)
++
++1. Usuario pulsa "Continuar con Google" en su página de login
++2. Supabase redirige a Google con `redirectTo: origin/auth/callback`
++3. Google autentica y devuelve a `/auth/callback?code=...`
++4. El callback intercambia el código por sesión con Supabase
++5. Se consulta `public.profiles` para verificar que el usuario está dado de alta
++   - Sin perfil → `signOut()` + redirect a `/unauthorized`
++   - Con perfil `role: admin` → redirect a `admin.leanfinance.es/dashboard`
++   - Con perfil `role: client` → redirect a `app.leanfinance.es/dashboard`
++6. El middleware protege todas las rutas: comprueba sesión y rol en cada request
++
++**No hay auto-registro.** Los usuarios son creados manualmente por los administradores.
++
++---
++
++## Modelo de datos (Supabase — schema public)
++
++### `public.profiles`
++Vinculada 1:1 con `auth.users`. Se crea automáticamente vía trigger al crear un usuario.
++
++| Columna | Tipo | Notas |
++|---------|------|-------|
++| id | uuid PK | FK → auth.users.id |
++| email | text | |
++| full_name | text | nullable |
++| role | enum(client, admin) | obligatorio |
++| department | text | nullable — solo para admins |
++| company_id | uuid | nullable — FK → companies.id, para clientes |
++| created_at | timestamptz | |
++| updated_at | timestamptz | auto-actualizado por trigger |
++
++### `public.companies`
++Empresa cliente. Una empresa puede tener N usuarios (profiles) vinculados.
++
++| Columna | Tipo | Notas |
++|---------|------|-------|
++| id | uuid PK | gen_random_uuid() |
++| company_name | text | |
++| nif | text | |
++| phone | text | |
++| address | text | |
++| created_at | timestamptz | |
++| updated_at | timestamptz | |
++
++### `public.admin_profiles`
++Extensión 1:1 para empleados (admins). Lista para crecer con campos específicos.
++
++| Columna | Tipo |
++|---------|------|
++| id | uuid PK FK → profiles.id |
++| created_at | timestamptz |
++| updated_at | timestamptz |
++
++---
++
++## Roles
++
++| Rol | Dominio | Descripción |
++|-----|---------|-------------|
++| `admin` | admin.leanfinance.es | Empleado de LeanFinance |
++| `client` | app.leanfinance.es | Usuario de empresa cliente |
++
++El middleware redirige automáticamente si un usuario intenta acceder al dominio incorrecto.
++
++---
++
++## Variables de entorno
++
++```env
++NEXT_PUBLIC_SUPABASE_URL=
++NEXT_PUBLIC_SUPABASE_ANON_KEY=
++NEXT_PUBLIC_APP_URL=https://app.leanfinance.es
++NEXT_PUBLIC_ADMIN_URL=https://admin.leanfinance.es
++```
++
++---
++
++## Configuración externa
++
++- **Supabase Auth**: proveedor Google activado con Client ID y Secret de Google Cloud
++- **Supabase URL Configuration**: `https://app.leanfinance.es/auth/callback` y `https://admin.leanfinance.es/auth/callback` como redirect URLs permitidas
++- **Google Cloud Console**: URI de redireccionamiento → `https://wgxugccbatusioubnsfl.supabase.co/auth/v1/callback`
++- **Vercel**: ambos dominios apuntando al mismo proyecto `intranet`
++- **Dinahosting DNS**: CNAME para `app` y `admin` apuntando a Vercel
+diff --git a/docs/plans/2026-03-11-login-page.md b/docs/plans/2026-03-11-login-page.md
+new file mode 100644
+index 0000000..d2110ec
+--- /dev/null
++++ b/docs/plans/2026-03-11-login-page.md
+@@ -0,0 +1,102 @@
++# Plan: Login Page — app.leanfinance.es
++
++- **Goal:** Página de login con email + CIF/NIF usando Supabase Auth, con diseño LeanFinance
++- **Architecture:** Next.js 16 App Router · Supabase Auth · Server Actions · Middleware
++- **Tech stack:** Next.js, TypeScript, Tailwind v4, @supabase/ssr, @supabase/supabase-js
++- **Date:** 2026-03-11
++
++---
++
++## File Map
++
++```
++app/globals.css                  → Design tokens LeanFinance (colores, fuentes)
++app/layout.tsx                   → Lato desde Google Fonts, metadata actualizada
++app/page.tsx                     → Redirect a /login (raíz pública)
++app/login/page.tsx               → Página de login (UI)
++app/login/actions.ts             → Server Action: signIn con Supabase
++app/dashboard/page.tsx           → Placeholder post-login (ruta protegida)
++lib/supabase/client.ts           → Supabase browser client
++lib/supabase/server.ts           → Supabase server client (SSR)
++middleware.ts                    → Protección de rutas: redirect si no hay sesión
++.env.local                       → NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
++```
++
++---
++
++## Tasks
++
++### 0. Setup de dependencias y variables de entorno
++
++- [ ] 0.1 Instalar dependencias:
++  ```bash
++  npm install @supabase/supabase-js @supabase/ssr
++  ```
++- [ ] 0.2 Crear `.env.local` con las keys del proyecto Supabase `wgxugccbatusioubnsfl`:
++  ```
++  NEXT_PUBLIC_SUPABASE_URL=https://wgxugccbatusioubnsfl.supabase.co
++  NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
++  ```
++
++---
++
++### 1. Design tokens LeanFinance en Tailwind v4
++
++- [ ] 1.1 Actualizar `app/globals.css`: añadir colores, fuentes y tipografía LeanFinance via `@theme`
++- [ ] 1.2 Actualizar `app/layout.tsx`: cargar fuente Lato desde Google Fonts, eliminar Geist
++
++---
++
++### 2. Clientes Supabase
++
++- [ ] 2.1 Crear `lib/supabase/client.ts` — cliente browser (`createBrowserClient`)
++- [ ] 2.2 Crear `lib/supabase/server.ts` — cliente server (`createServerClient` con cookies)
++
++---
++
++### 3. Middleware de protección de rutas
++
++- [ ] 3.1 Crear `middleware.ts`:
++  - Rutas públicas: `/login`
++  - Todo lo demás requiere sesión activa → redirect a `/login`
++  - Si hay sesión y va a `/login` → redirect a `/dashboard`
++
++---
++
++### 4. Server Action de login
++
++- [ ] 4.1 Crear `app/login/actions.ts`:
++  - Recibe `email` + `cifNif`
++  - Llama a `supabase.auth.signInWithPassword({ email, password: cifNif })`
++  - Si error → devuelve mensaje de error
++  - Si OK → `redirect('/dashboard')`
++
++---
++
++### 5. Página de login
++
++- [ ] 5.1 Crear `app/login/page.tsx` con diseño LeanFinance:
++  - Fondo `surface-gray` (#F9FAFB) con card central blanca
++  - Logo LeanFinance (texto con tipografía heading)
++  - Label eyebrow teal + H1 navy
++  - Inputs: email + CIF/NIF
++  - Botón CTA `rounded-full bg-brand-teal`
++  - Mensaje de error inline si falla
++  - Sin navbar ni footer
++
++---
++
++### 6. Dashboard placeholder
++
++- [ ] 6.1 Crear `app/dashboard/page.tsx` — página mínima que confirma login correcto
++- [ ] 6.2 Actualizar `app/page.tsx` → redirect a `/login`
++
++---
++
++### 7. Verificación
++
++- [ ] 7.1 Arrancar servidor: `npm run dev`
++- [ ] 7.2 Verificar que `/` redirige a `/login`
++- [ ] 7.3 Verificar que `/dashboard` sin sesión redirige a `/login`
++- [ ] 7.4 Hacer login con credenciales de prueba → llega a `/dashboard`
++- [ ] 7.5 Screenshot del resultado
+diff --git a/middleware.ts b/middleware.ts
+index c725bf2..b73379f 100644
+--- a/middleware.ts
++++ b/middleware.ts
+@@ -1,7 +1,28 @@
+ import { createServerClient } from "@supabase/ssr";
+ import { NextResponse, type NextRequest } from "next/server";
+ 
++const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
++const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3000";
++
+ export async function middleware(request: NextRequest) {
++  const { pathname } = request.nextUrl;
++  const host = request.headers.get("host") ?? "";
++
++  // Rutas que bypasean el middleware completamente
++  if (pathname.startsWith("/auth") || pathname === "/unauthorized") {
++    return NextResponse.next({ request });
++  }
++
++  // --- Detección del espacio ---
++  // En producción: por dominio. En local: por prefijo de ruta.
++  const isAdminHost = host === "admin.leanfinance.es";
++  const isAppHost = host === "app.leanfinance.es";
++  const isProdDomain = isAdminHost || isAppHost;
++
++  let space: "admin" | "app" = "app";
++  if (isAdminHost || pathname.startsWith("/admin")) space = "admin";
++
++  // --- Supabase client ---
+   let supabaseResponse = NextResponse.next({ request });
+ 
+   const supabase = createServerClient(
+@@ -25,18 +46,74 @@ export async function middleware(request: NextRequest) {
+     }
+   );
+ 
+-  const { data: { user } } = await supabase.auth.getUser();
+-  const { pathname } = request.nextUrl;
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  // Ruta de login efectiva según entorno
++  const loginPath = isProdDomain ? "/login" : `/${space}/login`;
++
++  // ¿Estamos en la página de login?
++  const isOnLoginPage = isProdDomain
++    ? pathname === "/login"
++    : pathname === `/${space}/login`;
++
++  // --- Sin sesión ---
++  if (!user) {
++    if (!isOnLoginPage) {
++      return NextResponse.redirect(new URL(loginPath, request.url));
++    }
++    // En login sin sesión: permitir con rewrite si es dominio de prod
++    if (isProdDomain) {
++      return NextResponse.rewrite(
++        new URL(`/${space}${pathname}`, request.url)
++      );
++    }
++    return supabaseResponse;
++  }
++
++  // --- Con sesión: comprobar perfil y rol ---
++  const { data: profile } = await supabase
++    .from("profiles")
++    .select("role")
++    .eq("id", user.id)
++    .single();
++
++  if (!profile) {
++    // Sin perfil = no está dado de alta → desloguear
++    await supabase.auth.signOut();
++    return NextResponse.redirect(new URL("/unauthorized", request.url));
++  }
+ 
+-  // Si hay sesión y va a /login → redirige a /dashboard
+-  if (user && pathname === "/login") {
+-    return NextResponse.redirect(new URL("/dashboard", request.url));
++  const correctSpace = profile.role === "admin" ? "admin" : "app";
++
++  // En login con sesión → redirigir al dashboard del espacio correcto
++  if (isOnLoginPage) {
++    if (isProdDomain) {
++      const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
++      return NextResponse.redirect(`${correctOrigin}/dashboard`);
++    }
++    return NextResponse.redirect(
++      new URL(`/${correctSpace}/dashboard`, request.url)
++    );
++  }
++
++  // Espacio incorrecto para el rol → redirigir al espacio correcto
++  if (space !== correctSpace) {
++    if (isProdDomain) {
++      const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
++      return NextResponse.redirect(`${correctOrigin}/dashboard`);
++    }
++    return NextResponse.redirect(
++      new URL(`/${correctSpace}/dashboard`, request.url)
++    );
+   }
+ 
+-  // Si no hay sesión y no es ruta pública → redirige a /login
+-  const publicRoutes = ["/login"];
+-  if (!user && !publicRoutes.includes(pathname)) {
+-    return NextResponse.redirect(new URL("/login", request.url));
++  // Todo OK → aplicar rewrite en producción para mapear / → /app/ o /admin/
++  if (isProdDomain) {
++    return NextResponse.rewrite(
++      new URL(`/${space}${pathname}`, request.url)
++    );
+   }
+ 
+   return supabaseResponse;
+-- 
+2.34.1
+
