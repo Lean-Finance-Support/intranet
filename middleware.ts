@@ -1,7 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3000";
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const host = request.headers.get("host") ?? "";
+
+  // Rutas que bypasean el middleware completamente
+  if (pathname.startsWith("/auth") || pathname === "/unauthorized") {
+    return NextResponse.next({ request });
+  }
+
+  // --- Detección del espacio ---
+  // En producción: por dominio. En local: por prefijo de ruta.
+  const isAdminHost = host === "admin.leanfinance.es";
+  const isAppHost = host === "app.leanfinance.es";
+  const isProdDomain = isAdminHost || isAppHost;
+
+  let space: "admin" | "app" = "app";
+  if (isAdminHost || pathname.startsWith("/admin")) space = "admin";
+
+  // --- Supabase client ---
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -25,18 +46,74 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Si hay sesión y va a /login → redirige a /dashboard
-  if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Ruta de login efectiva según entorno
+  const loginPath = isProdDomain ? "/login" : `/${space}/login`;
+
+  // ¿Estamos en la página de login?
+  const isOnLoginPage = isProdDomain
+    ? pathname === "/login"
+    : pathname === `/${space}/login`;
+
+  // --- Sin sesión ---
+  if (!user) {
+    if (!isOnLoginPage) {
+      return NextResponse.redirect(new URL(loginPath, request.url));
+    }
+    // En login sin sesión: permitir con rewrite si es dominio de prod
+    if (isProdDomain) {
+      return NextResponse.rewrite(
+        new URL(`/${space}${pathname}`, request.url)
+      );
+    }
+    return supabaseResponse;
   }
 
-  // Si no hay sesión y no es ruta pública → redirige a /login
-  const publicRoutes = ["/login"];
-  if (!user && !publicRoutes.includes(pathname)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  // --- Con sesión: comprobar perfil y rol ---
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    // Sin perfil = no está dado de alta → desloguear
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
+  }
+
+  const correctSpace = profile.role === "admin" ? "admin" : "app";
+
+  // En login con sesión → redirigir al dashboard del espacio correcto
+  if (isOnLoginPage) {
+    if (isProdDomain) {
+      const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
+      return NextResponse.redirect(`${correctOrigin}/dashboard`);
+    }
+    return NextResponse.redirect(
+      new URL(`/${correctSpace}/dashboard`, request.url)
+    );
+  }
+
+  // Espacio incorrecto para el rol → redirigir al espacio correcto
+  if (space !== correctSpace) {
+    if (isProdDomain) {
+      const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
+      return NextResponse.redirect(`${correctOrigin}/dashboard`);
+    }
+    return NextResponse.redirect(
+      new URL(`/${correctSpace}/dashboard`, request.url)
+    );
+  }
+
+  // Todo OK → aplicar rewrite en producción para mapear / → /app/ o /admin/
+  if (isProdDomain) {
+    return NextResponse.rewrite(
+      new URL(`/${space}${pathname}`, request.url)
+    );
   }
 
   return supabaseResponse;
