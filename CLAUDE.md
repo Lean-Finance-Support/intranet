@@ -24,10 +24,26 @@ Una única app Next.js sirve ambos dominios. El middleware detecta el host (`adm
 
 - **Solo Google OAuth** — no hay registro ni email/contraseña
 - Los usuarios los crea manualmente un admin desde el panel de Supabase
-- El `/auth/callback` comprueba si existe `public.profiles` para el usuario:
-  - Sin perfil → `/unauthorized`
+- **Flujo preferido (GIS):** cuando `NEXT_PUBLIC_GOOGLE_CLIENT_ID` está configurado, se usa
+  Google Identity Services con `signInWithIdToken` — abre popup de Google, sin redirigir a la URL de Supabase
+- **Flujo fallback:** si no hay `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, se usa `signInWithOAuth`
+  (la URL de Supabase aparece brevemente durante el redirect)
+- El `/auth/callback` gestiona el flujo fallback (intercambia code por sesión)
+- El `/auth/verify` gestiona el flujo GIS (verifica sesión ya establecida en cliente)
+- Ambas rutas comprueban si existe `public.profiles`:
+  - Sin perfil → signOut + `/unauthorized`
   - role `admin` → `admin.leanfinance.es/dashboard`
   - role `client` → `app.leanfinance.es/dashboard`
+
+### Cómo crear un usuario (proceso manual)
+
+1. Crear el usuario en Supabase Auth dashboard (email del usuario)
+2. En "User Metadata" JSON del formulario, incluir: `{ "role": "admin" }` o `{ "role": "client" }`
+3. El trigger `handle_new_user` creará automáticamente la fila en `public.profiles`
+4. Si es client: asignar `company_id` en `public.profiles` apuntando a su empresa apuntando a su empresa
+
+**IMPORTANTE:** El trigger solo crea perfil si `raw_user_meta_data.role` está explícitamente presente.
+Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthorized`.
 
 ---
 
@@ -47,21 +63,21 @@ Una única app Next.js sirve ambos dominios. El middleware detecta el host (`adm
 - `company_name`, `nif`, `phone`, `address` (todos nullable)
 - `created_at`, `updated_at`
 
-### `public.admin_profiles` — extensión 1:1 con profiles para admins
-- `id` uuid PK FK → profiles.id
-- `created_at`, `updated_at`
-- (campo `department` se eliminó — ahora vive en `profiles.department`)
+### Trigger `handle_new_user`
+Solo crea perfil si `NEW.raw_user_meta_data->>'role'` está presente.
+Los logins de cuentas no pre-creadas por admin no generan perfil → van a /unauthorized.
 
 ---
 
 ## Estructura de rutas
 
 ```
-app/app/login/page.tsx          → Login clientes (Google)
+app/app/login/page.tsx          → Login clientes (GIS popup o OAuth fallback)
 app/app/dashboard/page.tsx      → Dashboard clientes
-app/admin/login/page.tsx        → Login empleados (Google)
+app/admin/login/page.tsx        → Login empleados (GIS popup o OAuth fallback)
 app/admin/dashboard/page.tsx    → Dashboard empleados
-app/auth/callback/route.ts      → OAuth callback (NO se reescribe por middleware)
+app/auth/callback/route.ts      → OAuth callback fallback (NO se reescribe por middleware)
+app/auth/verify/route.ts        → Verify para flujo GIS (NO se reescribe por middleware)
 app/unauthorized/page.tsx       → Sin acceso
 middleware.ts                   → Routing por dominio + guard de auth + control de rol
 lib/supabase/server.ts          → Cliente Supabase SSR
@@ -86,14 +102,25 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 NEXT_PUBLIC_APP_URL=https://app.leanfinance.es
 NEXT_PUBLIC_ADMIN_URL=https://admin.leanfinance.es
+NEXT_PUBLIC_GOOGLE_CLIENT_ID      # Activa flujo GIS (sin URL de Supabase)
 ```
 
 ---
 
 ## Pendiente / próximos pasos
 
-- Activar Google provider en Supabase (Client ID + Secret de Google Cloud)
-- Añadir redirect URLs en Supabase: `https://app.leanfinance.es/auth/callback` y `https://admin.leanfinance.es/auth/callback`
-- Añadir dominio `admin.leanfinance.es` en Vercel + CNAME en Dinahosting
-- Añadir variables de entorno en Vercel
-- Construir dashboards reales para ambos espacios
+### Para activar el flujo GIS (eliminar URL de Supabase en producción)
+1. En Google Cloud Console: crear OAuth 2.0 Client ID tipo "Web application"
+2. Añadir en "Authorized JavaScript origins": `https://app.leanfinance.es`, `https://admin.leanfinance.es`, `http://localhost:3000`
+3. Activar Google provider en Supabase Auth con ese Client ID + Client Secret
+4. Añadir `NEXT_PUBLIC_GOOGLE_CLIENT_ID` en `.env.local` y en Vercel
+
+### Para el despliegue en producción
+5. Añadir redirect URLs en Supabase: `https://app.leanfinance.es/auth/callback` y `https://admin.leanfinance.es/auth/callback`
+6. Desactivar "Enable Sign Ups" en Supabase → Auth → Settings (evita que cuentas no dadas de alta generen sesión)
+7. Añadir dominio `admin.leanfinance.es` en Vercel + CNAME en Dinahosting
+8. Añadir variables de entorno en Vercel
+
+### Producto
+9. Construir dashboards reales para ambos espacios
+10. Panel de administración para gestionar usuarios y empresas

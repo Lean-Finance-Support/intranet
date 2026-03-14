@@ -35,7 +35,8 @@ app/
 │   ├── login/page.tsx
 │   └── dashboard/page.tsx
 ├── auth/
-│   └── callback/route.ts   # Handler OAuth — intercambia código, comprueba perfil, redirige
+│   ├── callback/route.ts   # Handler OAuth fallback — intercambia código, comprueba perfil, redirige
+│   └── verify/route.ts     # Handler GIS — verifica sesión existente, comprueba perfil, redirige
 ├── unauthorized/
 │   └── page.tsx            # Pantalla "sin acceso" para usuarios sin perfil
 └── layout.tsx / globals.css
@@ -55,17 +56,27 @@ En **local** las rutas se acceden directamente:
 
 ## Flujo de autenticación (Google OAuth)
 
-1. Usuario pulsa "Continuar con Google" en su página de login
-2. Supabase redirige a Google con `redirectTo: origin/auth/callback`
-3. Google autentica y devuelve a `/auth/callback?code=...`
-4. El callback intercambia el código por sesión con Supabase
-5. Se consulta `public.profiles` para verificar que el usuario está dado de alta
-   - Sin perfil → `signOut()` + redirect a `/unauthorized`
-   - Con perfil `role: admin` → redirect a `admin.leanfinance.es/dashboard`
-   - Con perfil `role: client` → redirect a `app.leanfinance.es/dashboard`
-6. El middleware protege todas las rutas: comprueba sesión y rol en cada request
+### Flujo preferido — GIS popup (requiere `NEXT_PUBLIC_GOOGLE_CLIENT_ID`)
+1. Usuario pulsa el botón de Google → se abre un popup de Google Identity Services
+2. Google autentica y devuelve un ID token directamente al cliente
+3. El cliente llama a `supabase.auth.signInWithIdToken(token)` — sin redirigir a Supabase
+4. Se navega a `/auth/verify`, que verifica el perfil y redirige según el rol
+
+### Flujo fallback — OAuth redirect (cuando no hay `NEXT_PUBLIC_GOOGLE_CLIENT_ID`)
+1. Usuario pulsa "Continuar con Google" → `signInWithOAuth` redirige a Google
+2. Google devuelve a `supabase.co/auth/v1/callback` (URL brevemente visible)
+3. Supabase redirige a `/auth/callback?code=...`
+4. El callback intercambia el código por sesión y verifica el perfil
+
+### Lógica de verificación (común a ambos flujos)
+- Sin perfil → `signOut()` + redirect a `/unauthorized`
+- `role: admin` → redirect a `admin.leanfinance.es/dashboard`
+- `role: client` → redirect a `app.leanfinance.es/dashboard`
+
+El middleware protege todas las rutas: comprueba sesión y rol en cada request.
 
 **No hay auto-registro.** Los usuarios son creados manualmente por los administradores.
+El trigger solo crea perfil si el admin especifica `role` en los metadatos del usuario.
 
 ---
 
@@ -98,15 +109,6 @@ Empresa cliente. Una empresa puede tener N usuarios (profiles) vinculados.
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-### `public.admin_profiles`
-Extensión 1:1 para empleados (admins). Lista para crecer con campos específicos.
-
-| Columna | Tipo |
-|---------|------|
-| id | uuid PK FK → profiles.id |
-| created_at | timestamptz |
-| updated_at | timestamptz |
-
 ---
 
 ## Roles
@@ -127,6 +129,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_APP_URL=https://app.leanfinance.es
 NEXT_PUBLIC_ADMIN_URL=https://admin.leanfinance.es
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=   # Activa flujo GIS (sin URL de Supabase visible)
 ```
 
 ---
