@@ -4,7 +4,7 @@ export default function UnauthorizedPage() {
       <div className="w-full max-w-md text-center">
         <div className="text-center mb-8">
           <img
-            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
+            src="/logo-leanfinance.png"
             alt="LeanFinance"
             className="h-20 w-auto mx-auto"
           />
@@ -36,7 +36,7 @@ export default function UnauthorizedPage() {
           </p>
 
           <a
-            href="mailto:info@leanfinance.es"
+            href="mailto:tech@leanfinance.es"
             className="inline-block bg-brand-teal text-white font-medium text-sm px-6 py-3 rounded-full hover:bg-opacity-90 transition-colors"
           >
             Contactar con soporte

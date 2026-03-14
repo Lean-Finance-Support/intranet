@@ -91,9 +91,9 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <img
-            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
+            src="/logo-leanfinance.png"
             alt="LeanFinance"
-            className="h-20 w-auto mx-auto brightness-0 invert"
+            className="h-24 w-auto mx-auto brightness-0 invert"
           />
         </div>
 
@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
         <p className="text-center text-white/40 text-xs mt-6">
           ¿Problemas para acceder?{" "}
           <a
-            href="mailto:info@leanfinance.es"
+            href="mailto:tech@leanfinance.es"
             className="text-white/70 hover:text-white transition-colors"
           >
             Contacta con soporte

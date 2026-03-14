@@ -96,7 +96,7 @@ export default function ClientLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <img
-            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
+            src="/logo-leanfinance.png"
             alt="LeanFinance"
             className="h-24 w-auto mx-auto"
           />
@@ -146,7 +146,7 @@ export default function ClientLoginPage() {
 
         <p className="text-center text-text-muted text-xs mt-6">
           ¿Problemas para acceder?{" "}
-          <a href="mailto:info@leanfinance.es" className="text-brand-teal hover:underline">
+          <a href="mailto:tech@leanfinance.es" className="text-brand-teal hover:underline">
             Contacta con nosotros
           </a>
         </p>
