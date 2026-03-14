@@ -7,11 +7,6 @@ import type { NextRequest } from "next/server";
 // La sesión ya está establecida en el cliente; aquí solo verificamos
 // el perfil y redirigimos al espacio correcto según el rol.
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/app";
-const ADMIN_URL =
-  process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3000/admin";
-
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
@@ -50,14 +45,36 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (!profile) {
+    // Usuario sin perfil → cerrar sesión y limpiar cookies para evitar loops
     await supabase.auth.signOut();
-    return NextResponse.redirect(new URL("/unauthorized", origin));
+    const response = NextResponse.redirect(
+      new URL("/unauthorized", origin)
+    );
+    cookieStore.getAll().forEach((cookie) => {
+      if (cookie.name.startsWith("sb-")) {
+        response.cookies.delete(cookie.name);
+      }
+    });
+    return response;
   }
 
-  // Redirigir al espacio correcto según el rol
+  // Redirigir al dashboard del espacio correcto según el rol
+  const isAdminHost = request.headers.get("host")?.startsWith("admin.");
+  const isAppHost = request.headers.get("host")?.startsWith("app.");
+  const isProd = isAdminHost || isAppHost;
+
   if (profile.role === "admin") {
-    return NextResponse.redirect(`${ADMIN_URL}/dashboard`);
+    if (isProd) {
+      const adminUrl =
+        process.env.NEXT_PUBLIC_ADMIN_URL || origin;
+      return NextResponse.redirect(`${adminUrl}/dashboard`);
+    }
+    return NextResponse.redirect(new URL("/admin/dashboard", origin));
   }
 
-  return NextResponse.redirect(`${APP_URL}/dashboard`);
+  if (isProd) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
+    return NextResponse.redirect(`${appUrl}/dashboard`);
+  }
+  return NextResponse.redirect(new URL("/app/dashboard", origin));
 }

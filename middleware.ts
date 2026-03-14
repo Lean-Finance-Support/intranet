@@ -80,9 +80,18 @@ export async function middleware(request: NextRequest) {
     .single();
 
   if (!profile) {
-    // Sin perfil = no está dado de alta → desloguear
+    // Sin perfil = no está dado de alta → desloguear y limpiar cookies de sesión
     await supabase.auth.signOut();
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+    const redirectResponse = NextResponse.redirect(
+      new URL("/unauthorized", request.url)
+    );
+    // Copiar las cookies que signOut seteó en supabaseResponse + eliminar cookies sb-*
+    request.cookies.getAll().forEach((cookie) => {
+      if (cookie.name.startsWith("sb-")) {
+        redirectResponse.cookies.delete(cookie.name);
+      }
+    });
+    return redirectResponse;
   }
 
   const correctSpace = profile.role === "admin" ? "admin" : "app";
