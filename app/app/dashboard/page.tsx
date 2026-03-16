@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import NotificationsBell from "@/components/notifications-bell";
 
 export default async function ClientDashboardPage() {
   const supabase = await createClient();
@@ -41,6 +42,11 @@ export default async function ClientDashboardPage() {
 
   return (
     <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
+      {/* Notifications bell - top right */}
+      <div className="fixed top-4 right-4 z-50">
+        <NotificationsBell linkPrefix={prefix} variant="dark" />
+      </div>
+
       <div className="max-w-md w-full space-y-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
           <div className="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
