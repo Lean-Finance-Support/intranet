@@ -163,7 +163,7 @@ export async function notifyClient(
       recipient_id: client.id,
       title: "Modelos de impuestos disponibles",
       message: `Ya están disponibles tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
-      link: "/app/modelos",
+      link: "/modelos",
     });
   }
 }
