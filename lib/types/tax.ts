@@ -46,3 +46,22 @@ export interface EntryPayload {
   amount: number;
   entry_type: "pagar" | "percibir";
 }
+
+export interface TaxEntryForClient {
+  id: string;
+  tax_model_id: string;
+  model_code: string;
+  description: string | null;
+  amount: number;
+  entry_type: "pagar" | "percibir";
+  client_response: {
+    approved: boolean;
+    bank_account_id: string;
+  } | null;
+}
+
+export interface TaxClientResponsePayload {
+  tax_entry_id: string;
+  bank_account_id: string;
+  approved: boolean;
+}
