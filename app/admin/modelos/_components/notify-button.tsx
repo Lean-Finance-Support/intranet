@@ -101,7 +101,7 @@ export default function NotifyButton({
         disabled={sending}
         className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
           confirmStep === 1
-            ? "bg-amber-500 hover:bg-amber-600 text-white"
+            ? "bg-red-500 hover:bg-red-600 text-white"
             : "bg-brand-navy hover:bg-brand-navy/90 text-white"
         }`}
       >
