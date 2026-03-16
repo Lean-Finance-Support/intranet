@@ -17,9 +17,28 @@ export default async function AdminDashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, department")
+    .select("full_name, email, department_id, department:departments(name)")
     .eq("id", user.id)
     .single();
+
+  const dept = profile?.department as unknown as { name: string } | null;
+  const departmentName = dept?.name ?? null;
+
+  // Fetch services available to this admin's department
+  let serviceSlugs: string[] = [];
+  if (profile?.department_id) {
+    const { data } = await supabase
+      .from("department_services")
+      .select("service:services(slug)")
+      .eq("department_id", profile.department_id)
+      .eq("is_active", true);
+    serviceSlugs = (data ?? []).map((ds) => {
+      const svc = ds.service as unknown as { slug: string } | null;
+      return svc?.slug ?? "";
+    }).filter(Boolean);
+  }
+
+  const hasTaxModels = serviceSlugs.includes("tax-models");
 
   return (
     <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
@@ -49,12 +68,12 @@ export default async function AdminDashboardPage() {
           <p className="text-text-muted text-sm">
             {profile?.full_name ?? profile?.email ?? user.email}
           </p>
-          {profile?.department && (
-            <p className="text-text-muted text-xs mt-1">{profile.department}</p>
+          {departmentName && (
+            <p className="text-text-muted text-xs mt-1">{departmentName}</p>
           )}
         </div>
 
-        {profile?.department === "Asesoría Fiscal" && (
+        {hasTaxModels && (
           <a
             href={`${prefix}/modelos`}
             className="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow group"

@@ -1,66 +1,64 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import ModelosWorkspace from "./_components/modelos-workspace";
+import ModelosClientWorkspace from "./_components/modelos-client-workspace";
 
-export default async function ModelosPage() {
+export default async function ClientModelosPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/admin/login");
+  if (!user) redirect("/app/login");
 
   const headersList = await headers();
   const host = headersList.get("host") ?? "";
-  const isProd = host === "admin.leanfinance.es";
-  const prefix = isProd ? "" : "/admin";
+  const isProd = host === "app.leanfinance.es";
+  const prefix = isProd ? "" : "/app";
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, department_id")
+    .select("role, company_id")
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin" || !profile.department_id) {
+  if (!profile || profile.role !== "client" || !profile.company_id) {
     redirect(`${prefix}/dashboard`);
   }
 
-  // Check if this admin's department has the tax-models service
-  const { data: departmentService } = await supabase
-    .from("department_services")
+  // Check if company has tax-models service
+  const { data: companyService } = await supabase
+    .from("company_services")
     .select("id, service:services(slug)")
-    .eq("department_id", profile.department_id)
+    .eq("company_id", profile.company_id)
     .eq("is_active", true)
     .eq("services.slug", "tax-models")
     .not("service", "is", null)
     .maybeSingle();
 
-  if (!departmentService) {
+  if (!companyService) {
     redirect(`${prefix}/dashboard`);
   }
 
   return (
-    <div className="min-h-screen bg-brand-navy">
+    <div className="min-h-screen bg-surface-gray">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <a
             href={`${prefix}/dashboard`}
-            className="text-white/70 hover:text-white transition-colors"
+            className="text-text-muted hover:text-brand-navy transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </a>
-          <h1 className="font-heading text-2xl text-white">
+          <h1 className="font-heading text-2xl text-brand-navy">
             Modelos de Prestación de Impuestos
           </h1>
         </div>
 
-        {/* Card principal */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-          <ModelosWorkspace />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <ModelosClientWorkspace />
         </div>
       </div>
     </div>
