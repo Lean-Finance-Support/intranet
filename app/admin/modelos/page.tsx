@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import ModelosWorkspace from "./_components/modelos-workspace";
 
@@ -10,6 +11,11 @@ export default async function ModelosPage() {
 
   if (!user) redirect("/admin/login");
 
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "";
+  const isProd = host === "admin.leanfinance.es";
+  const prefix = isProd ? "" : "/admin";
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, department")
@@ -17,7 +23,7 @@ export default async function ModelosPage() {
     .single();
 
   if (!profile || profile.role !== "admin" || profile.department !== "Asesoría Fiscal") {
-    redirect("/admin/dashboard");
+    redirect(`${prefix}/dashboard`);
   }
 
   return (
@@ -26,7 +32,7 @@ export default async function ModelosPage() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <a
-            href="/admin/dashboard"
+            href={`${prefix}/dashboard`}
             className="text-white/70 hover:text-white transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function AdminDashboardPage() {
@@ -8,6 +9,11 @@ export default async function AdminDashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "";
+  const isProd = host === "admin.leanfinance.es";
+  const prefix = isProd ? "" : "/admin";
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -50,7 +56,7 @@ export default async function AdminDashboardPage() {
 
         {profile?.department === "Asesoría Fiscal" && (
           <a
-            href="/admin/modelos"
+            href={`${prefix}/modelos`}
             className="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow group"
           >
             <div className="flex items-center gap-4">
