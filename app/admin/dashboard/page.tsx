@@ -15,11 +15,16 @@ export default async function AdminDashboardPage() {
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("full_name, email, department_id, department:departments(name)")
     .eq("id", user.id)
     .single();
+
+  if (profileError) {
+    console.error("[admin/dashboard] profile query error:", profileError);
+  }
+  console.log("[admin/dashboard] profile result:", JSON.stringify(profile));
 
   const dept = profile?.department as unknown as { name: string } | null;
   const departmentName = dept?.name ?? null;
@@ -27,15 +32,21 @@ export default async function AdminDashboardPage() {
   // Fetch services available to this admin's department
   let serviceSlugs: string[] = [];
   if (profile?.department_id) {
-    const { data } = await supabase
+    const { data, error: dsError } = await supabase
       .from("department_services")
       .select("service:services(slug)")
       .eq("department_id", profile.department_id)
       .eq("is_active", true);
+    if (dsError) {
+      console.error("[admin/dashboard] department_services query error:", dsError);
+    }
+    console.log("[admin/dashboard] department_services result:", JSON.stringify(data));
     serviceSlugs = (data ?? []).map((ds) => {
       const svc = ds.service as unknown as { slug: string } | null;
       return svc?.slug ?? "";
     }).filter(Boolean);
+  } else {
+    console.log("[admin/dashboard] no department_id, skipping services query");
   }
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
