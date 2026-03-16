@@ -17,14 +17,13 @@ export default async function AdminDashboardPage() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("full_name, email, department_id, department:departments(name)")
+    .select("full_name, email, department_id, department:departments!profiles_department_id_fkey(name)")
     .eq("id", user.id)
     .single();
 
   if (profileError) {
     console.error("[admin/dashboard] profile query error:", profileError);
   }
-  console.log("[admin/dashboard] profile result:", JSON.stringify(profile));
 
   const dept = profile?.department as unknown as { name: string } | null;
   const departmentName = dept?.name ?? null;
@@ -40,13 +39,10 @@ export default async function AdminDashboardPage() {
     if (dsError) {
       console.error("[admin/dashboard] department_services query error:", dsError);
     }
-    console.log("[admin/dashboard] department_services result:", JSON.stringify(data));
     serviceSlugs = (data ?? []).map((ds) => {
       const svc = ds.service as unknown as { slug: string } | null;
       return svc?.slug ?? "";
     }).filter(Boolean);
-  } else {
-    console.log("[admin/dashboard] no department_id, skipping services query");
   }
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
