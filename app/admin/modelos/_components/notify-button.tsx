@@ -19,6 +19,7 @@ export default function NotifyButton({
   const [notified, setNotified] = useState(false);
   const [notifiedAt, setNotifiedAt] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [confirmStep, setConfirmStep] = useState(0); // 0=idle, 1=first confirm, 2=sending
 
   const loadStatus = useCallback(async () => {
     try {
@@ -34,10 +35,28 @@ export default function NotifyButton({
     loadStatus();
   }, [loadStatus]);
 
-  async function handleNotify() {
-    if (!confirm(`¿Notificar a ${companyName} sobre el ${quarter}T ${year}?`)) return;
+  // Reset confirm step if user changes company/quarter
+  useEffect(() => {
+    setConfirmStep(0);
+  }, [companyId, quarter, year]);
 
+  // Auto-reset confirm step after 5 seconds
+  useEffect(() => {
+    if (confirmStep === 1) {
+      const timer = setTimeout(() => setConfirmStep(0), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [confirmStep]);
+
+  async function handleClick() {
+    if (confirmStep === 0) {
+      setConfirmStep(1);
+      return;
+    }
+
+    // confirmStep === 1 → second click, send notification
     setSending(true);
+    setConfirmStep(2);
     try {
       await notifyClient(companyId, year, quarter);
       setNotified(true);
@@ -46,6 +65,7 @@ export default function NotifyButton({
       console.error("Error notificando:", err);
     } finally {
       setSending(false);
+      setConfirmStep(0);
     }
   }
 
@@ -67,13 +87,34 @@ export default function NotifyButton({
     );
   }
 
+  const buttonLabel =
+    sending
+      ? "Enviando..."
+      : confirmStep === 1
+        ? `¿Confirmar notificación a ${companyName}?`
+        : "Notificar al cliente";
+
   return (
-    <button
-      onClick={handleNotify}
-      disabled={sending}
-      className="px-6 py-2.5 bg-brand-navy text-white rounded-lg font-medium text-sm hover:bg-brand-navy/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
-      {sending ? "Enviando..." : "Notificar al cliente"}
-    </button>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={handleClick}
+        disabled={sending}
+        className={`px-6 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          confirmStep === 1
+            ? "bg-amber-500 hover:bg-amber-600 text-white"
+            : "bg-brand-navy hover:bg-brand-navy/90 text-white"
+        }`}
+      >
+        {buttonLabel}
+      </button>
+      {confirmStep === 1 && (
+        <button
+          onClick={() => setConfirmStep(0)}
+          className="text-sm text-text-muted hover:text-text-body transition-colors"
+        >
+          Cancelar
+        </button>
+      )}
+    </div>
   );
 }
