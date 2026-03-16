@@ -11,6 +11,9 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "Espacio de Clientes - Lean Finance",
   description: "Portal de clientes Lean Finance",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
