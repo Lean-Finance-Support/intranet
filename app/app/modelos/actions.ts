@@ -244,7 +244,7 @@ export async function submitQuarter(
       recipient_id: recipientId,
       title: `${companyName} ha validado sus modelos`,
       message: `La empresa ${companyName} ha enviado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
-      link: `/admin/modelos`,
+      link: `/modelos`,
     });
   }
 }
