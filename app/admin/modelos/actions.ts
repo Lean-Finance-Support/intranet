@@ -151,19 +151,30 @@ export async function notifyClient(
   if (error) throw new Error(error.message);
 
   // Create notifications for all client users of this company
-  const { data: clientProfiles } = await supabase
+  const { data: clientProfiles, error: profilesError } = await supabase
     .from("profiles")
     .select("id")
     .eq("company_id", companyId)
     .eq("role", "client");
 
+  console.log("[notifyClient] clientProfiles query:", {
+    companyId,
+    profilesError,
+    count: clientProfiles?.length ?? 0,
+    ids: clientProfiles?.map((p) => p.id),
+  });
+
   const quarterLabel = `${quarter}T ${year}`;
   for (const client of clientProfiles ?? []) {
-    await supabase.from("notifications").insert({
+    const { error: notifError } = await supabase.from("notifications").insert({
       recipient_id: client.id,
       title: "Modelos de impuestos disponibles",
       message: `Ya están disponibles tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
       link: "/modelos",
+    });
+    console.log("[notifyClient] notification insert:", {
+      recipient_id: client.id,
+      error: notifError,
     });
   }
 }
