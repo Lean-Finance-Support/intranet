@@ -238,7 +238,7 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
                         : "bg-blue-50 text-blue-700"
                     }`}
                   >
-                    {entry.entry_type === "pagar" ? "A pagar" : "A percibir"}
+                    {entry.entry_type === "pagar" ? "A pagar" : "A compensar"}
                   </span>
                 </div>
                 {entry.description && (

@@ -190,7 +190,7 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
                           onChange={() => updateEntry(index, "entry_type", "percibir")}
                           className="accent-brand-teal"
                         />
-                        <span className="text-sm text-text-body">A percibir</span>
+                        <span className="text-sm text-text-body">A compensar</span>
                       </label>
                     </div>
                   </td>

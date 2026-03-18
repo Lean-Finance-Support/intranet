@@ -42,7 +42,7 @@ export default async function ModelosPage() {
 
   return (
     <div className="min-h-screen bg-brand-navy">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <a
