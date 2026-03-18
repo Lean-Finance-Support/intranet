@@ -34,7 +34,16 @@ async function requireServiceAdmin(serviceSlug: string) {
     throw new Error("Sin permisos para este servicio");
   }
 
-  return { supabase, user };
+  // Check if user is the department chief
+  const { data: dept } = await supabase
+    .from("departments")
+    .select("chief_id")
+    .eq("id", profile.department_id)
+    .single();
+
+  const isChief = dept?.chief_id === user.id;
+
+  return { supabase, user, departmentId: profile.department_id, isChief };
 }
 
 async function requireFiscalAdmin() {
@@ -42,11 +51,53 @@ async function requireFiscalAdmin() {
 }
 
 export async function getAllCompanies(): Promise<Company[]> {
-  const { supabase } = await requireFiscalAdmin();
+  const { supabase, user, isChief } = await requireFiscalAdmin();
+
+  // Get the service id for tax-models
+  const { data: svc } = await supabase
+    .from("services")
+    .select("id")
+    .eq("slug", SERVICE_SLUGS.TAX_MODELS)
+    .single();
+
+  if (!svc) return [];
+
+  // Get companies that have the tax-models service active
+  const { data: companyServices } = await supabase
+    .from("company_services")
+    .select("company_id")
+    .eq("service_id", svc.id)
+    .eq("is_active", true);
+
+  const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id);
+  if (serviceCompanyIds.length === 0) return [];
+
+  if (isChief) {
+    // Chief sees all companies with the service contracted
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id, company_name, nif")
+      .in("id", serviceCompanyIds)
+      .order("company_name");
+
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  }
+
+  // Non-chief: only companies assigned to this technician AND with the service
+  const { data: assignments } = await supabase
+    .from("company_technicians")
+    .select("company_id")
+    .eq("technician_id", user.id);
+
+  const assignedIds = (assignments ?? []).map((a) => a.company_id);
+  const filteredIds = assignedIds.filter((id) => serviceCompanyIds.includes(id));
+  if (filteredIds.length === 0) return [];
 
   const { data, error } = await supabase
     .from("companies")
     .select("id, company_name, nif")
+    .in("id", filteredIds)
     .order("company_name");
 
   if (error) throw new Error(error.message);

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import NotificationsBell from "@/components/notifications-bell";
 import LogoutButton from "@/components/logout-button";
+import DepartmentInfoButton from "@/components/department-info-button";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -129,6 +130,7 @@ export default async function AdminDashboardPage() {
           </a>
         )}
       </div>
+      <DepartmentInfoButton />
       <LogoutButton loginPath={`${prefix}/login`} />
     </main>
   );

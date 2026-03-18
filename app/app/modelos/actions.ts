@@ -218,12 +218,17 @@ export async function submitQuarter(
 
   if (submitError) throw new Error(submitError.message);
 
-  // Get fiscal technician and department chief for notifications
+  // Get technicians assigned to this company + department chief for notifications
   const { data: company } = await supabase
     .from("companies")
-    .select("fiscal_technician_id, company_name")
+    .select("company_name")
     .eq("id", companyId)
     .single();
+
+  const { data: technicians } = await supabase
+    .from("company_technicians")
+    .select("technician_id")
+    .eq("company_id", companyId);
 
   const { data: fiscalDept } = await supabase
     .from("departments")
@@ -232,7 +237,7 @@ export async function submitQuarter(
     .single();
 
   const recipients = new Set<string>();
-  if (company?.fiscal_technician_id) recipients.add(company.fiscal_technician_id);
+  for (const t of technicians ?? []) recipients.add(t.technician_id);
   if (fiscalDept?.chief_id) recipients.add(fiscalDept.chief_id);
 
   const companyName = company?.company_name ?? "Cliente";
