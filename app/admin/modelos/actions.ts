@@ -113,7 +113,7 @@ export async function getModelsWithEntries(
 
   const { data: models, error: modelsError } = await supabase
     .from("tax_models")
-    .select("id, year, quarter, model_code, description, display_order")
+    .select("id, year, quarter, model_code, description, display_order, is_informative")
     .eq("year", year)
     .eq("quarter", quarter)
     .order("display_order");

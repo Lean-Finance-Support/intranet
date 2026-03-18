@@ -56,7 +56,7 @@ export async function getClientQuarterData(
   // Get tax models for this quarter
   const { data: models, error: modelsError } = await supabase
     .from("tax_models")
-    .select("id, model_code, description, display_order")
+    .select("id, model_code, description, display_order, is_informative")
     .eq("year", year)
     .eq("quarter", quarter)
     .order("display_order");
@@ -118,6 +118,7 @@ export async function getClientQuarterData(
       description: model.description,
       amount: Number(e.amount),
       entry_type: e.entry_type as "pagar" | "percibir",
+      is_informative: model.is_informative ?? false,
       client_response: responsesByEntry.get(e.id) ?? null,
     };
   });
@@ -189,7 +190,7 @@ export async function saveClientResponses(
     const { error } = await supabase.from("tax_client_responses").upsert(
       {
         tax_entry_id: response.tax_entry_id,
-        bank_account_id: response.bank_account_id,
+        bank_account_id: response.bank_account_id ?? null,
         approved: response.approved,
         approved_by: user.id,
         approved_at: new Date().toISOString(),

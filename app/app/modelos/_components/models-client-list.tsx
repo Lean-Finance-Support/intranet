@@ -90,10 +90,10 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
 
   async function handleSave() {
     const toSave = entries
-      .filter((e) => e.dirty && e.approved && e.selectedBankAccountId)
+      .filter((e) => e.dirty && e.approved && (e.is_informative || e.selectedBankAccountId))
       .map((e) => ({
         tax_entry_id: e.id,
-        bank_account_id: e.selectedBankAccountId,
+        bank_account_id: e.is_informative ? null : e.selectedBankAccountId,
         approved: e.approved,
       }));
 
@@ -115,8 +115,8 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
   }
 
   async function handleSubmit() {
-    // All entries must be approved with a bank account
-    const allReady = entries.every((e) => e.approved && e.selectedBankAccountId);
+    // All entries must be approved; non-informative ones also need a bank account
+    const allReady = entries.every((e) => e.approved && (e.is_informative || e.selectedBankAccountId));
     if (!allReady) {
       setMessage("Debes aprobar todos los modelos y seleccionar un IBAN para cada uno");
       setTimeout(() => setMessage(""), 5000);
@@ -129,7 +129,7 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
       await saveClientResponses(
         unsaved.map((e) => ({
           tax_entry_id: e.id,
-          bank_account_id: e.selectedBankAccountId,
+          bank_account_id: e.is_informative ? null : e.selectedBankAccountId,
           approved: e.approved,
         }))
       );
@@ -197,7 +197,7 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
   }
 
   const hasDirty = entries.some((e) => e.dirty);
-  const allApproved = entries.every((e) => e.approved && e.selectedBankAccountId);
+  const allApproved = entries.every((e) => e.approved && (e.is_informative || e.selectedBankAccountId));
 
   return (
     <div>
@@ -231,15 +231,21 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-text-body">{entry.model_code}</span>
-                  <span
-                    className={`text-sm font-medium px-2 py-0.5 rounded-full ${
-                      entry.entry_type === "pagar"
-                        ? "bg-red-50 text-red-700"
-                        : "bg-blue-50 text-blue-700"
-                    }`}
-                  >
-                    {entry.entry_type === "pagar" ? "A pagar" : "A compensar"}
-                  </span>
+                  {entry.is_informative ? (
+                    <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-gray-100 text-text-muted">
+                      Informativo
+                    </span>
+                  ) : (
+                    <span
+                      className={`text-sm font-medium px-2 py-0.5 rounded-full ${
+                        entry.entry_type === "pagar"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-blue-50 text-blue-700"
+                      }`}
+                    >
+                      {entry.entry_type === "pagar" ? "A pagar" : "A compensar"}
+                    </span>
+                  )}
                 </div>
                 {entry.description && (
                   <p className="text-xs text-text-muted mt-1">{entry.description}</p>
@@ -268,37 +274,39 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
               </button>
             </div>
 
-            {/* IBAN selector */}
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <label className="block text-xs font-medium text-text-muted mb-1">
-                Cuenta de destino
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={entry.selectedBankAccountId}
-                  onChange={(e) => changeBankAccount(index, e.target.value)}
-                  disabled={submitted}
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal disabled:bg-gray-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">Seleccionar cuenta...</option>
-                  {bankAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.iban}
-                      {account.label ? ` — ${account.label}` : ""}
-                    </option>
-                  ))}
-                </select>
-                {!submitted && (
-                  <button
-                    onClick={() => setShowAddAccount(true)}
-                    className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
-                    title="Añadir cuenta"
+            {/* IBAN selector — only for non-informative models */}
+            {!entry.is_informative && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <label className="block text-xs font-medium text-text-muted mb-1">
+                  Cuenta de destino
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={entry.selectedBankAccountId}
+                    onChange={(e) => changeBankAccount(index, e.target.value)}
+                    disabled={submitted}
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal disabled:bg-gray-50 disabled:cursor-not-allowed"
                   >
-                    +
-                  </button>
-                )}
+                    <option value="">Seleccionar cuenta...</option>
+                    {bankAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.iban}
+                        {account.label ? ` — ${account.label}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {!submitted && (
+                    <button
+                      onClick={() => setShowAddAccount(true)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
+                      title="Añadir cuenta"
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>

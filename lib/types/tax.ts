@@ -5,6 +5,7 @@ export interface TaxModel {
   model_code: string;
   description: string | null;
   display_order: number;
+  is_informative: boolean;
 }
 
 export interface TaxEntry {
@@ -54,6 +55,7 @@ export interface TaxEntryForClient {
   description: string | null;
   amount: number;
   entry_type: "pagar" | "percibir";
+  is_informative: boolean;
   client_response: {
     approved: boolean;
     bank_account_id: string;
@@ -62,6 +64,6 @@ export interface TaxEntryForClient {
 
 export interface TaxClientResponsePayload {
   tax_entry_id: string;
-  bank_account_id: string;
+  bank_account_id: string | null;
   approved: boolean;
 }

@@ -17,6 +17,7 @@ interface LocalEntry {
   description: string | null;
   amount: string;
   entry_type: "pagar" | "percibir";
+  is_informative: boolean;
   dirty: boolean;
 }
 
@@ -46,6 +47,7 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
           description: m.description,
           amount: m.entry?.amount?.toString() ?? "",
           entry_type: m.entry?.entry_type ?? "pagar",
+          is_informative: m.is_informative ?? false,
           dirty: false,
         }))
       );
@@ -171,28 +173,32 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
                     />
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="radio"
-                          name={`type-${entry.tax_model_id}`}
-                          checked={entry.entry_type === "pagar"}
-                          onChange={() => updateEntry(index, "entry_type", "pagar")}
-                          className="accent-brand-teal"
-                        />
-                        <span className="text-sm text-text-body">A pagar</span>
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="radio"
-                          name={`type-${entry.tax_model_id}`}
-                          checked={entry.entry_type === "percibir"}
-                          onChange={() => updateEntry(index, "entry_type", "percibir")}
-                          className="accent-brand-teal"
-                        />
-                        <span className="text-sm text-text-body">A compensar</span>
-                      </label>
-                    </div>
+                    {entry.is_informative ? (
+                      <span className="text-sm text-text-muted italic">Informativo</span>
+                    ) : (
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`type-${entry.tax_model_id}`}
+                            checked={entry.entry_type === "pagar"}
+                            onChange={() => updateEntry(index, "entry_type", "pagar")}
+                            className="accent-brand-teal"
+                          />
+                          <span className="text-sm text-text-body">A pagar</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`type-${entry.tax_model_id}`}
+                            checked={entry.entry_type === "percibir"}
+                            onChange={() => updateEntry(index, "entry_type", "percibir")}
+                            className="accent-brand-teal"
+                          />
+                          <span className="text-sm text-text-body">A compensar</span>
+                        </label>
+                      </div>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     {!response ? (
