@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  const correctSpace = profile.role === "admin" ? "admin" : "app";
+  const correctSpace = profile.role === "admin" || profile.role === "superadmin" ? "admin" : "app";
 
   // En login con sesión → redirigir al dashboard del espacio correcto
   if (isOnLoginPage) {

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import NotificationsBell from "@/components/notifications-bell";
 import LogoutButton from "@/components/logout-button";
@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("full_name, email, department_id, department:departments!profiles_department_id_fkey(name)")
+    .select("full_name, email, role, department_id, department:departments!profiles_department_id_fkey(name)")
     .eq("id", user.id)
     .single();
 
@@ -28,16 +28,38 @@ export default async function AdminDashboardPage() {
     console.error("[admin/dashboard] profile query error:", profileError);
   }
 
-  const dept = profile?.department as unknown as { name: string } | null;
-  const departmentName = dept?.name ?? null;
+  const isSuperadmin = profile?.role === "superadmin";
 
-  // Fetch services available to this admin's department
+  // Superadmin: use cookie-based department selection
+  let departmentId = profile?.department_id ?? null;
+  let departmentName: string | null = null;
+
+  if (isSuperadmin) {
+    const cookieStore = await cookies();
+    const saDeptId = cookieStore.get("sa-department-id")?.value;
+    if (!saDeptId) {
+      // No department selected yet → redirect to picker
+      redirect(`${prefix}/departamentos`);
+    }
+    departmentId = saDeptId;
+    const { data: saDept } = await supabase
+      .from("departments")
+      .select("name")
+      .eq("id", saDeptId)
+      .single();
+    departmentName = saDept?.name ?? null;
+  } else {
+    const dept = profile?.department as unknown as { name: string } | null;
+    departmentName = dept?.name ?? null;
+  }
+
+  // Fetch services available to the active department
   let serviceSlugs: string[] = [];
-  if (profile?.department_id) {
+  if (departmentId) {
     const { data, error: dsError } = await supabase
       .from("department_services")
       .select("service:services(slug)")
-      .eq("department_id", profile.department_id)
+      .eq("department_id", departmentId)
       .eq("is_active", true);
     if (dsError) {
       console.error("[admin/dashboard] department_services query error:", dsError);
@@ -84,7 +106,12 @@ export default async function AdminDashboardPage() {
             {profile?.full_name ?? profile?.email ?? user.email}
           </p>
           {departmentName && (
-            <p className="text-text-muted text-xs mt-1">{departmentName}</p>
+            <p className="text-text-muted text-xs mt-1">
+              {departmentName}
+              {isSuperadmin && (
+                <> · <a href={`${prefix}/departamentos`} className="text-brand-teal hover:underline">Cambiar</a></>
+              )}
+            </p>
           )}
         </div>
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import ModelosWorkspace from "./_components/modelos-workspace";
 
@@ -22,15 +22,26 @@ export default async function ModelosPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin" || !profile.department_id) {
+  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
     redirect(`${prefix}/dashboard`);
   }
 
-  // Check if this admin's department has the tax-models service
+  // Superadmin uses cookie-based department
+  let departmentId = profile.department_id;
+  if (profile.role === "superadmin") {
+    const cookieStore = await cookies();
+    departmentId = cookieStore.get("sa-department-id")?.value ?? null;
+  }
+
+  if (!departmentId) {
+    redirect(`${prefix}/dashboard`);
+  }
+
+  // Check if this department has the tax-models service
   const { data: departmentService } = await supabase
     .from("department_services")
     .select("id, service:services(slug)")
-    .eq("department_id", profile.department_id)
+    .eq("department_id", departmentId)
     .eq("is_active", true)
     .eq("services.slug", "tax-models")
     .not("service", "is", null)

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 import type { Company, TaxModelWithEntry, EntryPayload } from "@/lib/types/tax";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 
@@ -17,14 +18,27 @@ async function requireServiceAdmin(serviceSlug: string) {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin" || !profile.department_id) {
+  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
     throw new Error("Sin permisos");
+  }
+
+  const isSuperadmin = profile.role === "superadmin";
+
+  // Superadmin uses cookie-based department, regular admin uses profile department
+  let departmentId = profile.department_id;
+  if (isSuperadmin) {
+    const cookieStore = await cookies();
+    departmentId = cookieStore.get("sa-department-id")?.value ?? null;
+  }
+
+  if (!departmentId) {
+    throw new Error("Sin departamento asignado");
   }
 
   const { data: departmentService } = await supabase
     .from("department_services")
     .select("id, service:services(slug)")
-    .eq("department_id", profile.department_id)
+    .eq("department_id", departmentId)
     .eq("is_active", true)
     .eq("services.slug", serviceSlug)
     .not("service", "is", null)
@@ -34,16 +48,16 @@ async function requireServiceAdmin(serviceSlug: string) {
     throw new Error("Sin permisos para este servicio");
   }
 
-  // Check if user is the department chief
+  // Check if user is the department chief — superadmin is always chief
   const { data: dept } = await supabase
     .from("departments")
     .select("chief_id")
-    .eq("id", profile.department_id)
+    .eq("id", departmentId)
     .single();
 
-  const isChief = dept?.chief_id === user.id;
+  const isChief = isSuperadmin || dept?.chief_id === user.id;
 
-  return { supabase, user, departmentId: profile.department_id, isChief };
+  return { supabase, user, departmentId, isChief };
 }
 
 async function requireFiscalAdmin() {

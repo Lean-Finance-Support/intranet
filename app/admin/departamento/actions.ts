@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -15,21 +16,35 @@ async function requireAdmin() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin" || !profile.department_id) {
+  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
     throw new Error("Sin permisos");
+  }
+
+  const isSuperadmin = profile.role === "superadmin";
+
+  // Superadmin uses cookie-based department, regular admin uses profile department
+  let departmentId = profile.department_id;
+  if (isSuperadmin) {
+    const cookieStore = await cookies();
+    departmentId = cookieStore.get("sa-department-id")?.value ?? null;
+  }
+
+  if (!departmentId) {
+    throw new Error("Sin departamento asignado");
   }
 
   const { data: dept } = await supabase
     .from("departments")
     .select("id, name, slug, chief_id")
-    .eq("id", profile.department_id)
+    .eq("id", departmentId)
     .single();
 
   if (!dept) throw new Error("Departamento no encontrado");
 
-  const isChief = dept.chief_id === user.id;
+  // Superadmin is always chief of any department they enter
+  const isChief = isSuperadmin || dept.chief_id === user.id;
 
-  return { supabase, user, departmentId: profile.department_id, dept, isChief };
+  return { supabase, user, departmentId, dept, isChief };
 }
 
 // ---------- Types ----------
