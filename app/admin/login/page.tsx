@@ -25,12 +25,18 @@ declare global {
 
 const GIS_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
+function isMobile() {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
   const router = useRouter();
   const btnRef = useRef<HTMLDivElement>(null);
+  const useGIS = GIS_CLIENT_ID && !isMobile();
 
   function initGIS() {
     if (!GIS_CLIENT_ID || !window.google?.accounts?.id) return;
@@ -79,7 +85,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
-      {GIS_CLIENT_ID && (
+      {useGIS && (
         <Script
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
@@ -115,7 +121,7 @@ export default function AdminLoginPage() {
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
           )}
 
-          {GIS_CLIENT_ID ? (
+          {useGIS ? (
             <div
               ref={btnRef}
               className="w-full flex justify-center min-h-[44px]"

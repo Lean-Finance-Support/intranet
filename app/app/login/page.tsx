@@ -25,12 +25,18 @@ declare global {
 
 const GIS_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
+function isMobile() {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 export default function ClientLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
   const router = useRouter();
   const btnRef = useRef<HTMLDivElement>(null);
+  const useGIS = GIS_CLIENT_ID && !isMobile();
 
   // Se llama cuando el script de GIS termina de cargarse
   function initGIS() {
@@ -84,7 +90,7 @@ export default function ClientLoginPage() {
   return (
     <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
       {/* Cargar GIS solo si está configurado el Client ID */}
-      {GIS_CLIENT_ID && (
+      {useGIS && (
         <Script
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
@@ -120,14 +126,14 @@ export default function ClientLoginPage() {
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
           )}
 
-          {GIS_CLIENT_ID ? (
+          {useGIS ? (
             // GIS renderiza el botón oficial de Google aquí — sin URL de Supabase
             <div
               ref={btnRef}
               className="w-full flex justify-center min-h-[44px]"
             />
           ) : (
-            // Fallback: botón manual con signInWithOAuth
+            // En móvil o sin GIS: botón manual con signInWithOAuth (redirect)
             <button
               onClick={handleOAuthFallback}
               disabled={loading}
