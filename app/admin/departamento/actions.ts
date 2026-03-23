@@ -44,7 +44,7 @@ async function requireAdmin() {
   // Superadmin is always chief of any department they enter
   const isChief = isSuperadmin || dept.chief_id === user.id;
 
-  return { supabase, user, departmentId, dept, isChief };
+  return { supabase, user, departmentId, dept, isChief, isSuperadmin };
 }
 
 // ---------- Types ----------
@@ -81,7 +81,7 @@ export interface DepartmentInfo {
 // ---------- Get department info ----------
 
 export async function getDepartmentInfo(): Promise<DepartmentInfo> {
-  const { supabase, user, departmentId, dept, isChief } = await requireAdmin();
+  const { supabase, user, departmentId, dept, isChief, isSuperadmin } = await requireAdmin();
 
   // 1. Get all department members
   const { data: members } = await supabase
@@ -158,12 +158,13 @@ export async function getDepartmentInfo(): Promise<DepartmentInfo> {
     return { department_name: dept.name, is_chief: isChief, members: deptMembers, companies: [] };
   }
 
-  // 5. Get company details
-  const { data: companies } = await supabase
+  // 5. Get company details (hide demo companies from non-superadmin)
+  let companiesQuery = supabase
     .from("companies")
     .select("id, legal_name, company_name, nif")
-    .in("id", filteredCompanyIds)
-    .order("legal_name");
+    .in("id", filteredCompanyIds);
+  if (!isSuperadmin) companiesQuery = companiesQuery.eq("is_demo", false);
+  const { data: companies } = await companiesQuery.order("legal_name");
 
   // 6. Get technician assignments for these companies
   const { data: allAssignments } = await supabase

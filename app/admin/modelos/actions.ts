@@ -57,7 +57,7 @@ async function requireServiceAdmin(serviceSlug: string) {
 
   const isChief = isSuperadmin || dept?.chief_id === user.id;
 
-  return { supabase, user, departmentId, isChief };
+  return { supabase, user, departmentId, isChief, isSuperadmin };
 }
 
 async function requireFiscalAdmin() {
@@ -65,7 +65,7 @@ async function requireFiscalAdmin() {
 }
 
 export async function getAllCompanies(): Promise<Company[]> {
-  const { supabase, user, isChief } = await requireFiscalAdmin();
+  const { supabase, user, isChief, isSuperadmin } = await requireFiscalAdmin();
 
   // Get the service id for tax-models
   const { data: svc } = await supabase
@@ -88,11 +88,12 @@ export async function getAllCompanies(): Promise<Company[]> {
 
   if (isChief) {
     // Chief sees all companies with the service contracted
-    const { data, error } = await supabase
+    let query = supabase
       .from("companies")
       .select("id, legal_name, company_name, nif")
-      .in("id", serviceCompanyIds)
-      .order("legal_name");
+      .in("id", serviceCompanyIds);
+    if (!isSuperadmin) query = query.eq("is_demo", false);
+    const { data, error } = await query.order("legal_name");
 
     if (error) {
     console.error("[admin/modelos] DB error:", error.code);
@@ -111,11 +112,12 @@ export async function getAllCompanies(): Promise<Company[]> {
   const filteredIds = assignedIds.filter((id) => serviceCompanyIds.includes(id));
   if (filteredIds.length === 0) return [];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("companies")
     .select("id, legal_name, company_name, nif")
-    .in("id", filteredIds)
-    .order("legal_name");
+    .in("id", filteredIds);
+  if (!isSuperadmin) query = query.eq("is_demo", false);
+  const { data, error } = await query.order("legal_name");
 
   if (error) {
     console.error("[admin/modelos] DB error:", error.code);
