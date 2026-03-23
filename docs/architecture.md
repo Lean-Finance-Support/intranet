@@ -102,7 +102,8 @@ Empresa cliente. Una empresa puede tener N usuarios (profiles) vinculados.
 | Columna | Tipo | Notas |
 |---------|------|-------|
 | id | uuid PK | gen_random_uuid() |
-| company_name | text | |
+| legal_name | text NOT NULL | Razón social / nombre legal (solo editable desde BD) |
+| company_name | text | Nombre comercial (opcional, editable por admins) |
 | nif | text | |
 | phone | text | |
 | address | text | |

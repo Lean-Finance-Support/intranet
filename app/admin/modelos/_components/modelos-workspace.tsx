@@ -34,11 +34,11 @@ export default function ModelosWorkspace() {
         <div className="border-t border-gray-200 pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading text-lg text-text-body">
-              Modelos {quarter}T 2026 — {company.company_name}
+              Modelos {quarter}T 2026 — {company.legal_name}
             </h3>
             <NotifyButton
               companyId={company.id}
-              companyName={company.company_name ?? "Cliente"}
+              companyName={company.legal_name}
               quarter={quarter}
             />
           </div>

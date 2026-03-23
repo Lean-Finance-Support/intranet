@@ -60,7 +60,9 @@ Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthor
 
 ### `public.companies` — empresa cliente (N usuarios pueden pertenecer a una empresa)
 - `id` uuid PK (gen_random_uuid)
-- `company_name`, `nif`, `phone`, `address` (todos nullable)
+- `legal_name` text NOT NULL — razón social / nombre legal (solo editable desde BD)
+- `company_name` text nullable — nombre comercial (editable por admins desde admin.leanfinance.es)
+- `nif`, `phone`, `address` (todos nullable)
 - `created_at`, `updated_at`
 
 ### Trigger `handle_new_user`

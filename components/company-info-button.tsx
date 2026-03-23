@@ -276,7 +276,13 @@ export default function CompanyInfoButton() {
                     </h3>
                     <div className="space-y-2">
                       <div className="bg-gray-50 rounded-lg px-4 py-3">
-                        <p className="text-xs text-text-muted">Nombre</p>
+                        <p className="text-xs text-text-muted">Nombre legal</p>
+                        <p className="text-sm font-medium text-text-body">
+                          {info.legal_name}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg px-4 py-3">
+                        <p className="text-xs text-text-muted">Nombre comercial</p>
                         <p className="text-sm font-medium text-text-body">
                           {info.company_name ?? "—"}
                         </p>

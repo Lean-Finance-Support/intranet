@@ -37,6 +37,7 @@ export interface TaxModelWithEntry extends TaxModel {
 
 export interface Company {
   id: string;
+  legal_name: string;
   company_name: string | null;
   nif: string | null;
 }

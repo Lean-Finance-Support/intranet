@@ -64,6 +64,7 @@ export interface DeptCompanyTechnician {
 
 export interface DeptCompany {
   id: string;
+  legal_name: string;
   company_name: string | null;
   nif: string | null;
   services: string[]; // active service names contracted by this company in the dept
@@ -160,9 +161,9 @@ export async function getDepartmentInfo(): Promise<DepartmentInfo> {
   // 5. Get company details
   const { data: companies } = await supabase
     .from("companies")
-    .select("id, company_name, nif")
+    .select("id, legal_name, company_name, nif")
     .in("id", filteredCompanyIds)
-    .order("company_name");
+    .order("legal_name");
 
   // 6. Get technician assignments for these companies
   const { data: allAssignments } = await supabase
@@ -189,6 +190,7 @@ export async function getDepartmentInfo(): Promise<DepartmentInfo> {
 
   const deptCompanies: DeptCompany[] = (companies ?? []).map((c) => ({
     id: c.id,
+    legal_name: c.legal_name,
     company_name: c.company_name,
     nif: c.nif,
     services: companyServiceMap.get(c.id) ?? [],
@@ -201,6 +203,25 @@ export async function getDepartmentInfo(): Promise<DepartmentInfo> {
     members: deptMembers,
     companies: deptCompanies,
   };
+}
+
+// ---------- Update company commercial name ----------
+
+export async function updateCompanyName(
+  companyId: string,
+  companyName: string | null
+): Promise<void> {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("companies")
+    .update({ company_name: companyName || null, updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+
+  if (error) {
+    console.error("[admin/departamento] updateCompanyName error:", error.code);
+    throw new Error("Error al actualizar el nombre comercial.");
+  }
 }
 
 // ---------- Assign technician to company ----------

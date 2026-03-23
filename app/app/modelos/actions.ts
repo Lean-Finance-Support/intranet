@@ -244,7 +244,7 @@ export async function submitQuarter(
   // Get technicians assigned to this company + department chief for notifications
   const { data: company } = await supabase
     .from("companies")
-    .select("company_name")
+    .select("legal_name, company_name")
     .eq("id", companyId)
     .single();
 
@@ -263,7 +263,7 @@ export async function submitQuarter(
   for (const t of technicians ?? []) recipients.add(t.technician_id);
   if (fiscalDept?.chief_id) recipients.add(fiscalDept.chief_id);
 
-  const companyName = company?.company_name ?? "Cliente";
+  const companyName = company?.legal_name ?? "Cliente";
   const quarterLabel = `${quarter}T ${year}`;
 
   // Create notifications for each recipient

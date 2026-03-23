@@ -90,9 +90,9 @@ export async function getAllCompanies(): Promise<Company[]> {
     // Chief sees all companies with the service contracted
     const { data, error } = await supabase
       .from("companies")
-      .select("id, company_name, nif")
+      .select("id, legal_name, company_name, nif")
       .in("id", serviceCompanyIds)
-      .order("company_name");
+      .order("legal_name");
 
     if (error) {
     console.error("[admin/modelos] DB error:", error.code);
@@ -113,9 +113,9 @@ export async function getAllCompanies(): Promise<Company[]> {
 
   const { data, error } = await supabase
     .from("companies")
-    .select("id, company_name, nif")
+    .select("id, legal_name, company_name, nif")
     .in("id", filteredIds)
-    .order("company_name");
+    .order("legal_name");
 
   if (error) {
     console.error("[admin/modelos] DB error:", error.code);

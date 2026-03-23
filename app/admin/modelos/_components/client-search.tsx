@@ -27,6 +27,7 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
     const q = query.toLowerCase();
     return companies.filter(
       (c) =>
+        c.legal_name.toLowerCase().includes(q) ||
         c.company_name?.toLowerCase().includes(q) ||
         c.nif?.toLowerCase().includes(q)
     );
@@ -37,15 +38,17 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
       <div className="flex items-center gap-3 bg-brand-teal/5 border border-brand-teal/20 rounded-lg px-4 py-3">
         <div className="w-9 h-9 bg-brand-teal/10 rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-brand-teal font-bold text-sm">
-            {(selected.company_name?.[0] ?? "E").toUpperCase()}
+            {selected.legal_name[0].toUpperCase()}
           </span>
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-text-body truncate">
-            {selected.company_name ?? "Sin nombre"}
+            {selected.legal_name}
           </p>
-          {selected.nif && (
-            <p className="text-sm text-text-muted">NIF: {selected.nif}</p>
+          {(selected.company_name || selected.nif) && (
+            <p className="text-sm text-text-muted truncate">
+              {[selected.company_name, selected.nif ? `NIF: ${selected.nif}` : null].filter(Boolean).join(" · ")}
+            </p>
           )}
         </div>
         <button
@@ -64,7 +67,7 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar empresa por nombre o NIF..."
+        placeholder="Buscar empresa por nombre legal, nombre comercial o NIF..."
         className="w-full px-4 py-3 mb-3 rounded-lg border border-gray-200 text-text-body placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
       />
 
@@ -87,16 +90,16 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
               >
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-text-muted text-xs font-bold">
-                    {(company.company_name?.[0] ?? "E").toUpperCase()}
+                    {company.legal_name[0].toUpperCase()}
                   </span>
                 </div>
                 <div className="min-w-0">
                   <p className="font-medium text-sm text-text-body truncate">
-                    {company.company_name ?? "Sin nombre"}
+                    {company.legal_name}
                   </p>
-                  {company.nif && (
-                    <p className="text-xs text-text-muted">{company.nif}</p>
-                  )}
+                  <p className="text-xs text-text-muted truncate">
+                    {[company.company_name, company.nif].filter(Boolean).join(" · ")}
+                  </p>
                 </div>
               </button>
             </li>

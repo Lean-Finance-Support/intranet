@@ -11,6 +11,7 @@ import {
   assignTechnician,
   removeTechnician,
   assignAllMembers,
+  updateCompanyName,
 } from "@/app/admin/departamento/actions";
 
 // ---------- Technician Selector (dropdown to add) ----------
@@ -55,6 +56,7 @@ function CompanyCard({
   onAssign,
   onRemove,
   onAssignAll,
+  onUpdateName,
 }: {
   company: DeptCompany;
   members: DeptMember[];
@@ -62,16 +64,70 @@ function CompanyCard({
   onAssign: (companyId: string, techId: string) => void;
   onRemove: (companyId: string, techId: string) => void;
   onAssignAll: (companyId: string) => void;
+  onUpdateName: (companyId: string, name: string | null) => void;
 }) {
   const existingTechIds = new Set(company.technicians.map((t) => t.technician_id));
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(company.company_name ?? "");
+  const [savingName, setSavingName] = useState(false);
+
+  async function handleSaveName() {
+    setSavingName(true);
+    try {
+      await onUpdateName(company.id, nameValue || null);
+      setEditingName(false);
+    } finally {
+      setSavingName(false);
+    }
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-2">
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-text-body">
-            {company.company_name ?? "Sin nombre"}
+            {company.legal_name}
           </p>
+          {editingName ? (
+            <div className="flex items-center gap-1.5 mt-1">
+              <input
+                type="text"
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                placeholder="Nombre comercial"
+                className="text-xs border border-gray-200 rounded px-2 py-1 flex-1 min-w-0 focus:outline-none focus:ring-1 focus:ring-brand-teal/50 focus:border-brand-teal"
+                autoFocus
+              />
+              <button
+                onClick={handleSaveName}
+                disabled={savingName}
+                className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer disabled:opacity-50"
+              >
+                {savingName ? "..." : "OK"}
+              </button>
+              <button
+                onClick={() => { setNameValue(company.company_name ?? ""); setEditingName(false); }}
+                className="text-xs text-text-muted hover:text-text-body cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setEditingName(true)}
+              className="text-xs text-text-muted hover:text-brand-teal mt-0.5 cursor-pointer flex items-center gap-1"
+              title="Editar nombre comercial"
+            >
+              {company.company_name ? (
+                <span>{company.company_name}</span>
+              ) : (
+                <span className="italic">Añadir nombre comercial</span>
+              )}
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+              </svg>
+            </button>
+          )}
           {company.nif && (
             <p className="text-xs text-text-muted font-mono mt-0.5">{company.nif}</p>
           )}
@@ -151,12 +207,14 @@ function ClientsFullScreen({
   onAssign,
   onRemove,
   onAssignAll,
+  onUpdateName,
 }: {
   info: DepartmentInfo;
   onClose: () => void;
   onAssign: (companyId: string, techId: string) => void;
   onRemove: (companyId: string, techId: string) => void;
   onAssignAll: (companyId: string) => void;
+  onUpdateName: (companyId: string, name: string | null) => void;
 }) {
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -166,6 +224,7 @@ function ClientsFullScreen({
     const q = search.trim().toLowerCase();
     return info.companies.filter(
       (c) =>
+        c.legal_name.toLowerCase().includes(q) ||
         (c.company_name ?? "").toLowerCase().includes(q) ||
         (c.nif ?? "").toLowerCase().includes(q)
     );
@@ -275,6 +334,7 @@ function ClientsFullScreen({
                   onAssign={onAssign}
                   onRemove={onRemove}
                   onAssignAll={onAssignAll}
+                  onUpdateName={onUpdateName}
                 />
               ))}
             </div>
@@ -424,6 +484,23 @@ export default function DepartmentInfoButton() {
     });
   }
 
+  function handleUpdateName(companyId: string, name: string | null) {
+    // Optimistic update
+    setInfo((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        companies: prev.companies.map((c) =>
+          c.id === companyId ? { ...c, company_name: name } : c
+        ),
+      };
+    });
+
+    updateCompanyName(companyId, name).catch(() => {
+      loadInfo();
+    });
+  }
+
   return (
     <>
       {/* Floating button */}
@@ -556,6 +633,7 @@ export default function DepartmentInfoButton() {
           onAssign={handleAssign}
           onRemove={handleRemove}
           onAssignAll={handleAssignAll}
+          onUpdateName={handleUpdateName}
         />
       )}
     </>

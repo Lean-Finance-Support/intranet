@@ -25,6 +25,7 @@ async function requireClient() {
 
 export interface CompanyInfo {
   id: string;
+  legal_name: string;
   company_name: string | null;
   nif: string | null;
   phone: string | null;
@@ -38,7 +39,7 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, company_name, nif, phone, address")
+    .select("id, legal_name, company_name, nif, phone, address")
     .eq("id", companyId)
     .single();
 
