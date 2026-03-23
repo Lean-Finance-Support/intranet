@@ -36,6 +36,8 @@ export async function getClientQuarterData(
   submitted: boolean;
   submitted_at: string | null;
 }> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase, companyId } = await requireClient();
 
   // Check if admin has notified for this quarter
@@ -61,7 +63,10 @@ export async function getClientQuarterData(
     .eq("quarter", quarter)
     .order("display_order");
 
-  if (modelsError) throw new Error(modelsError.message);
+  if (modelsError) {
+    console.error("[app/modelos] models query error:", modelsError.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   if (!models || models.length === 0) {
     return { notified: true, entries: [], submitted: false, submitted_at: null };
   }
@@ -74,7 +79,10 @@ export async function getClientQuarterData(
     .eq("company_id", companyId)
     .in("tax_model_id", modelIds);
 
-  if (entriesError) throw new Error(entriesError.message);
+  if (entriesError) {
+    console.error("[app/modelos] entries query error:", entriesError.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
 
   const filledEntries = (rawEntries ?? []).filter(
     (e) => e.amount !== null && Number(e.amount) !== 0
@@ -146,7 +154,10 @@ export async function getBankAccounts(): Promise<CompanyBankAccount[]> {
     .eq("company_id", companyId)
     .order("is_default", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[app/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   return data ?? [];
 }
 
@@ -177,7 +188,10 @@ export async function addBankAccount(
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[app/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   return data;
 }
 
@@ -197,7 +211,10 @@ export async function saveClientResponses(
       },
       { onConflict: "tax_entry_id" }
     );
-    if (error) throw new Error(error.message);
+    if (error) {
+    console.error("[app/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   }
 }
 
@@ -205,6 +222,8 @@ export async function submitQuarter(
   year: number,
   quarter: number
 ): Promise<void> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase, user, companyId } = await requireClient();
 
   // Insert submission record
@@ -217,7 +236,10 @@ export async function submitQuarter(
       submitted_by: user.id,
     });
 
-  if (submitError) throw new Error(submitError.message);
+  if (submitError) {
+    console.error("[app/modelos] submit error:", submitError.code);
+    throw new Error("Error al enviar el trimestre.");
+  }
 
   // Get technicians assigned to this company + department chief for notifications
   const { data: company } = await supabase

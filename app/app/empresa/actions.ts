@@ -78,7 +78,10 @@ export async function updateCompanyContact(
     .update({ phone, address, updated_at: new Date().toISOString() })
     .eq("id", companyId);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[app/empresa] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
 }
 
 export async function addCompanyBankAccount(
@@ -107,7 +110,10 @@ export async function addCompanyBankAccount(
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[app/empresa] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   return data;
 }
 
@@ -130,7 +136,10 @@ export async function updateCompanyBankAccount(
     .eq("id", accountId)
     .eq("company_id", companyId);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[app/empresa] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
 }
 
 export async function deleteCompanyBankAccount(
@@ -144,5 +153,8 @@ export async function deleteCompanyBankAccount(
     .eq("id", accountId)
     .eq("company_id", companyId);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[app/empresa] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
 }

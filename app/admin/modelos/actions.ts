@@ -94,7 +94,10 @@ export async function getAllCompanies(): Promise<Company[]> {
       .in("id", serviceCompanyIds)
       .order("company_name");
 
-    if (error) throw new Error(error.message);
+    if (error) {
+    console.error("[admin/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
     return data ?? [];
   }
 
@@ -114,7 +117,10 @@ export async function getAllCompanies(): Promise<Company[]> {
     .in("id", filteredIds)
     .order("company_name");
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[admin/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   return data ?? [];
 }
 
@@ -123,6 +129,8 @@ export async function getModelsWithEntries(
   year: number,
   quarter: number
 ): Promise<TaxModelWithEntry[]> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase } = await requireFiscalAdmin();
 
   const { data: models, error: modelsError } = await supabase
@@ -132,7 +140,10 @@ export async function getModelsWithEntries(
     .eq("quarter", quarter)
     .order("display_order");
 
-  if (modelsError) throw new Error(modelsError.message);
+  if (modelsError) {
+    console.error("[admin/modelos] models query error:", modelsError.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   if (!models || models.length === 0) return [];
 
   const modelIds = models.map((m) => m.id);
@@ -142,7 +153,10 @@ export async function getModelsWithEntries(
     .eq("company_id", companyId)
     .in("tax_model_id", modelIds);
 
-  if (entriesError) throw new Error(entriesError.message);
+  if (entriesError) {
+    console.error("[admin/modelos] entries query error:", entriesError.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
 
   const entriesByModel = new Map(
     (entries ?? []).map((e) => [
@@ -162,6 +176,8 @@ export async function getNotificationStatus(
   year: number,
   quarter: number
 ): Promise<{ notified: boolean; notified_at: string | null }> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase } = await requireFiscalAdmin();
 
   const { data } = await supabase
@@ -195,7 +211,10 @@ export async function saveEntries(entries: EntryPayload[]): Promise<void> {
       },
       { onConflict: "company_id,tax_model_id" }
     );
-    if (error) throw new Error(error.message);
+    if (error) {
+    console.error("[admin/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
   }
 }
 
@@ -204,6 +223,8 @@ export async function notifyClient(
   year: number,
   quarter: number
 ): Promise<void> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase, user } = await requireFiscalAdmin();
 
   const { error } = await supabase.from("tax_notifications").insert({
@@ -213,33 +234,25 @@ export async function notifyClient(
     notified_by: user.id,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[notifyClient] insert tax_notification:", error);
+    throw new Error("Error al registrar la notificación.");
+  }
 
   // Create notifications for all client users of this company
-  const { data: clientProfiles, error: profilesError } = await supabase
+  const { data: clientProfiles } = await supabase
     .from("profiles")
     .select("id")
     .eq("company_id", companyId)
     .eq("role", "client");
 
-  console.log("[notifyClient] clientProfiles query:", {
-    companyId,
-    profilesError,
-    count: clientProfiles?.length ?? 0,
-    ids: clientProfiles?.map((p) => p.id),
-  });
-
   const quarterLabel = `${quarter}T ${year}`;
   for (const client of clientProfiles ?? []) {
-    const { error: notifError } = await supabase.from("notifications").insert({
+    await supabase.from("notifications").insert({
       recipient_id: client.id,
       title: "Modelos de impuestos disponibles",
       message: `Ya están disponibles tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
       link: "/modelos",
-    });
-    console.log("[notifyClient] notification insert:", {
-      recipient_id: client.id,
-      error: notifError,
     });
   }
 }

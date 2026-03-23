@@ -217,7 +217,8 @@ export async function assignTechnician(
 
   if (error) {
     if (error.code === "23505") return; // already assigned, ignore
-    throw new Error(error.message);
+    console.error("[admin/departamento] assignTechnician error:", error.code);
+    throw new Error("Error al asignar el técnico.");
   }
 }
 
@@ -235,7 +236,10 @@ export async function removeTechnician(
     .eq("company_id", companyId)
     .eq("technician_id", technicianId);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[admin/departamento] removeTechnician error:", error.code);
+    throw new Error("Error al eliminar el técnico.");
+  }
 }
 
 // ---------- Assign ALL department members to a company ----------
@@ -255,6 +259,9 @@ export async function assignAllMembers(companyId: string): Promise<void> {
       .insert({ company_id: companyId, technician_id: member.id });
 
     // Ignore duplicates
-    if (error && error.code !== "23505") throw new Error(error.message);
+    if (error && error.code !== "23505") {
+    console.error("[admin/departamento] assignAllMembers error:", error.code);
+    throw new Error("Error al asignar miembros.");
+  }
   }
 }
