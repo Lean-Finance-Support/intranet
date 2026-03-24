@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import NotificationsBell from "@/components/notifications-bell";
 import LogoutButton from "@/components/logout-button";
-import DepartmentInfoButton from "@/components/department-info-button";
+
+const DepartmentInfoButton = dynamic(() => import("@/components/department-info-button"));
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -18,11 +21,15 @@ export default async function AdminDashboardPage() {
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("full_name, email, role, department_id, department:departments!profiles_department_id_fkey(name)")
-    .eq("id", user.id)
-    .single();
+  // Lanzar query de perfil y lectura de cookies en paralelo
+  const [{ data: profile, error: profileError }, cookieStore] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, email, role, department_id, department:departments!profiles_department_id_fkey(name)")
+      .eq("id", user.id)
+      .single(),
+    cookies(),
+  ]);
 
   if (profileError) {
     console.error("[admin/dashboard] profile query error:", profileError);
@@ -30,45 +37,43 @@ export default async function AdminDashboardPage() {
 
   const isSuperadmin = profile?.role === "superadmin";
 
-  // Superadmin: use cookie-based department selection
+  // Determinar departamento activo
   let departmentId = profile?.department_id ?? null;
   let departmentName: string | null = null;
 
   if (isSuperadmin) {
-    const cookieStore = await cookies();
     const saDeptId = cookieStore.get("sa-department-id")?.value;
     if (!saDeptId) {
-      // No department selected yet → redirect to picker
       redirect(`${prefix}/departamentos`);
     }
     departmentId = saDeptId;
-    const { data: saDept } = await supabase
-      .from("departments")
-      .select("name")
-      .eq("id", saDeptId)
-      .single();
-    departmentName = saDept?.name ?? null;
+  }
+
+  // Lanzar query de nombre de departamento (solo superadmin) y servicios en paralelo
+  const [deptResult, servicesResult] = await Promise.all([
+    isSuperadmin && departmentId
+      ? supabase.from("departments").select("name").eq("id", departmentId).single()
+      : Promise.resolve(null),
+    departmentId
+      ? supabase
+          .from("department_services")
+          .select("service:services(slug)")
+          .eq("department_id", departmentId)
+          .eq("is_active", true)
+      : Promise.resolve(null),
+  ]);
+
+  if (isSuperadmin) {
+    departmentName = deptResult?.data?.name ?? null;
   } else {
     const dept = profile?.department as unknown as { name: string } | null;
     departmentName = dept?.name ?? null;
   }
 
-  // Fetch services available to the active department
-  let serviceSlugs: string[] = [];
-  if (departmentId) {
-    const { data, error: dsError } = await supabase
-      .from("department_services")
-      .select("service:services(slug)")
-      .eq("department_id", departmentId)
-      .eq("is_active", true);
-    if (dsError) {
-      console.error("[admin/dashboard] department_services query error:", dsError);
-    }
-    serviceSlugs = (data ?? []).map((ds) => {
-      const svc = ds.service as unknown as { slug: string } | null;
-      return svc?.slug ?? "";
-    }).filter(Boolean);
-  }
+  const serviceSlugs = (servicesResult?.data ?? []).map((ds) => {
+    const svc = (ds as unknown as { service: { slug: string } | null }).service;
+    return svc?.slug ?? "";
+  }).filter(Boolean);
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
 
@@ -109,14 +114,14 @@ export default async function AdminDashboardPage() {
             <p className="text-text-muted text-xs mt-1">
               {departmentName}
               {isSuperadmin && (
-                <> · <a href={`${prefix}/departamentos`} className="text-brand-teal hover:underline">Cambiar</a></>
+                <> · <Link href={`${prefix}/departamentos`} className="text-brand-teal hover:underline">Cambiar</Link></>
               )}
             </p>
           )}
         </div>
 
         {hasTaxModels && (
-          <a
+          <Link
             href={`${prefix}/modelos`}
             className="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow group"
           >
@@ -154,7 +159,7 @@ export default async function AdminDashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </div>
-          </a>
+          </Link>
         )}
       </div>
       <DepartmentInfoButton />

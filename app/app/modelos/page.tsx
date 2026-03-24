@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import ModelosClientWorkspace from "./_components/modelos-client-workspace";
 
 export default async function ClientModelosPage() {
@@ -16,9 +17,10 @@ export default async function ClientModelosPage() {
   const isProd = host === "app.leanfinance.es";
   const prefix = isProd ? "" : "/app";
 
+  // Una sola query: perfil + servicios de la empresa con join
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, company_id")
+    .select("role, company_id, company:companies!profiles_company_id_fkey(company_services(is_active, service:services(slug)))")
     .eq("id", user.id)
     .single();
 
@@ -26,17 +28,14 @@ export default async function ClientModelosPage() {
     redirect(`${prefix}/dashboard`);
   }
 
-  // Check if company has tax-models service
-  const { data: companyService } = await supabase
-    .from("company_services")
-    .select("id, service:services(slug)")
-    .eq("company_id", profile.company_id)
-    .eq("is_active", true)
-    .eq("services.slug", "tax-models")
-    .not("service", "is", null)
-    .maybeSingle();
+  const company = profile.company as unknown as {
+    company_services: { is_active: boolean; service: { slug: string } | null }[];
+  } | null;
+  const hasTaxModels = (company?.company_services ?? []).some(
+    (cs) => cs.is_active && cs.service?.slug === "tax-models"
+  );
 
-  if (!companyService) {
+  if (!hasTaxModels) {
     redirect(`${prefix}/dashboard`);
   }
 
@@ -44,14 +43,14 @@ export default async function ClientModelosPage() {
     <div className="min-h-screen bg-surface-gray">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <a
+          <Link
             href={`${prefix}/dashboard`}
             className="text-text-muted hover:text-brand-navy transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-          </a>
+          </Link>
           <h1 className="font-heading text-2xl text-brand-navy">
             Modelos de Prestación de Impuestos
           </h1>

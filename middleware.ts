@@ -60,6 +60,10 @@ export async function middleware(request: NextRequest) {
 
   // --- Sin sesión ---
   if (!user) {
+    // Limpiar cookie de rol cacheado si no hay sesión
+    if (request.cookies.get("x-user-role")) {
+      supabaseResponse.cookies.delete("x-user-role");
+    }
     if (!isOnLoginPage) {
       return NextResponse.redirect(new URL(loginPath, request.url));
     }
@@ -73,28 +77,44 @@ export async function middleware(request: NextRequest) {
   }
 
   // --- Con sesión: comprobar perfil y rol ---
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  // Usar cookie cacheada para evitar query a BD en cada request
+  const cachedRole = request.cookies.get("x-user-role")?.value;
+  let role: string | null = cachedRole ?? null;
 
-  if (!profile) {
-    // Sin perfil = no está dado de alta → desloguear y limpiar cookies de sesión
-    await supabase.auth.signOut();
-    const redirectResponse = NextResponse.redirect(
-      new URL("/unauthorized", request.url)
-    );
-    // Copiar las cookies que signOut seteó en supabaseResponse + eliminar cookies sb-*
-    request.cookies.getAll().forEach((cookie) => {
-      if (cookie.name.startsWith("sb-")) {
-        redirectResponse.cookies.delete(cookie.name);
-      }
+  if (!cachedRole) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile) {
+      // Sin perfil = no está dado de alta → desloguear y limpiar cookies de sesión
+      await supabase.auth.signOut();
+      const redirectResponse = NextResponse.redirect(
+        new URL("/unauthorized", request.url)
+      );
+      request.cookies.getAll().forEach((cookie) => {
+        if (cookie.name.startsWith("sb-")) {
+          redirectResponse.cookies.delete(cookie.name);
+        }
+      });
+      return redirectResponse;
+    }
+
+    role = profile.role;
+
+    // Cachear el rol en cookie (httpOnly, 1 hora de vida)
+    supabaseResponse.cookies.set("x-user-role", role!, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 3600, // 1 hora
     });
-    return redirectResponse;
   }
 
-  const correctSpace = profile.role === "admin" || profile.role === "superadmin" ? "admin" : "app";
+  const correctSpace = role === "admin" || role === "superadmin" ? "admin" : "app";
 
   // En login con sesión → redirigir al dashboard del espacio correcto
   if (isOnLoginPage) {

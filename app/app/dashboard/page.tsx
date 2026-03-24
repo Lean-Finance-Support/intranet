@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import NotificationsBell from "@/components/notifications-bell";
 import LogoutButton from "@/components/logout-button";
-import CompanyInfoButton from "@/components/company-info-button";
+
+const CompanyInfoButton = dynamic(() => import("@/components/company-info-button"));
 
 export default async function ClientDashboardPage() {
   const supabase = await createClient();
@@ -18,27 +21,20 @@ export default async function ClientDashboardPage() {
   const isProd = host === "app.leanfinance.es";
   const prefix = isProd ? "" : "/app";
 
+  // Perfil + servicios de la empresa en paralelo (perfil incluye company_id para el join)
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, company_id")
+    .select("full_name, email, company_id, company:companies!profiles_company_id_fkey(company_services(is_active, service:services(slug)))")
     .eq("id", user.id)
     .single();
 
-  // Fetch services contracted by this client's company
-  let serviceSlugs: string[] = [];
-  if (profile?.company_id) {
-    const { data } = await supabase
-      .from("company_services")
-      .select("service:services(slug)")
-      .eq("company_id", profile.company_id)
-      .eq("is_active", true);
-    serviceSlugs = (data ?? [])
-      .map((cs) => {
-        const svc = cs.service as unknown as { slug: string } | null;
-        return svc?.slug ?? "";
-      })
-      .filter(Boolean);
-  }
+  const company = profile?.company as unknown as {
+    company_services: { is_active: boolean; service: { slug: string } | null }[];
+  } | null;
+  const serviceSlugs = (company?.company_services ?? [])
+    .filter((cs) => cs.is_active)
+    .map((cs) => cs.service?.slug ?? "")
+    .filter(Boolean);
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
 
@@ -78,7 +74,7 @@ export default async function ClientDashboardPage() {
         </div>
 
         {hasTaxModels && (
-          <a
+          <Link
             href={`${prefix}/modelos`}
             className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow group"
           >
@@ -116,7 +112,7 @@ export default async function ClientDashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </div>
-          </a>
+          </Link>
         )}
       </div>
       <CompanyInfoButton />

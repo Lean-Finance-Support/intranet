@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import type { Notification } from "@/lib/types/notifications";
 import {
   getNotifications,
@@ -180,9 +181,9 @@ export default function NotificationsBell({
 
                 if (linkHref) {
                   return (
-                    <a key={n.id} href={linkHref} className="block">
+                    <Link key={n.id} href={linkHref} className="block">
                       {content}
-                    </a>
+                    </Link>
                   );
                 }
                 return <div key={n.id}>{content}</div>;

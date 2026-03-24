@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Script from "next/script";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -116,9 +117,12 @@ export default function ClientLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img
+          <Image
             src="/logo-leanfinance.png"
             alt="LeanFinance"
+            width={279}
+            height={96}
+            priority
             className="h-24 w-auto mx-auto"
           />
         </div>

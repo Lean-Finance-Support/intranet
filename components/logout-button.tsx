@@ -22,6 +22,8 @@ export default function LogoutButton({ loginPath }: { loginPath: string }) {
     setLoading(true);
     const supabase = createClient();
     await supabase.auth.signOut();
+    // Limpiar cookie de rol cacheado
+    document.cookie = "x-user-role=; path=/; max-age=0";
     window.location.href = loginPath;
   }
 

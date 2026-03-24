@@ -1,11 +1,17 @@
+import Link from "next/link";
+import Image from "next/image";
+
 export default function UnauthorizedPage() {
   return (
     <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
       <div className="w-full max-w-md text-center">
         <div className="text-center mb-8">
-          <img
+          <Image
             src="/logo-leanfinance.png"
             alt="LeanFinance"
+            width={232}
+            height={80}
+            priority
             className="h-20 w-auto mx-auto"
           />
         </div>
@@ -45,12 +51,12 @@ export default function UnauthorizedPage() {
 
         <p className="text-text-muted text-xs mt-6">
           ¿Tienes otra cuenta de Google?{" "}
-          <a
+          <Link
             href="/"
             className="text-brand-teal hover:underline"
           >
             Intentar de nuevo
-          </a>
+          </Link>
         </p>
       </div>
     </main>
