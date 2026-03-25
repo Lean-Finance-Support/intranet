@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveCompanyId } from "@/lib/active-company";
 import ModelosClientWorkspace from "./_components/modelos-client-workspace";
 
 export default async function ClientModelosPage() {
@@ -16,22 +17,22 @@ export default async function ClientModelosPage() {
   const isProd = host === "app.leanfinance.es";
   const prefix = isProd ? "" : "/app";
 
-  // Una sola query: perfil + servicios de la empresa con join
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, company_id, company:companies!profiles_company_id_fkey(company_services(is_active, service:services(slug)))")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "client" || !profile.company_id) {
-    redirect(`${prefix}/dashboard`);
+  const activeCompanyId = await getActiveCompanyId();
+  if (!activeCompanyId) {
+    redirect(`${prefix}/select-company`);
   }
 
-  const company = profile.company as unknown as {
-    company_services: { is_active: boolean; service: { slug: string } | null }[];
-  } | null;
-  const hasTaxModels = (company?.company_services ?? []).some(
-    (cs) => cs.is_active && cs.service?.slug === "tax-models"
+  // Verificar que el servicio tax-models está activo para la empresa activa
+  const { data: companyServices } = await supabase
+    .from("company_services")
+    .select("is_active, service:services(slug)")
+    .eq("company_id", activeCompanyId);
+
+  const hasTaxModels = (companyServices ?? []).some(
+    (cs) => {
+      const svc = cs.service as unknown as { slug: string } | null;
+      return cs.is_active && svc?.slug === "tax-models";
+    }
   );
 
   if (!hasTaxModels) {

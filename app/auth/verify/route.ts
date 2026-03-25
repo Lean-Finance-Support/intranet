@@ -72,9 +72,37 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/dashboard", origin));
   }
 
-  if (isProd) {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
-    return NextResponse.redirect(`${appUrl}/dashboard`);
+  // Cliente: consultar empresas asociadas en profile_companies
+  const { data: profileCompanies } = await supabase
+    .from("profile_companies")
+    .select("company_id")
+    .eq("profile_id", user.id);
+
+  const companies = profileCompanies ?? [];
+
+  if (companies.length === 0) {
+    await supabase.auth.signOut();
+    const response = NextResponse.redirect(new URL("/unauthorized", origin));
+    cookieStore.getAll().forEach((cookie) => {
+      if (cookie.name.startsWith("sb-")) {
+        response.cookies.delete(cookie.name);
+      }
+    });
+    return response;
   }
-  return NextResponse.redirect(new URL("/app/dashboard", origin));
+
+  const appPrefix = isProd ? "" : "/app";
+
+  if (companies.length === 1) {
+    // Auto-seleccionar la única empresa
+    const { setActiveCompanyCookieOnResponse } = await import("@/lib/active-company");
+    const appUrl = isProd ? (process.env.NEXT_PUBLIC_APP_URL || origin) : origin;
+    const response = NextResponse.redirect(new URL(`${appPrefix}/dashboard`, appUrl));
+    setActiveCompanyCookieOnResponse(response, companies[0].company_id);
+    return response;
+  }
+
+  // Múltiples empresas → página de selección
+  const appUrl = isProd ? (process.env.NEXT_PUBLIC_APP_URL || origin) : origin;
+  return NextResponse.redirect(new URL(`${appPrefix}/select-company`, appUrl));
 }

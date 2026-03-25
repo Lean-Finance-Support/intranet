@@ -1,31 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireClient } from "@/lib/require-client";
 import type {
   TaxEntryForClient,
   TaxClientResponsePayload,
 } from "@/lib/types/tax";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
-
-async function requireClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autenticado");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, company_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "client" || !profile.company_id) {
-    throw new Error("Sin permisos");
-  }
-
-  return { supabase, user, companyId: profile.company_id };
-}
 
 export async function getClientQuarterData(
   year: number,
@@ -270,6 +250,7 @@ export async function submitQuarter(
   for (const recipientId of recipients) {
     await supabase.from("notifications").insert({
       recipient_id: recipientId,
+      company_id: companyId,
       title: `${companyName} ha validado sus modelos`,
       message: `La empresa ${companyName} ha enviado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
       link: `/modelos`,

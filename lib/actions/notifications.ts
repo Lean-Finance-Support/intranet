@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getActiveCompanyId } from "@/lib/active-company";
 import type { Notification } from "@/lib/types/notifications";
 
 export async function getNotifications(): Promise<Notification[]> {
@@ -10,12 +11,21 @@ export async function getNotifications(): Promise<Notification[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  const activeCompanyId = await getActiveCompanyId();
+
+  let query = supabase
     .from("notifications")
     .select("*")
     .eq("recipient_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);
+
+  // Filtrar por empresa activa si hay una seleccionada
+  if (activeCompanyId) {
+    query = query.or(`company_id.eq.${activeCompanyId},company_id.is.null`);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("[notifications] fetch error:", error);

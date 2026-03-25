@@ -1,27 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireClient } from "@/lib/require-client";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
-
-async function requireClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autenticado");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, company_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "client" || !profile.company_id) {
-    throw new Error("Sin permisos");
-  }
-
-  return { supabase, user, companyId: profile.company_id };
-}
 
 export interface CompanyInfo {
   id: string;
@@ -45,11 +25,15 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
 
   if (companyError || !company) throw new Error("Empresa no encontrada");
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .eq("company_id", companyId)
-    .order("full_name");
+  // Obtener usuarios asociados a esta empresa via profile_companies
+  const { data: profileLinks } = await supabase
+    .from("profile_companies")
+    .select("profile:profiles(id, full_name, email)")
+    .eq("company_id", companyId);
+
+  const profiles = (profileLinks ?? [])
+    .map((row) => row.profile as unknown as { id: string; full_name: string | null; email: string } | null)
+    .filter((p): p is NonNullable<typeof p> => p !== null);
 
   const { data: bankAccounts } = await supabase
     .from("company_bank_accounts")

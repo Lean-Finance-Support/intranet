@@ -40,7 +40,7 @@ Una única app Next.js sirve ambos dominios. El middleware detecta el host (`adm
 1. Crear el usuario en Supabase Auth dashboard (email del usuario)
 2. En "User Metadata" JSON del formulario, incluir: `{ "role": "admin" }` o `{ "role": "client" }`
 3. El trigger `handle_new_user` creará automáticamente la fila en `public.profiles`
-4. Si es client: asignar `company_id` en `public.profiles` apuntando a su empresa apuntando a su empresa
+4. Si es client: crear fila(s) en `public.profile_companies` vinculando el profile con la(s) empresa(s)
 
 **IMPORTANTE:** El trigger solo crea perfil si `raw_user_meta_data.role` está explícitamente presente.
 Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthorized`.
@@ -55,8 +55,18 @@ Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthor
 - `full_name` text (nullable)
 - `role` enum('client','admin')
 - `department` text (nullable — para admins)
-- `company_id` uuid (nullable — FK → companies.id, para clientes)
+- ~~`company_id`~~ eliminado — ahora se usa `profile_companies`
 - `created_at`, `updated_at` (timestamptz)
+
+### `public.profile_companies` — relación N:M entre profiles y companies
+- `profile_id` uuid FK → profiles.id (ON DELETE CASCADE)
+- `company_id` uuid FK → companies.id (ON DELETE CASCADE)
+- `created_at` timestamptz
+- PRIMARY KEY (profile_id, company_id)
+- RLS: clientes ven solo las suyas, admins ven/escriben todo
+- **Cookie `x-active-company-id`** almacena la empresa activa en sesión (7 días, httpOnly)
+- Al login: 1 empresa → auto-setea cookie + va a /dashboard; N empresas → va a /select-company
+- `profiles.company_id` se mantiene como campo legacy (nullable), ya no se usa en código
 
 ### `public.companies` — empresa cliente (N usuarios pueden pertenecer a una empresa)
 - `id` uuid PK (gen_random_uuid)
@@ -75,6 +85,7 @@ Los logins de cuentas no pre-creadas por admin no generan perfil → van a /unau
 
 ```
 app/app/login/page.tsx          → Login clientes (GIS popup o OAuth fallback)
+app/app/select-company/         → Selector de empresa (si el cliente tiene varias)
 app/app/dashboard/page.tsx      → Dashboard clientes
 app/admin/login/page.tsx        → Login empleados (GIS popup o OAuth fallback)
 app/admin/dashboard/page.tsx    → Dashboard empleados
@@ -84,6 +95,8 @@ app/unauthorized/page.tsx       → Sin acceso
 middleware.ts                   → Routing por dominio + guard de auth + control de rol
 lib/supabase/server.ts          → Cliente Supabase SSR
 lib/supabase/client.ts          → Cliente Supabase browser
+lib/active-company.ts           → Helpers para cookie x-active-company-id
+lib/require-client.ts           → Helper requireClient() para server actions de clientes
 ```
 
 ---

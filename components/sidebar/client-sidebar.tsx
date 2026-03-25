@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { setActiveCompany } from "@/app/app/select-company/actions";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -111,10 +112,32 @@ function NavItem({
   );
 }
 
+// ---- Icons extra ----
+function ChevronUpDownIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+    </svg>
+  );
+}
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+  );
+}
+
 // ---- Props ----
 export interface ClientSidebarProfile {
   full_name: string | null;
   email: string | null;
+}
+
+export interface SidebarCompany {
+  id: string;
+  legal_name: string;
+  company_name: string | null;
 }
 
 interface ClientSidebarProps {
@@ -123,14 +146,30 @@ interface ClientSidebarProps {
   loginPath: string;
   linkPrefix: string;
   unreadCount: number;
+  companies: SidebarCompany[];
+  activeCompany: SidebarCompany | null;
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPrefix, unreadCount }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPrefix, unreadCount, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
+  const [switchingCompany, setSwitchingCompany] = useState(false);
+
+  async function handleSwitchCompany(companyId: string) {
+    setSwitchingCompany(true);
+    setCompanySwitcherOpen(false);
+    try {
+      await setActiveCompany(companyId);
+      router.refresh();
+    } finally {
+      setSwitchingCompany(false);
+    }
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem("client-sidebar-collapsed");
@@ -146,6 +185,7 @@ export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPr
     const supabase = createClient();
     await supabase.auth.signOut();
     document.cookie = "x-user-role=; path=/; max-age=0";
+    document.cookie = "x-active-company-id=; path=/; max-age=0";
     window.location.href = loginPath;
   }
 
@@ -163,6 +203,86 @@ export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPr
   const initials = profile.full_name
     ? profile.full_name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
     : (profile.email?.[0] ?? "?").toUpperCase();
+
+  const switcherRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setCompanySwitcherOpen(false);
+      }
+    }
+    if (companySwitcherOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [companySwitcherOpen]);
+
+  const hasMultipleCompanies = companies.length > 1;
+  const activeLabel = activeCompany
+    ? (activeCompany.company_name || activeCompany.legal_name)
+    : "Sin empresa";
+
+  const companySwitcher = activeCompany && (
+    <div ref={switcherRef} className="relative px-2 py-3 border-b border-gray-100 flex-shrink-0">
+      <button
+        onClick={() => hasMultipleCompanies && setCompanySwitcherOpen((v) => !v)}
+        className={`
+          flex items-center gap-3 w-full px-2 py-2 rounded-lg transition-colors
+          ${hasMultipleCompanies ? "hover:bg-gray-50 cursor-pointer" : "cursor-default"}
+          ${collapsed ? "justify-center" : ""}
+        `}
+      >
+        <div className="w-8 h-8 rounded-lg bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+          <BuildingIcon className="w-4 h-4 text-brand-teal" />
+        </div>
+        {!collapsed && (
+          <>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-xs font-semibold text-brand-navy truncate">{activeLabel}</p>
+              {hasMultipleCompanies && (
+                <p className="text-[10px] text-text-muted">{companies.length} empresas</p>
+              )}
+            </div>
+            {hasMultipleCompanies && (
+              <ChevronUpDownIcon className="w-4 h-4 text-text-muted flex-shrink-0" />
+            )}
+          </>
+        )}
+      </button>
+      {companySwitcherOpen && !collapsed && (
+        <div className="absolute left-2 right-2 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+          {companies.map((company) => {
+            const isActive = company.id === activeCompany.id;
+            const label = company.company_name || company.legal_name;
+            return (
+              <button
+                key={company.id}
+                disabled={isActive || switchingCompany}
+                onClick={() => handleSwitchCompany(company.id)}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
+                  ${isActive ? "bg-brand-teal/5" : "hover:bg-gray-50 cursor-pointer"}
+                  disabled:cursor-default
+                `}
+              >
+                <div className="w-7 h-7 rounded-md bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                  <BuildingIcon className="w-3.5 h-3.5 text-brand-teal" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-brand-navy truncate">{label}</p>
+                  {company.company_name && (
+                    <p className="text-[10px] text-text-muted truncate">{company.legal_name}</p>
+                  )}
+                </div>
+                {isActive && <CheckIcon className="w-4 h-4 text-brand-teal flex-shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
@@ -233,6 +353,7 @@ export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPr
             <ChevronLeftIcon className={`w-4 h-4 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
           </button>
         </div>
+        {companySwitcher}
         {navItems}
         {userSection}
       </div>
@@ -248,6 +369,43 @@ export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPr
                 <XIcon className="w-4 h-4" />
               </button>
             </div>
+            {activeCompany && (
+              <div className="px-2 py-3 border-b border-gray-100">
+                {hasMultipleCompanies ? (
+                  <div className="space-y-1">
+                    {companies.map((company) => {
+                      const isActive = company.id === activeCompany.id;
+                      const label = company.company_name || company.legal_name;
+                      return (
+                        <button
+                          key={company.id}
+                          disabled={isActive || switchingCompany}
+                          onClick={() => handleSwitchCompany(company.id)}
+                          className={`
+                            w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors
+                            ${isActive ? "bg-brand-teal/5" : "hover:bg-gray-50 cursor-pointer"}
+                            disabled:cursor-default
+                          `}
+                        >
+                          <div className="w-7 h-7 rounded-md bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                            <BuildingIcon className="w-3.5 h-3.5 text-brand-teal" />
+                          </div>
+                          <p className="text-xs font-medium text-brand-navy truncate flex-1">{label}</p>
+                          {isActive && <CheckIcon className="w-4 h-4 text-brand-teal flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 px-2 py-2">
+                    <div className="w-7 h-7 rounded-md bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                      <BuildingIcon className="w-3.5 h-3.5 text-brand-teal" />
+                    </div>
+                    <p className="text-xs font-semibold text-brand-navy truncate">{activeLabel}</p>
+                  </div>
+                )}
+              </div>
+            )}
             <nav className="flex-1 px-2 py-4 space-y-0.5">
               <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               {hasTaxModels && (

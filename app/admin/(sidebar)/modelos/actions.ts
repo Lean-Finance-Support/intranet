@@ -241,17 +241,17 @@ export async function notifyClient(
     throw new Error("Error al registrar la notificación.");
   }
 
-  // Create notifications for all client users of this company
-  const { data: clientProfiles } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("company_id", companyId)
-    .eq("role", "client");
+  // Buscar clientes asociados a esta empresa vía profile_companies
+  const { data: profileLinks } = await supabase
+    .from("profile_companies")
+    .select("profile_id")
+    .eq("company_id", companyId);
 
   const quarterLabel = `${quarter}T ${year}`;
-  for (const client of clientProfiles ?? []) {
+  for (const link of profileLinks ?? []) {
     await supabase.from("notifications").insert({
-      recipient_id: client.id,
+      recipient_id: link.profile_id,
+      company_id: companyId,
       title: "Modelos de impuestos disponibles",
       message: `Ya están disponibles tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
       link: "/modelos",

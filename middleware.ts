@@ -8,16 +8,27 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") ?? "";
 
-  // Rutas que bypasean el middleware completamente
-  if (pathname.startsWith("/auth") || pathname === "/unauthorized") {
-    return NextResponse.next({ request });
-  }
-
   // --- Detección del espacio ---
   // En producción: por dominio. En local: por prefijo de ruta.
   const isAdminHost = host === "admin.leanfinance.es";
   const isAppHost = host === "app.leanfinance.es";
   const isProdDomain = isAdminHost || isAppHost;
+
+  // Rutas que bypasean el middleware completamente
+  if (
+    pathname.startsWith("/auth") ||
+    pathname === "/unauthorized" ||
+    pathname === "/select-company" ||
+    pathname === "/app/select-company"
+  ) {
+    // Para select-company en producción, aplicar rewrite
+    if (isProdDomain && pathname === "/select-company") {
+      return NextResponse.rewrite(
+        new URL(`/app/select-company`, request.url)
+      );
+    }
+    return NextResponse.next({ request });
+  }
 
   let space: "admin" | "app" = "app";
   if (isAdminHost || pathname.startsWith("/admin")) space = "admin";
