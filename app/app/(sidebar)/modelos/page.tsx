@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
 import ModelosClientWorkspace from "./_components/modelos-client-workspace";
 
 export default async function ClientModelosPage() {
@@ -40,25 +39,12 @@ export default async function ClientModelosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-gray">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Link
-            href={`${prefix}/dashboard`}
-            className="text-text-muted hover:text-brand-navy transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <h1 className="font-heading text-2xl text-brand-navy">
-            Modelos de Prestación de Impuestos
-          </h1>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-          <ModelosClientWorkspace />
-        </div>
+    <div className="min-h-full px-8 py-12">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="font-heading text-2xl text-brand-navy mb-8">
+          Modelos de Prestación de Impuestos
+        </h1>
+        <ModelosClientWorkspace />
       </div>
     </div>
   );
