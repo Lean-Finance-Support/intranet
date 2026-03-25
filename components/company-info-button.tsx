@@ -117,6 +117,8 @@ export default function CompanyInfoButton() {
   const [editingContact, setEditingContact] = useState(false);
   const [savingContact, setSavingContact] = useState(false);
 
+  const [contactSaved, setContactSaved] = useState(false);
+
   // Bank accounts
   const [addingBank, setAddingBank] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
@@ -159,6 +161,8 @@ export default function CompanyInfoButton() {
       await updateCompanyContact(phone || null, address || null);
       setInfo((prev) => (prev ? { ...prev, phone: phone || null, address: address || null } : prev));
       setEditingContact(false);
+      setContactSaved(true);
+      setTimeout(() => setContactSaved(false), 2000);
     } catch {
       // keep editing mode
     } finally {
@@ -212,26 +216,31 @@ export default function CompanyInfoButton() {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-18 right-4 z-50 w-10 h-10 rounded-full bg-white/90 backdrop-blur border border-gray-200 shadow-lg hover:shadow-xl hover:bg-white transition-all flex items-center justify-center cursor-pointer"
-        title="Información de empresa"
-      >
-        <svg
-          className="w-5 h-5 text-gray-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
+      {/* Floating button con tooltip */}
+      <div className="fixed bottom-18 right-4 z-50 group/btn">
+        <button
+          onClick={() => setOpen(true)}
+          className="w-10 h-10 rounded-full bg-white/90 backdrop-blur border border-gray-200 shadow-lg hover:shadow-xl hover:bg-white transition-all flex items-center justify-center cursor-pointer"
+          aria-label="Mi empresa"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
-          />
-        </svg>
-      </button>
+          <svg
+            className="w-5 h-5 text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+            />
+          </svg>
+        </button>
+        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-gray-900 text-white text-xs whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity duration-150 delay-300 pointer-events-none">
+          Mi empresa
+        </span>
+      </div>
 
       {/* Backdrop + Panel */}
       {open && (
@@ -239,7 +248,7 @@ export default function CompanyInfoButton() {
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
           <div
             ref={panelRef}
-            className="relative w-full max-w-md bg-white shadow-2xl h-full overflow-y-auto animate-in slide-in-from-right duration-200"
+            className="relative w-full max-w-md bg-white shadow-2xl h-full overflow-y-auto animate-slide-in-right"
           >
             {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
@@ -258,8 +267,22 @@ export default function CompanyInfoButton() {
 
             <div className="px-6 py-5 space-y-6">
               {loading && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-brand-teal border-t-transparent rounded-full animate-spin" />
+                <div className="space-y-6 animate-pulse">
+                  {[
+                    { titleW: "w-32", rows: 3, rowH: "h-[60px]" },
+                    { titleW: "w-28", rows: 2, rowH: "h-[60px]" },
+                    { titleW: "w-20", rows: 2, rowH: "h-[60px]" },
+                    { titleW: "w-24", rows: 1, rowH: "h-[60px]" },
+                  ].map((section, i) => (
+                    <div key={i}>
+                      <div className={`h-3 ${section.titleW} bg-gray-200 rounded mb-3`} />
+                      <div className="space-y-2">
+                        {Array.from({ length: section.rows }).map((_, j) => (
+                          <div key={j} className={`${section.rowH} bg-gray-100 rounded-lg`} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -333,9 +356,18 @@ export default function CompanyInfoButton() {
                       {!editingContact && (
                         <button
                           onClick={() => setEditingContact(true)}
-                          className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
+                          className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer flex items-center gap-1"
                         >
-                          Editar
+                          {contactSaved ? (
+                            <>
+                              <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                              <span className="text-green-500">Guardado</span>
+                            </>
+                          ) : (
+                            "Editar"
+                          )}
                         </button>
                       )}
                     </div>

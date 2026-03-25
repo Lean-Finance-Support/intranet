@@ -9,6 +9,33 @@ import {
   markAllNotificationsRead,
 } from "@/lib/actions/notifications";
 
+function groupNotifications(notifications: Notification[]): Array<{ label: string; items: Notification[] }> {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const groups: Record<string, Notification[]> = { hoy: [], ayer: [], semana: [], antes: [] };
+
+  for (const n of notifications) {
+    const d = new Date(n.created_at);
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (day >= today) groups.hoy.push(n);
+    else if (day >= yesterday) groups.ayer.push(n);
+    else if (day >= weekAgo) groups.semana.push(n);
+    else groups.antes.push(n);
+  }
+
+  return [
+    { label: "Hoy", items: groups.hoy },
+    { label: "Ayer", items: groups.ayer },
+    { label: "Esta semana", items: groups.semana },
+    { label: "Anteriores", items: groups.antes },
+  ].filter((g) => g.items.length > 0);
+}
+
 interface NotificationsBellProps {
   /** Link prefix for navigation (e.g. "" for prod, "/admin" or "/app" for local) */
   linkPrefix?: string;
@@ -96,7 +123,7 @@ export default function NotificationsBell({
         </svg>
         {!loading && unreadCount > 0 && (
           <span
-            className={`absolute -top-0.5 -right-0.5 ${badgeBg} text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1`}
+            className={`absolute -top-0.5 -right-0.5 ${badgeBg} text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse`}
           >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -142,52 +169,43 @@ export default function NotificationsBell({
                 </p>
               </div>
             ) : (
-              notifications.map((n) => {
-                const linkHref = n.link
-                  ? `${linkPrefix}${n.link}`
-                  : undefined;
-
-                const content = (
-                  <div
-                    className={`px-4 py-3 border-b border-gray-50 transition-colors ${
-                      n.is_read
-                        ? "bg-white"
-                        : "bg-blue-50/50"
-                    } ${linkHref ? "hover:bg-gray-50 cursor-pointer" : ""}`}
-                    onClick={() => {
-                      if (!n.is_read) handleMarkRead(n.id);
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      {!n.is_read && (
-                        <div className="w-2 h-2 bg-brand-teal rounded-full mt-1.5 flex-shrink-0" />
-                      )}
-                      <div className={n.is_read ? "pl-5" : ""}>
-                        <p className="text-sm font-medium text-text-body leading-snug">
-                          {n.title}
-                        </p>
-                        {n.message && (
-                          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">
-                            {n.message}
-                          </p>
-                        )}
-                        <p className="text-xs text-text-muted/70 mt-1">
-                          {formatTime(n.created_at)}
-                        </p>
-                      </div>
-                    </div>
+              groupNotifications(notifications).map((group) => (
+                <div key={group.label}>
+                  <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+                    <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                      {group.label}
+                    </span>
                   </div>
-                );
-
-                if (linkHref) {
-                  return (
-                    <Link key={n.id} href={linkHref} className="block">
-                      {content}
-                    </Link>
-                  );
-                }
-                return <div key={n.id}>{content}</div>;
-              })
+                  {group.items.map((n) => {
+                    const linkHref = n.link ? `${linkPrefix}${n.link}` : undefined;
+                    const content = (
+                      <div
+                        className={`px-4 py-3 border-b border-gray-50 transition-colors duration-300 ${
+                          n.is_read ? "bg-white" : "bg-blue-50/50"
+                        } ${linkHref ? "hover:bg-gray-50 cursor-pointer" : ""}`}
+                        onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
+                      >
+                        <div className="flex items-start gap-3">
+                          {!n.is_read && (
+                            <div className="w-2 h-2 bg-brand-teal rounded-full mt-1.5 flex-shrink-0" />
+                          )}
+                          <div className={n.is_read ? "pl-5" : ""}>
+                            <p className="text-sm font-medium text-text-body leading-snug">{n.title}</p>
+                            {n.message && (
+                              <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{n.message}</p>
+                            )}
+                            <p className="text-xs text-text-muted/70 mt-1">{formatTime(n.created_at)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                    if (linkHref) {
+                      return <Link key={n.id} href={linkHref} className="block">{content}</Link>;
+                    }
+                    return <div key={n.id}>{content}</div>;
+                  })}
+                </div>
+              ))
             )}
           </div>
         </div>

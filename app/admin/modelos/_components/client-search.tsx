@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { getAllCompanies } from "../actions";
 import type { Company } from "@/lib/types/tax";
 
@@ -8,6 +8,21 @@ interface ClientSearchProps {
   selected: Company | null;
   onSelect: (company: Company) => void;
   onClear: () => void;
+}
+
+function highlight(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const index = text.toLowerCase().indexOf(query.toLowerCase());
+  if (index === -1) return text;
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="bg-brand-teal/15 text-brand-teal rounded px-0.5 not-italic font-medium">
+        {text.slice(index, index + query.length)}
+      </mark>
+      {text.slice(index + query.length)}
+    </>
+  );
 }
 
 export default function ClientSearch({ selected, onSelect, onClear }: ClientSearchProps) {
@@ -63,18 +78,37 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
 
   return (
     <div>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar empresa por nombre legal, nombre comercial o NIF..."
-        className="w-full px-4 py-3 mb-3 rounded-lg border border-gray-200 text-text-body placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
-      />
+      <div className="relative mb-3">
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar empresa por nombre legal, nombre comercial o NIF..."
+          className="w-full pl-9 pr-4 py-3 rounded-lg border border-gray-200 text-text-body placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+        />
+      </div>
 
       {/* Company list */}
       {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="h-5 w-5 border-2 border-brand-teal border-t-transparent rounded-full animate-spin" />
+        <div className="border border-gray-100 rounded-lg divide-y divide-gray-100 animate-pulse">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-36 bg-gray-200 rounded" />
+                <div className="h-3 w-24 bg-gray-100 rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-center text-text-muted text-sm py-6">
@@ -95,10 +129,10 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
                 </div>
                 <div className="min-w-0">
                   <p className="font-medium text-sm text-text-body truncate">
-                    {company.legal_name}
+                    {highlight(company.legal_name, query)}
                   </p>
                   <p className="text-xs text-text-muted truncate">
-                    {[company.company_name, company.nif].filter(Boolean).join(" · ")}
+                    {highlight([company.company_name, company.nif].filter(Boolean).join(" · "), query)}
                   </p>
                 </div>
               </button>

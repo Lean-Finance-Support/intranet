@@ -170,11 +170,11 @@ Añadir tooltip nativo con `title` como solución simple, o crear un componente 
 
 ---
 
-## Fase 2 — Paneles laterales + Notificaciones ⬜
+## Fase 2 — Paneles laterales + Notificaciones ✅ COMPLETADA
 
 **Objetivo**: Pulir la experiencia de los paneles que se usan a diario.
 
-### 2.1 Skeleton loaders ⬜
+### 2.1 Skeleton loaders ✅
 
 **Crear componente**: `components/ui/skeleton.tsx`
 
@@ -195,7 +195,7 @@ Usarlo en:
 - `notifications-bell.tsx`: mientras carga notificaciones
 - **Replicar la forma del contenido final** (no un spinner genérico)
 
-### 2.2 Mejorar transiciones de paneles laterales ⬜
+### 2.2 Mejorar transiciones de paneles laterales ✅
 
 **Archivos**: `components/company-info-button.tsx`, `components/department-info-button.tsx`
 
@@ -224,7 +224,7 @@ Propuesta — spring-like con CSS:
 
 Backdrop: aumentar blur a `backdrop-blur-md` y opacidad a `bg-black/30`.
 
-### 2.3 Transición lectura/edición en Company Info ⬜
+### 2.3 Transición lectura/edición en Company Info ✅
 
 **Archivo**: `components/company-info-button.tsx`
 
@@ -233,7 +233,7 @@ Cuando el usuario pulsa "Editar", los campos pasan de texto a input. Añadir tra
 - Al cambiar a edit: sutil border-teal aparece, background se aclara
 - Al guardar: icono checkmark verde animado (scale 0→1 en 200ms), luego vuelve a modo lectura
 
-### 2.4 Notificaciones — Mejor agrupación y empty state ⬜
+### 2.4 Notificaciones — Mejor agrupación y empty state ✅
 
 **Archivo**: `components/notifications-bell.tsx`
 
@@ -243,7 +243,7 @@ Cuando el usuario pulsa "Editar", los campos pasan de texto a input. Añadir tra
 - Badge: añadir `animate-pulse` sutil cuando hay nuevas notificaciones no leídas
 - Al marcar como leída: transición de `bg-blue-50` → `bg-white` con `transition-colors duration-300`
 
-### 2.5 Feedback visual al guardar ⬜
+### 2.5 Feedback visual al guardar ✅
 
 **Archivos**: `components/company-info-button.tsx`, `components/department-info-button.tsx`
 
@@ -316,11 +316,11 @@ Al guardar cambios exitosamente:
 
 ---
 
-## Fase 4 — Modelos workspace ⬜
+## Fase 4 — Modelos workspace ✅ COMPLETADA
 
 **Objetivo**: Mejorar la experiencia del flujo de trabajo principal.
 
-### 4.1 Quarter selector como pill group
+### 4.1 Quarter selector como pill group ✅
 
 **Archivo**: `_components/quarter-selector.tsx`
 
@@ -344,7 +344,7 @@ Reemplazar select por botones tipo pill:
 </div>
 ```
 
-### 4.2 Stagger animation en lista de modelos
+### 4.2 Stagger animation en lista de modelos ✅
 
 **Archivos**: `_components/models-client-list.tsx`, `_components/models-form.tsx`
 
@@ -359,7 +359,7 @@ Al cargar/cambiar trimestre, los items aparecen con stagger:
 /* ... etc */
 ```
 
-### 4.3 Empty state para modelos
+### 4.3 Empty state para modelos ✅
 
 Cuando no hay modelos para un trimestre:
 
@@ -378,7 +378,7 @@ Cuando no hay modelos para un trimestre:
 </div>
 ```
 
-### 4.4 Formulario admin — Mejor agrupación visual
+### 4.4 Formulario admin — Mejor agrupación visual ✅
 
 **Archivo**: `_components/models-form.tsx`
 
@@ -387,7 +387,7 @@ Cuando no hay modelos para un trimestre:
 - Separador entre secciones: `border-t border-gray-100 my-6`
 - Campos numéricos con `font-mono` para alineación visual
 
-### 4.5 Client search mejorado (admin)
+### 4.5 Client search mejorado (admin) ✅
 
 **Archivo**: `_components/client-search.tsx`
 

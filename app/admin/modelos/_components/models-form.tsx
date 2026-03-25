@@ -107,8 +107,30 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-6 w-6 border-2 border-brand-teal border-t-transparent rounded-full animate-spin" />
+      <div className="animate-pulse">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                {["Modelo", "Importe (€)", "Tipo", "Respuesta cliente"].map((h) => (
+                  <th key={h} className="text-left py-3 px-4">
+                    <div className="h-3 w-20 bg-gray-200 rounded" />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4].map((i) => (
+                <tr key={i} className="border-b border-gray-100">
+                  <td className="py-3 px-4"><div className="h-4 w-16 bg-gray-100 rounded" /></td>
+                  <td className="py-3 px-4"><div className="h-9 w-36 bg-gray-100 rounded-lg" /></td>
+                  <td className="py-3 px-4"><div className="h-4 w-28 bg-gray-100 rounded" /></td>
+                  <td className="py-3 px-4"><div className="h-4 w-12 bg-gray-100 rounded" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -154,7 +176,11 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
             {entries.map((entry, index) => {
               const response = responsesByModel.get(entry.tax_model_id);
               return (
-                <tr key={entry.tax_model_id} className="border-b border-gray-100">
+                <tr
+                  key={entry.tax_model_id}
+                  className="border-b border-gray-100 animate-fade-in-up"
+                  style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
+                >
                   <td className="py-3 px-4">
                     <span className="font-medium text-text-body">{entry.model_code}</span>
                     {entry.description && (
@@ -169,7 +195,7 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
                       value={entry.amount}
                       onChange={(e) => updateEntry(index, "amount", e.target.value)}
                       placeholder="0,00"
-                      className="w-36 px-3 py-2 rounded-lg border border-gray-200 text-text-body focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+                      className="w-36 px-3 py-2 rounded-lg border border-gray-200 text-text-body font-mono focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
                     />
                   </td>
                   <td className="py-3 px-4">
