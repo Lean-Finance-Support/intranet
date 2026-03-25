@@ -8,6 +8,18 @@ import LogoutButton from "@/components/logout-button";
 
 const DepartmentInfoButton = dynamic(() => import("@/components/department-info-button"));
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Buenos días";
+  if (hour < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+function getFirstName(fullName: string | null | undefined): string | null {
+  if (!fullName) return null;
+  return fullName.split(" ")[0];
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const {
@@ -77,6 +89,10 @@ export default async function AdminDashboardPage() {
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
 
+  const greeting = getGreeting();
+  const firstName = getFirstName(profile?.full_name);
+  const displayName = firstName ?? profile?.email ?? user.email;
+
   return (
     <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
       {/* Notifications bell - top right */}
@@ -84,7 +100,7 @@ export default async function AdminDashboardPage() {
         <NotificationsBell linkPrefix={prefix} variant="light" />
       </div>
 
-      <div className="max-w-md w-full space-y-4">
+      <div className="max-w-md w-full flex flex-col gap-4 stagger-children">
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
           <div className="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -104,12 +120,14 @@ export default async function AdminDashboardPage() {
           <p className="text-brand-teal text-sm font-medium mb-1">
             Portal de empleados
           </p>
-          <h1 className="text-2xl font-bold font-heading text-brand-navy mt-1 mb-2">
-            Bienvenido
+          <h1 className="text-2xl font-bold font-heading text-brand-navy tracking-tight mt-1 mb-1">
+            {greeting}{displayName ? "," : ""}
           </h1>
-          <p className="text-text-muted text-sm">
-            {profile?.full_name ?? profile?.email ?? user.email}
-          </p>
+          {displayName && (
+            <p className="text-xl font-heading text-brand-navy font-semibold mb-2">
+              {displayName}
+            </p>
+          )}
           {departmentName && (
             <p className="text-text-muted text-xs mt-1">
               {departmentName}
@@ -123,7 +141,7 @@ export default async function AdminDashboardPage() {
         {hasTaxModels && (
           <Link
             href={`${prefix}/modelos`}
-            className="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow group"
+            className="block bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 group"
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center flex-shrink-0">
@@ -145,12 +163,12 @@ export default async function AdminDashboardPage() {
                 <p className="font-medium text-text-body group-hover:text-brand-teal transition-colors">
                   Modelos de Prestación de Impuestos
                 </p>
-                <p className="text-sm text-text-muted">
+                <p className="text-sm text-text-muted leading-relaxed">
                   Gestión trimestral de modelos tributarios
                 </p>
               </div>
               <svg
-                className="w-5 h-5 text-text-muted group-hover:text-brand-teal transition-colors"
+                className="w-5 h-5 text-text-muted group-hover:text-brand-teal group-hover:translate-x-0.5 transition-all duration-200"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

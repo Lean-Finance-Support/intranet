@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
   }
 
   const oauthButtonClass =
-    "w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl px-5 py-3.5 text-text-body text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+    "w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl px-5 py-3.5 text-text-body text-sm font-medium hover:bg-gray-50 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed";
 
   return (
     <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
@@ -111,7 +111,7 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 animate-fade-in-up">
           <Image
             src="/logo-leanfinance.png"
             alt="LeanFinance"
@@ -123,18 +123,18 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 animate-fade-in-up animate-delay-75">
           <p className="text-brand-teal text-sm font-medium mb-1">
             Portal de empleados
           </p>
-          <h1 className="text-2xl font-bold font-heading text-brand-navy mb-2">
+          <h1 className="text-2xl font-bold font-heading text-brand-navy tracking-tight mb-2">
             Acceso interno
           </h1>
-          <p className="text-text-muted text-sm mb-8">
+          <p className="text-text-muted text-sm mb-8 leading-relaxed">
             Usa tu cuenta de Google o Microsoft corporativa para acceder.
           </p>
 
-          <div className="w-10 h-1 bg-brand-teal rounded-full mb-8" />
+          <div className="w-12 h-1 rounded-full mb-8 bg-gradient-to-r from-brand-teal to-brand-blue" />
 
           {error && (
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
@@ -142,6 +142,7 @@ export default function AdminLoginPage() {
 
           <div className="flex flex-col gap-3">
             {useGIS ? (
+              // GIS renderiza el botón oficial de Google — tiene hover nativo propio
               <div
                 ref={btnRef}
                 className="w-full flex justify-center min-h-[44px]"
@@ -178,7 +179,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-white/40 text-xs mt-6">
+        <p className="text-center text-white/40 text-xs mt-6 animate-fade-in-up animate-delay-225">
           ¿Problemas para acceder?{" "}
           <a
             href="mailto:tech@leanfinance.es"
