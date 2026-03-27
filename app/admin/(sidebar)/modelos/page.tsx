@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { headers, cookies } from "next/headers";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import ModelosWorkspace from "./_components/modelos-workspace";
 
@@ -11,44 +11,41 @@ export default async function ModelosPage() {
 
   if (!user) redirect("/admin/login");
 
-  // Perfil, headers y cookies en paralelo
-  const [{ data: profile }, headersList, cookieStore] = await Promise.all([
-    supabase.from("profiles").select("role, department_id").eq("id", user.id).single(),
+  const [{ data: profile }, headersList] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
     headers(),
-    cookies(),
   ]);
 
   const host = headersList.get("host") ?? "";
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
+  if (!profile || profile.role !== "admin") {
     redirect(`${prefix}/dashboard`);
   }
 
-  // Superadmin uses cookie-based department
-  let departmentId = profile.department_id;
-  if (profile.role === "superadmin") {
-    departmentId = cookieStore.get("sa-department-id")?.value ?? null;
-  }
+  // Check if ANY of the user's departments has the tax-models service active
+  const { data: userDepts } = await supabase
+    .from("profile_departments")
+    .select("department_id")
+    .eq("profile_id", user.id);
 
-  if (!departmentId) {
-    redirect(`${prefix}/dashboard`);
-  }
+  const deptIds = (userDepts ?? []).map((d) => d.department_id as string);
 
-  // Check if this department has the tax-models service
-  const { data: departmentService } = await supabase
+  if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
+
+  const { data: deptServices } = await supabase
     .from("department_services")
-    .select("id, service:services(slug)")
-    .eq("department_id", departmentId)
-    .eq("is_active", true)
-    .eq("services.slug", "tax-models")
-    .not("service", "is", null)
-    .maybeSingle();
+    .select("service:services(slug)")
+    .in("department_id", deptIds)
+    .eq("is_active", true);
 
-  if (!departmentService) {
-    redirect(`${prefix}/dashboard`);
-  }
+  const hasTaxModels = (deptServices ?? []).some((ds) => {
+    const svc = (ds as unknown as { service: { slug: string } | null }).service;
+    return svc?.slug === "tax-models";
+  });
+
+  if (!hasTaxModels) redirect(`${prefix}/dashboard`);
 
   return (
     <div className="min-h-full px-8 py-12">

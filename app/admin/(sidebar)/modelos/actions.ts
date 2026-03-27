@@ -1,63 +1,53 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/require-admin";
 import type { Company, TaxModelWithEntry, EntryPayload } from "@/lib/types/tax";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 
 async function requireServiceAdmin(serviceSlug: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autenticado");
+  const { supabase, user } = await requireAdmin();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, department_id")
-    .eq("id", user.id)
-    .single();
+  // Get all user's departments
+  const { data: userDepts } = await supabase
+    .from("profile_departments")
+    .select("department_id")
+    .eq("profile_id", user.id);
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
-    throw new Error("Sin permisos");
-  }
+  const deptIds = (userDepts ?? []).map((d) => d.department_id as string);
+  if (deptIds.length === 0) throw new Error("Sin departamento asignado");
 
-  const isSuperadmin = profile.role === "superadmin";
-
-  // Superadmin uses cookie-based department, regular admin uses profile department
-  let departmentId = profile.department_id;
-  if (isSuperadmin) {
-    const cookieStore = await cookies();
-    departmentId = cookieStore.get("sa-department-id")?.value ?? null;
-  }
-
-  if (!departmentId) {
-    throw new Error("Sin departamento asignado");
-  }
-
-  const { data: departmentService } = await supabase
+  // Find if any of the user's departments has this service active
+  const { data: deptServices } = await supabase
     .from("department_services")
-    .select("id, service:services(slug)")
-    .eq("department_id", departmentId)
-    .eq("is_active", true)
-    .eq("services.slug", serviceSlug)
-    .not("service", "is", null)
-    .maybeSingle();
+    .select("department_id, service:services(slug)")
+    .in("department_id", deptIds)
+    .eq("is_active", true);
 
-  if (!departmentService) {
-    throw new Error("Sin permisos para este servicio");
-  }
+  const hasService = (deptServices ?? []).some((ds) => {
+    const svc = (ds as unknown as { service: { slug: string } | null }).service;
+    return svc?.slug === serviceSlug;
+  });
 
-  // Check if user is the department chief — superadmin is always chief
-  const { data: dept } = await supabase
-    .from("departments")
-    .select("chief_id")
-    .eq("id", departmentId)
-    .single();
+  if (!hasService) throw new Error("Sin permisos para este servicio");
 
-  const isChief = isSuperadmin || dept?.chief_id === user.id;
+  // Get departments with this service to determine chief status
+  const serviceDeptIds = (deptServices ?? [])
+    .filter((ds) => {
+      const svc = (ds as unknown as { service: { slug: string } | null }).service;
+      return svc?.slug === serviceSlug;
+    })
+    .map((ds) => ds.department_id as string);
 
-  return { supabase, user, departmentId, isChief, isSuperadmin };
+  const { data: chiefRecords } = await supabase
+    .from("department_chiefs")
+    .select("department_id")
+    .eq("profile_id", user.id)
+    .in("department_id", serviceDeptIds);
+
+  const isChief = (chiefRecords ?? []).length > 0;
+
+  return { supabase, user, isChief };
 }
 
 async function requireFiscalAdmin() {
@@ -65,7 +55,7 @@ async function requireFiscalAdmin() {
 }
 
 export async function getAllCompanies(): Promise<Company[]> {
-  const { supabase, user, isChief, isSuperadmin } = await requireFiscalAdmin();
+  const { supabase, user, isChief } = await requireFiscalAdmin();
 
   // Get the service id for tax-models
   const { data: svc } = await supabase
@@ -88,36 +78,35 @@ export async function getAllCompanies(): Promise<Company[]> {
 
   if (isChief) {
     // Chief sees all companies with the service contracted
-    let query = supabase
+    const { data, error } = await supabase
       .from("companies")
       .select("id, legal_name, company_name, nif")
-      .in("id", serviceCompanyIds);
-    if (!isSuperadmin) query = query.eq("is_demo", false);
-    const { data, error } = await query.order("legal_name");
+      .in("id", serviceCompanyIds)
+      .order("legal_name");
 
     if (error) {
-    console.error("[admin/modelos] DB error:", error.code);
-    throw new Error("Error al procesar la solicitud.");
-  }
+      console.error("[admin/modelos] DB error:", error.code);
+      throw new Error("Error al procesar la solicitud.");
+    }
     return data ?? [];
   }
 
-  // Non-chief: only companies assigned to this technician AND with the service
+  // Non-chief: only companies assigned to this technician for this service
   const { data: assignments } = await supabase
     .from("company_technicians")
     .select("company_id")
-    .eq("technician_id", user.id);
+    .eq("technician_id", user.id)
+    .eq("service_id", svc.id);
 
   const assignedIds = (assignments ?? []).map((a) => a.company_id);
   const filteredIds = assignedIds.filter((id) => serviceCompanyIds.includes(id));
   if (filteredIds.length === 0) return [];
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("companies")
     .select("id, legal_name, company_name, nif")
-    .in("id", filteredIds);
-  if (!isSuperadmin) query = query.eq("is_demo", false);
-  const { data, error } = await query.order("legal_name");
+    .in("id", filteredIds)
+    .order("legal_name");
 
   if (error) {
     console.error("[admin/modelos] DB error:", error.code);
@@ -214,9 +203,9 @@ export async function saveEntries(entries: EntryPayload[]): Promise<void> {
       { onConflict: "company_id,tax_model_id" }
     );
     if (error) {
-    console.error("[admin/modelos] DB error:", error.code);
-    throw new Error("Error al procesar la solicitud.");
-  }
+      console.error("[admin/modelos] DB error:", error.code);
+      throw new Error("Error al procesar la solicitud.");
+    }
   }
 }
 
@@ -277,7 +266,6 @@ export async function getClientResponses(
 }> {
   const { supabase } = await requireFiscalAdmin();
 
-  // Check submission status
   const { data: submission } = await supabase
     .from("tax_client_submissions")
     .select("submitted_at")
@@ -286,7 +274,6 @@ export async function getClientResponses(
     .eq("quarter", quarter)
     .maybeSingle();
 
-  // Get entries for this company/quarter
   const { data: models } = await supabase
     .from("tax_models")
     .select("id")
@@ -307,13 +294,11 @@ export async function getClientResponses(
     return { submitted: false, submitted_at: null, responses: [] };
   }
 
-  // Get client responses with bank account info
   const { data: rawResponses } = await supabase
     .from("tax_client_responses")
     .select("tax_entry_id, approved, bank_account:company_bank_accounts(iban, label)")
     .in("tax_entry_id", entries.map((e) => e.id));
 
-  // Map entry_id → model_id for response lookup
   const entryToModel = new Map(entries.map((e) => [e.id, e.tax_model_id]));
 
   const responses: ClientResponseStatus[] = (rawResponses ?? []).map((r) => {

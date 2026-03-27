@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (!profile) {
-    // Usuario sin perfil → cerrar sesión y limpiar cookies para evitar loops
     await supabase.auth.signOut();
     const response = NextResponse.redirect(
       new URL("/unauthorized", origin)
@@ -58,18 +57,14 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  // Redirigir al dashboard del espacio correcto según el rol
   const isAdminHost = request.headers.get("host")?.startsWith("admin.");
   const isAppHost = request.headers.get("host")?.startsWith("app.");
   const isProd = isAdminHost || isAppHost;
 
-  if (profile.role === "admin" || profile.role === "superadmin") {
-    if (isProd) {
-      const adminUrl =
-        process.env.NEXT_PUBLIC_ADMIN_URL || origin;
-      return NextResponse.redirect(`${adminUrl}/dashboard`);
-    }
-    return NextResponse.redirect(new URL("/admin/dashboard", origin));
+  if (profile.role === "admin") {
+    const adminPrefix = isProd ? "" : "/admin";
+    const adminUrl = isProd ? (process.env.NEXT_PUBLIC_ADMIN_URL || origin) : origin;
+    return NextResponse.redirect(new URL(`${adminPrefix}/dashboard`, adminUrl));
   }
 
   // Cliente: consultar empresas asociadas en profile_companies
@@ -94,7 +89,6 @@ export async function GET(request: NextRequest) {
   const appPrefix = isProd ? "" : "/app";
 
   if (companies.length === 1) {
-    // Auto-seleccionar la única empresa
     const { setActiveCompanyCookieOnResponse } = await import("@/lib/active-company");
     const appUrl = isProd ? (process.env.NEXT_PUBLIC_APP_URL || origin) : origin;
     const response = NextResponse.redirect(new URL(`${appPrefix}/dashboard`, appUrl));
@@ -102,7 +96,6 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  // Múltiples empresas → página de selección
   const appUrl = isProd ? (process.env.NEXT_PUBLIC_APP_URL || origin) : origin;
   return NextResponse.redirect(new URL(`${appPrefix}/select-company`, appUrl));
 }

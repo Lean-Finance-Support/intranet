@@ -62,7 +62,6 @@ function XIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
 // ---- Nav Item ----
 function NavItem({
   icon,
@@ -115,9 +114,8 @@ function NavItem({
 export interface AdminSidebarProfile {
   full_name: string | null;
   email: string | null;
-  role: string;
-  department_name: string | null;
 }
+
 
 interface AdminSidebarProps {
   profile: AdminSidebarProfile;
@@ -133,7 +131,6 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-
   useEffect(() => {
     const stored = localStorage.getItem("admin-sidebar-collapsed");
     if (stored !== null) setCollapsed(stored === "true");
@@ -158,7 +155,6 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
 
   const isActive = (href: string) => {
     const path = pathname ?? "";
-    // Normalize: strip linkPrefix for comparison
     if (href === dashHref) return path === dashHref || path === "/admin/dashboard";
     return path === href || path.startsWith(href + "/") || path === href.replace(linkPrefix, "");
   };
@@ -167,6 +163,8 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
     ? profile.full_name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
     : (profile.email?.[0] ?? "?").toUpperCase();
 
+  const isDeptActive = isActive(deptHref);
+
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
       <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
@@ -174,7 +172,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={collapsed} badge={unreadCount} />
-      <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isActive(deptHref)} collapsed={collapsed} />
+      <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
     </nav>
   );
 
@@ -188,7 +186,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
           <>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-white truncate">{profile.full_name ?? profile.email ?? "Usuario"}</p>
-              {profile.department_name && <p className="text-[10px] text-white/50 truncate">{profile.department_name}</p>}
+              <p className="text-[10px] text-white/50 truncate">Portal de empleados</p>
             </div>
             <button
               onClick={handleLogout}
@@ -257,14 +255,14 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
               )}
               <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={false} badge={unreadCount} />
-              <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isActive(deptHref)} collapsed={false} />
+              <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={false} />
             </nav>
             <div className="border-t border-white/10 px-2 py-3">
               <div className="flex items-center gap-3 px-2 py-2">
                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-semibold">{initials}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-white truncate">{profile.full_name ?? profile.email ?? "Usuario"}</p>
-                  {profile.department_name && <p className="text-[10px] text-white/50 truncate">{profile.department_name}</p>}
+                  <p className="text-[10px] text-white/50 truncate">Portal de empleados</p>
                 </div>
                 <button onClick={handleLogout} disabled={loggingOut} className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-red-400 cursor-pointer disabled:opacity-50">
                   <LogoutIcon className="w-4 h-4" />
