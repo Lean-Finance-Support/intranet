@@ -20,35 +20,29 @@ export async function requireClient() {
     throw new Error("Sin permisos");
   }
 
-  let companyId: string | null = await getActiveCompanyId();
+  const cookieCompanyId: string | null = await getActiveCompanyId();
 
-  if (!companyId) {
-    // Fallback: si solo tiene una empresa, auto-seleccionarla
-    const { data: companies } = await supabase
-      .from("profile_companies")
-      .select("company_id")
-      .eq("profile_id", user.id);
+  const { data: companies } = await supabase
+    .from("profile_companies")
+    .select("company_id")
+    .eq("profile_id", user.id);
 
-    if (!companies || companies.length === 0) {
-      throw new Error("Sin empresa asignada");
-    }
+  if (!companies || companies.length === 0) {
+    throw new Error("Sin empresa asignada");
+  }
 
-    if (companies.length === 1) {
-      companyId = companies[0].company_id as string;
-      await setActiveCompanyIdInCookies(companyId);
-    } else {
-      throw new Error("Selecciona una empresa primero");
-    }
+  const validIds = companies.map((c) => c.company_id as string);
+
+  let companyId: string | null = null;
+
+  if (cookieCompanyId && validIds.includes(cookieCompanyId)) {
+    companyId = cookieCompanyId;
+  } else if (validIds.length === 1) {
+    // Cookie inválida o ausente: auto-seleccionar la única empresa
+    companyId = validIds[0];
+    await setActiveCompanyIdInCookies(companyId);
   } else {
-    // Verificar que el usuario tiene acceso a esta empresa
-    const { data: access } = await supabase
-      .from("profile_companies")
-      .select("company_id")
-      .eq("profile_id", user.id)
-      .eq("company_id", companyId)
-      .single();
-
-    if (!access) throw new Error("Sin acceso a esta empresa");
+    throw new Error("Selecciona una empresa primero");
   }
 
   return { supabase, user, companyId };
