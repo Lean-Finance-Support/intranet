@@ -20,32 +20,36 @@ export default async function ModelosPage() {
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  if (!profile || profile.role !== "admin") {
+  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
     redirect(`${prefix}/dashboard`);
   }
 
-  // Check if ANY of the user's departments has the tax-models service active
-  const { data: userDepts } = await supabase
-    .from("profile_departments")
-    .select("department_id")
-    .eq("profile_id", user.id);
+  const isSuperadmin = profile.role === "superadmin";
 
-  const deptIds = (userDepts ?? []).map((d) => d.department_id as string);
+  if (!isSuperadmin) {
+    // Check if ANY of the user's departments has the tax-models service active
+    const { data: userDepts } = await supabase
+      .from("profile_departments")
+      .select("department_id")
+      .eq("profile_id", user.id);
 
-  if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
+    const deptIds = (userDepts ?? []).map((d) => d.department_id as string);
 
-  const { data: deptServices } = await supabase
-    .from("department_services")
-    .select("service:services(slug)")
-    .in("department_id", deptIds)
-    .eq("is_active", true);
+    if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
 
-  const hasTaxModels = (deptServices ?? []).some((ds) => {
-    const svc = (ds as unknown as { service: { slug: string } | null }).service;
-    return svc?.slug === "tax-models";
-  });
+    const { data: deptServices } = await supabase
+      .from("department_services")
+      .select("service:services(slug)")
+      .in("department_id", deptIds)
+      .eq("is_active", true);
 
-  if (!hasTaxModels) redirect(`${prefix}/dashboard`);
+    const hasTaxModels = (deptServices ?? []).some((ds) => {
+      const svc = (ds as unknown as { service: { slug: string } | null }).service;
+      return svc?.slug === "tax-models";
+    });
+
+    if (!hasTaxModels) redirect(`${prefix}/dashboard`);
+  }
 
   return (
     <div className="min-h-full px-8 py-12">

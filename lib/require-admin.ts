@@ -15,9 +15,10 @@ export async function requireAdmin() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin") {
+  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
     throw new Error("Sin permisos");
   }
 
-  return { supabase, user };
+  const isSuperadmin = profile.role === "superadmin";
+  return { supabase, user, isSuperadmin };
 }

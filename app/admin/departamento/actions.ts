@@ -45,24 +45,28 @@ export interface DepartmentInfo {
 // ---------- Get department info (single department by ID) ----------
 
 export async function getDepartmentInfo(departmentId: string): Promise<DepartmentInfo> {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user, isSuperadmin } = await requireAdmin();
 
-  // Verify user has access to this department
-  const { data: access } = await supabase
-    .from("profile_departments")
-    .select("department_id")
-    .eq("profile_id", user.id)
-    .eq("department_id", departmentId)
-    .single();
-  if (!access) throw new Error("Sin acceso a este departamento");
+  if (!isSuperadmin) {
+    // Verify user has access to this department
+    const { data: access } = await supabase
+      .from("profile_departments")
+      .select("department_id")
+      .eq("profile_id", user.id)
+      .eq("department_id", departmentId)
+      .single();
+    if (!access) throw new Error("Sin acceso a este departamento");
+  }
 
-  const { data: chiefRecord } = await supabase
-    .from("department_chiefs")
-    .select("department_id")
-    .eq("profile_id", user.id)
-    .eq("department_id", departmentId)
-    .maybeSingle();
-  const isChief = !!chiefRecord;
+  const isChief = isSuperadmin || await (async () => {
+    const { data: chiefRecord } = await supabase
+      .from("department_chiefs")
+      .select("department_id")
+      .eq("profile_id", user.id)
+      .eq("department_id", departmentId)
+      .maybeSingle();
+    return !!chiefRecord;
+  })();
 
   const { data: dept } = await supabase
     .from("departments")
@@ -72,10 +76,10 @@ export async function getDepartmentInfo(departmentId: string): Promise<Departmen
 
   if (!dept) throw new Error("Departamento no encontrado");
 
-  // 1. Get all department members via profile_departments
+  // 1. Get all department members via profile_departments (exclude superadmins — they are invisible)
   const { data: memberLinks } = await supabase
     .from("profile_departments")
-    .select("profile:profiles(id, full_name, email)")
+    .select("profile:profiles(id, full_name, email, role)")
     .eq("department_id", departmentId);
 
   // Get chiefs for this department
@@ -88,8 +92,8 @@ export async function getDepartmentInfo(departmentId: string): Promise<Departmen
 
   const deptMembers: DeptMember[] = (memberLinks ?? [])
     .map((row) => {
-      const p = row.profile as unknown as { id: string; full_name: string | null; email: string } | null;
-      if (!p) return null;
+      const p = row.profile as unknown as { id: string; full_name: string | null; email: string; role: string } | null;
+      if (!p || p.role === "superadmin") return null;
       return {
         id: p.id,
         full_name: p.full_name,
@@ -165,12 +169,14 @@ export async function getDepartmentInfo(departmentId: string): Promise<Departmen
     return { department_id: departmentId, department_name: dept.name, is_chief: isChief, members: deptMembers, companies: [] };
   }
 
-  // 6. Get company details
-  const { data: companies } = await supabase
+  // 6. Get company details (superadmin sees demo companies too)
+  let companiesQuery = supabase
     .from("companies")
     .select("id, legal_name, company_name, nif")
     .in("id", filteredCompanyIds)
     .order("legal_name");
+  if (!isSuperadmin) companiesQuery = companiesQuery.eq("is_demo", false);
+  const { data: companies } = await companiesQuery;
 
   // Build member name map
   const memberNameMap = new Map<string, string | null>();
@@ -231,23 +237,30 @@ export async function getAllDepartmentsInfo(): Promise<DepartmentInfo[]> {
   if (!user) throw new Error("No autenticado");
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || profile.role !== "admin") throw new Error("Sin permisos");
+  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) throw new Error("Sin permisos");
 
-  // Get all user's departments
-  const { data: userDepts } = await supabase
-    .from("profile_departments")
-    .select("department_id")
-    .eq("profile_id", user.id);
+  const isSuperadmin = profile.role === "superadmin";
 
-  if (!userDepts || userDepts.length === 0) return [];
+  // Get departments: superadmin sees all, others only their own
+  let deptIds: string[];
+  if (isSuperadmin) {
+    const { data: allDepts } = await supabase.from("departments").select("id");
+    deptIds = (allDepts ?? []).map((d) => d.id as string);
+  } else {
+    const { data: userDepts } = await supabase
+      .from("profile_departments")
+      .select("department_id")
+      .eq("profile_id", user.id);
+    deptIds = (userDepts ?? []).map((d) => d.department_id as string);
+  }
 
-  const deptIds = userDepts.map((d) => d.department_id as string);
+  if (deptIds.length === 0) return [];
 
   // Batch queries
   const [{ data: depts }, { data: allMemberLinks }, { data: allChiefs }, { data: allDeptServices }] =
     await Promise.all([
       supabase.from("departments").select("id, name").in("id", deptIds),
-      supabase.from("profile_departments").select("department_id, profile:profiles(id, full_name, email)").in("department_id", deptIds),
+      supabase.from("profile_departments").select("department_id, profile:profiles(id, full_name, email, role)").in("department_id", deptIds),
       supabase.from("department_chiefs").select("department_id, profile_id").in("department_id", deptIds),
       supabase.from("department_services").select("department_id, service_id, service:services(id, name)").in("department_id", deptIds).eq("is_active", true),
     ]);
@@ -271,7 +284,9 @@ export async function getAllDepartmentsInfo(): Promise<DepartmentInfo[]> {
 
     const allCompanyIds = [...new Set(companyServices.map((cs) => cs.company_id))];
     if (allCompanyIds.length > 0) {
-      const { data: compData } = await supabase.from("companies").select("id, legal_name, company_name, nif").in("id", allCompanyIds).order("legal_name");
+      let compQuery = supabase.from("companies").select("id, legal_name, company_name, nif").in("id", allCompanyIds).order("legal_name");
+      if (!isSuperadmin) compQuery = compQuery.eq("is_demo", false);
+      const { data: compData } = await compQuery;
       companies = compData ?? [];
     }
   }
@@ -283,8 +298,8 @@ export async function getAllDepartmentsInfo(): Promise<DepartmentInfo[]> {
     return (allMemberLinks ?? [])
       .filter((row) => row.department_id === deptId)
       .map((row) => {
-        const p = row.profile as unknown as { id: string; full_name: string | null; email: string } | null;
-        if (!p) return null;
+        const p = row.profile as unknown as { id: string; full_name: string | null; email: string; role: string } | null;
+        if (!p || p.role === "superadmin") return null;
         return { id: p.id, full_name: p.full_name, email: p.email, is_chief: chiefIds.has(p.id) };
       })
       .filter((m): m is NonNullable<typeof m> => m !== null)
@@ -292,7 +307,7 @@ export async function getAllDepartmentsInfo(): Promise<DepartmentInfo[]> {
   }
 
   return (depts ?? []).map((dept) => {
-    const isChief = (allChiefs ?? []).some((c) => c.profile_id === user.id && c.department_id === dept.id);
+    const isChief = isSuperadmin || (allChiefs ?? []).some((c) => c.profile_id === user.id && c.department_id === dept.id);
     const members = buildMembers(dept.id);
     const memberNameMap = new Map(members.map((m) => [m.id, m.full_name]));
 

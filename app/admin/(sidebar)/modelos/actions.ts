@@ -6,7 +6,12 @@ import type { Company, TaxModelWithEntry, EntryPayload } from "@/lib/types/tax";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 
 async function requireServiceAdmin(serviceSlug: string) {
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user, isSuperadmin } = await requireAdmin();
+
+  // Superadmin siempre tiene acceso como chief a todos los servicios
+  if (isSuperadmin) {
+    return { supabase, user, isChief: true };
+  }
 
   // Get all user's departments
   const { data: userDepts } = await supabase

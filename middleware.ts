@@ -9,7 +9,6 @@ export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
 
   // --- Detección del espacio ---
-  // En producción: por dominio. En local: por prefijo de ruta.
   const isAdminHost = host === "admin.leanfinance.es";
   const isAppHost = host === "app.leanfinance.es";
   const isProdDomain = isAdminHost || isAppHost;
@@ -19,13 +18,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/auth") ||
     pathname === "/unauthorized" ||
     pathname === "/select-company" ||
-    pathname === "/app/select-company"
+    pathname === "/app/select-company" ||
+    pathname === "/select-department" ||
+    pathname === "/admin/select-department"
   ) {
-    // Para select-company en producción, aplicar rewrite
     if (isProdDomain && pathname === "/select-company") {
-      return NextResponse.rewrite(
-        new URL(`/app/select-company`, request.url)
-      );
+      return NextResponse.rewrite(new URL(`/app/select-company`, request.url));
+    }
+    if (isProdDomain && pathname === "/select-department") {
+      return NextResponse.rewrite(new URL(`/admin/select-department`, request.url));
     }
     return NextResponse.next({ request });
   }
@@ -64,21 +65,18 @@ export async function middleware(request: NextRequest) {
   // Ruta de login efectiva según entorno
   const loginPath = isProdDomain ? "/login" : `/${space}/login`;
 
-  // ¿Estamos en la página de login?
   const isOnLoginPage = isProdDomain
     ? pathname === "/login"
     : pathname === `/${space}/login`;
 
   // --- Sin sesión ---
   if (!user) {
-    // Limpiar cookie de rol cacheado si no hay sesión
     if (request.cookies.get("x-user-role")) {
       supabaseResponse.cookies.delete("x-user-role");
     }
     if (!isOnLoginPage) {
       return NextResponse.redirect(new URL(loginPath, request.url));
     }
-    // En login sin sesión: permitir con rewrite si es dominio de prod
     if (isProdDomain) {
       return NextResponse.rewrite(
         new URL(`/${space}${pathname}`, request.url)
@@ -88,7 +86,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // --- Con sesión: comprobar perfil y rol ---
-  // Usar cookie cacheada para evitar query a BD en cada request
   const cachedRole = request.cookies.get("x-user-role")?.value;
   let role: string | null = cachedRole ?? null;
 
@@ -100,7 +97,6 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile) {
-      // Sin perfil = no está dado de alta → desloguear y limpiar cookies de sesión
       await supabase.auth.signOut();
       const redirectResponse = NextResponse.redirect(
         new URL("/unauthorized", request.url)
@@ -115,13 +111,12 @@ export async function middleware(request: NextRequest) {
 
     role = profile.role;
 
-    // Cachear el rol en cookie (httpOnly, 1 hora de vida)
     supabaseResponse.cookies.set("x-user-role", role!, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 3600, // 1 hora
+      maxAge: 3600,
     });
   }
 
@@ -138,7 +133,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Espacio incorrecto para el rol → redirigir al espacio correcto
+  // Espacio incorrecto para el rol → redirigir
   if (space !== correctSpace) {
     if (isProdDomain) {
       const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
@@ -149,7 +144,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Todo OK → aplicar rewrite en producción para mapear / → /app/ o /admin/
+  // Todo OK → aplicar rewrite en producción
   if (isProdDomain) {
     return NextResponse.rewrite(
       new URL(`/${space}${pathname}`, request.url)

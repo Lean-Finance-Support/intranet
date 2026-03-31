@@ -21,11 +21,14 @@ export default async function AdminSidebarLayout({
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  const [{ data: profile }, { data: profileDepts }, allNotifications] = await Promise.all([
+  const [{ data: profile }, { data: profileRole }, { data: profileDepts }, allNotifications] = await Promise.all([
     supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
     supabase.from("profile_departments").select("department:departments(id, name, slug)").eq("profile_id", user.id),
     getNotifications(),
   ]);
+
+  const isSuperadmin = profileRole?.role === "superadmin";
 
   const departments = (profileDepts ?? [])
     .map((row) => {
@@ -35,19 +38,21 @@ export default async function AdminSidebarLayout({
     .filter((d): d is NonNullable<typeof d> => d !== null);
 
   // Fetch ALL services across ALL user's departments
-  const deptIds = departments.map((d) => d.id);
-  let hasTaxModels = false;
-  if (deptIds.length > 0) {
-    const { data: allServices } = await supabase
-      .from("department_services")
-      .select("service:services(slug)")
-      .in("department_id", deptIds)
-      .eq("is_active", true);
+  let hasTaxModels = isSuperadmin; // superadmin siempre tiene acceso a todos los servicios
+  if (!isSuperadmin) {
+    const deptIds = departments.map((d) => d.id);
+    if (deptIds.length > 0) {
+      const { data: allServices } = await supabase
+        .from("department_services")
+        .select("service:services(slug)")
+        .in("department_id", deptIds)
+        .eq("is_active", true);
 
-    hasTaxModels = (allServices ?? []).some((ds) => {
-      const svc = (ds as unknown as { service: { slug: string } | null }).service;
-      return svc?.slug === "tax-models";
-    });
+      hasTaxModels = (allServices ?? []).some((ds) => {
+        const svc = (ds as unknown as { service: { slug: string } | null }).service;
+        return svc?.slug === "tax-models";
+      });
+    }
   }
 
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;

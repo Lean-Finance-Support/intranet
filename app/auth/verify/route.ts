@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
   const isAppHost = request.headers.get("host")?.startsWith("app.");
   const isProd = isAdminHost || isAppHost;
 
-  if (profile.role === "admin") {
+  if (profile.role === "admin" || profile.role === "superadmin") {
     const adminPrefix = isProd ? "" : "/admin";
     const adminUrl = isProd ? (process.env.NEXT_PUBLIC_ADMIN_URL || origin) : origin;
     return NextResponse.redirect(new URL(`${adminPrefix}/dashboard`, adminUrl));
