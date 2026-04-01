@@ -251,6 +251,8 @@ export async function notifyClient(
       link: "/modelos",
     });
   }
+  // El email lo gestiona la Edge Function notify-tax-models
+  // disparada automáticamente por el trigger en tax_notifications
 }
 
 export interface ClientResponseStatus {
