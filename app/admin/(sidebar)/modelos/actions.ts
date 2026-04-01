@@ -94,21 +94,20 @@ export async function getAllCompanies(): Promise<Company[]> {
 
   const companies = data ?? [];
 
-  // Chiefs y superadmins pueden editar todas
-  if (isChief) {
-    return companies.map((c) => ({ ...c, canEdit: true }));
-  }
-
-  // Técnicos solo pueden editar las empresas a las que están asignados
+  // Asignaciones del usuario como técnico (aplica a cualquier rol)
   const { data: assignments } = await supabase
     .from("company_technicians")
     .select("company_id")
     .eq("technician_id", user.id)
     .eq("service_id", svc.id);
 
-  const editableIds = new Set((assignments ?? []).map((a) => a.company_id as string));
+  const assignedIds = new Set((assignments ?? []).map((a) => a.company_id as string));
 
-  return companies.map((c) => ({ ...c, canEdit: editableIds.has(c.id) }));
+  return companies.map((c) => ({
+    ...c,
+    canEdit: isChief || assignedIds.has(c.id), // chief/superadmin editan todo, técnico solo las suyas
+    isAssigned: assignedIds.has(c.id),          // asignación explícita como técnico
+  }));
 }
 
 export async function getModelsWithEntries(

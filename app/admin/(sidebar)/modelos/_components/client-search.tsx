@@ -38,12 +38,12 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
       .finally(() => setLoading(false));
   }, []);
 
-  // Solo mostrar el toggle si hay empresas que el usuario no puede editar
-  const hasNonEditable = companies.some((c) => !c.canEdit);
-  const myCount = companies.filter((c) => c.canEdit).length;
+  // Mostrar el toggle si el usuario tiene al menos una empresa asignada
+  const myCount = companies.filter((c) => c.isAssigned).length;
+  const showToggle = myCount > 0;
 
   const filtered = useMemo(() => {
-    let list = onlyMine ? companies.filter((c) => c.canEdit) : companies;
+    let list = onlyMine ? companies.filter((c) => c.isAssigned) : companies;
     if (!query.trim()) return list;
     const q = query.toLowerCase();
     return list.filter(
@@ -105,7 +105,7 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
           />
         </div>
 
-        {!loading && hasNonEditable && (
+        {!loading && showToggle && (
           <button
             onClick={() => setOnlyMine((v) => !v)}
             title={onlyMine ? "Mostrar todas las empresas" : "Mostrar solo mis empresas"}
@@ -143,7 +143,7 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
           {query
             ? "Sin resultados"
             : onlyMine
-              ? "No tienes empresas asignadas"
+              ? "No tienes empresas asignadas como técnico"
               : "No hay empresas registradas"}
         </p>
       ) : (
@@ -152,14 +152,12 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
             <li key={company.id}>
               <button
                 onClick={() => onSelect(company)}
-                className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 ${
-                  !company.canEdit ? "opacity-70" : ""
-                }`}
+                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  company.canEdit ? "bg-brand-teal/10" : "bg-gray-100"
+                  company.isAssigned ? "bg-brand-teal/10" : "bg-gray-100"
                 }`}>
-                  <span className={`text-xs font-bold ${company.canEdit ? "text-brand-teal" : "text-text-muted"}`}>
+                  <span className={`text-xs font-bold ${company.isAssigned ? "text-brand-teal" : "text-text-muted"}`}>
                     {company.legal_name[0].toUpperCase()}
                   </span>
                 </div>
@@ -168,7 +166,7 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
                     <p className="font-medium text-sm text-text-body truncate">
                       {highlight(company.legal_name, query)}
                     </p>
-                    {company.canEdit && (
+                    {company.isAssigned && (
                       <span className="flex-shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold text-brand-teal bg-brand-teal/10 rounded-full px-1.5 py-0.5 leading-none">
                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
