@@ -133,7 +133,7 @@ Aplicar `animate-fade-in-up` con delays escalonados a los elementos del dashboar
 - Texto descriptivo: delay 160ms
 - Service cards: delay 240ms
 
-### 1.7 Tooltips en floating buttons ⬜
+### 1.7 Tooltips en floating buttons ✅
 
 **Archivos**: `components/logout-button.tsx`, `components/notifications-bell.tsx`, `components/company-info-button.tsx`, `components/department-info-button.tsx`
 
@@ -254,65 +254,279 @@ Al guardar cambios exitosamente:
 
 ---
 
-## Fase 3 — Sidebar de navegación (opcional — cambio estructural) ⬜
+## Fase 3 — Sidebar de navegación ✅ COMPLETADA
 
-**Objetivo**: Dar coherencia de navegación a toda la app.
+**Objetivo**: Añadir navegación persistente y con personalidad a ambos portales.
 
-> NOTA: Este es el cambio más grande. Requiere crear layouts compartidos.
-> Si se decide NO hacer sidebar, saltar a Fase 4.
+> Este es el cambio más invasivo — reorganiza la estructura de layouts de toda la app.
+> Requiere crear route groups, un layout compartido, y migrar los floating buttons.
 
-### 3.1 Layout compartido con sidebar
+---
 
-**Crear archivos**:
-- `app/admin/(dashboard)/layout.tsx` — layout con sidebar para admin
-- `app/app/(dashboard)/layout.tsx` — layout con sidebar para client
-- `components/sidebar.tsx` — componente sidebar reutilizable
+### Decisiones de diseño (acordadas)
 
-**Estructura del sidebar**:
+| Decisión | Valor |
+|---|---|
+| Colapsable | Sí — ancho completo ↔ solo iconos |
+| Responsive | En móvil se oculta, hamburger lo abre como overlay |
+| Secciones | Dinámicas: dependen del rol/servicios contratados (ver 3.4) |
+| Avatar/usuario | Abajo del sidebar, fijo al fondo |
+| Notificaciones | En el sidebar como item con badge numérico |
+| Estilo admin | Fondo `bg-brand-navy`, texto blanco (igual que el dashboard actual) |
+| Estilo client | Fondo blanco, acentos teal |
+| Grupos/separadores | Lista plana. Solo un separador antes del bloque de usuario (bottom). No secciones con título. |
+
+---
+
+### Estructura visual
+
 ```
-┌─────────────────────┐
-│  Logo LeanFinance    │
-│                      │
-│  ─────────────────   │
-│                      │
-│  📊 Dashboard        │  ← nav items con icono + texto
-│  📋 Modelos          │
-│  🔔 Notificaciones   │
-│  🏢 Mi empresa       │  ← (client) o "Departamento" (admin)
-│                      │
-│                      │
-│                      │
-│  ─────────────────   │
-│                      │
-│  👤 Mario Pantoja    │  ← avatar + nombre + menú logout
-│  └ Cerrar sesión     │
-└─────────────────────┘
+┌─────────────────────────┐
+│  [≡]  lean finance      │  ← logo + botón colapsar
+│─────────────────────────│
+│                          │
+│  ⊞  Dashboard            │  ← item activo: fondo teal/10, borde-l teal
+│  ▦  Modelos fiscales     │
+│  🔔  Notificaciones  (3) │  ← badge con nº de no leídas
+│  ⊡  [Sección dinámica]  │  ← varía según servicios / departamento
+│                          │
+│                          │  ← espacio flexible
+│─────────────────────────│
+│  👤  Mario Pantoja       │  ← avatar inicial + nombre + "Cerrar sesión"
+└─────────────────────────┘
+
+Colapsado (solo iconos, con tooltips al hover):
+┌──────┐
+│ [≡]  │
+│──────│
+│  ⊞   │
+│  ▦   │
+│  🔔③ │
+│  ⊡   │
+│      │
+│──────│
+│  M   │  ← inicial del nombre
+└──────┘
 ```
 
-**Especificaciones**:
-- Ancho expandido: `w-64`
-- Ancho colapsado: `w-16` (solo iconos + tooltips)
-- Toggle con botón en el header del sidebar
-- Transición: `transition-all duration-300 ease-in-out`
-- Item activo: `border-l-2 border-brand-teal bg-brand-teal/5 text-brand-navy font-semibold`
-- Items inactivos: `text-text-muted hover:bg-gray-50 hover:text-text-body`
+---
 
-**Admin sidebar**:
-- Fondo: `bg-brand-navy` con texto blanco
-- Item activo: `border-l-2 border-brand-teal bg-white/10 text-white`
-- Items inactivos: `text-white/60 hover:text-white hover:bg-white/5`
+### 3.1 Crear route groups y layouts ✅
 
-### 3.2 Migrar floating buttons a sidebar
+**Archivos nuevos**:
 
-- Mover logout, notificaciones, company/department info como items del sidebar
-- Eliminar los botones flotantes (ya no necesarios)
-- Notificaciones: badge numérico junto al icono en el sidebar
+```
+app/
+  admin/
+    (sidebar)/          ← nuevo route group (no afecta la URL)
+      layout.tsx        ← layout con sidebar admin
+      dashboard/
+        page.tsx        ← mover desde app/admin/dashboard/
+      modelos/
+        (...)           ← mover desde app/admin/modelos/
+  app/
+    (sidebar)/          ← nuevo route group
+      layout.tsx        ← layout con sidebar client
+      dashboard/
+        page.tsx
+      modelos/
+        (...)
+```
 
-### 3.3 Responsive
+> Los route groups `(sidebar)` en Next.js App Router NO cambian la URL.
+> `app/admin/(sidebar)/dashboard/page.tsx` sigue siendo accesible en `/admin/dashboard`.
 
-- Desktop (≥1024px): sidebar visible, expandible/colapsable
-- Tablet (768-1023px): sidebar colapsada por defecto (solo iconos)
-- Móvil (<768px): sidebar oculta, hamburger button en top-left para abrirla como overlay
+**Cada layout.tsx**:
+```tsx
+// app/admin/(sidebar)/layout.tsx
+import { createClient } from "@/lib/supabase/server"
+import AdminSidebar from "@/components/sidebar/admin-sidebar"
+
+export default async function AdminSidebarLayout({ children }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, department")
+    .eq("id", user.id)
+    .single()
+
+  return (
+    <div className="flex h-screen bg-brand-navy overflow-hidden">
+      <AdminSidebar profile={profile} />
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
+    </div>
+  )
+}
+```
+
+---
+
+### 3.2 Componentes del sidebar ✅
+
+**Archivos a crear**:
+- `components/sidebar/admin-sidebar.tsx` — sidebar admin (navy)
+- `components/sidebar/client-sidebar.tsx` — sidebar client (blanco)
+- `components/sidebar/sidebar-nav-item.tsx` — item de navegación reutilizable
+- `components/sidebar/sidebar-user.tsx` — bloque de usuario en el bottom
+- `components/sidebar/collapse-button.tsx` — botón para colapsar (Client Component)
+
+**Estado de colapso** — persistir en `localStorage` para no perderlo al navegar:
+```tsx
+// components/sidebar/collapse-button.tsx — "use client"
+const [collapsed, setCollapsed] = useState(() => {
+  if (typeof window === "undefined") return false
+  return localStorage.getItem("sidebar-collapsed") === "true"
+})
+```
+
+**Pasar el estado hacia arriba** con un Context o simplemente con un wrapper Client Component que envuelva al sidebar completo.
+
+---
+
+### 3.3 Estilos por portal ✅
+
+**Admin (navy)**:
+```
+Fondo sidebar:     bg-brand-navy
+Borde derecho:     border-r border-white/10
+Texto inactivo:    text-white/60
+Hover inactivo:    hover:bg-white/5 hover:text-white
+Item activo:       bg-white/10 text-white border-l-2 border-brand-teal
+Badge notif:       bg-brand-teal text-white
+Avatar inicial:    bg-white/20 text-white
+Logo:              brightness-0 invert (blanco)
+```
+
+**Client (blanco)**:
+```
+Fondo sidebar:     bg-white border-r border-gray-100
+Texto inactivo:    text-text-muted
+Hover inactivo:    hover:bg-gray-50 hover:text-text-body
+Item activo:       bg-brand-teal/5 text-brand-navy border-l-2 border-brand-teal font-semibold
+Badge notif:       bg-brand-teal text-white
+Avatar inicial:    bg-brand-teal/10 text-brand-teal
+Logo:              normal (a color)
+```
+
+**Transición colapso**:
+```
+transition-all duration-300 ease-in-out
+Expandido: w-64
+Colapsado: w-16
+```
+
+Cuando está colapsado, ocultar el texto con `overflow-hidden opacity-0` en el label,
+y mostrar tooltips en hover con el mismo patrón CSS-only de Fase 2.
+
+---
+
+### 3.4 Navegación dinámica ✅
+
+Las secciones del sidebar **no son hardcoded** — dependen del perfil del usuario.
+
+**Client**: las secciones son los servicios contratados por su empresa.
+```tsx
+// Cada servicio contratado genera un nav item
+// Fuente de datos: tabla company_services o similar
+// Ejemplo resultado:
+[
+  { label: "Dashboard",           href: "/dashboard", icon: HomeIcon },
+  { label: "Modelos fiscales",    href: "/modelos",   icon: DocumentIcon },
+  { label: "Notificaciones",      href: null,         icon: BellIcon, badge: unreadCount },
+  { label: "Mi empresa",          href: null,         icon: BuildingIcon, action: "openCompanyPanel" },
+]
+```
+
+**Admin**: las secciones son los servicios de su departamento + acceso a gestión.
+```tsx
+[
+  { label: "Dashboard",           href: "/admin/dashboard", icon: HomeIcon },
+  { label: "Modelos fiscales",    href: "/admin/modelos",   icon: DocumentIcon },
+  { label: "Notificaciones",      href: null,               icon: BellIcon, badge: unreadCount },
+  { label: "Mi departamento",     href: null,               icon: UsersIcon, action: "openDeptPanel" },
+]
+```
+
+> Los paneles de empresa/departamento (company-info-button, department-info-button)
+> **no desaparecen** — se abren desde el item del sidebar en lugar de desde el botón flotante.
+> Los floating buttons SÍ se eliminan (su función pasa al sidebar).
+
+---
+
+### 3.5 Notificaciones en sidebar ✅
+
+Reemplazar el `NotificationsBell` flotante por un item del sidebar con badge.
+Al hacer click, abrir el mismo panel desplegable que existe ahora pero anclado al sidebar.
+
+```tsx
+// Item de notificaciones en el sidebar
+<SidebarNavItem
+  icon={BellIcon}
+  label="Notificaciones"
+  badge={unreadCount > 0 ? unreadCount : undefined}
+  onClick={() => setNotifOpen(true)}
+/>
+
+{/* El panel de notificaciones existente, sin cambios de lógica */}
+{notifOpen && <NotificationsPanel ... />}
+```
+
+---
+
+### 3.6 Responsive ✅
+
+| Breakpoint | Comportamiento |
+|---|---|
+| ≥ 1024px (desktop) | Sidebar visible. Toggle colapsa/expande. |
+| 768–1023px (tablet) | Sidebar colapsada por defecto (solo iconos). |
+| < 768px (móvil) | Sidebar oculta. Hamburger en top-left. Click abre overlay con backdrop. |
+
+**Hamburger en móvil**:
+```tsx
+// Solo visible en móvil (md:hidden)
+<button className="fixed top-4 left-4 z-50 md:hidden ...">
+  <HamburgerIcon />
+</button>
+
+// Overlay con backdrop al abrir
+{mobileOpen && (
+  <div className="fixed inset-0 z-40 flex md:hidden">
+    <div className="absolute inset-0 bg-black/40" onClick={close} />
+    <div className="relative w-64 h-full animate-slide-in-right">
+      {/* sidebar content */}
+    </div>
+  </div>
+)}
+```
+
+---
+
+### 3.7 Eliminar floating buttons ✅
+
+Una vez el sidebar esté en funcionamiento, eliminar:
+- `components/logout-button.tsx` — sustituido por el bloque de usuario en sidebar bottom
+- `components/notifications-bell.tsx` — sustituido por item de sidebar con badge
+- Los imports/usos en `app/admin/dashboard/page.tsx` y `app/app/dashboard/page.tsx`
+
+Los paneles `company-info-button.tsx` y `department-info-button.tsx` **se mantienen**
+(solo cambia el trigger — del botón flotante al item del sidebar).
+
+---
+
+### 3.8 Orden de implementación ✅
+
+1. Crear route groups y mover archivos de páginas (sin cambiar URLs)
+2. Crear layouts con sidebar básico (sin colapso, sin responsive)
+3. Añadir nav items estáticos y active state
+4. Implementar colapso + localStorage
+5. Integrar notificaciones (badge + panel)
+6. Integrar panels de empresa/departamento desde sidebar
+7. Añadir responsive (tablet + móvil + hamburger)
+8. Eliminar floating buttons
+9. Testing visual en 375px, 768px, 1440px
 
 ---
 
@@ -423,7 +637,7 @@ Añadir a todos los botones interactivos:
 active:scale-[0.97] transition-transform duration-100
 ```
 
-### 5.3 Números en monospace ⬜
+### 5.3 Números en monospace ✅
 
 **Aplicar `font-mono`** en:
 - NIFs en company-info y department-info
