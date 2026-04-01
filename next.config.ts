@@ -23,6 +23,16 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  turbopack: {
+    root: ".",
+  },
+  webpack: (config) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ["**/.claude/**", "**/node_modules/**"],
+    };
+    return config;
+  },
   async headers() {
     return [
       {

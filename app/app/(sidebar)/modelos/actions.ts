@@ -221,27 +221,45 @@ export async function submitQuarter(
     throw new Error("Error al enviar el trimestre.");
   }
 
-  // Get technicians assigned to this company + department chief for notifications
+  // Get technicians assigned to this company + department chiefs for notifications
   const { data: company } = await supabase
     .from("companies")
     .select("legal_name, company_name")
     .eq("id", companyId)
     .single();
 
-  const { data: technicians } = await supabase
-    .from("company_technicians")
-    .select("technician_id")
-    .eq("company_id", companyId);
+  // Get the tax-models service id
+  const { data: taxService } = await supabase
+    .from("services")
+    .select("id")
+    .eq("slug", "tax-models")
+    .single();
 
+  const { data: technicians } = taxService
+    ? await supabase
+        .from("company_technicians")
+        .select("technician_id")
+        .eq("company_id", companyId)
+        .eq("service_id", taxService.id)
+    : { data: null };
+
+  // Get fiscal department chiefs
   const { data: fiscalDept } = await supabase
     .from("departments")
-    .select("chief_id")
+    .select("id")
     .eq("slug", "asesoria-fiscal")
     .single();
 
+  const { data: chiefs } = fiscalDept
+    ? await supabase
+        .from("department_chiefs")
+        .select("profile_id")
+        .eq("department_id", fiscalDept.id)
+    : { data: null };
+
   const recipients = new Set<string>();
   for (const t of technicians ?? []) recipients.add(t.technician_id);
-  if (fiscalDept?.chief_id) recipients.add(fiscalDept.chief_id);
+  for (const c of chiefs ?? []) recipients.add(c.profile_id);
 
   const companyName = company?.legal_name ?? "Cliente";
   const quarterLabel = `${quarter}T ${year}`;
