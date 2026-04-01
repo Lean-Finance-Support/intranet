@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   markNotificationRead,
   markAllNotificationsRead,
@@ -57,21 +59,25 @@ function BellIcon({ className }: { className?: string }) {
 
 interface NotificationsPageProps {
   initialNotifications: Notification[];
+  linkPrefix?: string;
 }
 
-export default function NotificationsPage({ initialNotifications }: NotificationsPageProps) {
+export default function NotificationsPage({ initialNotifications, linkPrefix = "" }: NotificationsPageProps) {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const handleMarkRead = useCallback(async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     await markNotificationRead(id);
-  }, []);
+    router.refresh(); // actualiza el badge del sidebar
+  }, [router]);
 
   const handleMarkAllRead = useCallback(async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     await markAllNotificationsRead();
-  }, []);
+    router.refresh(); // actualiza el badge del sidebar
+  }, [router]);
 
   const groups = groupNotifications(notifications);
 
@@ -110,32 +116,47 @@ export default function NotificationsPage({ initialNotifications }: Notification
                   {group.label}
                 </p>
                 <div className="space-y-2">
-                  {group.items.map((n) => (
-                    <div
-                      key={n.id}
-                      onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
-                      className={`rounded-xl px-5 py-4 transition-colors duration-200 ${
-                        n.is_read
-                          ? "bg-white border border-gray-100"
-                          : "bg-white border border-brand-teal/20 cursor-pointer hover:border-brand-teal/40"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        {!n.is_read && (
-                          <div className="w-2 h-2 bg-brand-teal rounded-full mt-1.5 flex-shrink-0" />
-                        )}
-                        <div className={`flex-1 min-w-0 ${n.is_read ? "" : ""}`}>
-                          <p className={`text-sm leading-snug ${n.is_read ? "text-text-body" : "font-medium text-brand-navy"}`}>
-                            {n.title}
-                          </p>
-                          {n.message && (
-                            <p className="text-sm text-text-muted mt-1">{n.message}</p>
+                  {group.items.map((n) => {
+                    const linkHref = n.link ? `${linkPrefix}${n.link}` : undefined;
+                    const card = (
+                      <div
+                        onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
+                        className={`rounded-xl px-5 py-4 transition-colors duration-200 ${
+                          n.is_read
+                            ? "bg-white border border-gray-100"
+                            : `bg-white border border-brand-teal/20 cursor-pointer hover:border-brand-teal/40 ${linkHref ? "hover:bg-gray-50" : ""}`
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {!n.is_read && (
+                            <div className="w-2 h-2 bg-brand-teal rounded-full mt-1.5 flex-shrink-0" />
                           )}
-                          <p className="text-xs text-text-muted/60 mt-2">{formatTime(n.created_at)}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm leading-snug ${n.is_read ? "text-text-body" : "font-medium text-brand-navy"}`}>
+                              {n.title}
+                            </p>
+                            {n.message && (
+                              <p className="text-sm text-text-muted mt-1">{n.message}</p>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <p className="text-xs text-text-muted/60">{formatTime(n.created_at)}</p>
+                              {linkHref && (
+                                <span className="text-xs text-brand-teal font-medium">Ver →</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                    if (linkHref) {
+                      return (
+                        <Link key={n.id} href={linkHref} className="block">
+                          {card}
+                        </Link>
+                      );
+                    }
+                    return <div key={n.id}>{card}</div>;
+                  })}
                 </div>
               </div>
             ))}
