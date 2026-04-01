@@ -10,6 +10,7 @@ import type { Company } from "@/lib/types/tax";
 export default function ModelosWorkspace() {
   const [quarter, setQuarter] = useState(1);
   const [company, setCompany] = useState<Company | null>(null);
+  const canEdit = company?.canEdit ?? true;
 
   return (
     <div className="space-y-6">
@@ -40,12 +41,14 @@ export default function ModelosWorkspace() {
               companyId={company.id}
               companyName={company.legal_name}
               quarter={quarter}
+              canEdit={canEdit}
             />
           </div>
           <ModelsForm
             key={`${company.id}-${quarter}`}
             companyId={company.id}
             quarter={quarter}
+            canEdit={canEdit}
           />
         </div>
       )}

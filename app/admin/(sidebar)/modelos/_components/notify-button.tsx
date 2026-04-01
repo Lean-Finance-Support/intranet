@@ -8,6 +8,7 @@ interface NotifyButtonProps {
   companyName: string;
   quarter: number;
   year?: number;
+  canEdit?: boolean;
 }
 
 export default function NotifyButton({
@@ -15,6 +16,7 @@ export default function NotifyButton({
   companyName,
   quarter,
   year = 2026,
+  canEdit = true,
 }: NotifyButtonProps) {
   const [notified, setNotified] = useState(false);
   const [notifiedAt, setNotifiedAt] = useState<string | null>(null);
@@ -68,6 +70,8 @@ export default function NotifyButton({
       setConfirmStep(0);
     }
   }
+
+  if (!canEdit) return null;
 
   if (notified && notifiedAt) {
     const date = new Date(notifiedAt).toLocaleDateString("es-ES", {

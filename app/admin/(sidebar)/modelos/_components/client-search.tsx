@@ -29,6 +29,7 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
   const [query, setQuery] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [onlyMine, setOnlyMine] = useState(false);
 
   useEffect(() => {
     getAllCompanies()
@@ -37,16 +38,21 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
       .finally(() => setLoading(false));
   }, []);
 
+  // Solo mostrar el toggle si hay empresas que el usuario no puede editar
+  const hasNonEditable = companies.some((c) => !c.canEdit);
+  const myCount = companies.filter((c) => c.canEdit).length;
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return companies;
+    let list = onlyMine ? companies.filter((c) => c.canEdit) : companies;
+    if (!query.trim()) return list;
     const q = query.toLowerCase();
-    return companies.filter(
+    return list.filter(
       (c) =>
         c.legal_name.toLowerCase().includes(q) ||
         c.company_name?.toLowerCase().includes(q) ||
         c.nif?.toLowerCase().includes(q)
     );
-  }, [companies, query]);
+  }, [companies, query, onlyMine]);
 
   if (selected) {
     return (
@@ -78,26 +84,48 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
 
   return (
     <div>
-      <div className="relative mb-3">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar empresa por nombre legal, nombre comercial o NIF..."
-          className="w-full pl-9 pr-4 py-3 rounded-lg border border-gray-200 text-text-body placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
-        />
+      {/* Buscador + toggle "Solo mis empresas" */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="relative flex-1">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre, nombre comercial o NIF..."
+            className="w-full pl-9 pr-4 py-3 rounded-lg border border-gray-200 text-text-body placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+          />
+        </div>
+
+        {!loading && hasNonEditable && (
+          <button
+            onClick={() => setOnlyMine((v) => !v)}
+            title={onlyMine ? "Mostrar todas las empresas" : "Mostrar solo mis empresas"}
+            className={`
+              flex items-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0
+              ${onlyMine
+                ? "bg-brand-teal text-white border-brand-teal"
+                : "bg-white text-text-muted border-gray-200 hover:border-brand-teal hover:text-brand-teal"
+              }
+            `}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+            {onlyMine ? `Mis empresas (${myCount})` : "Solo mis empresas"}
+          </button>
+        )}
       </div>
 
-      {/* Company list */}
+      {/* Lista de empresas */}
       {loading ? (
         <div className="border border-gray-100 rounded-lg divide-y divide-gray-100 animate-pulse">
           {[1, 2, 3].map((i) => (
@@ -112,7 +140,11 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-center text-text-muted text-sm py-6">
-          {query ? "Sin resultados" : "No hay empresas registradas"}
+          {query
+            ? "Sin resultados"
+            : onlyMine
+              ? "No tienes empresas asignadas"
+              : "No hay empresas registradas"}
         </p>
       ) : (
         <ul className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-72 overflow-auto">
@@ -120,17 +152,31 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
             <li key={company.id}>
               <button
                 onClick={() => onSelect(company)}
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 ${
+                  !company.canEdit ? "opacity-70" : ""
+                }`}
               >
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-text-muted text-xs font-bold">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  company.canEdit ? "bg-brand-teal/10" : "bg-gray-100"
+                }`}>
+                  <span className={`text-xs font-bold ${company.canEdit ? "text-brand-teal" : "text-text-muted"}`}>
                     {company.legal_name[0].toUpperCase()}
                   </span>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-sm text-text-body truncate">
-                    {highlight(company.legal_name, query)}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="font-medium text-sm text-text-body truncate">
+                      {highlight(company.legal_name, query)}
+                    </p>
+                    {company.canEdit && (
+                      <span className="flex-shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold text-brand-teal bg-brand-teal/10 rounded-full px-1.5 py-0.5 leading-none">
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        Asignada
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-text-muted truncate">
                     {highlight([company.company_name, company.nif].filter(Boolean).join(" · "), query)}
                   </p>

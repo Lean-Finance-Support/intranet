@@ -9,6 +9,7 @@ interface ModelsFormProps {
   companyId: string;
   quarter: number;
   year?: number;
+  canEdit?: boolean;
 }
 
 interface LocalEntry {
@@ -21,7 +22,7 @@ interface LocalEntry {
   dirty: boolean;
 }
 
-export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFormProps) {
+export default function ModelsForm({ companyId, quarter, year = 2026, canEdit = true }: ModelsFormProps) {
   const [entries, setEntries] = useState<LocalEntry[]>([]);
   const [clientResponses, setClientResponses] = useState<{
     submitted: boolean;
@@ -137,6 +138,16 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
 
   return (
     <div>
+      {/* Banner solo lectura */}
+      {!canEdit && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2">
+          <svg className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          <span className="text-sm text-text-muted">Solo lectura — no estás asignado como técnico de esta empresa</span>
+        </div>
+      )}
+
       {/* Client submission banner */}
       {clientResponses.submitted && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200">
@@ -193,9 +204,14 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
                       step="0.01"
                       min="0"
                       value={entry.amount}
-                      onChange={(e) => updateEntry(index, "amount", e.target.value)}
+                      onChange={(e) => canEdit && updateEntry(index, "amount", e.target.value)}
                       placeholder="0,00"
-                      className="w-36 px-3 py-2 rounded-lg border border-gray-200 text-text-body font-mono focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+                      readOnly={!canEdit}
+                      className={`w-36 px-3 py-2 rounded-lg border text-text-body font-mono focus:outline-none transition-colors ${
+                        canEdit
+                          ? "border-gray-200 focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+                          : "border-gray-100 bg-gray-50 text-text-muted cursor-default"
+                      }`}
                     />
                   </td>
                   <td className="py-3 px-4">
@@ -203,22 +219,24 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
                       <span className="text-sm text-text-muted italic">Informativo</span>
                     ) : (
                       <div className="flex gap-4">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                        <label className={`flex items-center gap-1.5 ${canEdit ? "cursor-pointer" : "cursor-default opacity-60"}`}>
                           <input
                             type="radio"
                             name={`type-${entry.tax_model_id}`}
                             checked={entry.entry_type === "pagar"}
-                            onChange={() => updateEntry(index, "entry_type", "pagar")}
+                            onChange={() => canEdit && updateEntry(index, "entry_type", "pagar")}
+                            disabled={!canEdit}
                             className="accent-brand-teal"
                           />
                           <span className="text-sm text-text-body">A pagar</span>
                         </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                        <label className={`flex items-center gap-1.5 ${canEdit ? "cursor-pointer" : "cursor-default opacity-60"}`}>
                           <input
                             type="radio"
                             name={`type-${entry.tax_model_id}`}
                             checked={entry.entry_type === "percibir"}
-                            onChange={() => updateEntry(index, "entry_type", "percibir")}
+                            onChange={() => canEdit && updateEntry(index, "entry_type", "percibir")}
+                            disabled={!canEdit}
                             className="accent-brand-teal"
                           />
                           <span className="text-sm text-text-body">A compensar</span>
@@ -263,20 +281,22 @@ export default function ModelsForm({ companyId, quarter, year = 2026 }: ModelsFo
         </table>
       </div>
 
-      <div className="flex items-center gap-4 mt-6">
-        <button
-          onClick={handleSave}
-          disabled={!hasDirty || saving}
-          className="px-6 py-2.5 bg-brand-teal text-white rounded-lg font-medium text-sm hover:bg-brand-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? "Guardando..." : "Guardar"}
-        </button>
-        {savedMessage && (
-          <span className={`text-sm ${savedMessage.includes("Error") ? "text-red-500" : "text-green-600"}`}>
-            {savedMessage}
-          </span>
-        )}
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-4 mt-6">
+          <button
+            onClick={handleSave}
+            disabled={!hasDirty || saving}
+            className="px-6 py-2.5 bg-brand-teal text-white rounded-lg font-medium text-sm hover:bg-brand-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+          {savedMessage && (
+            <span className={`text-sm ${savedMessage.includes("Error") ? "text-red-500" : "text-green-600"}`}>
+              {savedMessage}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

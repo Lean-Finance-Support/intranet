@@ -71,53 +71,44 @@ export async function getAllCompanies(): Promise<Company[]> {
 
   if (!svc) return [];
 
-  // Get companies that have the tax-models service active
+  // Get ALL companies with the tax-models service active
   const { data: companyServices } = await supabase
     .from("company_services")
     .select("company_id")
     .eq("service_id", svc.id)
     .eq("is_active", true);
 
-  const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id);
+  const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
-
-  if (isChief) {
-    // Chief sees all companies with the service contracted
-    const { data, error } = await supabase
-      .from("companies")
-      .select("id, legal_name, company_name, nif")
-      .in("id", serviceCompanyIds)
-      .order("legal_name");
-
-    if (error) {
-      console.error("[admin/modelos] DB error:", error.code);
-      throw new Error("Error al procesar la solicitud.");
-    }
-    return data ?? [];
-  }
-
-  // Non-chief: only companies assigned to this technician for this service
-  const { data: assignments } = await supabase
-    .from("company_technicians")
-    .select("company_id")
-    .eq("technician_id", user.id)
-    .eq("service_id", svc.id);
-
-  const assignedIds = (assignments ?? []).map((a) => a.company_id);
-  const filteredIds = assignedIds.filter((id) => serviceCompanyIds.includes(id));
-  if (filteredIds.length === 0) return [];
 
   const { data, error } = await supabase
     .from("companies")
     .select("id, legal_name, company_name, nif")
-    .in("id", filteredIds)
+    .in("id", serviceCompanyIds)
     .order("legal_name");
 
   if (error) {
     console.error("[admin/modelos] DB error:", error.code);
     throw new Error("Error al procesar la solicitud.");
   }
-  return data ?? [];
+
+  const companies = data ?? [];
+
+  // Chiefs y superadmins pueden editar todas
+  if (isChief) {
+    return companies.map((c) => ({ ...c, canEdit: true }));
+  }
+
+  // Técnicos solo pueden editar las empresas a las que están asignados
+  const { data: assignments } = await supabase
+    .from("company_technicians")
+    .select("company_id")
+    .eq("technician_id", user.id)
+    .eq("service_id", svc.id);
+
+  const editableIds = new Set((assignments ?? []).map((a) => a.company_id as string));
+
+  return companies.map((c) => ({ ...c, canEdit: editableIds.has(c.id) }));
 }
 
 export async function getModelsWithEntries(
