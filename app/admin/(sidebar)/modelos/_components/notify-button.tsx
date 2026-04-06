@@ -9,6 +9,7 @@ interface NotifyButtonProps {
   quarter: number;
   year?: number;
   canEdit?: boolean;
+  onBeforeSend?: () => Promise<void>;
 }
 
 export default function NotifyButton({
@@ -17,6 +18,7 @@ export default function NotifyButton({
   quarter,
   year = 2026,
   canEdit = true,
+  onBeforeSend,
 }: NotifyButtonProps) {
   const [notified, setNotified] = useState(false);
   const [notifiedAt, setNotifiedAt] = useState<string | null>(null);
@@ -60,6 +62,7 @@ export default function NotifyButton({
     setSending(true);
     setConfirmStep(2);
     try {
+      await onBeforeSend?.();
       await notifyClient(companyId, year, quarter);
       setNotified(true);
       setNotifiedAt(new Date().toISOString());

@@ -1,6 +1,7 @@
 "use server";
 
 import { requireClient } from "@/lib/require-client";
+import { createAdminClient } from "@/lib/supabase/server";
 import type {
   TaxEntryForClient,
   TaxClientResponsePayload,
@@ -196,6 +197,62 @@ export async function saveClientResponses(
     throw new Error("Error al procesar la solicitud.");
   }
   }
+}
+
+export async function getAdvisorContactInfo(): Promise<{
+  emails: string[];
+  companyName: string;
+}> {
+  const { supabase, companyId } = await requireClient();
+  const admin = createAdminClient();
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("legal_name, company_name")
+    .eq("id", companyId)
+    .single();
+
+  const companyName = company?.company_name ?? company?.legal_name ?? "";
+
+  const { data: taxService } = await admin
+    .from("services")
+    .select("id")
+    .eq("slug", "tax-models")
+    .single();
+
+  if (!taxService) return { emails: [], companyName };
+
+  const { data: technicians } = await admin
+    .from("company_technicians")
+    .select("profile:profiles(email)")
+    .eq("company_id", companyId)
+    .eq("service_id", taxService.id);
+
+  const techEmails = (technicians ?? [])
+    .map((t) => (t.profile as { email: string } | null)?.email)
+    .filter(Boolean) as string[];
+
+  if (techEmails.length > 0) return { emails: techEmails, companyName };
+
+  // Fallback: chiefs del departamento fiscal
+  const { data: fiscalDept } = await admin
+    .from("departments")
+    .select("id")
+    .eq("slug", "asesoria-fiscal")
+    .single();
+
+  if (!fiscalDept) return { emails: [], companyName };
+
+  const { data: chiefs } = await admin
+    .from("department_chiefs")
+    .select("profile:profiles(email)")
+    .eq("department_id", fiscalDept.id);
+
+  const chiefEmails = (chiefs ?? [])
+    .map((c) => (c.profile as { email: string } | null)?.email)
+    .filter(Boolean) as string[];
+
+  return { emails: chiefEmails, companyName };
 }
 
 export async function submitQuarter(

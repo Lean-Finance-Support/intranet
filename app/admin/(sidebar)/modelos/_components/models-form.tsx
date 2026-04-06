@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
 import { getModelsWithEntries, saveEntries, getClientResponses } from "../actions";
 import type { ClientResponseStatus } from "../actions";
 import type { TaxModelWithEntry } from "@/lib/types/tax";
+
+export interface ModelsFormHandle {
+  saveIfDirty: () => Promise<void>;
+}
 
 interface ModelsFormProps {
   companyId: string;
@@ -22,7 +26,10 @@ interface LocalEntry {
   dirty: boolean;
 }
 
-export default function ModelsForm({ companyId, quarter, year = 2026, canEdit = true }: ModelsFormProps) {
+const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function ModelsForm(
+  { companyId, quarter, year = 2026, canEdit = true }: ModelsFormProps,
+  ref
+) {
   const [entries, setEntries] = useState<LocalEntry[]>([]);
   const [clientResponses, setClientResponses] = useState<{
     submitted: boolean;
@@ -100,6 +107,22 @@ export default function ModelsForm({ companyId, quarter, year = 2026, canEdit = 
   }
 
   const hasDirty = entries.some((e) => e.dirty && e.amount !== "");
+
+  useImperativeHandle(ref, () => ({
+    saveIfDirty: async () => {
+      const toSave = entries
+        .filter((e) => e.amount !== "" && e.dirty)
+        .map((e) => ({
+          tax_model_id: e.tax_model_id,
+          company_id: companyId,
+          amount: parseFloat(e.amount),
+          entry_type: e.entry_type as "pagar" | "percibir",
+        }));
+      if (toSave.length === 0) return;
+      await saveEntries(toSave);
+      setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
+    },
+  }), [entries, companyId]);
 
   // Build a map of tax_model_id → client response for quick lookup
   const responsesByModel = new Map(
@@ -299,4 +322,6 @@ export default function ModelsForm({ companyId, quarter, year = 2026, canEdit = 
       )}
     </div>
   );
-}
+});
+
+export default ModelsForm;

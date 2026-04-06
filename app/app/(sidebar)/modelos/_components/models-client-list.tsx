@@ -6,6 +6,7 @@ import {
   getBankAccounts,
   saveClientResponses,
   submitQuarter,
+  getAdvisorContactInfo,
 } from "../actions";
 import type { TaxEntryForClient } from "@/lib/types/tax";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
@@ -33,15 +34,20 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [advisorEmails, setAdvisorEmails] = useState<string[]>([]);
+  const [companyName, setCompanyName] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setMessage("");
     try {
-      const [quarterData, accounts] = await Promise.all([
+      const [quarterData, accounts, contactInfo] = await Promise.all([
         getClientQuarterData(year, quarter),
         getBankAccounts(),
+        getAdvisorContactInfo(),
       ]);
+      setAdvisorEmails(contactInfo.emails);
+      setCompanyName(contactInfo.companyName);
 
       setNotified(quarterData.notified);
       setSubmitted(quarterData.submitted);
@@ -156,6 +162,14 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
     setShowAddAccount(false);
   }
 
+  function buildMailtoHref(): string {
+    const to = advisorEmails.join(",");
+    const subject = encodeURIComponent(
+      `Consulta modelos fiscales ${quarter}T ${year}${companyName ? ` — ${companyName}` : ""}`
+    );
+    return `mailto:${to}?subject=${subject}`;
+  }
+
   function formatAmount(amount: number): string {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
@@ -214,6 +228,17 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
         <p className="text-xs text-text-muted">
           Los modelos aparecerán aquí cuando el asesor los complete
         </p>
+        {advisorEmails.length > 0 && (
+          <a
+            href={buildMailtoHref()}
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+            Contactar con tu asesor
+          </a>
+        )}
       </div>
     );
   }
@@ -358,6 +383,20 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
               {message}
             </span>
           )}
+        </div>
+      )}
+
+      {advisorEmails.length > 0 && (
+        <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
+          <a
+            href={buildMailtoHref()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
+            Contactar con tu asesor
+          </a>
         </div>
       )}
 
