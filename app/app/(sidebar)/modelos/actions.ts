@@ -229,7 +229,7 @@ export async function getAdvisorContactInfo(): Promise<{
     .eq("service_id", taxService.id);
 
   const techEmails = (technicians ?? [])
-    .map((t) => (t.profile as { email: string } | null)?.email)
+    .map((t) => (t.profile as unknown as { email: string } | null)?.email)
     .filter(Boolean) as string[];
 
   if (techEmails.length > 0) return { emails: techEmails, companyName };
@@ -249,7 +249,7 @@ export async function getAdvisorContactInfo(): Promise<{
     .eq("department_id", fiscalDept.id);
 
   const chiefEmails = (chiefs ?? [])
-    .map((c) => (c.profile as { email: string } | null)?.email)
+    .map((c) => (c.profile as unknown as { email: string } | null)?.email)
     .filter(Boolean) as string[];
 
   return { emails: chiefEmails, companyName };
