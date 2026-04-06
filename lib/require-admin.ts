@@ -1,19 +1,12 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getCachedProfile } from "@/lib/cached-queries";
 
 export async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const profile = await getCachedProfile(user.id);
 
   if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
     throw new Error("Sin permisos");

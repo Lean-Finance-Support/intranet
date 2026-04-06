@@ -1,6 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import {
+  getAuthUser,
+  getCachedProfile,
+  getCachedUserDepartments,
+} from "@/lib/cached-queries";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -15,29 +18,13 @@ function getFirstName(fullName: string | null | undefined): string | null {
 }
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { user } = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile }, headersList] = await Promise.all([
-    supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
-    headers(),
+  const [profile, departments] = await Promise.all([
+    getCachedProfile(user.id),
+    getCachedUserDepartments(user.id),
   ]);
-
-  const { data: profileDepts } = await supabase
-    .from("profile_departments")
-    .select("department:departments(name)")
-    .eq("profile_id", user.id);
-
-  const departmentNames = (profileDepts ?? [])
-    .map((row) => {
-      const d = row.department as unknown as { name: string } | null;
-      return d?.name ?? null;
-    })
-    .filter((n): n is string => n !== null);
 
   const greeting = getGreeting();
   const firstName = getFirstName(profile?.full_name);
@@ -50,9 +37,9 @@ export default async function AdminDashboardPage() {
         <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
           {greeting}{displayName ? `, ${displayName}` : ""}
         </h1>
-        {departmentNames.length > 0 && (
+        {departments.length > 0 && (
           <p className="text-text-muted text-sm mt-2">
-            {departmentNames.join(" · ")}
+            {departments.map((d) => d.name).join(" · ")}
           </p>
         )}
         <div className="w-10 h-0.5 bg-brand-teal rounded-full mt-6" />

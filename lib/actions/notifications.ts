@@ -1,21 +1,18 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/cached-queries";
 import { getActiveCompanyId } from "@/lib/active-company";
 import type { Notification } from "@/lib/types/notifications";
 
 export async function getNotifications(): Promise<Notification[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthUser();
   if (!user) return [];
 
   const activeCompanyId = await getActiveCompanyId();
 
   let query = supabase
     .from("notifications")
-    .select("*")
+    .select("id, recipient_id, company_id, title, message, link, is_read, created_at")
     .eq("recipient_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -36,10 +33,7 @@ export async function getNotifications(): Promise<Notification[]> {
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthUser();
   if (!user) return;
 
   await supabase
@@ -50,10 +44,7 @@ export async function markNotificationRead(id: string): Promise<void> {
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthUser();
   if (!user) return;
 
   await supabase

@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
 import { getActiveCompanyId } from "@/lib/active-company";
 import ModelosClientWorkspace from "./_components/modelos-client-workspace";
+import {
+  getAuthUser,
+  getCachedCompanyServiceSlugs,
+} from "@/lib/cached-queries";
 
 export default async function ClientModelosPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { user } = await getAuthUser();
   if (!user) redirect("/app/login");
 
   const headersList = await headers();
@@ -22,20 +21,8 @@ export default async function ClientModelosPage() {
     redirect(`${prefix}/select-company`);
   }
 
-  // Verificar que el servicio tax-models está activo para la empresa activa
-  const { data: companyServices } = await supabase
-    .from("company_services")
-    .select("is_active, service:services(slug)")
-    .eq("company_id", activeCompanyId);
-
-  const hasTaxModels = (companyServices ?? []).some(
-    (cs) => {
-      const svc = cs.service as unknown as { slug: string } | null;
-      return cs.is_active && svc?.slug === "tax-models";
-    }
-  );
-
-  if (!hasTaxModels) {
+  const slugs = await getCachedCompanyServiceSlugs(activeCompanyId);
+  if (!slugs.includes("tax-models")) {
     redirect(`${prefix}/dashboard`);
   }
 

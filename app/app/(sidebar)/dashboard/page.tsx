@@ -1,6 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getAuthUser, getCachedProfile } from "@/lib/cached-queries";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -15,18 +14,10 @@ function getFirstName(fullName: string | null | undefined): string | null {
 }
 
 export default async function ClientDashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { user } = await getAuthUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, email")
-    .eq("id", user.id)
-    .single();
+  const profile = await getCachedProfile(user.id);
 
   const greeting = getGreeting();
   const firstName = getFirstName(profile?.full_name);
