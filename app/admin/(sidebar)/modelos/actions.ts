@@ -295,6 +295,19 @@ export interface ClientResponseStatus {
   bank_account_label: string | null;
 }
 
+export async function deleteEntry(companyId: string, taxModelId: string): Promise<void> {
+  const { supabase } = await requireFiscalAdmin();
+  const { error } = await supabase
+    .from("tax_entries")
+    .delete()
+    .eq("company_id", companyId)
+    .eq("tax_model_id", taxModelId);
+  if (error) {
+    console.error("[admin/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
+  }
+}
+
 export async function getClientResponses(
   companyId: string,
   year: number,
@@ -317,7 +330,7 @@ export async function getClientResponses(
 
   const { data: models } = await supabase
     .from("tax_models")
-    .select("id")
+    .select("id, is_informative")
     .eq("year", year)
     .eq("quarter", quarter);
 
@@ -327,7 +340,7 @@ export async function getClientResponses(
 
   const { data: entries } = await supabase
     .from("tax_entries")
-    .select("id, tax_model_id")
+    .select("id, tax_model_id, amount")
     .eq("company_id", companyId)
     .in("tax_model_id", models.map((m) => m.id));
 
@@ -352,22 +365,19 @@ export async function getClientResponses(
     };
   });
 
-  // Get filled entries (amount > 0) to determine which models are "sent"
-  const { data: filledEntries } = await supabase
-    .from("tax_entries")
-    .select("id")
-    .eq("company_id", companyId)
-    .in("tax_model_id", models.map((m) => m.id))
-    .gt("amount", 0);
+  // Relevant entries: informative models (any amount, including 0) + non-informative with amount > 0
+  const modelInfoMap = new Map(models.map((m) => [m.id, m.is_informative ?? false]));
+  const relevantEntryIds = new Set(
+    entries
+      .filter((e) => modelInfoMap.get(e.tax_model_id) ? true : Number(e.amount) > 0)
+      .map((e) => e.id)
+  );
 
-  const filledEntryIds = new Set((filledEntries ?? []).map((e) => e.id));
-
-  // allAccepted = all filled entries have a response with status 'accepted'
-  const filledResponses = (rawResponses ?? []).filter((r) => filledEntryIds.has(r.tax_entry_id));
+  const relevantResponses = (rawResponses ?? []).filter((r) => relevantEntryIds.has(r.tax_entry_id));
   const allAccepted =
-    filledEntryIds.size > 0 &&
-    filledResponses.length === filledEntryIds.size &&
-    filledResponses.every((r) => r.status === "accepted");
+    relevantEntryIds.size > 0 &&
+    relevantResponses.length === relevantEntryIds.size &&
+    relevantResponses.every((r) => r.status === "accepted");
 
   return {
     submitted: !!submission,
@@ -395,14 +405,18 @@ export async function notifyPresentation(
 
   if (!models || models.length === 0) throw new Error("No hay modelos para este trimestre.");
 
-  const { data: entries } = await supabase
+  const { data: allEntries } = await supabase
     .from("tax_entries")
     .select("id, tax_model_id, amount, entry_type")
     .eq("company_id", companyId)
-    .in("tax_model_id", models.map((m) => m.id))
-    .gt("amount", 0);
+    .in("tax_model_id", models.map((m) => m.id));
 
-  if (!entries || entries.length === 0) throw new Error("No hay modelos con importe.");
+  const modelIsInformative = new Map(models.map((m) => [m.id, m.is_informative ?? false]));
+  const entries = (allEntries ?? []).filter((e) =>
+    modelIsInformative.get(e.tax_model_id) ? true : Number(e.amount) > 0
+  );
+
+  if (entries.length === 0) throw new Error("No hay modelos a presentar.");
 
   const { data: responses } = await supabase
     .from("tax_client_responses")

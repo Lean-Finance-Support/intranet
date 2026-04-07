@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { getModelsWithEntries, saveEntries, getClientResponses } from "../actions";
+import { getModelsWithEntries, saveEntries, deleteEntry, getClientResponses } from "../actions";
 import type { ClientResponseStatus } from "../actions";
 import type { TaxModelWithEntry } from "@/lib/types/tax";
 
@@ -25,6 +25,7 @@ interface LocalEntry {
   amount: string;
   entry_type: "pagar" | "percibir";
   is_informative: boolean;
+  selected: boolean; // for informative models: whether included in the notification
   dirty: boolean;
 }
 
@@ -55,9 +56,13 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
           tax_model_id: m.id,
           model_code: m.model_code,
           description: m.description,
-          amount: m.entry?.amount?.toString() ?? "",
+          // For informative models: show amount only if > 0 (amount=0 means "selected with no amount")
+          amount: m.is_informative
+            ? (m.entry?.amount && Number(m.entry.amount) !== 0 ? m.entry.amount.toString() : "")
+            : (m.entry?.amount?.toString() ?? ""),
           entry_type: m.entry?.entry_type ?? "pagar",
           is_informative: m.is_informative ?? false,
+          selected: m.is_informative ? m.entry !== null : true,
           dirty: false,
         }))
       );
@@ -79,28 +84,63 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
 
   function updateEntry(index: number, field: "amount" | "entry_type", value: string) {
     setEntries((prev) =>
+      prev.map((e, i) => {
+        if (i !== index) return e;
+        // Auto-select informative models when an amount is typed
+        if (field === "amount" && e.is_informative && value !== "") {
+          return { ...e, [field]: value, selected: true, dirty: true };
+        }
+        return { ...e, [field]: value, dirty: true };
+      })
+    );
+  }
+
+  function updateInformativeSelection(index: number, checked: boolean) {
+    setEntries((prev) =>
       prev.map((e, i) =>
-        i === index ? { ...e, [field]: value, dirty: true } : e
+        i === index
+          ? { ...e, selected: checked, amount: checked ? e.amount : "", dirty: true }
+          : e
       )
     );
   }
 
   async function handleSave() {
-    const toSave = entries
-      .filter((e) => e.amount !== "" && e.dirty)
-      .map((e) => ({
-        tax_model_id: e.tax_model_id,
-        company_id: companyId,
-        amount: parseFloat(e.amount),
-        entry_type: e.entry_type as "pagar" | "percibir",
-      }));
+    const toSave: { tax_model_id: string; company_id: string; amount: number; entry_type: "pagar" | "percibir" }[] = [];
+    const toDelete: string[] = [];
 
-    if (toSave.length === 0) return;
+    for (const e of entries) {
+      if (!e.dirty) continue;
+      if (e.is_informative) {
+        if (e.selected) {
+          toSave.push({
+            tax_model_id: e.tax_model_id,
+            company_id: companyId,
+            amount: e.amount !== "" ? parseFloat(e.amount) : 0,
+            entry_type: e.entry_type as "pagar" | "percibir",
+          });
+        } else {
+          toDelete.push(e.tax_model_id);
+        }
+      } else {
+        if (e.amount !== "") {
+          toSave.push({
+            tax_model_id: e.tax_model_id,
+            company_id: companyId,
+            amount: parseFloat(e.amount),
+            entry_type: e.entry_type as "pagar" | "percibir",
+          });
+        }
+      }
+    }
+
+    if (toSave.length === 0 && toDelete.length === 0) return;
 
     setSaving(true);
     setSavedMessage("");
     try {
-      await saveEntries(toSave);
+      if (toSave.length > 0) await saveEntries(toSave);
+      for (const taxModelId of toDelete) await deleteEntry(companyId, taxModelId);
       setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
       setSavedMessage("Guardado correctamente");
       setTimeout(() => setSavedMessage(""), 3000);
@@ -112,20 +152,30 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
     }
   }
 
-  const hasDirty = entries.some((e) => e.dirty && e.amount !== "");
+  const hasDirty = entries.some((e) =>
+    e.is_informative ? e.dirty : (e.dirty && e.amount !== "")
+  );
 
   useImperativeHandle(ref, () => ({
     saveIfDirty: async () => {
-      const toSave = entries
-        .filter((e) => e.amount !== "" && e.dirty)
-        .map((e) => ({
-          tax_model_id: e.tax_model_id,
-          company_id: companyId,
-          amount: parseFloat(e.amount),
-          entry_type: e.entry_type as "pagar" | "percibir",
-        }));
-      if (toSave.length === 0) return;
-      await saveEntries(toSave);
+      const toSave: { tax_model_id: string; company_id: string; amount: number; entry_type: "pagar" | "percibir" }[] = [];
+      const toDelete: string[] = [];
+      for (const e of entries) {
+        if (!e.dirty) continue;
+        if (e.is_informative) {
+          if (e.selected) {
+            toSave.push({ tax_model_id: e.tax_model_id, company_id: companyId, amount: e.amount !== "" ? parseFloat(e.amount) : 0, entry_type: e.entry_type as "pagar" | "percibir" });
+          } else {
+            toDelete.push(e.tax_model_id);
+          }
+        } else {
+          if (e.amount !== "") {
+            toSave.push({ tax_model_id: e.tax_model_id, company_id: companyId, amount: parseFloat(e.amount), entry_type: e.entry_type as "pagar" | "percibir" });
+          }
+        }
+      }
+      if (toSave.length > 0) await saveEntries(toSave);
+      for (const taxModelId of toDelete) await deleteEntry(companyId, taxModelId);
       setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
     },
   }), [entries, companyId]);
@@ -255,7 +305,22 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                   </td>
                   <td className="py-3 px-4">
                     {entry.is_informative ? (
-                      <span className="text-sm text-text-muted italic">Informativo</span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm text-text-muted italic">Informativo</span>
+                        {canEdit && !presented ? (
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={entry.selected}
+                              onChange={(e) => updateInformativeSelection(index, e.target.checked)}
+                              className="accent-brand-teal"
+                            />
+                            <span className="text-xs text-text-muted">Incluir</span>
+                          </label>
+                        ) : entry.selected ? (
+                          <span className="text-xs text-green-600 font-medium">Incluido</span>
+                        ) : null}
+                      </div>
                     ) : (
                       <div className="flex gap-4">
                         <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>

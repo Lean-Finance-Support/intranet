@@ -69,9 +69,12 @@ export async function getClientQuarterData(
     throw new Error("Error al procesar la solicitud.");
   }
 
-  const filledEntries = (rawEntries ?? []).filter(
-    (e) => e.amount !== null && Number(e.amount) !== 0
-  );
+  const modelsMap = new Map(models.map((m) => [m.id, m]));
+  // Include: non-informative with amount > 0, OR informative with any entry (even amount=0)
+  const filledEntries = (rawEntries ?? []).filter((e) => {
+    const model = modelsMap.get(e.tax_model_id);
+    return model?.is_informative ? e.amount !== null : (e.amount !== null && Number(e.amount) !== 0);
+  });
 
   if (filledEntries.length === 0) {
     return { notified: true, entries: [], submitted: false, submitted_at: null, presented };
@@ -103,7 +106,6 @@ export async function getClientQuarterData(
     .maybeSingle();
 
   // Build result
-  const modelsMap = new Map(models.map((m) => [m.id, m]));
   const entries: TaxEntryForClient[] = filledEntries.map((e) => {
     const model = modelsMap.get(e.tax_model_id)!;
     return {
