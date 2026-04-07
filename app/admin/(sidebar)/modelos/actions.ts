@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
-import type { Company, TaxModelWithEntry, EntryPayload } from "@/lib/types/tax";
+import type { Company, TaxModelWithEntry, EntryPayload, TaxModelStatus } from "@/lib/types/tax";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 
 async function requireServiceAdmin(serviceSlug: string) {
@@ -161,24 +161,27 @@ export async function getNotificationStatus(
   companyId: string,
   year: number,
   quarter: number
-): Promise<{ notified: boolean; notified_at: string | null }> {
+): Promise<{ notified: boolean; notified_at: string | null; presented: boolean }> {
   if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
   if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase } = await requireFiscalAdmin();
 
-  const { data } = await supabase
+  const { data: notifications } = await supabase
     .from("tax_notifications")
-    .select("notified_at")
+    .select("notified_at, notification_type")
     .eq("company_id", companyId)
     .eq("year", year)
     .eq("quarter", quarter)
-    .order("notified_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("notified_at", { ascending: false });
+
+  const all = notifications ?? [];
+  const latest = all[0] ?? null;
+  const presented = all.some((n) => n.notification_type === "presentation");
 
   return {
-    notified: !!data,
-    notified_at: data?.notified_at ?? null,
+    notified: !!latest,
+    notified_at: latest?.notified_at ?? null,
+    presented,
   };
 }
 
@@ -213,11 +216,51 @@ export async function notifyClient(
   if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase, user } = await requireFiscalAdmin();
 
+  // Get the last notification date for this company/quarter
+  const { data: lastNotification } = await supabase
+    .from("tax_notifications")
+    .select("notified_at")
+    .eq("company_id", companyId)
+    .eq("year", year)
+    .eq("quarter", quarter)
+    .order("notified_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // If re-notifying, reset status to 'pending' for entries modified since last notification
+  if (lastNotification?.notified_at) {
+    const { data: models } = await supabase
+      .from("tax_models")
+      .select("id")
+      .eq("year", year)
+      .eq("quarter", quarter);
+
+    if (models && models.length > 0) {
+      // Find entries modified after last notification
+      const { data: modifiedEntries } = await supabase
+        .from("tax_entries")
+        .select("id")
+        .eq("company_id", companyId)
+        .in("tax_model_id", models.map((m) => m.id))
+        .gt("updated_at", lastNotification.notified_at);
+
+      if (modifiedEntries && modifiedEntries.length > 0) {
+        const modifiedEntryIds = modifiedEntries.map((e) => e.id);
+        await supabase
+          .from("tax_client_responses")
+          .update({ status: "pending", bank_account_id: null })
+          .in("tax_entry_id", modifiedEntryIds);
+      }
+    }
+  }
+
+  // Insert new notification record
   const { error } = await supabase.from("tax_notifications").insert({
     company_id: companyId,
     year,
     quarter,
     notified_by: user.id,
+    notification_type: "update",
   });
 
   if (error) {
@@ -236,8 +279,8 @@ export async function notifyClient(
     await supabase.from("notifications").insert({
       recipient_id: link.profile_id,
       company_id: companyId,
-      title: "Modelos de impuestos disponibles",
-      message: `Ya están disponibles tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
+      title: "Modelos de impuestos actualizados",
+      message: `Se han actualizado tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
       link: "/modelos",
     });
   }
@@ -247,7 +290,7 @@ export async function notifyClient(
 
 export interface ClientResponseStatus {
   tax_model_id: string;
-  approved: boolean;
+  status: TaxModelStatus;
   bank_account_iban: string;
   bank_account_label: string | null;
 }
@@ -260,6 +303,7 @@ export async function getClientResponses(
   submitted: boolean;
   submitted_at: string | null;
   responses: ClientResponseStatus[];
+  allAccepted: boolean;
 }> {
   const { supabase } = await requireFiscalAdmin();
 
@@ -278,7 +322,7 @@ export async function getClientResponses(
     .eq("quarter", quarter);
 
   if (!models || models.length === 0) {
-    return { submitted: false, submitted_at: null, responses: [] };
+    return { submitted: false, submitted_at: null, responses: [], allAccepted: false };
   }
 
   const { data: entries } = await supabase
@@ -288,12 +332,12 @@ export async function getClientResponses(
     .in("tax_model_id", models.map((m) => m.id));
 
   if (!entries || entries.length === 0) {
-    return { submitted: false, submitted_at: null, responses: [] };
+    return { submitted: false, submitted_at: null, responses: [], allAccepted: false };
   }
 
   const { data: rawResponses } = await supabase
     .from("tax_client_responses")
-    .select("tax_entry_id, approved, bank_account:company_bank_accounts(iban, label)")
+    .select("tax_entry_id, status, bank_account:company_bank_accounts(iban, label)")
     .in("tax_entry_id", entries.map((e) => e.id));
 
   const entryToModel = new Map(entries.map((e) => [e.id, e.tax_model_id]));
@@ -302,15 +346,106 @@ export async function getClientResponses(
     const bank = r.bank_account as unknown as { iban: string; label: string | null } | null;
     return {
       tax_model_id: entryToModel.get(r.tax_entry_id) ?? "",
-      approved: r.approved,
+      status: r.status as TaxModelStatus,
       bank_account_iban: bank?.iban ?? "",
       bank_account_label: bank?.label ?? null,
     };
   });
 
+  // Get filled entries (amount > 0) to determine which models are "sent"
+  const { data: filledEntries } = await supabase
+    .from("tax_entries")
+    .select("id")
+    .eq("company_id", companyId)
+    .in("tax_model_id", models.map((m) => m.id))
+    .gt("amount", 0);
+
+  const filledEntryIds = new Set((filledEntries ?? []).map((e) => e.id));
+
+  // allAccepted = all filled entries have a response with status 'accepted'
+  const filledResponses = (rawResponses ?? []).filter((r) => filledEntryIds.has(r.tax_entry_id));
+  const allAccepted =
+    filledEntryIds.size > 0 &&
+    filledResponses.length === filledEntryIds.size &&
+    filledResponses.every((r) => r.status === "accepted");
+
   return {
     submitted: !!submission,
     submitted_at: submission?.submitted_at ?? null,
     responses,
+    allAccepted,
   };
+}
+
+export async function notifyPresentation(
+  companyId: string,
+  year: number,
+  quarter: number
+): Promise<void> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
+  const { supabase, user } = await requireFiscalAdmin();
+
+  // Verify all models are accepted before sending
+  const { data: models } = await supabase
+    .from("tax_models")
+    .select("id, model_code, is_informative")
+    .eq("year", year)
+    .eq("quarter", quarter);
+
+  if (!models || models.length === 0) throw new Error("No hay modelos para este trimestre.");
+
+  const { data: entries } = await supabase
+    .from("tax_entries")
+    .select("id, tax_model_id, amount, entry_type")
+    .eq("company_id", companyId)
+    .in("tax_model_id", models.map((m) => m.id))
+    .gt("amount", 0);
+
+  if (!entries || entries.length === 0) throw new Error("No hay modelos con importe.");
+
+  const { data: responses } = await supabase
+    .from("tax_client_responses")
+    .select("tax_entry_id, status")
+    .in("tax_entry_id", entries.map((e) => e.id));
+
+  const responseMap = new Map((responses ?? []).map((r) => [r.tax_entry_id, r.status]));
+  const allAccepted = entries.every((e) => responseMap.get(e.id) === "accepted");
+  if (!allAccepted) throw new Error("No todos los modelos están aceptados.");
+
+  const quarterLabel = `${quarter}T ${year}`;
+
+  // Get company name
+  const { data: company } = await supabase
+    .from("companies")
+    .select("legal_name, company_name")
+    .eq("id", companyId)
+    .single();
+
+  const companyName = company?.company_name ?? company?.legal_name ?? "Cliente";
+
+  // Insert notification record (presentation type)
+  await supabase.from("tax_notifications").insert({
+    company_id: companyId,
+    year,
+    quarter,
+    notified_by: user.id,
+    notification_type: "presentation",
+  });
+
+  // Notify clients
+  const { data: profileLinks } = await supabase
+    .from("profile_companies")
+    .select("profile_id")
+    .eq("company_id", companyId);
+
+  for (const link of profileLinks ?? []) {
+    await supabase.from("notifications").insert({
+      recipient_id: link.profile_id,
+      company_id: companyId,
+      title: "Modelos de impuestos presentados",
+      message: `Tu asesor ha presentado los modelos de impuestos del ${quarterLabel}.`,
+      link: "/modelos",
+    });
+  }
 }

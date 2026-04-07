@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import QuarterSelector from "./quarter-selector";
 import ClientSearch from "./client-search";
 import ModelsForm, { type ModelsFormHandle } from "./models-form";
@@ -10,15 +10,31 @@ import type { Company } from "@/lib/types/tax";
 export default function ModelosWorkspace() {
   const [quarter, setQuarter] = useState(1);
   const [company, setCompany] = useState<Company | null>(null);
+  const [allAccepted, setAllAccepted] = useState(false);
+  const [presented, setPresented] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const canEdit = company?.canEdit ?? true;
   const formRef = useRef<ModelsFormHandle>(null);
+
+  const handleClientDataLoaded = useCallback((data: { allAccepted: boolean; submitted: boolean }) => {
+    setAllAccepted(data.allAccepted);
+  }, []);
+
+  const handleNotified = useCallback(() => {
+    setReloadKey((k) => k + 1);
+  }, []);
+
+  function resetCompanyState() {
+    setPresented(false);
+    setAllAccepted(false);
+  }
 
   return (
     <div className="space-y-6">
       {/* Selector de trimestre */}
       <div>
         <label className="block text-sm font-medium text-text-muted mb-2">Trimestre</label>
-        <QuarterSelector selected={quarter} onChange={setQuarter} />
+        <QuarterSelector selected={quarter} onChange={(q) => { setQuarter(q); resetCompanyState(); }} />
       </div>
 
       {/* Buscador de cliente */}
@@ -26,8 +42,8 @@ export default function ModelosWorkspace() {
         <label className="block text-sm font-medium text-text-muted mb-2">Empresa</label>
         <ClientSearch
           selected={company}
-          onSelect={setCompany}
-          onClear={() => setCompany(null)}
+          onSelect={(c) => { setCompany(c); resetCompanyState(); }}
+          onClear={() => { setCompany(null); resetCompanyState(); }}
         />
       </div>
 
@@ -43,15 +59,22 @@ export default function ModelosWorkspace() {
               companyName={company.legal_name}
               quarter={quarter}
               canEdit={canEdit}
+              allAccepted={allAccepted}
+              presented={presented}
               onBeforeSend={() => formRef.current?.saveIfDirty() ?? Promise.resolve()}
+              onNotified={handleNotified}
+              onPresentationSent={() => setPresented(true)}
+              onStatusLoaded={(p) => setPresented(p)}
             />
           </div>
           <ModelsForm
-            key={`${company.id}-${quarter}`}
+            key={`${company.id}-${quarter}-${reloadKey}`}
             ref={formRef}
             companyId={company.id}
             quarter={quarter}
             canEdit={canEdit}
+            presented={presented}
+            onClientDataLoaded={handleClientDataLoaded}
           />
         </div>
       )}

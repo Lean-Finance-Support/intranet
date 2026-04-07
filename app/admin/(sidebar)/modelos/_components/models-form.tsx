@@ -14,6 +14,8 @@ interface ModelsFormProps {
   quarter: number;
   year?: number;
   canEdit?: boolean;
+  presented?: boolean;
+  onClientDataLoaded?: (data: { allAccepted: boolean; submitted: boolean }) => void;
 }
 
 interface LocalEntry {
@@ -27,7 +29,7 @@ interface LocalEntry {
 }
 
 const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function ModelsForm(
-  { companyId, quarter, year = 2026, canEdit = true }: ModelsFormProps,
+  { companyId, quarter, year = 2026, canEdit = true, presented = false, onClientDataLoaded }: ModelsFormProps,
   ref
 ) {
   const [entries, setEntries] = useState<LocalEntry[]>([]);
@@ -60,6 +62,10 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
         }))
       );
       setClientResponses(clientData);
+      onClientDataLoaded?.({
+        allAccepted: clientData.allAccepted,
+        submitted: clientData.submitted,
+      });
     } catch (err) {
       console.error("Error cargando modelos:", err);
     } finally {
@@ -161,8 +167,18 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
 
   return (
     <div>
-      {/* Banner solo lectura */}
-      {!canEdit && (
+      {/* Banner presentación — bloqueo definitivo */}
+      {presented && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-brand-navy/5 border border-brand-navy/20 flex items-center gap-2">
+          <svg className="w-4 h-4 text-brand-navy shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm text-brand-navy">Modelos presentados — este trimestre ya no admite cambios</span>
+        </div>
+      )}
+
+      {/* Banner solo lectura (no asignado) */}
+      {!canEdit && !presented && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2">
           <svg className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -227,11 +243,11 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                       step="0.01"
                       min="0"
                       value={entry.amount}
-                      onChange={(e) => canEdit && updateEntry(index, "amount", e.target.value)}
+                      onChange={(e) => canEdit && !presented && updateEntry(index, "amount", e.target.value)}
                       placeholder="0,00"
-                      readOnly={!canEdit}
+                      readOnly={!canEdit || presented}
                       className={`w-36 px-3 py-2 rounded-lg border text-text-body font-mono focus:outline-none transition-colors ${
-                        canEdit
+                        canEdit && !presented
                           ? "border-gray-200 focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
                           : "border-gray-100 bg-gray-50 text-text-muted cursor-default"
                       }`}
@@ -242,24 +258,24 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                       <span className="text-sm text-text-muted italic">Informativo</span>
                     ) : (
                       <div className="flex gap-4">
-                        <label className={`flex items-center gap-1.5 ${canEdit ? "cursor-pointer" : "cursor-default opacity-60"}`}>
+                        <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>
                           <input
                             type="radio"
                             name={`type-${entry.tax_model_id}`}
                             checked={entry.entry_type === "pagar"}
-                            onChange={() => canEdit && updateEntry(index, "entry_type", "pagar")}
-                            disabled={!canEdit}
+                            onChange={() => canEdit && !presented && updateEntry(index, "entry_type", "pagar")}
+                            disabled={!canEdit || presented}
                             className="accent-brand-teal"
                           />
                           <span className="text-sm text-text-body">A pagar</span>
                         </label>
-                        <label className={`flex items-center gap-1.5 ${canEdit ? "cursor-pointer" : "cursor-default opacity-60"}`}>
+                        <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>
                           <input
                             type="radio"
                             name={`type-${entry.tax_model_id}`}
                             checked={entry.entry_type === "percibir"}
-                            onChange={() => canEdit && updateEntry(index, "entry_type", "percibir")}
-                            disabled={!canEdit}
+                            onChange={() => canEdit && !presented && updateEntry(index, "entry_type", "percibir")}
+                            disabled={!canEdit || presented}
                             className="accent-brand-teal"
                           />
                           <span className="text-sm text-text-body">A compensar</span>
@@ -273,18 +289,26 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                     ) : (
                       <div className="flex flex-col gap-1">
                         <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                          response.approved ? "text-green-700" : "text-amber-700"
+                          response.status === "accepted"
+                            ? "text-green-700"
+                            : response.status === "rejected"
+                              ? "text-red-700"
+                              : "text-amber-700"
                         }`}>
-                          {response.approved ? (
+                          {response.status === "accepted" ? (
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : response.status === "rejected" ? (
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           ) : (
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01" />
                             </svg>
                           )}
-                          {response.approved ? "OK" : "Pendiente"}
+                          {response.status === "accepted" ? "Aceptado" : response.status === "rejected" ? "Rechazado" : "Pendiente"}
                         </span>
                         {response.bank_account_iban && (
                           <span className="text-xs text-text-muted font-mono">
@@ -304,7 +328,7 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
         </table>
       </div>
 
-      {canEdit && (
+      {canEdit && !presented && (
         <div className="flex items-center gap-4 mt-6">
           <button
             onClick={handleSave}

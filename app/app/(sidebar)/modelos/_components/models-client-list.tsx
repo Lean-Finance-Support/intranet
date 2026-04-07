@@ -8,7 +8,7 @@ import {
   submitQuarter,
   getAdvisorContactInfo,
 } from "../actions";
-import type { TaxEntryForClient } from "@/lib/types/tax";
+import type { TaxEntryForClient, TaxModelStatus } from "@/lib/types/tax";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import AddBankAccountModal from "./add-bank-account-modal";
 
@@ -18,9 +18,10 @@ interface ModelsClientListProps {
 }
 
 interface LocalEntry extends TaxEntryForClient {
-  approved: boolean;
+  status: TaxModelStatus;
   selectedBankAccountId: string;
   dirty: boolean;
+  ibanError: boolean; // tried to accept without IBAN
 }
 
 export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientListProps) {
@@ -28,8 +29,8 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
   const [bankAccounts, setBankAccounts] = useState<CompanyBankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [notified, setNotified] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
+  const [presented, setPresented] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -50,8 +51,8 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
       setCompanyName(contactInfo.companyName);
 
       setNotified(quarterData.notified);
-      setSubmitted(quarterData.submitted);
       setSubmittedAt(quarterData.submitted_at);
+      setPresented(quarterData.presented);
       setBankAccounts(accounts);
 
       const defaultAccount = accounts.find((a) => a.is_default);
@@ -59,10 +60,11 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
       setEntries(
         quarterData.entries.map((e) => ({
           ...e,
-          approved: e.client_response?.approved ?? false,
+          status: e.client_response?.status ?? "pending",
           selectedBankAccountId:
             e.client_response?.bank_account_id ?? defaultAccount?.id ?? "",
           dirty: false,
+          ibanError: false,
         }))
       );
     } catch (err) {
@@ -76,31 +78,54 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
     loadData();
   }, [loadData]);
 
-  function toggleApproval(index: number) {
-    if (submitted) return;
+  function tryAccept(index: number) {
+    if (presented) return;
+    const entry = entries[index];
+    // For non-informative models, IBAN must be selected before accepting
+    if (!entry.is_informative && !entry.selectedBankAccountId) {
+      setEntries((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, ibanError: true } : e))
+      );
+      return;
+    }
     setEntries((prev) =>
       prev.map((e, i) =>
-        i === index ? { ...e, approved: !e.approved, dirty: true } : e
+        i === index
+          ? { ...e, status: e.status === "accepted" ? "pending" : "accepted", dirty: true, ibanError: false }
+          : e
+      )
+    );
+  }
+
+  function tryReject(index: number) {
+    if (presented) return;
+    setEntries((prev) =>
+      prev.map((e, i) =>
+        i === index
+          ? { ...e, status: e.status === "rejected" ? "pending" : "rejected", dirty: true, ibanError: false }
+          : e
       )
     );
   }
 
   function changeBankAccount(index: number, bankAccountId: string) {
-    if (submitted) return;
+    if (presented) return;
     setEntries((prev) =>
       prev.map((e, i) =>
-        i === index ? { ...e, selectedBankAccountId: bankAccountId, dirty: true } : e
+        i === index
+          ? { ...e, selectedBankAccountId: bankAccountId, dirty: true, ibanError: false }
+          : e
       )
     );
   }
 
   async function handleSave() {
     const toSave = entries
-      .filter((e) => e.dirty && e.approved && (e.is_informative || e.selectedBankAccountId))
+      .filter((e) => e.dirty && e.status !== "pending")
       .map((e) => ({
         tax_entry_id: e.id,
-        bank_account_id: e.is_informative ? null : e.selectedBankAccountId,
-        approved: e.approved,
+        bank_account_id: e.is_informative ? null : (e.status === "accepted" ? e.selectedBankAccountId : null),
+        status: e.status,
       }));
 
     if (toSave.length === 0) return;
@@ -121,34 +146,41 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
   }
 
   async function handleSubmit() {
-    // All entries must be approved; non-informative ones also need a bank account
-    const allReady = entries.every((e) => e.approved && (e.is_informative || e.selectedBankAccountId));
-    if (!allReady) {
-      setMessage("Debes aprobar todos los modelos y seleccionar un IBAN para cada uno");
+    const allDecided = entries.every((e) => e.status === "accepted" || e.status === "rejected");
+    if (!allDecided) {
+      setMessage("Debes aceptar o rechazar todos los modelos antes de enviar");
       setTimeout(() => setMessage(""), 5000);
       return;
     }
 
-    // Save any unsaved changes first
-    const unsaved = entries.filter((e) => e.dirty);
-    if (unsaved.length > 0) {
-      await saveClientResponses(
-        unsaved.map((e) => ({
-          tax_entry_id: e.id,
-          bank_account_id: e.is_informative ? null : e.selectedBankAccountId,
-          approved: e.approved,
-        }))
-      );
+    const acceptedNeedIban = entries.some(
+      (e) => e.status === "accepted" && !e.is_informative && !e.selectedBankAccountId
+    );
+    if (acceptedNeedIban) {
+      setMessage("Selecciona un IBAN para cada modelo aceptado");
+      setTimeout(() => setMessage(""), 5000);
+      return;
     }
+
+    const toSave = entries
+      .filter((e) => e.status !== "pending")
+      .map((e) => ({
+        tax_entry_id: e.id,
+        bank_account_id: e.is_informative ? null : (e.status === "accepted" ? e.selectedBankAccountId : null),
+        status: e.status,
+      }));
 
     setSubmitting(true);
     setMessage("");
     try {
+      if (toSave.length > 0) {
+        await saveClientResponses(toSave);
+      }
       await submitQuarter(year, quarter);
-      setSubmitted(true);
       setSubmittedAt(new Date().toISOString());
       setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
       setMessage("Enviado correctamente al asesor fiscal");
+      setTimeout(() => setMessage(""), 5000);
     } catch (err) {
       console.error("Error enviando:", err);
       setMessage("Error al enviar");
@@ -184,10 +216,7 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
           <div key={i} className="border border-gray-100 rounded-xl p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-16 bg-gray-200 rounded" />
-                  <div className="h-5 w-20 bg-gray-100 rounded-full" />
-                </div>
+                <div className="h-4 w-16 bg-gray-200 rounded" />
                 <div className="h-3 w-32 bg-gray-100 rounded" />
                 <div className="h-6 w-24 bg-gray-200 rounded" />
               </div>
@@ -222,17 +251,10 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
           </svg>
         </div>
-        <p className="text-sm font-medium text-text-body mb-1">
-          No hay modelos con importe para este trimestre
-        </p>
-        <p className="text-xs text-text-muted">
-          Los modelos aparecerán aquí cuando el asesor los complete
-        </p>
+        <p className="text-sm font-medium text-text-body mb-1">No hay modelos con importe para este trimestre</p>
+        <p className="text-xs text-text-muted">Los modelos aparecerán aquí cuando el asesor los complete</p>
         {advisorEmails.length > 0 && (
-          <a
-            href={buildMailtoHref()}
-            className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
-          >
+          <a href={buildMailtoHref()} className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
@@ -244,23 +266,70 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
   }
 
   const hasDirty = entries.some((e) => e.dirty);
-  const allApproved = entries.every((e) => e.approved && (e.is_informative || e.selectedBankAccountId));
+  const allDecided = entries.every((e) => e.status === "accepted" || e.status === "rejected");
+  const canSubmit = allDecided && !entries.some((e) => e.status === "accepted" && !e.is_informative && !e.selectedBankAccountId);
+
+  const acceptedCount = entries.filter((e) => e.status === "accepted").length;
+  const rejectedCount = entries.filter((e) => e.status === "rejected").length;
+  const pendingCount = entries.filter((e) => e.status === "pending").length;
 
   return (
     <div>
-      {submitted && (
+      {/* Presented banner — locks everything */}
+      {presented && (
+        <div className="mb-6 p-4 bg-brand-navy/5 border border-brand-navy/20 rounded-xl flex items-center gap-3">
+          <svg className="w-5 h-5 text-brand-navy flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-sm font-medium text-brand-navy">Modelos presentados</p>
+            <p className="text-xs text-text-muted">Tu asesor ha presentado los modelos de este trimestre. No se pueden realizar más cambios.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Submission banner */}
+      {!presented && submittedAt && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
           <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           <div>
             <p className="text-sm font-medium text-green-800">Enviado al asesor fiscal</p>
-            {submittedAt && (
-              <p className="text-xs text-green-600">
-                {new Date(submittedAt).toLocaleString("es-ES")}
-              </p>
-            )}
+            <p className="text-xs text-green-600">
+              {new Date(submittedAt).toLocaleString("es-ES")} — Puedes modificar y volver a enviar si es necesario.
+            </p>
           </div>
+        </div>
+      )}
+
+      {/* Status summary */}
+      {(acceptedCount > 0 || rejectedCount > 0) && (
+        <div className="mb-4 flex gap-3 text-xs">
+          {acceptedCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-medium">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {acceptedCount} aceptado{acceptedCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {rejectedCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {rejectedCount} rechazado{rejectedCount !== 1 ? "s" : ""}
+            </span>
+          )}
+          {pendingCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-medium">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01" />
+              </svg>
+              {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
       )}
 
@@ -269,81 +338,92 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
           <div
             key={entry.id}
             className={`border rounded-xl p-4 transition-colors animate-fade-in-up ${
-              entry.approved
+              entry.status === "accepted"
                 ? "border-green-200 bg-green-50/50"
-                : "border-gray-200"
+                : entry.status === "rejected"
+                  ? "border-red-200 bg-red-50/50"
+                  : "border-gray-200"
             }`}
-            style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
+            style={{ animationDelay: `${index * 60}ms`, animationFillMode: "both" }}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-text-body">{entry.model_code}</span>
                   {entry.is_informative ? (
-                    <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-gray-100 text-text-muted">
-                      Informativo
-                    </span>
+                    <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-gray-100 text-text-muted">Informativo</span>
                   ) : (
-                    <span
-                      className={`text-sm font-medium px-2 py-0.5 rounded-full ${
-                        entry.entry_type === "pagar"
-                          ? "bg-red-50 text-red-700"
-                          : "bg-blue-50 text-blue-700"
-                      }`}
-                    >
+                    <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${entry.entry_type === "pagar" ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"}`}>
                       {entry.entry_type === "pagar" ? "A pagar" : "A compensar"}
                     </span>
                   )}
                 </div>
-                {entry.description && (
-                  <p className="text-xs text-text-muted mt-1">{entry.description}</p>
-                )}
-                <p className="text-lg font-semibold font-mono text-brand-navy mt-2">
-                  {formatAmount(entry.amount)}
-                </p>
+                {entry.description && <p className="text-xs text-text-muted mt-1">{entry.description}</p>}
+                <p className="text-lg font-semibold font-mono text-brand-navy mt-2">{formatAmount(entry.amount)}</p>
               </div>
 
-              <button
-                onClick={() => toggleApproval(index)}
-                disabled={submitted}
-                className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  submitted
-                    ? "cursor-default"
-                    : "cursor-pointer hover:opacity-80"
-                } ${
-                  entry.approved
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-text-muted"
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
+              {/* Reject (left) | Accept (right) — disabled when presented */}
+              {!presented && (
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => tryReject(index)}
+                    title="Rechazar"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                      entry.status === "rejected"
+                        ? "bg-red-500 text-white"
+                        : "bg-gray-100 text-text-muted hover:bg-red-100 hover:text-red-600"
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => tryAccept(index)}
+                    title="Aceptar"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                      entry.status === "accepted"
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* IBAN selector — only for non-informative models */}
+            {/* IBAN selector — always visible for non-informative models */}
             {!entry.is_informative && (
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <label className="block text-xs font-medium text-text-muted mb-1">
                   Cuenta de destino
+                  {entry.ibanError && (
+                    <span className="ml-2 text-red-600 font-normal">— Selecciona una cuenta antes de aceptar</span>
+                  )}
                 </label>
-                <div className="flex gap-2">
-                  <select
-                    value={entry.selectedBankAccountId}
-                    onChange={(e) => changeBankAccount(index, e.target.value)}
-                    disabled={submitted}
-                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal disabled:bg-gray-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Seleccionar cuenta...</option>
-                    {bankAccounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.iban}
-                        {account.label ? ` — ${account.label}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {!submitted && (
+                {presented ? (
+                  <p className="text-sm text-text-body font-mono">
+                    {bankAccounts.find((a) => a.id === entry.selectedBankAccountId)?.iban ?? "—"}
+                  </p>
+                ) : (
+                  <div className="flex gap-2">
+                    <select
+                      value={entry.selectedBankAccountId}
+                      onChange={(e) => changeBankAccount(index, e.target.value)}
+                      className={`flex-1 px-3 py-2 rounded-lg border text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal transition-colors ${
+                        entry.ibanError ? "border-red-400 bg-red-50" : "border-gray-200"
+                      }`}
+                    >
+                      <option value="">Seleccionar cuenta...</option>
+                      {bankAccounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.iban}{account.label ? ` — ${account.label}` : ""}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       onClick={() => setShowAddAccount(true)}
                       className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
@@ -351,16 +431,16 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
                     >
                       +
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Actions */}
-      {!submitted && (
+      {/* Actions — hidden when presented */}
+      {!presented && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-6 pt-6 border-t border-gray-200">
           <div className="flex gap-3">
             <button
@@ -372,14 +452,14 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!allApproved || submitting}
+              disabled={!canSubmit || submitting}
               className="px-6 py-2.5 bg-brand-teal text-white rounded-lg text-sm font-medium hover:bg-brand-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? "Enviando..." : "Enviar al asesor"}
             </button>
           </div>
           {message && (
-            <span className={`text-sm ${message.includes("Error") || message.includes("Debes") ? "text-red-500" : "text-green-600"}`}>
+            <span className={`text-sm ${message.includes("Error") || message.includes("Debes") || message.includes("Selecciona") ? "text-red-500" : "text-green-600"}`}>
               {message}
             </span>
           )}
@@ -388,10 +468,7 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
 
       {advisorEmails.length > 0 && (
         <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
-          <a
-            href={buildMailtoHref()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors"
-          >
+          <a href={buildMailtoHref()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import type {
   TaxEntryForClient,
   TaxClientResponsePayload,
+  TaxModelStatus,
 } from "@/lib/types/tax";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 
@@ -16,24 +17,27 @@ export async function getClientQuarterData(
   entries: TaxEntryForClient[];
   submitted: boolean;
   submitted_at: string | null;
+  presented: boolean;
 }> {
   if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
   if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase, companyId } = await requireClient();
 
   // Check if admin has notified for this quarter
-  const { data: notification } = await supabase
+  const { data: notifications } = await supabase
     .from("tax_notifications")
-    .select("notified_at")
+    .select("notified_at, notification_type")
     .eq("company_id", companyId)
     .eq("year", year)
     .eq("quarter", quarter)
-    .order("notified_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("notified_at", { ascending: false });
+
+  const allNotifications = notifications ?? [];
+  const notification = allNotifications[0] ?? null;
+  const presented = allNotifications.some((n) => n.notification_type === "presentation");
 
   if (!notification) {
-    return { notified: false, entries: [], submitted: false, submitted_at: null };
+    return { notified: false, entries: [], submitted: false, submitted_at: null, presented: false };
   }
 
   // Get tax models for this quarter
@@ -49,7 +53,7 @@ export async function getClientQuarterData(
     throw new Error("Error al procesar la solicitud.");
   }
   if (!models || models.length === 0) {
-    return { notified: true, entries: [], submitted: false, submitted_at: null };
+    return { notified: true, entries: [], submitted: false, submitted_at: null, presented };
   }
 
   // Get entries (only those with amount filled by admin)
@@ -70,30 +74,32 @@ export async function getClientQuarterData(
   );
 
   if (filledEntries.length === 0) {
-    return { notified: true, entries: [], submitted: false, submitted_at: null };
+    return { notified: true, entries: [], submitted: false, submitted_at: null, presented };
   }
 
   // Get client responses for these entries
   const entryIds = filledEntries.map((e) => e.id);
   const { data: responses } = await supabase
     .from("tax_client_responses")
-    .select("tax_entry_id, approved, bank_account_id")
+    .select("tax_entry_id, status, bank_account_id")
     .in("tax_entry_id", entryIds);
 
   const responsesByEntry = new Map(
     (responses ?? []).map((r) => [
       r.tax_entry_id,
-      { approved: r.approved, bank_account_id: r.bank_account_id },
+      { status: r.status as TaxModelStatus, bank_account_id: r.bank_account_id },
     ])
   );
 
-  // Check if already submitted
+  // Check latest submission
   const { data: submission } = await supabase
     .from("tax_client_submissions")
     .select("submitted_at")
     .eq("company_id", companyId)
     .eq("year", year)
     .eq("quarter", quarter)
+    .order("submitted_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   // Build result
@@ -123,6 +129,7 @@ export async function getClientQuarterData(
     entries,
     submitted: !!submission,
     submitted_at: submission?.submitted_at ?? null,
+    presented,
   };
 }
 
@@ -186,16 +193,17 @@ export async function saveClientResponses(
       {
         tax_entry_id: response.tax_entry_id,
         bank_account_id: response.bank_account_id ?? null,
-        approved: response.approved,
+        status: response.status,
+        approved: response.status === "accepted",
         approved_by: user.id,
         approved_at: new Date().toISOString(),
       },
       { onConflict: "tax_entry_id" }
     );
     if (error) {
-    console.error("[app/modelos] DB error:", error.code);
-    throw new Error("Error al procesar la solicitud.");
-  }
+      console.error("[app/modelos] DB error:", error.code);
+      throw new Error("Error al procesar la solicitud.");
+    }
   }
 }
 
@@ -263,7 +271,7 @@ export async function submitQuarter(
   if (year < 2000 || year > 2100) throw new Error("Año inválido");
   const { supabase, user, companyId } = await requireClient();
 
-  // Insert submission record
+  // Insert new submission record (multiple allowed)
   const { error: submitError } = await supabase
     .from("tax_client_submissions")
     .insert({
@@ -326,7 +334,7 @@ export async function submitQuarter(
     await supabase.from("notifications").insert({
       recipient_id: recipientId,
       company_id: companyId,
-      title: `${companyName} ha validado sus modelos`,
+      title: `${companyName} ha enviado sus respuestas`,
       message: `La empresa ${companyName} ha enviado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
       link: `/modelos`,
     });

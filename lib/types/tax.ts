@@ -1,3 +1,5 @@
+export type TaxModelStatus = "pending" | "accepted" | "rejected";
+
 export interface TaxModel {
   id: string;
   year: number;
@@ -60,7 +62,7 @@ export interface TaxEntryForClient {
   entry_type: "pagar" | "percibir";
   is_informative: boolean;
   client_response: {
-    approved: boolean;
+    status: TaxModelStatus;
     bank_account_id: string;
   } | null;
 }
@@ -68,5 +70,5 @@ export interface TaxEntryForClient {
 export interface TaxClientResponsePayload {
   tax_entry_id: string;
   bank_account_id: string | null;
-  approved: boolean;
+  status: TaxModelStatus;
 }
