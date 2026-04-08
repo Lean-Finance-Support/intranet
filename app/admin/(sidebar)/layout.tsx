@@ -31,11 +31,13 @@ export default async function AdminSidebarLayout({
   const isSuperadmin = profile?.role === "superadmin";
 
   let hasTaxModels = isSuperadmin;
+  let hasEnisaDocs = isSuperadmin;
   if (!isSuperadmin) {
     const deptIds = departments.map((d) => d.id);
     if (deptIds.length > 0) {
       const slugs = await getCachedDepartmentServiceSlugs(deptIds);
       hasTaxModels = slugs.includes("tax-models");
+      hasEnisaDocs = slugs.includes("enisa-docs");
     }
   }
 
@@ -49,6 +51,7 @@ export default async function AdminSidebarLayout({
           email: profile?.email ?? user.email ?? null,
         }}
         hasTaxModels={hasTaxModels}
+        hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
         unreadCount={unreadCount}
