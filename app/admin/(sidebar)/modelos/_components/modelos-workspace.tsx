@@ -7,7 +7,7 @@ import ModelsForm, { type ModelsFormHandle } from "./models-form";
 import NotifyButton from "./notify-button";
 import type { Company } from "@/lib/types/tax";
 
-export default function ModelosWorkspace() {
+export default function ModelosWorkspace({ initialCompanyId }: { initialCompanyId?: string }) {
   const [quarter, setQuarter] = useState(1);
   const [company, setCompany] = useState<Company | null>(null);
   const [allAccepted, setAllAccepted] = useState(false);
@@ -24,17 +24,24 @@ export default function ModelosWorkspace() {
     setReloadKey((k) => k + 1);
   }, []);
 
-  function resetCompanyState() {
+  const handleSelectCompany = useCallback((c: Company) => {
+    setCompany(c);
     setPresented(false);
     setAllAccepted(false);
-  }
+  }, []);
+
+  const handleClearCompany = useCallback(() => {
+    setCompany(null);
+    setPresented(false);
+    setAllAccepted(false);
+  }, []);
 
   return (
     <div className="space-y-6">
       {/* Selector de trimestre */}
       <div>
         <label className="block text-sm font-medium text-text-muted mb-2">Trimestre</label>
-        <QuarterSelector selected={quarter} onChange={(q) => { setQuarter(q); resetCompanyState(); }} />
+        <QuarterSelector selected={quarter} onChange={(q) => { setQuarter(q); setPresented(false); setAllAccepted(false); }} />
       </div>
 
       {/* Buscador de cliente */}
@@ -42,8 +49,9 @@ export default function ModelosWorkspace() {
         <label className="block text-sm font-medium text-text-muted mb-2">Empresa</label>
         <ClientSearch
           selected={company}
-          onSelect={(c) => { setCompany(c); resetCompanyState(); }}
-          onClear={() => { setCompany(null); resetCompanyState(); }}
+          initialCompanyId={initialCompanyId}
+          onSelect={handleSelectCompany}
+          onClear={handleClearCompany}
         />
       </div>
 

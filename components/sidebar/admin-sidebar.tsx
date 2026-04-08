@@ -34,6 +34,13 @@ function UsersIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    </svg>
+  );
+}
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -152,6 +159,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
   const modelosHref = `${linkPrefix}/modelos`;
   const notifHref = `${linkPrefix}/notificaciones`;
   const deptHref = `${linkPrefix}/departamento`;
+  const clientesHref = `${linkPrefix}/clientes`;
 
   const isActive = (href: string) => {
     const path = pathname ?? "";
@@ -173,6 +181,8 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
       )}
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={collapsed} badge={unreadCount} />
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
+      <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
+      <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
     </nav>
   );
 
@@ -256,6 +266,8 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
               )}
               <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={false} badge={unreadCount} />
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={false} />
+              <div className="my-2 border-t border-white/10 mx-2" />
+              <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
             </nav>
             <div className="border-t border-white/10 px-2 py-3">
               <div className="flex items-center gap-3 px-2 py-2">

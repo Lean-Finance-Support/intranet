@@ -8,14 +8,19 @@ import {
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
 
-export default async function ModelosPage() {
+export default async function ModelosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ company?: string }>;
+}) {
   const { user } = await getAuthUser();
   if (!user) redirect("/admin/login");
 
-  const [profile, departments, headersList] = await Promise.all([
+  const [profile, departments, headersList, resolvedParams] = await Promise.all([
     getCachedProfile(user.id),
     getCachedUserDepartments(user.id),
     headers(),
+    searchParams,
   ]);
 
   const host = headersList.get("host") ?? "";
@@ -42,7 +47,7 @@ export default async function ModelosPage() {
         <h1 className="font-heading text-2xl text-brand-navy mb-8">
           Modelos de Prestación de Impuestos
         </h1>
-        <ModelosWorkspace />
+        <ModelosWorkspace initialCompanyId={resolvedParams.company} />
       </div>
     </div>
   );

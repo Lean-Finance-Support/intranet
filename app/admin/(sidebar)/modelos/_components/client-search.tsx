@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { getAllCompanies } from "../actions";
 import type { Company } from "@/lib/types/tax";
 
 interface ClientSearchProps {
   selected: Company | null;
+  initialCompanyId?: string;
   onSelect: (company: Company) => void;
   onClear: () => void;
 }
@@ -25,18 +26,28 @@ function highlight(text: string, query: string): React.ReactNode {
   );
 }
 
-export default function ClientSearch({ selected, onSelect, onClear }: ClientSearchProps) {
+export default function ClientSearch({ selected, initialCompanyId, onSelect, onClear }: ClientSearchProps) {
   const [query, setQuery] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [onlyMine, setOnlyMine] = useState(false);
+  const autoSelectedRef = useRef(false);
 
   useEffect(() => {
     getAllCompanies()
-      .then(setCompanies)
+      .then((list) => {
+        setCompanies(list);
+        if (initialCompanyId && !autoSelectedRef.current) {
+          const match = list.find((c) => c.id === initialCompanyId);
+          if (match) {
+            autoSelectedRef.current = true;
+            onSelect(match);
+          }
+        }
+      })
       .catch(() => setCompanies([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialCompanyId, onSelect]);
 
   // Mostrar el toggle si el usuario tiene al menos una empresa asignada
   const myCount = companies.filter((c) => c.isAssigned).length;
