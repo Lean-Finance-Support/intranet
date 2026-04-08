@@ -387,9 +387,14 @@ export default function ClientDetailPanel({
               </div>
             ) : (
               <button onClick={() => setEditingName(true)} className="text-left group/name cursor-pointer" title="Editar nombre comercial">
-                <h2 className="text-lg font-bold font-heading text-brand-navy truncate group-hover/name:text-brand-navy/80">
-                  {company.company_name || company.legal_name}
-                </h2>
+                <div className="flex items-center gap-1.5">
+                  <h2 className="text-lg font-bold font-heading text-brand-navy truncate group-hover/name:text-brand-navy/80">
+                    {company.company_name || company.legal_name}
+                  </h2>
+                  <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 group-hover/name:text-brand-teal transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                  </svg>
+                </div>
                 {company.company_name && (
                   <p className="text-xs text-text-muted mt-0.5 truncate">{company.legal_name}</p>
                 )}

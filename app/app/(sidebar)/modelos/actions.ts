@@ -35,6 +35,7 @@ export async function getClientQuarterData(
   const allNotifications = notifications ?? [];
   const notification = allNotifications[0] ?? null;
   const presented = allNotifications.some((n) => n.notification_type === "presentation");
+  const latestUpdateNotification = allNotifications.find((n) => n.notification_type === "update") ?? null;
 
   if (!notification) {
     return { notified: false, entries: [], submitted: false, submitted_at: null, presented: false };
@@ -126,11 +127,18 @@ export async function getClientQuarterData(
     (a, b) => (orderMap.get(a.tax_model_id) ?? 0) - (orderMap.get(b.tax_model_id) ?? 0)
   );
 
+  // Submission banner should only show if the client submitted AFTER the last admin notification.
+  // If admin re-notified after the client's submission, the client owes a new response.
+  const submissionIsActive =
+    !!submission &&
+    (!latestUpdateNotification?.notified_at ||
+      submission.submitted_at > latestUpdateNotification.notified_at);
+
   return {
     notified: true,
     entries,
-    submitted: !!submission,
-    submitted_at: submission?.submitted_at ?? null,
+    submitted: submissionIsActive,
+    submitted_at: submissionIsActive ? submission!.submitted_at : null,
     presented,
   };
 }

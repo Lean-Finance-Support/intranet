@@ -321,13 +321,34 @@ export async function getClientResponses(
 }> {
   const { supabase } = await requireFiscalAdmin();
 
-  const { data: submission } = await supabase
-    .from("tax_client_submissions")
-    .select("submitted_at")
-    .eq("company_id", companyId)
-    .eq("year", year)
-    .eq("quarter", quarter)
-    .maybeSingle();
+  const [{ data: submission }, { data: lastUpdateNotification }] = await Promise.all([
+    supabase
+      .from("tax_client_submissions")
+      .select("submitted_at")
+      .eq("company_id", companyId)
+      .eq("year", year)
+      .eq("quarter", quarter)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("tax_notifications")
+      .select("notified_at")
+      .eq("company_id", companyId)
+      .eq("year", year)
+      .eq("quarter", quarter)
+      .eq("notification_type", "update")
+      .order("notified_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  // Submission is only "active" if it happened after the last admin notification.
+  // If admin re-notified after the client submitted, the client owes a new response.
+  const submissionIsActive =
+    !!submission &&
+    (!lastUpdateNotification?.notified_at ||
+      submission.submitted_at > lastUpdateNotification.notified_at);
 
   const { data: models } = await supabase
     .from("tax_models")
@@ -381,8 +402,8 @@ export async function getClientResponses(
     relevantResponses.every((r) => r.status === "accepted");
 
   return {
-    submitted: !!submission,
-    submitted_at: submission?.submitted_at ?? null,
+    submitted: submissionIsActive,
+    submitted_at: submissionIsActive ? submission!.submitted_at : null,
     responses,
     allAccepted,
   };
