@@ -146,9 +146,9 @@ export async function middleware(request: NextRequest) {
 
   // Todo OK → aplicar rewrite en producción
   if (isProdDomain) {
-    return NextResponse.rewrite(
-      new URL(`/${space}${pathname}`, request.url)
-    );
+    const rewriteUrl = new URL(`/${space}${pathname}`, request.url);
+    rewriteUrl.search = request.nextUrl.search;
+    return NextResponse.rewrite(rewriteUrl);
   }
 
   return supabaseResponse;
