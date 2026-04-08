@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -61,10 +62,13 @@ export default async function SelectDepartmentPage() {
     <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
       <div className="max-w-lg w-full space-y-4">
         <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-          <img
+          <Image
             src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
             alt="LeanFinance"
-            className="h-8 mx-auto mb-6"
+            width={279}
+            height={96}
+            className="h-8 w-auto mx-auto mb-6"
+            priority
           />
           <h1 className="text-2xl font-bold font-heading text-brand-navy mt-1 mb-2">
             Selecciona un espacio

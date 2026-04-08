@@ -440,12 +440,18 @@ export async function assignAllMembers(companyId: string, serviceId: string, dep
     .select("profile_id")
     .eq("department_id", departmentId);
 
-  for (const link of memberLinks ?? []) {
+  const rows = (memberLinks ?? []).map((link) => ({
+    company_id: companyId,
+    service_id: serviceId,
+    technician_id: link.profile_id,
+  }));
+
+  if (rows.length > 0) {
     const { error } = await supabase
       .from("company_technicians")
-      .insert({ company_id: companyId, service_id: serviceId, technician_id: link.profile_id });
+      .upsert(rows, { onConflict: "company_id,service_id,technician_id", ignoreDuplicates: true });
 
-    if (error && error.code !== "23505") {
+    if (error) {
       console.error("[admin/departamento] assignAllMembers error:", error.code);
       throw new Error("Error al asignar miembros.");
     }

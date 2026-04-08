@@ -22,6 +22,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "leanfinance.es",
+        pathname: "/wp-content/uploads/**",
+      },
+    ],
   },
   turbopack: {
     root: ".",

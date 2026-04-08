@@ -81,11 +81,18 @@ export async function getAllCompanies(): Promise<Company[]> {
   const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("companies")
-    .select("id, legal_name, company_name, nif")
-    .in("id", serviceCompanyIds)
-    .order("legal_name");
+  const [{ data, error }, { data: assignments }] = await Promise.all([
+    supabase
+      .from("companies")
+      .select("id, legal_name, company_name, nif")
+      .in("id", serviceCompanyIds)
+      .order("legal_name"),
+    supabase
+      .from("company_technicians")
+      .select("company_id")
+      .eq("technician_id", user.id)
+      .eq("service_id", svc.id),
+  ]);
 
   if (error) {
     console.error("[admin/modelos] DB error:", error.code);
@@ -93,13 +100,6 @@ export async function getAllCompanies(): Promise<Company[]> {
   }
 
   const companies = data ?? [];
-
-  // Asignaciones del usuario como técnico (aplica a cualquier rol)
-  const { data: assignments } = await supabase
-    .from("company_technicians")
-    .select("company_id")
-    .eq("technician_id", user.id)
-    .eq("service_id", svc.id);
 
   const assignedIds = new Set((assignments ?? []).map((a) => a.company_id as string));
 
@@ -188,22 +188,23 @@ export async function getNotificationStatus(
 export async function saveEntries(entries: EntryPayload[]): Promise<void> {
   const { supabase, user } = await requireFiscalAdmin();
 
-  for (const entry of entries) {
-    const { error } = await supabase.from("tax_entries").upsert(
-      {
-        company_id: entry.company_id,
-        tax_model_id: entry.tax_model_id,
-        amount: entry.amount,
-        entry_type: entry.entry_type,
-        filled_by: user.id,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "company_id,tax_model_id" }
-    );
-    if (error) {
-      console.error("[admin/modelos] DB error:", error.code);
-      throw new Error("Error al procesar la solicitud.");
-    }
+  const now = new Date().toISOString();
+  const rows = entries.map((e) => ({
+    company_id: e.company_id,
+    tax_model_id: e.tax_model_id,
+    amount: e.amount,
+    entry_type: e.entry_type,
+    filled_by: user.id,
+    updated_at: now,
+  }));
+
+  const { error } = await supabase
+    .from("tax_entries")
+    .upsert(rows, { onConflict: "company_id,tax_model_id" });
+
+  if (error) {
+    console.error("[admin/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
   }
 }
 
@@ -453,13 +454,15 @@ export async function notifyPresentation(
     .select("profile_id")
     .eq("company_id", companyId);
 
-  for (const link of profileLinks ?? []) {
-    await supabase.from("notifications").insert({
-      recipient_id: link.profile_id,
-      company_id: companyId,
-      title: "Modelos de impuestos presentados",
-      message: `Tu asesor ha presentado los modelos de impuestos del ${quarterLabel}.`,
-      link: "/modelos",
-    });
+  const notificationRows = (profileLinks ?? []).map((link) => ({
+    recipient_id: link.profile_id,
+    company_id: companyId,
+    title: "Modelos de impuestos presentados",
+    message: `Tu asesor ha presentado los modelos de impuestos del ${quarterLabel}.`,
+    link: "/modelos",
+  }));
+
+  if (notificationRows.length > 0) {
+    await supabase.from("notifications").insert(notificationRows);
   }
 }

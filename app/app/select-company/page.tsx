@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -33,10 +34,13 @@ export default async function SelectCompanyPage() {
     <div className="min-h-screen bg-surface-gray flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <img
+          <Image
             src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
             alt="LeanFinance"
-            className="h-20 mx-auto mb-6"
+            width={279}
+            height={96}
+            className="h-20 w-auto mx-auto mb-6"
+            priority
           />
           <h1 className="text-xl font-semibold text-brand-navy">
             Selecciona un espacio

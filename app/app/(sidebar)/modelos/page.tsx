@@ -11,12 +11,13 @@ export default async function ClientModelosPage() {
   const { user } = await getAuthUser();
   if (!user) redirect("/app/login");
 
-  const headersList = await headers();
+  const [headersList, activeCompanyId] = await Promise.all([
+    headers(),
+    getActiveCompanyId(),
+  ]);
   const host = headersList.get("host") ?? "";
   const isProd = host === "app.leanfinance.es";
   const prefix = isProd ? "" : "/app";
-
-  const activeCompanyId = await getActiveCompanyId();
   if (!activeCompanyId) {
     redirect(`${prefix}/select-company`);
   }

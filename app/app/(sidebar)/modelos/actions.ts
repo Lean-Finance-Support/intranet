@@ -190,22 +190,23 @@ export async function saveClientResponses(
 ): Promise<void> {
   const { supabase, user } = await requireClient();
 
-  for (const response of responses) {
-    const { error } = await supabase.from("tax_client_responses").upsert(
-      {
-        tax_entry_id: response.tax_entry_id,
-        bank_account_id: response.bank_account_id ?? null,
-        status: response.status,
-        approved: response.status === "accepted",
-        approved_by: user.id,
-        approved_at: new Date().toISOString(),
-      },
-      { onConflict: "tax_entry_id" }
-    );
-    if (error) {
-      console.error("[app/modelos] DB error:", error.code);
-      throw new Error("Error al procesar la solicitud.");
-    }
+  const now = new Date().toISOString();
+  const rows = responses.map((r) => ({
+    tax_entry_id: r.tax_entry_id,
+    bank_account_id: r.bank_account_id ?? null,
+    status: r.status,
+    approved: r.status === "accepted",
+    approved_by: user.id,
+    approved_at: now,
+  }));
+
+  const { error } = await supabase
+    .from("tax_client_responses")
+    .upsert(rows, { onConflict: "tax_entry_id" });
+
+  if (error) {
+    console.error("[app/modelos] DB error:", error.code);
+    throw new Error("Error al procesar la solicitud.");
   }
 }
 
@@ -216,19 +217,20 @@ export async function getAdvisorContactInfo(): Promise<{
   const { supabase, companyId } = await requireClient();
   const admin = createAdminClient();
 
-  const { data: company } = await supabase
-    .from("companies")
-    .select("legal_name, company_name")
-    .eq("id", companyId)
-    .single();
+  const [{ data: company }, { data: taxService }] = await Promise.all([
+    supabase
+      .from("companies")
+      .select("legal_name, company_name")
+      .eq("id", companyId)
+      .single(),
+    admin
+      .from("services")
+      .select("id")
+      .eq("slug", "tax-models")
+      .single(),
+  ]);
 
   const companyName = company?.company_name ?? company?.legal_name ?? "";
-
-  const { data: taxService } = await admin
-    .from("services")
-    .select("id")
-    .eq("slug", "tax-models")
-    .single();
 
   if (!taxService) return { emails: [], companyName };
 
@@ -331,14 +333,16 @@ export async function submitQuarter(
   const companyName = company?.legal_name ?? "Cliente";
   const quarterLabel = `${quarter}T ${year}`;
 
-  // Create notifications for each recipient
-  for (const recipientId of recipients) {
-    await supabase.from("notifications").insert({
-      recipient_id: recipientId,
-      company_id: companyId,
-      title: `${companyName} ha enviado sus respuestas`,
-      message: `La empresa ${companyName} ha enviado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
-      link: `/modelos`,
-    });
+  // Create notifications for all recipients in a single insert
+  const notificationRows = [...recipients].map((recipientId) => ({
+    recipient_id: recipientId,
+    company_id: companyId,
+    title: `${companyName} ha enviado sus respuestas`,
+    message: `La empresa ${companyName} ha enviado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
+    link: `/modelos`,
+  }));
+
+  if (notificationRows.length > 0) {
+    await supabase.from("notifications").insert(notificationRows);
   }
 }
