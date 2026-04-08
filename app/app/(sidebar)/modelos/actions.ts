@@ -258,7 +258,7 @@ export async function getAdvisorContactInfo(): Promise<{
   const { data: fiscalDept } = await admin
     .from("departments")
     .select("id")
-    .eq("slug", "asesoria-fiscal")
+    .eq("slug", "asesoria-fiscal-y-laboral")
     .single();
 
   if (!fiscalDept) return { emails: [], companyName };
@@ -324,7 +324,7 @@ export async function submitQuarter(
   const { data: fiscalDept } = await supabase
     .from("departments")
     .select("id")
-    .eq("slug", "asesoria-fiscal")
+    .eq("slug", "asesoria-fiscal-y-laboral")
     .single();
 
   const { data: chiefs } = fiscalDept
