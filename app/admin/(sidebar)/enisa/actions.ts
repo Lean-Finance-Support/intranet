@@ -115,6 +115,8 @@ export async function getCompanyEnisaData(companyId: string): Promise<{
   boxes: EnisaBoxData[];
   welcomeEmailSent: boolean;
   welcomeEmailSentAt: string | null;
+  lastUpdateSentAt: string | null;
+  updateCount: number;
   lastSubmittedAt: string | null;
 }> {
   await requireEnisaAdmin();
@@ -125,7 +127,7 @@ export async function getCompanyEnisaData(companyId: string): Promise<{
     { data: reviews },
     { data: credentials },
     { data: submissions },
-    { data: welcomeEmail },
+    { data: notifications },
   ] = await Promise.all([
     admin
       .from("enisa_documents")
@@ -148,10 +150,10 @@ export async function getCompanyEnisaData(companyId: string): Promise<{
       .order("submitted_at", { ascending: false })
       .limit(1),
     admin
-      .from("enisa_welcome_emails")
-      .select("sent_at")
+      .from("enisa_notifications")
+      .select("notification_type, sent_at")
       .eq("company_id", companyId)
-      .maybeSingle(),
+      .order("sent_at", { ascending: false }),
   ]);
 
   const docsByType = new Map<string, EnisaDocument[]>();
@@ -186,11 +188,17 @@ export async function getCompanyEnisaData(companyId: string): Promise<{
   });
 
   const lastSub = (submissions ?? [])[0] ?? null;
+  const allNotifs = notifications ?? [];
+  const welcomeNotif = allNotifs.find((n) => n.notification_type === "welcome") ?? null;
+  const updateNotifs = allNotifs.filter((n) => n.notification_type === "update");
+  const lastUpdateNotif = updateNotifs[0] ?? null;
 
   return {
     boxes,
-    welcomeEmailSent: !!welcomeEmail,
-    welcomeEmailSentAt: welcomeEmail?.sent_at ?? null,
+    welcomeEmailSent: !!welcomeNotif,
+    welcomeEmailSentAt: welcomeNotif?.sent_at ?? null,
+    lastUpdateSentAt: lastUpdateNotif?.sent_at ?? null,
+    updateCount: updateNotifs.length,
     lastSubmittedAt: lastSub?.submitted_at ?? null,
   };
 }
@@ -213,32 +221,6 @@ export async function validateBox(companyId: string, typeKey: string): Promise<v
       },
       { onConflict: "company_id,document_type_key" }
     );
-
-  // Notify client
-  const { data: profileCompanies } = await admin
-    .from("profile_companies")
-    .select("profile_id")
-    .eq("company_id", companyId);
-
-  const { data: company } = await admin
-    .from("companies")
-    .select("legal_name")
-    .eq("id", companyId)
-    .single();
-
-  const docType = ENISA_DOCUMENT_TYPES.find((dt) => dt.key === typeKey);
-
-  const notifRows = (profileCompanies ?? []).map((pc) => ({
-    recipient_id: pc.profile_id as string,
-    company_id: companyId,
-    title: "Documento ENISA validado",
-    message: `El apartado "${docType?.title ?? typeKey}" ha sido validado por tu asesor.`,
-    link: "/enisa",
-  }));
-
-  if (notifRows.length > 0) {
-    await admin.from("notifications").insert(notifRows);
-  }
 }
 
 export async function rejectBox(
@@ -265,26 +247,6 @@ export async function rejectBox(
       },
       { onConflict: "company_id,document_type_key" }
     );
-
-  // Notify client
-  const { data: profileCompanies } = await admin
-    .from("profile_companies")
-    .select("profile_id")
-    .eq("company_id", companyId);
-
-  const docType = ENISA_DOCUMENT_TYPES.find((dt) => dt.key === typeKey);
-
-  const notifRows = (profileCompanies ?? []).map((pc) => ({
-    recipient_id: pc.profile_id as string,
-    company_id: companyId,
-    title: "Documento ENISA rechazado",
-    message: `El apartado "${docType?.title ?? typeKey}" ha sido rechazado. Motivo: ${comment.trim()}`,
-    link: "/enisa",
-  }));
-
-  if (notifRows.length > 0) {
-    await admin.from("notifications").insert(notifRows);
-  }
 }
 
 export async function getDownloadUrl(
@@ -316,46 +278,49 @@ export async function sendWelcomeEmail(companyId: string): Promise<void> {
   const { user } = await requireEnisaAdmin();
   const admin = createAdminClient();
 
-  // Check if already sent
+  // Only one welcome per company
   const { data: existing } = await admin
-    .from("enisa_welcome_emails")
-    .select("company_id")
+    .from("enisa_notifications")
+    .select("id")
     .eq("company_id", companyId)
+    .eq("notification_type", "welcome")
     .maybeSingle();
 
   if (existing) throw new Error("El email de bienvenida ya fue enviado para esta empresa.");
 
-  // Check there are client profiles linked
   const { count } = await admin
     .from("profile_companies")
     .select("profile_id", { count: "exact", head: true })
     .eq("company_id", companyId);
 
-  if ((count ?? 0) === 0) {
-    throw new Error("No hay usuarios vinculados a esta empresa.");
-  }
+  if ((count ?? 0) === 0) throw new Error("No hay usuarios vinculados a esta empresa.");
 
-  // Insert triggers the notify-enisa-welcome Edge Function automatically
-  await admin.from("enisa_welcome_emails").insert({
+  // Insert triggers the Edge Function notify-enisa-welcome
+  await admin.from("enisa_notifications").insert({
     company_id: companyId,
     sent_by: user.id,
+    notification_type: "welcome",
   });
+}
 
-  // Create in-app notification
-  const { data: pcIds } = await admin
-    .from("profile_companies")
-    .select("profile_id")
-    .eq("company_id", companyId);
+export async function sendUpdateEmail(companyId: string): Promise<void> {
+  const { user } = await requireEnisaAdmin();
+  const admin = createAdminClient();
 
-  const notifRows = (pcIds ?? []).map((pc) => ({
-    recipient_id: pc.profile_id as string,
+  // Welcome must be sent first
+  const { data: welcome } = await admin
+    .from("enisa_notifications")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("notification_type", "welcome")
+    .maybeSingle();
+
+  if (!welcome) throw new Error("Primero debes enviar el email de bienvenida.");
+
+  // Insert triggers the Edge Function notify-enisa-welcome (handles update type)
+  await admin.from("enisa_notifications").insert({
     company_id: companyId,
-    title: "Documentación ENISA",
-    message: `Tu asesor te ha enviado las instrucciones para adjuntar la documentación necesaria para la solicitud ENISA.`,
-    link: "/enisa",
-  }));
-
-  if (notifRows.length > 0) {
-    await admin.from("notifications").insert(notifRows);
-  }
+    sent_by: user.id,
+    notification_type: "update",
+  });
 }

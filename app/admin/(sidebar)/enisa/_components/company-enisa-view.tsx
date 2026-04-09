@@ -7,6 +7,7 @@ import { getCompanyEnisaData } from "../actions";
 import DocumentReviewBox from "./document-review-box";
 import CredentialsReviewBox from "./credentials-review-box";
 import NotifyWelcomeButton from "./notify-welcome-button";
+import NotifyUpdateButton from "./notify-update-button";
 import DownloadAllButton from "./download-all-button";
 
 interface CompanyEnisaViewProps {
@@ -17,6 +18,8 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
   const [boxes, setBoxes] = useState<EnisaBoxData[]>([]);
   const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
   const [welcomeEmailSentAt, setWelcomeEmailSentAt] = useState<string | null>(null);
+  const [lastUpdateSentAt, setLastUpdateSentAt] = useState<string | null>(null);
+  const [updateCount, setUpdateCount] = useState(0);
   const [lastSubmittedAt, setLastSubmittedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,6 +29,8 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
       setBoxes(data.boxes);
       setWelcomeEmailSent(data.welcomeEmailSent);
       setWelcomeEmailSentAt(data.welcomeEmailSentAt);
+      setLastUpdateSentAt(data.lastUpdateSentAt);
+      setUpdateCount(data.updateCount);
       setLastSubmittedAt(data.lastSubmittedAt);
     } catch (err) {
       console.error("Error loading ENISA data:", err);
@@ -60,15 +65,29 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
   return (
     <div className="space-y-6">
       {/* Top actions bar */}
-      <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border border-gray-200 px-5 py-4">
-        <NotifyWelcomeButton
-          companyId={company.id}
-          alreadySent={welcomeEmailSent}
-          sentAt={welcomeEmailSentAt}
-          onSent={loadData}
-        />
-        <div className="flex-1" />
-        <DownloadAllButton companyId={company.id} hasDocuments={totalDocs > 0} />
+      <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
+        <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <NotifyWelcomeButton
+              companyId={company.id}
+              alreadySent={welcomeEmailSent}
+              sentAt={welcomeEmailSentAt}
+              onSent={loadData}
+            />
+            {welcomeEmailSent && (
+              <>
+                <div className="w-px self-stretch bg-gray-200" />
+                <NotifyUpdateButton
+                  companyId={company.id}
+                  lastSentAt={lastUpdateSentAt}
+                  updateCount={updateCount}
+                  onSent={loadData}
+                />
+              </>
+            )}
+          </div>
+          <DownloadAllButton companyId={company.id} hasDocuments={totalDocs > 0} />
+        </div>
       </div>
 
       {/* Status summary */}
