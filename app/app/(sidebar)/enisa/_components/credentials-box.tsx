@@ -1,6 +1,7 @@
 "use client";
 
 import type { EnisaBoxData } from "@/lib/types/enisa";
+import LinkifyText from "./linkify-text";
 
 interface CredentialsBoxProps {
   box: EnisaBoxData;
@@ -28,7 +29,7 @@ export default function CredentialsBox({
             <span className="text-xs font-medium text-text-muted">{box.order}.</span>
             <h3 className="text-sm font-semibold text-brand-navy">{box.title}</h3>
           </div>
-          <p className="text-xs text-text-muted leading-relaxed">{box.instructions}</p>
+          <LinkifyText text={box.instructions} className="text-xs text-text-muted leading-relaxed" />
         </div>
         <StatusBadge status={box.status} />
       </div>

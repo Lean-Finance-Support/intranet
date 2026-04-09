@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import type { EnisaBoxData } from "@/lib/types/enisa";
 import { getUploadUrl, deleteDocument } from "../actions";
+import LinkifyText from "./linkify-text";
 
 interface DocumentBoxProps {
   box: EnisaBoxData;
@@ -81,7 +82,7 @@ export default function DocumentBox({ box, onUpdate }: DocumentBoxProps) {
             <span className="text-xs font-medium text-text-muted">{box.order}.</span>
             <h3 className="text-sm font-semibold text-brand-navy">{box.title}</h3>
           </div>
-          <p className="text-xs text-text-muted leading-relaxed">{box.instructions}</p>
+          <LinkifyText text={box.instructions} className="text-xs text-text-muted leading-relaxed" />
         </div>
         <StatusBadge status={box.status} />
       </div>
