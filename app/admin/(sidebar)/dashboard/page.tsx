@@ -41,7 +41,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="flex h-full">
       {/* Left: main content */}
-      <div className="flex-1 min-w-0 px-8 py-12">
+      <div className="flex-1 min-w-0 overflow-y-auto px-8 py-12">
         <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
         <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
           {greeting}{displayName ? `, ${displayName}` : ""}
@@ -58,7 +58,7 @@ export default async function AdminDashboardPage() {
       <div className="w-px bg-gray-200 flex-shrink-0" />
 
       {/* Right: notifications */}
-      <div className="w-80 xl:w-96 flex-shrink-0 flex flex-col h-full">
+      <div className="flex-1 flex flex-col h-full">
         <DashboardNotificationsPanel initialNotifications={notifications} linkPrefix={prefix} />
       </div>
     </div>

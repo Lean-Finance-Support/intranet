@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/sidebar/admin-sidebar";
+import { getNotifications } from "@/lib/actions/notifications";
 import {
   getAuthUser,
   getCachedProfile,
@@ -21,9 +22,10 @@ export default async function AdminSidebarLayout({
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  const [profile, departments] = await Promise.all([
+  const [profile, departments, allNotifications] = await Promise.all([
     getCachedProfile(user.id),
     getCachedUserDepartments(user.id),
+    getNotifications(),
   ]);
 
   const isSuperadmin = profile?.role === "superadmin";
@@ -39,6 +41,8 @@ export default async function AdminSidebarLayout({
     }
   }
 
+  const unreadCount = allNotifications.filter((n) => !n.is_read).length;
+
   return (
     <div className="flex h-screen overflow-hidden bg-surface-gray">
       <AdminSidebar
@@ -50,6 +54,7 @@ export default async function AdminSidebarLayout({
         hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
+        unreadCount={unreadCount}
       />
       <main className="flex-1 overflow-y-auto">
         {children}

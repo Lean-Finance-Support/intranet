@@ -147,12 +147,13 @@ interface ClientSidebarProps {
   hasEnisaDocs: boolean;
   loginPath: string;
   linkPrefix: string;
+  unreadCount: number;
   companies: SidebarCompany[];
   activeCompany: SidebarCompany | null;
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, companies, activeCompany }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -287,7 +288,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
 
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
-      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
+      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} badge={unreadCount} />
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
@@ -410,7 +411,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
               </div>
             )}
             <nav className="flex-1 px-2 py-4 space-y-0.5">
-              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
+              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} badge={unreadCount} />
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
               )}

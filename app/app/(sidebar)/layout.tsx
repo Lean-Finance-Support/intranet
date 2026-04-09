@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import ClientSidebar from "@/components/sidebar/client-sidebar";
+import { getNotifications } from "@/lib/actions/notifications";
 import { getActiveCompanyId } from "@/lib/active-company";
 import {
   getAuthUser,
@@ -24,9 +25,10 @@ export default async function AppSidebarLayout({
 
   const activeCompanyId = await getActiveCompanyId();
 
-  const [profile, companies] = await Promise.all([
+  const [profile, companies, allNotifications] = await Promise.all([
     getCachedProfile(user.id),
     getCachedUserCompanies(user.id),
+    getNotifications(),
   ]);
 
   // Si no hay empresa activa, redirigir para que se setee la cookie
@@ -48,6 +50,7 @@ export default async function AppSidebarLayout({
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
   const hasEnisaDocs = serviceSlugs.includes("enisa-docs");
+  const unreadCount = allNotifications.filter((n) => !n.is_read).length;
   const activeCompany = companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
 
   return (
@@ -61,6 +64,7 @@ export default async function AppSidebarLayout({
         hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
+        unreadCount={unreadCount}
         companies={companies}
         activeCompany={activeCompany}
       />
