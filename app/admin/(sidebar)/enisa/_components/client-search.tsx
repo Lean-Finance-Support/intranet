@@ -8,6 +8,7 @@ interface ClientSearchProps {
   selected: EnisaCompany | null;
   onSelect: (company: EnisaCompany) => void;
   onClear: () => void;
+  initialCompanyId?: string;
 }
 
 function highlight(text: string, query: string): React.ReactNode {
@@ -25,7 +26,7 @@ function highlight(text: string, query: string): React.ReactNode {
   );
 }
 
-export default function ClientSearch({ selected, onSelect, onClear }: ClientSearchProps) {
+export default function ClientSearch({ selected, onSelect, onClear, initialCompanyId }: ClientSearchProps) {
   const [query, setQuery] = useState("");
   const [companies, setCompanies] = useState<EnisaCompany[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,9 +34,16 @@ export default function ClientSearch({ selected, onSelect, onClear }: ClientSear
 
   useEffect(() => {
     getAllEnisaCompanies()
-      .then(setCompanies)
+      .then((list) => {
+        setCompanies(list);
+        if (initialCompanyId) {
+          const match = list.find((c) => c.id === initialCompanyId);
+          if (match) onSelect(match);
+        }
+      })
       .catch(() => setCompanies([]))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const myCount = companies.filter((c) => c.isAssigned).length;

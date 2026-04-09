@@ -8,11 +8,19 @@ import {
 } from "@/lib/cached-queries";
 import EnisaAdminWorkspace from "./_components/enisa-admin-workspace";
 
-export default async function AdminEnisaPage() {
+export default async function AdminEnisaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ company?: string }>;
+}) {
   const { user } = await getAuthUser();
   if (!user) redirect("/admin/login");
 
-  const headersList = await headers();
+  const [headersList, resolvedParams] = await Promise.all([
+    headers(),
+    searchParams,
+  ]);
+
   const host = headersList.get("host") ?? "";
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
@@ -37,7 +45,7 @@ export default async function AdminEnisaPage() {
         <h1 className="font-heading text-2xl text-brand-navy mb-8">
           Documentación ENISA
         </h1>
-        <EnisaAdminWorkspace />
+        <EnisaAdminWorkspace initialCompanyId={resolvedParams.company} />
       </div>
     </div>
   );

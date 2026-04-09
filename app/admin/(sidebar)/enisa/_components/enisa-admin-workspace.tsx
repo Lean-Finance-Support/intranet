@@ -5,7 +5,7 @@ import type { EnisaCompany } from "../actions";
 import ClientSearch from "./client-search";
 import CompanyEnisaView from "./company-enisa-view";
 
-export default function EnisaAdminWorkspace() {
+export default function EnisaAdminWorkspace({ initialCompanyId }: { initialCompanyId?: string }) {
   const [selectedCompany, setSelectedCompany] = useState<EnisaCompany | null>(null);
 
   return (
@@ -14,6 +14,7 @@ export default function EnisaAdminWorkspace() {
         selected={selectedCompany}
         onSelect={setSelectedCompany}
         onClear={() => setSelectedCompany(null)}
+        initialCompanyId={initialCompanyId}
       />
 
       {selectedCompany && (
