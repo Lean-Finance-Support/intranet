@@ -34,21 +34,22 @@ export default async function ClientDashboardPage() {
   const displayName = firstName ?? profile?.email ?? user.email;
 
   return (
-    <div className="min-h-full px-8 py-12">
-      <div className="flex flex-col lg:flex-row gap-8 items-start max-w-5xl">
-        {/* Left: greeting */}
-        <div className="flex-1 min-w-0">
-          <p className="text-brand-teal text-sm font-medium mb-2">Portal de clientes</p>
-          <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
-            {greeting}{displayName ? `, ${displayName}` : ""}
-          </h1>
-          <div className="w-10 h-0.5 bg-brand-teal rounded-full mt-6" />
-        </div>
+    <div className="flex h-full">
+      {/* Left: main content */}
+      <div className="flex-1 min-w-0 px-8 py-12">
+        <p className="text-brand-teal text-sm font-medium mb-2">Portal de clientes</p>
+        <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
+          {greeting}{displayName ? `, ${displayName}` : ""}
+        </h1>
+        <div className="w-10 h-0.5 bg-brand-teal rounded-full mt-6" />
+      </div>
 
-        {/* Right: notifications panel */}
-        <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
-          <DashboardNotificationsPanel initialNotifications={notifications} linkPrefix={prefix} />
-        </div>
+      {/* Divider */}
+      <div className="w-px bg-gray-200 flex-shrink-0" />
+
+      {/* Right: notifications */}
+      <div className="w-80 xl:w-96 flex-shrink-0 flex flex-col h-full">
+        <DashboardNotificationsPanel initialNotifications={notifications} linkPrefix={prefix} />
       </div>
     </div>
   );

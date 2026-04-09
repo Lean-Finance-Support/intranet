@@ -82,51 +82,53 @@ export default function DashboardNotificationsPanel({
   const groups = groupNotifications(notifications);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div>
-          <p className="text-xs text-brand-teal font-medium mb-0.5">
-            {unreadCount > 0 ? `${unreadCount} sin leer` : "Al día"}
-          </p>
-          <h2 className="text-base font-bold font-heading text-brand-navy leading-tight">
-            Notificaciones
-          </h2>
+      <div className="px-6 py-5 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-brand-teal font-medium mb-0.5">
+              {unreadCount > 0 ? `${unreadCount} sin leer` : "Al día"}
+            </p>
+            <h2 className="text-lg font-bold font-heading text-brand-navy leading-tight">
+              Notificaciones
+            </h2>
+          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium transition-colors cursor-pointer"
+            >
+              Marcar todas
+            </button>
+          )}
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={handleMarkAllRead}
-            className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium transition-colors cursor-pointer"
-          >
-            Marcar todas
-          </button>
-        )}
       </div>
 
       {/* List */}
-      <div className="max-h-[520px] overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         {notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-14 text-center px-4">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <BellIcon className="w-10 h-10 text-gray-200 mb-3" />
             <p className="text-sm text-text-muted">Sin notificaciones</p>
           </div>
         ) : (
-          <div className="p-4 space-y-5">
+          <div className="space-y-5">
             {groups.map((group) => (
               <div key={group.label}>
-                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2 px-1">
                   {group.label}
                 </p>
                 <div className="space-y-1.5">
-                  {group.items.map((n) => {
+                  {groups && group.items.map((n) => {
                     const linkHref = n.link ? `${linkPrefix}${n.link}` : undefined;
                     const card = (
                       <div
                         onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
                         className={`rounded-xl px-4 py-3 transition-colors duration-200 ${
                           n.is_read
-                            ? "bg-gray-50 border border-gray-100"
-                            : `bg-white border border-brand-teal/20 cursor-pointer hover:border-brand-teal/40 ${linkHref ? "hover:bg-gray-50" : ""}`
+                            ? "bg-white border border-gray-100 shadow-sm"
+                            : `bg-white border border-brand-teal/20 shadow-sm cursor-pointer hover:border-brand-teal/40 ${linkHref ? "hover:bg-gray-50" : ""}`
                         }`}
                       >
                         <div className="flex items-start gap-2.5">
