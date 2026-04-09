@@ -251,20 +251,20 @@ export default function ClientesPage({
           </div>
 
           {/* Filter pills */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-text-muted font-medium">Filtros:</span>
-
+          <div className="space-y-2">
             {hasAssignedCompanies && (
-              <FilterPill
-                label="Mis asignadas"
-                active={assignedOnly}
-                onClick={() => setAssignedOnly((v) => !v)}
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <FilterPill
+                  label="Mis asignadas"
+                  active={assignedOnly}
+                  onClick={() => setAssignedOnly((v) => !v)}
+                />
+              </div>
             )}
 
             {data.departments.length > 1 && (
-              <>
-                <span className="text-xs text-gray-300">|</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-text-muted font-medium w-24 shrink-0">Departamentos</span>
                 {data.departments.map((d) => (
                   <FilterPill
                     key={d.id}
@@ -273,12 +273,12 @@ export default function ClientesPage({
                     onClick={() => toggleDept(d.id)}
                   />
                 ))}
-              </>
+              </div>
             )}
 
             {allServices.length > 1 && (
-              <>
-                <span className="text-xs text-gray-300">|</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-text-muted font-medium w-24 shrink-0">Servicios</span>
                 {allServices.map((s) => (
                   <FilterPill
                     key={s.id}
@@ -287,7 +287,7 @@ export default function ClientesPage({
                     onClick={() => toggleService(s.id)}
                   />
                 ))}
-              </>
+              </div>
             )}
           </div>
         </div>
