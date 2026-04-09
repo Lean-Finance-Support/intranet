@@ -1,19 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getAdvisorContactInfoEnisa } from "../actions";
+interface ContactButtonProps {
+  emails: string[];
+  companyName: string;
+}
 
-export default function ContactButton() {
-  const [emails, setEmails] = useState<string[]>([]);
-  const [companyName, setCompanyName] = useState("");
-
-  useEffect(() => {
-    getAdvisorContactInfoEnisa().then((info) => {
-      setEmails(info.emails);
-      setCompanyName(info.companyName);
-    });
-  }, []);
-
+export default function ContactButton({ emails, companyName }: ContactButtonProps) {
   if (emails.length === 0) return null;
 
   const subject = encodeURIComponent(
@@ -27,7 +19,7 @@ export default function ContactButton() {
       className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-brand-teal border-2 border-brand-teal/20 hover:border-brand-teal/40 hover:bg-brand-teal/5 transition-all"
     >
       <MailIcon />
-      Contactar con tu asesor
+      Contacta con tu técnico
     </a>
   );
 }

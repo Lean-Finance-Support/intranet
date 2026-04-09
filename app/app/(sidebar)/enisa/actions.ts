@@ -15,6 +15,8 @@ export async function getEnisaData(): Promise<{
   boxes: EnisaBoxData[];
   hasSubmitted: boolean;
   lastSubmittedAt: string | null;
+  advisorEmails: string[];
+  companyName: string;
 }> {
   const { supabase, companyId } = await requireClient();
 
@@ -23,6 +25,8 @@ export async function getEnisaData(): Promise<{
     { data: reviews },
     { data: credentials },
     { data: submissions },
+    { data: company },
+    { data: enisaService },
   ] = await Promise.all([
     supabase
       .from("enisa_documents")
@@ -44,7 +48,53 @@ export async function getEnisaData(): Promise<{
       .eq("company_id", companyId)
       .order("submitted_at", { ascending: false })
       .limit(1),
+    supabase
+      .from("companies")
+      .select("legal_name, company_name")
+      .eq("id", companyId)
+      .single(),
+    supabase
+      .from("services")
+      .select("id")
+      .eq("slug", "enisa-docs")
+      .maybeSingle(),
   ]);
+
+  const resolvedCompanyName = company?.company_name ?? company?.legal_name ?? "";
+
+  // Resolve advisor emails
+  let advisorEmails: string[] = [];
+  if (enisaService) {
+    const { data: technicians } = await supabase
+      .from("company_technicians")
+      .select("profile:profiles(email)")
+      .eq("company_id", companyId)
+      .eq("service_id", enisaService.id);
+
+    advisorEmails = (technicians ?? [])
+      .map((t) => (t.profile as unknown as { email: string } | null)?.email)
+      .filter(Boolean) as string[];
+  }
+
+  if (advisorEmails.length === 0) {
+    const admin = createAdminClient();
+    const { data: fpDept } = await admin
+      .from("departments")
+      .select("id")
+      .eq("slug", "financiacion-publica")
+      .maybeSingle();
+
+    if (fpDept) {
+      const { data: chiefs } = await admin
+        .from("department_chiefs")
+        .select("profile:profiles(email)")
+        .eq("department_id", fpDept.id);
+
+      advisorEmails = (chiefs ?? [])
+        .map((c) => (c.profile as unknown as { email: string } | null)?.email)
+        .filter(Boolean) as string[];
+    }
+  }
 
   const docsByType = new Map<string, EnisaDocument[]>();
   for (const doc of (documents ?? []) as EnisaDocument[]) {
@@ -83,6 +133,8 @@ export async function getEnisaData(): Promise<{
     boxes,
     hasSubmitted: !!lastSub,
     lastSubmittedAt: lastSub?.submitted_at ?? null,
+    advisorEmails,
+    companyName: resolvedCompanyName,
   };
 }
 
@@ -227,7 +279,9 @@ export async function saveCredentials(
   }
 }
 
-export async function submitDocumentation(): Promise<void> {
+export async function submitDocumentation(
+  credentials?: { username: string; password: string }
+): Promise<void> {
   const { supabase, user, companyId } = await requireClient();
   const admin = createAdminClient();
 
@@ -238,12 +292,31 @@ export async function submitDocumentation(): Promise<void> {
     .eq("company_id", companyId)
     .eq("is_submitted", false);
 
-  // Mark credentials as submitted
-  await admin
-    .from("enisa_credentials")
-    .update({ is_submitted: true })
-    .eq("company_id", companyId)
-    .eq("is_submitted", false);
+  // Save & submit credentials if provided
+  if (credentials && (credentials.username.trim() || credentials.password.trim())) {
+    const { data: credReview } = await admin
+      .from("enisa_box_reviews")
+      .select("status")
+      .eq("company_id", companyId)
+      .eq("document_type_key", "alta-enisa")
+      .maybeSingle();
+
+    if (credReview?.status !== "validated") {
+      await admin
+        .from("enisa_credentials")
+        .upsert(
+          {
+            company_id: companyId,
+            username: credentials.username.trim(),
+            password: credentials.password.trim(),
+            is_submitted: true,
+            updated_by: user.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id" }
+        );
+    }
+  }
 
   // For each document_type_key with docs, set review to 'submitted'
   // (only if current status is draft or rejected)

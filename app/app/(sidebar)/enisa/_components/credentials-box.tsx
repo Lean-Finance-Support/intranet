@@ -1,41 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import type { EnisaBoxData } from "@/lib/types/enisa";
-import { saveCredentials } from "../actions";
 
 interface CredentialsBoxProps {
   box: EnisaBoxData;
-  onUpdate: () => Promise<void>;
+  username: string;
+  password: string;
+  onUsernameChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
 }
 
-export default function CredentialsBox({ box, onUpdate }: CredentialsBoxProps) {
-  const [username, setUsername] = useState(box.credentials?.username ?? "");
-  const [password, setPassword] = useState(box.credentials?.password ?? "");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+export default function CredentialsBox({
+  box,
+  username,
+  password,
+  onUsernameChange,
+  onPasswordChange,
+}: CredentialsBoxProps) {
   const isReadOnly = box.status === "validated";
-  const hasChanged =
-    username !== (box.credentials?.username ?? "") ||
-    password !== (box.credentials?.password ?? "");
-
-  async function handleSave() {
-    if (!username.trim() && !password.trim()) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await saveCredentials(username.trim(), password.trim());
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-      await onUpdate();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al guardar.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <div className={`bg-white rounded-xl border ${statusBorderColor(box.status)} overflow-hidden`}>
@@ -68,7 +50,7 @@ export default function CredentialsBox({ box, onUpdate }: CredentialsBoxProps) {
           <input
             type="text"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => onUsernameChange(e.target.value)}
             disabled={isReadOnly}
             placeholder="usuario@ejemplo.com"
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:bg-gray-50 disabled:text-text-muted"
@@ -81,29 +63,12 @@ export default function CredentialsBox({ box, onUpdate }: CredentialsBoxProps) {
           <input
             type="text"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => onPasswordChange(e.target.value)}
             disabled={isReadOnly}
             placeholder="Contraseña del portal ENISA"
             className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:bg-gray-50 disabled:text-text-muted"
           />
         </div>
-
-        {!isReadOnly && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSave}
-              disabled={saving || !hasChanged}
-              className="px-4 py-2 text-xs font-medium text-white bg-brand-teal rounded-lg hover:bg-brand-teal/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {saving ? "Guardando..." : saved ? "Guardado" : "Guardar credenciales"}
-            </button>
-            {box.credentials?.is_submitted && (
-              <span className="text-[10px] text-blue-600">Enviado</span>
-            )}
-          </div>
-        )}
-
-        {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
     </div>
   );
