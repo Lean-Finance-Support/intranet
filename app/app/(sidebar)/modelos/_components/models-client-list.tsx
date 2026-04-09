@@ -253,14 +253,6 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
         </div>
         <p className="text-sm font-medium text-text-body mb-1">No hay modelos disponibles para este trimestre</p>
         <p className="text-xs text-text-muted">Los modelos aparecerán aquí cuando el asesor los complete</p>
-        {advisorEmails.length > 0 && (
-          <a href={buildMailtoHref()} className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-            Contactar con tu asesor
-          </a>
-        )}
       </div>
     );
   }
@@ -275,6 +267,19 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
 
   return (
     <div>
+      {/* Contact button */}
+      {advisorEmails.length > 0 && (
+        <div className="mb-6">
+          <a
+            href={buildMailtoHref()}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-brand-teal border-2 border-brand-teal/20 hover:border-brand-teal/40 hover:bg-brand-teal/5 transition-all"
+          >
+            <MailIcon />
+            Contacta con tu asesor
+          </a>
+        </div>
+      )}
+
       {/* Presented banner — locks everything */}
       {presented && (
         <div className="mb-6 p-4 bg-brand-navy/5 border border-brand-navy/20 rounded-xl flex items-center gap-3">
@@ -468,16 +473,6 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
         </div>
       )}
 
-      {advisorEmails.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
-          <a href={buildMailtoHref()} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm text-text-muted hover:bg-gray-50 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-            Contactar con tu asesor
-          </a>
-        </div>
-      )}
 
       {showAddAccount && (
         <AddBankAccountModal
@@ -486,5 +481,13 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
         />
       )}
     </div>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
   );
 }
