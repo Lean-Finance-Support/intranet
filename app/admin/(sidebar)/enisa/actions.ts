@@ -301,6 +301,24 @@ export async function sendWelcomeEmail(companyId: string): Promise<void> {
     sent_by: user.id,
     notification_type: "welcome",
   });
+
+  // In-app notification for client
+  const { data: profiles } = await admin
+    .from("profile_companies")
+    .select("profile_id")
+    .eq("company_id", companyId);
+
+  const welcomeNotifRows = (profiles ?? []).map((pc) => ({
+    recipient_id: pc.profile_id as string,
+    company_id: companyId,
+    title: "Documentación ENISA",
+    message: "Tu técnico te ha enviado las instrucciones para adjuntar la documentación necesaria para la solicitud ENISA.",
+    link: "/enisa",
+  }));
+
+  if (welcomeNotifRows.length > 0) {
+    await admin.from("notifications").insert(welcomeNotifRows);
+  }
 }
 
 export async function sendUpdateEmail(companyId: string): Promise<void> {
@@ -323,4 +341,22 @@ export async function sendUpdateEmail(companyId: string): Promise<void> {
     sent_by: user.id,
     notification_type: "update",
   });
+
+  // In-app notification for client
+  const { data: profiles } = await admin
+    .from("profile_companies")
+    .select("profile_id")
+    .eq("company_id", companyId);
+
+  const updateNotifRows = (profiles ?? []).map((pc) => ({
+    recipient_id: pc.profile_id as string,
+    company_id: companyId,
+    title: "Actualización documentación ENISA",
+    message: "Tu técnico ha revisado tu documentación ENISA. Accede al portal para ver el estado actual.",
+    link: "/enisa",
+  }));
+
+  if (updateNotifRows.length > 0) {
+    await admin.from("notifications").insert(updateNotifRows);
+  }
 }
