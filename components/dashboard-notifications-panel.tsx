@@ -84,25 +84,26 @@ export default function DashboardNotificationsPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-gray-100 flex-shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="px-8 py-12 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs text-brand-teal font-medium mb-0.5">
+            <p className="text-brand-teal text-sm font-medium mb-2">
               {unreadCount > 0 ? `${unreadCount} sin leer` : "Al día"}
             </p>
-            <h2 className="text-lg font-bold font-heading text-brand-navy leading-tight">
+            <h2 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
               Notificaciones
             </h2>
           </div>
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
-              className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium transition-colors cursor-pointer"
+              className="text-sm text-brand-teal hover:text-brand-teal/80 font-medium transition-colors cursor-pointer mt-1"
             >
               Marcar todas
             </button>
           )}
         </div>
+        <div className="w-10 h-0.5 bg-brand-teal rounded-full mt-6" />
       </div>
 
       {/* List */}
