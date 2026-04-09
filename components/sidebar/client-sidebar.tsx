@@ -355,7 +355,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
       </button>
 
       {/* Desktop sidebar */}
-      <div className={`hidden lg:flex flex-col h-screen sticky top-0 flex-shrink-0 bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
+      <div className={`hidden lg:flex flex-col h-full flex-shrink-0 bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
         {/* Collapse button */}
         <div className="flex items-center justify-end px-3 py-3 border-b border-gray-100 flex-shrink-0">
           <button

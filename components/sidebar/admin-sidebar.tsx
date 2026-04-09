@@ -190,7 +190,7 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
       {hasEnisaDocs && (
-        <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Doc. ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
+        <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={collapsed} badge={unreadCount} />
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
@@ -246,7 +246,7 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
       </button>
 
       {/* Desktop sidebar */}
-      <div className={`hidden lg:flex flex-col h-screen sticky top-0 flex-shrink-0 bg-brand-navy border-r border-white/10 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
+      <div className={`hidden lg:flex flex-col h-full flex-shrink-0 bg-brand-navy border-r border-white/10 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
         {/* Collapse button */}
         <div className="flex items-center justify-end px-3 py-3 border-b border-white/10 flex-shrink-0">
           <button
