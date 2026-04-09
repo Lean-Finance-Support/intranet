@@ -385,16 +385,19 @@ export async function submitDocumentation(
     .single();
 
   const companyName = company?.company_name ?? company?.legal_name ?? "Cliente";
-  const recipients = new Set<string>();
+  const recipientMap = new Map<string, { email: string; name: string }>();
 
   if (enisaService) {
     const { data: technicians } = await admin
       .from("company_technicians")
-      .select("technician_id")
+      .select("technician_id, profile:profiles(email, full_name)")
       .eq("company_id", companyId)
       .eq("service_id", enisaService.id);
 
-    for (const t of technicians ?? []) recipients.add(t.technician_id);
+    for (const t of technicians ?? []) {
+      const p = t.profile as { email: string; full_name: string | null } | null;
+      if (p?.email) recipientMap.set(t.technician_id, { email: p.email, name: p.full_name ?? "Técnico" });
+    }
   }
 
   // Also notify chiefs of financiacion-publica
@@ -407,13 +410,18 @@ export async function submitDocumentation(
   if (fpDept) {
     const { data: chiefs } = await admin
       .from("department_chiefs")
-      .select("profile_id")
+      .select("profile_id, profile:profiles(email, full_name)")
       .eq("department_id", fpDept.id);
 
-    for (const c of chiefs ?? []) recipients.add(c.profile_id);
+    for (const c of chiefs ?? []) {
+      const p = c.profile as { email: string; full_name: string | null } | null;
+      if (p?.email && !recipientMap.has(c.profile_id)) {
+        recipientMap.set(c.profile_id, { email: p.email, name: p.full_name ?? "Responsable" });
+      }
+    }
   }
 
-  const notificationRows = [...recipients].map((recipientId) => ({
+  const notificationRows = [...recipientMap.keys()].map((recipientId) => ({
     recipient_id: recipientId,
     company_id: companyId,
     title: `${companyName} ha enviado documentación ENISA`,
