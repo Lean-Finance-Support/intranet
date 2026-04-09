@@ -21,13 +21,6 @@ function DocumentIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-function BellIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  );
-}
 function BuildingIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -154,13 +147,12 @@ interface ClientSidebarProps {
   hasEnisaDocs: boolean;
   loginPath: string;
   linkPrefix: string;
-  unreadCount: number;
   companies: SidebarCompany[];
   activeCompany: SidebarCompany | null;
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount, companies, activeCompany }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -201,14 +193,13 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
   const dashHref = `${linkPrefix}/dashboard`;
   const modelosHref = `${linkPrefix}/modelos`;
   const enisaHref = `${linkPrefix}/enisa`;
-  const notifHref = `${linkPrefix}/notificaciones`;
   const empresaHref = `${linkPrefix}/empresa`;
 
-  const isActive = (href: string) => {
+  function isActive(href: string) {
     const path = pathname ?? "";
     if (href === dashHref) return path === dashHref || path === "/app/dashboard";
     return path === href || path.startsWith(href + "/") || path === href.replace(linkPrefix, "");
-  };
+  }
 
   const initials = profile.full_name
     ? profile.full_name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
@@ -303,7 +294,6 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
       {hasEnisaDocs && (
         <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
-      <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={collapsed} badge={unreadCount} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={collapsed} />
     </nav>
   );
@@ -427,7 +417,6 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
               {hasEnisaDocs && (
                 <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={false} />
               )}
-              <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={false} badge={unreadCount} />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
             </nav>
             <div className="border-t border-gray-100 px-2 py-3">

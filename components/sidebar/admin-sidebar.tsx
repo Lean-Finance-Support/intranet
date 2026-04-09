@@ -20,13 +20,6 @@ function DocumentIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-function BellIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  );
-}
 function UsersIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -138,11 +131,10 @@ interface AdminSidebarProps {
   hasEnisaDocs: boolean;
   loginPath: string;
   linkPrefix: string;
-  unreadCount: number;
 }
 
 // ---- Main Component ----
-export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount }: AdminSidebarProps) {
+export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -167,7 +159,6 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
   const dashHref = `${linkPrefix}/dashboard`;
   const modelosHref = `${linkPrefix}/modelos`;
   const enisaHref = `${linkPrefix}/enisa`;
-  const notifHref = `${linkPrefix}/notificaciones`;
   const deptHref = `${linkPrefix}/departamento`;
   const clientesHref = `${linkPrefix}/clientes`;
 
@@ -192,7 +183,6 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
       {hasEnisaDocs && (
         <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
-      <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={collapsed} badge={unreadCount} />
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
@@ -280,7 +270,6 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
               {hasEnisaDocs && (
                 <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Doc. ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={false} />
               )}
-              <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" href={notifHref} active={isActive(notifHref)} collapsed={false} badge={unreadCount} />
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={false} />
               <div className="my-2 border-t border-white/10 mx-2" />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
