@@ -395,7 +395,9 @@ export async function submitDocumentation(
       .eq("service_id", enisaService.id);
 
     for (const t of technicians ?? []) {
-      const p = t.profile as { email: string; full_name: string | null } | null;
+      // Supabase tipa la relación como array aunque a runtime sea un objeto único
+      const raw = t.profile as unknown as { email: string; full_name: string | null } | { email: string; full_name: string | null }[] | null;
+      const p = Array.isArray(raw) ? raw[0] ?? null : raw;
       if (p?.email) recipientMap.set(t.technician_id, { email: p.email, name: p.full_name ?? "Técnico" });
     }
   }
@@ -414,7 +416,9 @@ export async function submitDocumentation(
       .eq("department_id", fpDept.id);
 
     for (const c of chiefs ?? []) {
-      const p = c.profile as { email: string; full_name: string | null } | null;
+      // Supabase tipa la relación como array aunque a runtime sea un objeto único
+      const raw = c.profile as unknown as { email: string; full_name: string | null } | { email: string; full_name: string | null }[] | null;
+      const p = Array.isArray(raw) ? raw[0] ?? null : raw;
       if (p?.email && !recipientMap.has(c.profile_id)) {
         recipientMap.set(c.profile_id, { email: p.email, name: p.full_name ?? "Responsable" });
       }
