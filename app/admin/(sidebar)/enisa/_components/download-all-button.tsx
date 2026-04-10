@@ -41,7 +41,7 @@ export default function DownloadAllButton({ companyId, hasDocuments }: DownloadA
     <button
       onClick={handleDownload}
       disabled={downloading}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-gray-200 text-text-body hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-gray-200 text-text-body hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 whitespace-nowrap flex-shrink-0"
     >
       <DownloadIcon />
       {downloading ? "Descargando..." : "Descargar todo (ZIP)"}

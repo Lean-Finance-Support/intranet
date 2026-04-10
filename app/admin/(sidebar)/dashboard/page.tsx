@@ -54,11 +54,11 @@ export default async function AdminDashboardPage() {
         <div className="w-10 h-0.5 bg-brand-teal rounded-full mt-6" />
       </div>
 
-      {/* Divider */}
-      <div className="w-px bg-gray-200 flex-shrink-0" />
+      {/* Divider (desktop only) */}
+      <div className="hidden lg:block w-px bg-gray-200 flex-shrink-0" />
 
-      {/* Right: notifications */}
-      <div className="flex-1 flex flex-col h-full">
+      {/* Right: notifications (desktop only — en mobile se accede desde la barra inferior) */}
+      <div className="hidden lg:flex flex-1 flex-col h-full">
         <DashboardNotificationsPanel initialNotifications={notifications} linkPrefix={prefix} />
       </div>
     </div>

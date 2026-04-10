@@ -56,7 +56,7 @@ export default async function AdminSidebarLayout({
         linkPrefix={prefix}
         unreadCount={unreadCount}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">
         {children}
       </main>
     </div>

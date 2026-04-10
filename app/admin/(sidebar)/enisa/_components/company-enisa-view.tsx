@@ -66,8 +66,8 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
     <div className="space-y-6">
       {/* Top actions bar */}
       <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
             <NotifyWelcomeButton
               companyId={company.id}
               alreadySent={welcomeEmailSent}
@@ -76,7 +76,7 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
             />
             {welcomeEmailSent && (
               <>
-                <div className="w-px self-stretch bg-gray-200" />
+                <div className="hidden lg:block w-px self-stretch bg-gray-200" />
                 <NotifyUpdateButton
                   companyId={company.id}
                   lastSentAt={lastUpdateSentAt}

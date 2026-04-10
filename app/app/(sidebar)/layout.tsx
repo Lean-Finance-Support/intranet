@@ -68,7 +68,7 @@ export default async function AppSidebarLayout({
         companies={companies}
         activeCompany={activeCompany}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">
         {children}
       </main>
     </div>

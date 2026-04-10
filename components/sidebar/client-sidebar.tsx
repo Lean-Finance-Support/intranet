@@ -49,6 +49,13 @@ function MenuIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  );
+}
 function XIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -161,14 +168,16 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
   const [loggingOut, setLoggingOut] = useState(false);
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
   const [switchingCompany, setSwitchingCompany] = useState(false);
+  const prevNonNotifPathRef = useRef<string | null>(null);
 
   async function handleSwitchCompany(companyId: string) {
     setSwitchingCompany(true);
     setCompanySwitcherOpen(false);
     try {
       await setActiveCompany(companyId);
-      router.refresh();
-    } finally {
+      // Full reload para asegurar que todas las vistas del portal se actualizan con la nueva empresa
+      window.location.reload();
+    } catch {
       setSwitchingCompany(false);
     }
   }
@@ -195,6 +204,24 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
   const modelosHref = `${linkPrefix}/modelos`;
   const enisaHref = `${linkPrefix}/enisa`;
   const empresaHref = `${linkPrefix}/empresa`;
+  const notifHref = `${linkPrefix}/notificaciones`;
+  const isNotifActive = (pathname ?? "").includes("/notificaciones");
+
+  // Recuerda la última ruta visitada que NO sea /notificaciones para poder volver
+  useEffect(() => {
+    if (pathname && !pathname.includes("/notificaciones")) {
+      prevNonNotifPathRef.current = pathname;
+    }
+  }, [pathname]);
+
+  function handleNotifClick() {
+    setMobileOpen(false);
+    if (isNotifActive) {
+      router.push(prevNonNotifPathRef.current ?? dashHref);
+    } else {
+      router.push(notifHref);
+    }
+  }
 
   function isActive(href: string) {
     const path = pathname ?? "";
@@ -337,13 +364,52 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
 
   return (
     <>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden w-10 h-10 rounded-lg bg-white border border-gray-200 shadow-lg flex items-center justify-center text-text-muted"
-      >
-        <MenuIcon className="w-5 h-5" />
-      </button>
+      {/* Mobile bottom bar: user+logout (left) | notifications + hamburger (right) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-14 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] flex items-center justify-between px-3 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0 text-brand-teal text-xs font-semibold">
+            {initials}
+          </div>
+          <div className="min-w-0 max-w-[110px]">
+            <p className="text-xs font-medium text-text-body truncate leading-tight">{profile.full_name ?? profile.email ?? "Usuario"}</p>
+            <p className="text-[10px] text-text-muted truncate leading-tight">Portal de clientes</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            aria-label="Cerrar sesión"
+            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-text-muted hover:text-red-500 cursor-pointer disabled:opacity-50 flex-shrink-0 transition-colors"
+          >
+            <LogoutIcon className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={handleNotifClick}
+            aria-label={isNotifActive ? "Cerrar notificaciones" : "Notificaciones"}
+            className={`relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+              isNotifActive
+                ? "bg-brand-teal/10 text-brand-teal"
+                : "bg-gray-100 hover:bg-gray-200 text-text-muted"
+            }`}
+          >
+            <BellIcon className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-brand-teal text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-text-muted transition-colors"
+          >
+            {mobileOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
 
       {/* Desktop sidebar */}
       <div className={`hidden lg:flex flex-col h-full flex-shrink-0 bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
@@ -364,15 +430,9 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 flex lg:hidden">
+        <div className="fixed top-0 left-0 right-0 bottom-14 z-40 flex lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
           <div className="relative w-64 h-full flex flex-col bg-white border-r border-gray-100 animate-slide-in-right">
-            <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-text-muted">Menú</span>
-              <button onClick={() => setMobileOpen(false)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-text-muted hover:text-text-body">
-                <XIcon className="w-4 h-4" />
-              </button>
-            </div>
             {activeCompany && (
               <div className="px-2 py-3 border-b border-gray-100">
                 {hasMultipleCompanies ? (
@@ -410,7 +470,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
                 )}
               </div>
             )}
-            <nav className="flex-1 px-2 py-4 space-y-0.5">
+            <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
               <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} badge={unreadCount} />
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
@@ -420,18 +480,6 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
               )}
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
             </nav>
-            <div className="border-t border-gray-100 px-2 py-3">
-              <div className="flex items-center gap-3 px-2 py-2">
-                <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center text-brand-teal text-xs font-semibold">{initials}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-text-body truncate">{profile.full_name ?? profile.email ?? "Usuario"}</p>
-                  <p className="text-[10px] text-text-muted">Portal de clientes</p>
-                </div>
-                <button onClick={handleLogout} disabled={loggingOut} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-text-muted hover:text-red-500 cursor-pointer disabled:opacity-50">
-                  <LogoutIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
