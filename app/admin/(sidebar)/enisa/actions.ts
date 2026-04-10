@@ -25,7 +25,7 @@ async function requireEnisaAdmin() {
   const { supabase, user, isSuperadmin } = await requireAdmin();
 
   if (isSuperadmin) {
-    return { supabase, user, isChief: true };
+    return { supabase, user, isChief: true, isSuperadmin: true };
   }
 
   const { data: userDepts } = await supabase
@@ -64,11 +64,11 @@ async function requireEnisaAdmin() {
 
   const isChief = (chiefRecords ?? []).length > 0;
 
-  return { supabase, user, isChief };
+  return { supabase, user, isChief, isSuperadmin: false };
 }
 
 export async function getAllEnisaCompanies(): Promise<EnisaCompany[]> {
-  const { supabase, user, isChief } = await requireEnisaAdmin();
+  const { supabase, user, isChief, isSuperadmin } = await requireEnisaAdmin();
 
   const { data: svc } = await supabase
     .from("services")
@@ -87,12 +87,15 @@ export async function getAllEnisaCompanies(): Promise<EnisaCompany[]> {
   const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
 
+  let companiesQuery = supabase
+    .from("companies")
+    .select("id, legal_name, company_name, nif")
+    .in("id", serviceCompanyIds)
+    .order("legal_name");
+  if (!isSuperadmin) companiesQuery = companiesQuery.eq("is_demo", false);
+
   const [{ data, error }, { data: assignments }] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("id, legal_name, company_name, nif")
-      .in("id", serviceCompanyIds)
-      .order("legal_name"),
+    companiesQuery,
     supabase
       .from("company_technicians")
       .select("company_id")

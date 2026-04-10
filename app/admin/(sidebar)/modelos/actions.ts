@@ -10,7 +10,7 @@ async function requireServiceAdmin(serviceSlug: string) {
 
   // Superadmin siempre tiene acceso como chief a todos los servicios
   if (isSuperadmin) {
-    return { supabase, user, isChief: true };
+    return { supabase, user, isChief: true, isSuperadmin: true };
   }
 
   // Get all user's departments
@@ -52,7 +52,7 @@ async function requireServiceAdmin(serviceSlug: string) {
 
   const isChief = (chiefRecords ?? []).length > 0;
 
-  return { supabase, user, isChief };
+  return { supabase, user, isChief, isSuperadmin: false };
 }
 
 async function requireFiscalAdmin() {
@@ -60,7 +60,7 @@ async function requireFiscalAdmin() {
 }
 
 export async function getAllCompanies(): Promise<Company[]> {
-  const { supabase, user, isChief } = await requireFiscalAdmin();
+  const { supabase, user, isChief, isSuperadmin } = await requireFiscalAdmin();
 
   // Get the service id for tax-models
   const { data: svc } = await supabase
@@ -81,12 +81,15 @@ export async function getAllCompanies(): Promise<Company[]> {
   const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
 
+  let companiesQuery = supabase
+    .from("companies")
+    .select("id, legal_name, company_name, nif")
+    .in("id", serviceCompanyIds)
+    .order("legal_name");
+  if (!isSuperadmin) companiesQuery = companiesQuery.eq("is_demo", false);
+
   const [{ data, error }, { data: assignments }] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("id, legal_name, company_name, nif")
-      .in("id", serviceCompanyIds)
-      .order("legal_name"),
+    companiesQuery,
     supabase
       .from("company_technicians")
       .select("company_id")
