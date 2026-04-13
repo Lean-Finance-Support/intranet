@@ -298,59 +298,79 @@ export async function submitQuarter(
     throw new Error("Error al enviar el trimestre.");
   }
 
-  // Get technicians assigned to this company + department chiefs for notifications
-  const { data: company } = await supabase
+  // Lookups + notification insert must bypass RLS (client user can't read
+  // company_technicians / department_chiefs ni insertar notifications ajenas)
+  const admin = createAdminClient();
+
+  const { data: company } = await admin
     .from("companies")
     .select("legal_name, company_name")
     .eq("id", companyId)
     .single();
 
-  // Get the tax-models service id
-  const { data: taxService } = await supabase
+  const { data: taxService } = await admin
     .from("services")
     .select("id")
     .eq("slug", "tax-models")
     .single();
 
-  const { data: technicians } = taxService
-    ? await supabase
-        .from("company_technicians")
-        .select("technician_id")
-        .eq("company_id", companyId)
-        .eq("service_id", taxService.id)
-    : { data: null };
+  const recipients = new Set<string>();
 
-  // Get fiscal department chiefs
-  const { data: fiscalDept } = await supabase
-    .from("departments")
-    .select("id")
-    .eq("slug", "asesoria-fiscal-y-laboral")
-    .single();
+  if (taxService) {
+    const { data: technicians } = await admin
+      .from("company_technicians")
+      .select("technician_id")
+      .eq("company_id", companyId)
+      .eq("service_id", taxService.id);
+    for (const t of technicians ?? []) recipients.add(t.technician_id);
+  }
 
-  const { data: chiefs } = fiscalDept
-    ? await supabase
+  // Fallback a chiefs SOLO si no hay técnicos asignados
+  if (recipients.size === 0) {
+    const { data: fiscalDept } = await admin
+      .from("departments")
+      .select("id")
+      .eq("slug", "asesoria-fiscal-y-laboral")
+      .single();
+
+    if (fiscalDept) {
+      const { data: chiefs } = await admin
         .from("department_chiefs")
         .select("profile_id")
-        .eq("department_id", fiscalDept.id)
-    : { data: null };
+        .eq("department_id", fiscalDept.id);
+      for (const c of chiefs ?? []) recipients.add(c.profile_id);
+    }
+  }
 
-  const recipients = new Set<string>();
-  for (const t of technicians ?? []) recipients.add(t.technician_id);
-  for (const c of chiefs ?? []) recipients.add(c.profile_id);
-
-  const companyName = company?.legal_name ?? "Cliente";
+  const companyName = company?.company_name ?? company?.legal_name ?? "Cliente";
   const quarterLabel = `${quarter}T ${year}`;
 
-  // Create notifications for all recipients in a single insert
-  const notificationRows = [...recipients].map((recipientId) => ({
-    recipient_id: recipientId,
-    company_id: companyId,
-    title: `${companyName} ha enviado sus respuestas`,
-    message: `La empresa ${companyName} ha enviado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
-    link: `/modelos`,
-  }));
+  if (recipients.size > 0) {
+    const notificationRows = [...recipients].map((recipientId) => ({
+      recipient_id: recipientId,
+      company_id: companyId,
+      title: `${companyName} ha validado sus modelos fiscales`,
+      message: `${companyName} ha validado sus respuestas de modelos de impuestos del ${quarterLabel}.`,
+      link: `/modelos?company=${companyId}`,
+    }));
 
-  if (notificationRows.length > 0) {
-    await supabase.from("notifications").insert(notificationRows);
+    const { error: notifError } = await admin
+      .from("notifications")
+      .insert(notificationRows);
+    if (notifError) {
+      console.error("[app/modelos] notifications insert error:", notifError.code);
+    }
+  }
+
+  // Fire-and-forget email notifications via edge function
+  try {
+    const { error: fnError } = await admin.functions.invoke("notify-tax-submission", {
+      body: { company_id: companyId, year, quarter },
+    });
+    if (fnError) {
+      console.error("[app/modelos] notify-tax-submission error:", fnError.message);
+    }
+  } catch (err) {
+    console.error("[app/modelos] notify-tax-submission threw:", err);
   }
 }
