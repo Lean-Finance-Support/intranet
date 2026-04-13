@@ -28,13 +28,8 @@ export default async function ClientModelosPage() {
   }
 
   return (
-    <div className="min-h-full px-8 py-12">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="font-heading text-2xl text-brand-navy mb-8">
-          Modelos de Prestación de Impuestos
-        </h1>
-        <ModelosClientWorkspace />
-      </div>
+    <div className="min-h-full">
+      <ModelosClientWorkspace />
     </div>
   );
 }

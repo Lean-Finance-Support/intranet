@@ -166,7 +166,7 @@ export default function NotificationsDrawer({
   const groups = groupNotifications(notifications);
 
   return (
-    <div className="fixed inset-0 z-[60]">
+    <div className="fixed top-0 left-0 right-0 bottom-14 lg:bottom-0 z-[60]">
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${

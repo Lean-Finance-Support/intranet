@@ -93,110 +93,114 @@ export default function EnisaClientWorkspace() {
     return <LoadingSkeleton />;
   }
 
+  const renderBox = (box: EnisaBoxData) =>
+    box.isCredentials ? (
+      <CredentialsBox
+        key={box.typeKey}
+        box={box}
+        username={credUsername}
+        password={credPassword}
+        onUsernameChange={setCredUsername}
+        onPasswordChange={setCredPassword}
+      />
+    ) : (
+      <DocumentBox key={box.typeKey} box={box} onUpdate={loadData} />
+    );
+
+  const counts = {
+    all: boxes.length,
+    rejected: boxes.filter((b) => b.status === "rejected").length,
+    draft: boxes.filter((b) => b.status === "draft").length,
+    submitted: boxes.filter((b) => b.status === "submitted").length,
+    validated: boxes.filter((b) => b.status === "validated").length,
+  };
+
+  const filtered =
+    statusFilter === "all" ? boxes : boxes.filter((b) => b.status === statusFilter);
+
   return (
-    <div className="space-y-6">
-      {allValidated && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 text-sm">
-          Toda la documentación ha sido validada. No es necesario realizar ninguna acción adicional.
-        </div>
-      )}
+    <div className="px-4 sm:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="sticky top-0 bg-surface-gray z-20 pt-8 sm:pt-12 pb-4 border-b border-gray-200 space-y-4">
+          <h1 className="font-heading text-2xl text-brand-navy">
+            Documentación ENISA
+          </h1>
 
-      {hasSubmitted && lastSubmittedAt && !allValidated && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 text-sm">
-          Documentación enviada el{" "}
-          {new Date(lastSubmittedAt).toLocaleDateString("es-ES", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-          . Puedes seguir adjuntando documentos y volver a enviar.
-        </div>
-      )}
+          {allValidated && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 text-sm">
+              Toda la documentación ha sido validada. No es necesario realizar ninguna acción adicional.
+            </div>
+          )}
 
-      {!allValidated && (
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <SubmitButton
-            onSubmit={handleSubmit}
-            submitting={submitting}
-            disabled={!hasUnsubmittedContent}
-            hasSubmitted={hasSubmitted}
-          />
-          <ContactButton emails={advisorEmails} companyName={companyName} />
-        </div>
-      )}
+          {hasSubmitted && lastSubmittedAt && !allValidated && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 text-sm">
+              Documentación enviada el{" "}
+              {new Date(lastSubmittedAt).toLocaleDateString("es-ES", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              . Puedes seguir adjuntando documentos y volver a enviar.
+            </div>
+          )}
 
-      {(() => {
-        const renderBox = (box: EnisaBoxData) =>
-          box.isCredentials ? (
-            <CredentialsBox
-              key={box.typeKey}
-              box={box}
-              username={credUsername}
-              password={credPassword}
-              onUsernameChange={setCredUsername}
-              onPasswordChange={setCredPassword}
-            />
-          ) : (
-            <DocumentBox key={box.typeKey} box={box} onUpdate={loadData} />
-          );
+          {!allValidated && (
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <SubmitButton
+                onSubmit={handleSubmit}
+                submitting={submitting}
+                disabled={!hasUnsubmittedContent}
+                hasSubmitted={hasSubmitted}
+              />
+              <ContactButton emails={advisorEmails} companyName={companyName} />
+            </div>
+          )}
 
-        const counts = {
-          all: boxes.length,
-          rejected: boxes.filter((b) => b.status === "rejected").length,
-          draft: boxes.filter((b) => b.status === "draft").length,
-          submitted: boxes.filter((b) => b.status === "submitted").length,
-          validated: boxes.filter((b) => b.status === "validated").length,
-        };
-
-        const filtered =
-          statusFilter === "all" ? boxes : boxes.filter((b) => b.status === statusFilter);
-
-        return (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {FILTER_CONFIG.map((f) => {
-                const active = statusFilter === f.key;
-                return (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => setStatusFilter(f.key)}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
-                      active ? f.activeClass : f.inactiveClass
+          <div className="flex flex-wrap gap-2">
+            {FILTER_CONFIG.map((f) => {
+              const active = statusFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setStatusFilter(f.key)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
+                    active ? f.activeClass : f.inactiveClass
+                  }`}
+                >
+                  {f.label}
+                  <span
+                    className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold ${
+                      active ? "bg-white/20 text-white" : "bg-gray-100 text-text-muted"
                     }`}
                   >
-                    {f.label}
-                    <span
-                      className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold ${
-                        active ? "bg-white/20 text-white" : "bg-gray-100 text-text-muted"
-                      }`}
-                    >
-                      {counts[f.key]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {filtered.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-text-muted">
-                No hay apartados en este estado.
-              </div>
-            ) : (
-              <div className="space-y-3">{filtered.map(renderBox)}</div>
-            )}
+                    {counts[f.key]}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        );
-      })()}
+        </div>
+
+        <div className="pt-4 pb-12">
+          {filtered.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-text-muted">
+              No hay apartados en este estado.
+            </div>
+          ) : (
+            <div className="space-y-3">{filtered.map(renderBox)}</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
+    <div className="px-4 sm:px-8 pt-8 sm:pt-12 pb-12 max-w-4xl mx-auto space-y-6 animate-pulse">
       {/* Buttons placeholder */}
       <div className="flex gap-4">
         <div className="h-11 bg-gray-200 rounded-xl w-52" />

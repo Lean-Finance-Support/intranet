@@ -37,56 +37,63 @@ export default function ModelosWorkspace({ initialCompanyId }: { initialCompanyI
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Selector de trimestre */}
-      <div>
-        <label className="block text-sm font-medium text-text-muted mb-2">Trimestre</label>
-        <QuarterSelector selected={quarter} onChange={(q) => { setQuarter(q); setPresented(false); setAllAccepted(false); }} />
-      </div>
+    <div className="px-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="sticky top-0 bg-surface-gray z-20 pt-12 pb-5 border-b border-gray-200 space-y-5">
+          <h1 className="font-heading text-2xl text-brand-navy">
+            Modelos de Prestación de Impuestos
+          </h1>
 
-      {/* Buscador de cliente */}
-      <div>
-        <label className="block text-sm font-medium text-text-muted mb-2">Empresa</label>
-        <ClientSearch
-          selected={company}
-          initialCompanyId={initialCompanyId}
-          onSelect={handleSelectCompany}
-          onClear={handleClearCompany}
-        />
-      </div>
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-2">Trimestre</label>
+            <QuarterSelector selected={quarter} onChange={(q) => { setQuarter(q); setPresented(false); setAllAccepted(false); }} />
+          </div>
 
-      {/* Tabla de modelos + botón notificar */}
-      {company && (
-        <div className="border-t border-gray-200 pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading text-lg text-text-body">
-              Modelos {quarter}T 2026 — {company.legal_name}
-            </h3>
-            <NotifyButton
-              companyId={company.id}
-              companyName={company.legal_name}
-              quarter={quarter}
-              canEdit={canEdit}
-              allAccepted={allAccepted}
-              presented={presented}
-              onBeforeSend={() => formRef.current?.saveIfDirty() ?? Promise.resolve()}
-              onNotified={handleNotified}
-              onPresentationSent={() => setPresented(true)}
-              onStatusLoaded={(p) => setPresented(p)}
+          <div>
+            <label className="block text-sm font-medium text-text-muted mb-2">Empresa</label>
+            <ClientSearch
+              selected={company}
+              initialCompanyId={initialCompanyId}
+              onSelect={handleSelectCompany}
+              onClear={handleClearCompany}
             />
           </div>
-          <ModelsForm
-            key={`${company.id}-${quarter}-${reloadKey}`}
-            ref={formRef}
-            companyId={company.id}
-            quarter={quarter}
-            canEdit={canEdit}
-            presented={presented}
-            onClientDataLoaded={handleClientDataLoaded}
-          />
-        </div>
-      )}
 
+          {company && (
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="font-heading text-lg text-text-body">
+                Modelos {quarter}T 2026 — {company.legal_name}
+              </h3>
+              <NotifyButton
+                companyId={company.id}
+                companyName={company.legal_name}
+                quarter={quarter}
+                canEdit={canEdit}
+                allAccepted={allAccepted}
+                presented={presented}
+                onBeforeSend={() => formRef.current?.saveIfDirty() ?? Promise.resolve()}
+                onNotified={handleNotified}
+                onPresentationSent={() => setPresented(true)}
+                onStatusLoaded={(p) => setPresented(p)}
+              />
+            </div>
+          )}
+        </div>
+
+        {company && (
+          <div className="pt-6 pb-12">
+            <ModelsForm
+              key={`${company.id}-${quarter}-${reloadKey}`}
+              ref={formRef}
+              companyId={company.id}
+              quarter={quarter}
+              canEdit={canEdit}
+              presented={presented}
+              onClientDataLoaded={handleClientDataLoaded}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

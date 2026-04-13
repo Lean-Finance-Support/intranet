@@ -214,7 +214,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
 
   function handleNotifClick() {
     setMobileOpen(false);
-    setDrawerOpen(true);
+    setDrawerOpen((v) => !v);
   }
 
   function isActive(href: string) {
@@ -422,9 +422,9 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed top-0 left-0 right-0 bottom-14 z-40 flex lg:hidden">
+        <div className="fixed top-0 left-0 right-0 bottom-14 z-40 flex justify-end lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-64 h-full flex flex-col bg-white border-r border-gray-100 animate-slide-in-right">
+          <div className="relative w-64 h-full flex flex-col bg-white border-l border-gray-100 animate-slide-in-right">
             {activeCompany && (
               <div className="px-2 py-3 border-b border-gray-100">
                 {hasMultipleCompanies ? (
@@ -462,7 +462,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
                 )}
               </div>
             )}
-            <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
+            <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto" onClick={() => setMobileOpen(false)}>
               <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
@@ -472,7 +472,6 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
               )}
               <div className="my-2 border-t border-gray-100 mx-2" />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
-              <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={false} badge={unreadCount} />
             </nav>
           </div>
         </div>

@@ -200,16 +200,17 @@ export default function ClientesPage({
   const hasAssignedCompanies = data.companies.some((c) => c.is_assigned);
 
   return (
-    <div className="min-h-full px-8 py-12">
-      <div className="max-w-6xl space-y-6">
-        {/* Header */}
-        <div>
-          <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
-          <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">Clientes</h1>
-        </div>
+    <div className="min-h-full px-8">
+      <div className="max-w-6xl">
+        <div className="sticky top-0 bg-surface-gray z-20 pt-12 pb-4 border-b border-gray-200 space-y-4">
+          {/* Header */}
+          <div>
+            <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
+            <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">Clientes</h1>
+          </div>
 
-        {/* Search + filters */}
-        <div className="space-y-3">
+          {/* Search + filters */}
+          <div className="space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
             {/* Search */}
             <div className="relative flex-1 min-w-[240px] max-w-sm">
@@ -291,21 +292,24 @@ export default function ClientesPage({
             )}
           </div>
         </div>
+        </div>
 
         {/* Grid */}
-        {companies.length === 0 ? (
-          <p className="text-sm text-text-muted italic">Sin clientes</p>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-sm text-text-muted">Sin resultados para los filtros aplicados</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {filtered.map((c) => (
-              <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
-            ))}
-          </div>
-        )}
+        <div className="pt-6 pb-12">
+          {companies.length === 0 ? (
+            <p className="text-sm text-text-muted italic">Sin clientes</p>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-sm text-text-muted">Sin resultados para los filtros aplicados</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {filtered.map((c) => (
+                <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Detail panel */}
