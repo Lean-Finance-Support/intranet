@@ -374,29 +374,23 @@ export default function ModelsClientList({ quarter, year = 2026 }: ModelsClientL
                 <div className="flex gap-2 flex-shrink-0">
                   <button
                     onClick={() => tryReject(index)}
-                    title="Rechazar"
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                    className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
                       entry.status === "rejected"
                         ? "bg-red-500 text-white"
                         : "bg-gray-100 text-text-muted hover:bg-red-100 hover:text-red-600"
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    No Validar
                   </button>
                   <button
                     onClick={() => tryAccept(index)}
-                    title="Aceptar"
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                    className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
                       entry.status === "accepted"
                         ? "bg-green-500 text-white"
                         : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                    Validar
                   </button>
                 </div>
               )}

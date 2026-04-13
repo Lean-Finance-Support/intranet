@@ -8,12 +8,12 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8 animate-fade-in-up">
           <Image
-            src="/logo-leanfinance.png"
+            src="/logo-leanfinance-white.png"
             alt="LeanFinance"
             width={279}
             height={96}
             priority
-            className="h-24 w-auto mx-auto brightness-0 invert"
+            className="h-24 w-auto mx-auto"
           />
         </div>
 

@@ -9,6 +9,7 @@ import CredentialsReviewBox from "./credentials-review-box";
 import NotifyWelcomeButton from "./notify-welcome-button";
 import NotifyUpdateButton from "./notify-update-button";
 import DownloadAllButton from "./download-all-button";
+import StatusAccordion from "@/app/app/(sidebar)/enisa/_components/status-accordion";
 
 interface CompanyEnisaViewProps {
   company: EnisaCompany;
@@ -122,26 +123,70 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
         </div>
       )}
 
-      {/* Document boxes */}
-      {boxes.map((box) =>
-        box.isCredentials ? (
-          <CredentialsReviewBox
-            key={box.typeKey}
-            box={box}
-            companyId={company.id}
-            canEdit={company.canEdit}
-            onUpdate={loadData}
-          />
-        ) : (
-          <DocumentReviewBox
-            key={box.typeKey}
-            box={box}
-            companyId={company.id}
-            canEdit={company.canEdit}
-            onUpdate={loadData}
-          />
-        )
-      )}
+      {/* Document boxes grouped by status */}
+      {(() => {
+        const renderBox = (box: EnisaBoxData) =>
+          box.isCredentials ? (
+            <CredentialsReviewBox
+              key={box.typeKey}
+              box={box}
+              companyId={company.id}
+              canEdit={company.canEdit}
+              onUpdate={loadData}
+            />
+          ) : (
+            <DocumentReviewBox
+              key={box.typeKey}
+              box={box}
+              companyId={company.id}
+              canEdit={company.canEdit}
+              onUpdate={loadData}
+            />
+          );
+
+        const groups = {
+          rejected: boxes.filter((b) => b.status === "rejected"),
+          draft: boxes.filter((b) => b.status === "draft"),
+          submitted: boxes.filter((b) => b.status === "submitted"),
+          validated: boxes.filter((b) => b.status === "validated"),
+        };
+
+        return (
+          <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-4 lg:gap-4 lg:items-stretch">
+            <StatusAccordion
+              title="Rechazado"
+              count={groups.rejected.length}
+              tone="red"
+              defaultOpen={groups.rejected.length > 0}
+            >
+              {groups.rejected.map(renderBox)}
+            </StatusAccordion>
+            <StatusAccordion
+              title="Pendiente"
+              count={groups.draft.length}
+              tone="amber"
+              defaultOpen={groups.draft.length > 0}
+            >
+              {groups.draft.map(renderBox)}
+            </StatusAccordion>
+            <StatusAccordion
+              title="Revisión"
+              count={groups.submitted.length}
+              tone="blue"
+              defaultOpen={groups.submitted.length > 0}
+            >
+              {groups.submitted.map(renderBox)}
+            </StatusAccordion>
+            <StatusAccordion
+              title="Validado"
+              count={groups.validated.length}
+              tone="green"
+            >
+              {groups.validated.map(renderBox)}
+            </StatusAccordion>
+          </div>
+        );
+      })()}
     </div>
   );
 }

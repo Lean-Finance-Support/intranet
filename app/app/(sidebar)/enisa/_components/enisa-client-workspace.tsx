@@ -8,6 +8,16 @@ import CredentialsBox from "./credentials-box";
 import SubmitButton from "./submit-button";
 import ContactButton from "./contact-button";
 
+type StatusFilter = "all" | "rejected" | "draft" | "submitted" | "validated";
+
+const FILTER_CONFIG: { key: StatusFilter; label: string; activeClass: string; inactiveClass: string }[] = [
+  { key: "all", label: "Todos", activeClass: "bg-brand-navy text-white border-brand-navy", inactiveClass: "bg-white text-text-body border-gray-200 hover:bg-gray-50" },
+  { key: "rejected", label: "Rechazado", activeClass: "bg-red-500 text-white border-red-500", inactiveClass: "bg-white text-red-700 border-red-200 hover:bg-red-50" },
+  { key: "draft", label: "Pendiente", activeClass: "bg-amber-500 text-white border-amber-500", inactiveClass: "bg-white text-amber-700 border-amber-200 hover:bg-amber-50" },
+  { key: "submitted", label: "Enviado", activeClass: "bg-blue-500 text-white border-blue-500", inactiveClass: "bg-white text-blue-700 border-blue-200 hover:bg-blue-50" },
+  { key: "validated", label: "Validado", activeClass: "bg-green-500 text-white border-green-500", inactiveClass: "bg-white text-green-700 border-green-200 hover:bg-green-50" },
+];
+
 export default function EnisaClientWorkspace() {
   const [boxes, setBoxes] = useState<EnisaBoxData[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -18,6 +28,7 @@ export default function EnisaClientWorkspace() {
   const [credPassword, setCredPassword] = useState("");
   const [advisorEmails, setAdvisorEmails] = useState<string[]>([]);
   const [companyName, setCompanyName] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const loadData = useCallback(async () => {
     try {
@@ -116,20 +127,69 @@ export default function EnisaClientWorkspace() {
         </div>
       )}
 
-      {boxes.map((box) =>
-        box.isCredentials ? (
-          <CredentialsBox
-            key={box.typeKey}
-            box={box}
-            username={credUsername}
-            password={credPassword}
-            onUsernameChange={setCredUsername}
-            onPasswordChange={setCredPassword}
-          />
-        ) : (
-          <DocumentBox key={box.typeKey} box={box} onUpdate={loadData} />
-        )
-      )}
+      {(() => {
+        const renderBox = (box: EnisaBoxData) =>
+          box.isCredentials ? (
+            <CredentialsBox
+              key={box.typeKey}
+              box={box}
+              username={credUsername}
+              password={credPassword}
+              onUsernameChange={setCredUsername}
+              onPasswordChange={setCredPassword}
+            />
+          ) : (
+            <DocumentBox key={box.typeKey} box={box} onUpdate={loadData} />
+          );
+
+        const counts = {
+          all: boxes.length,
+          rejected: boxes.filter((b) => b.status === "rejected").length,
+          draft: boxes.filter((b) => b.status === "draft").length,
+          submitted: boxes.filter((b) => b.status === "submitted").length,
+          validated: boxes.filter((b) => b.status === "validated").length,
+        };
+
+        const filtered =
+          statusFilter === "all" ? boxes : boxes.filter((b) => b.status === statusFilter);
+
+        return (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {FILTER_CONFIG.map((f) => {
+                const active = statusFilter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setStatusFilter(f.key)}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
+                      active ? f.activeClass : f.inactiveClass
+                    }`}
+                  >
+                    {f.label}
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[10px] font-bold ${
+                        active ? "bg-white/20 text-white" : "bg-gray-100 text-text-muted"
+                      }`}
+                    >
+                      {counts[f.key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-sm text-text-muted">
+                No hay apartados en este estado.
+              </div>
+            ) : (
+              <div className="space-y-3">{filtered.map(renderBox)}</div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

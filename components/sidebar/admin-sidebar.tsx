@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import NotificationsDrawer from "@/components/notifications-drawer";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -74,29 +75,29 @@ function NavItem({
   icon,
   label,
   href,
+  onClick,
   active,
   collapsed,
   badge,
 }: {
   icon: React.ReactNode;
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
   active?: boolean;
   collapsed: boolean;
   badge?: number;
 }) {
-  return (
-    <Link
-      href={href}
-      className={`
-        relative flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
-        transition-all duration-150 group/item
-        ${active
-          ? "bg-white/10 text-white border-l-2 border-brand-teal pl-[10px]"
-          : "text-white/60 hover:bg-white/5 hover:text-white border-l-2 border-transparent pl-[10px]"
-        }
-      `}
-    >
+  const className = `
+    relative flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
+    transition-all duration-150 group/item cursor-pointer
+    ${active
+      ? "bg-white/10 text-white border-l-2 border-brand-teal pl-[10px]"
+      : "text-white/60 hover:bg-white/5 hover:text-white border-l-2 border-transparent pl-[10px]"
+    }
+  `;
+  const content = (
+    <>
       <span className="flex-shrink-0 w-5 h-5 relative">
         {icon}
         {badge !== undefined && badge > 0 && (
@@ -113,8 +114,12 @@ function NavItem({
           {label}{badge !== undefined && badge > 0 ? ` (${badge})` : ""}
         </span>
       )}
-    </Link>
+    </>
   );
+  if (href) {
+    return <Link href={href} className={className}>{content}</Link>;
+  }
+  return <button type="button" onClick={onClick} className={className}>{content}</button>;
 }
 
 // ---- Props ----
@@ -142,13 +147,15 @@ interface AdminSidebarProps {
 }
 
 // ---- Main Component ----
-export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount }: AdminSidebarProps) {
+export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount: initialUnreadCount }: AdminSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const prevNonNotifPathRef = useRef<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [liveUnreadCount, setLiveUnreadCount] = useState(initialUnreadCount);
+  const unreadCount = liveUnreadCount;
+  const handleUnreadCountChange = useCallback((count: number) => setLiveUnreadCount(count), []);
   useEffect(() => {
     const stored = localStorage.getItem("admin-sidebar-collapsed");
     if (stored !== null) setCollapsed(stored === "true");
@@ -183,37 +190,25 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
     : (profile.email?.[0] ?? "?").toUpperCase();
 
   const isDeptActive = isActive(deptHref);
-  const notifHref = `${linkPrefix}/notificaciones`;
-  const isNotifActive = (pathname ?? "").includes("/notificaciones");
-
-  // Recuerda la última ruta visitada que NO sea /notificaciones para poder volver
-  useEffect(() => {
-    if (pathname && !pathname.includes("/notificaciones")) {
-      prevNonNotifPathRef.current = pathname;
-    }
-  }, [pathname]);
 
   function handleNotifClick() {
     setMobileOpen(false);
-    if (isNotifActive) {
-      router.push(prevNonNotifPathRef.current ?? dashHref);
-    } else {
-      router.push(notifHref);
-    }
+    setDrawerOpen(true);
   }
 
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
-      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} badge={unreadCount} />
+      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
       {hasEnisaDocs && (
         <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
-      <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
+      <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
+      <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
   );
 
@@ -278,12 +273,8 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
           <button
             type="button"
             onClick={handleNotifClick}
-            aria-label={isNotifActive ? "Cerrar notificaciones" : "Notificaciones"}
-            className={`relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              isNotifActive
-                ? "bg-white/20 text-white"
-                : "bg-white/10 hover:bg-white/15 text-white/80 hover:text-white"
-            }`}
+            aria-label="Notificaciones"
+            className="relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer bg-white/10 hover:bg-white/15 text-white/80 hover:text-white"
           >
             <BellIcon className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -324,20 +315,28 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
           <div className="relative w-64 h-full flex flex-col bg-brand-navy border-r border-white/10 animate-slide-in-right">
             <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} badge={unreadCount} />
+              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
               )}
               {hasEnisaDocs && (
                 <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Doc. ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={false} />
               )}
-              <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={false} />
               <div className="my-2 border-t border-white/10 mx-2" />
+              <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={false} />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
+              <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={false} badge={unreadCount} />
             </nav>
           </div>
         </div>
       )}
+
+      <NotificationsDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        linkPrefix={linkPrefix}
+        onUnreadCountChange={handleUnreadCountChange}
+      />
     </>
   );
 }

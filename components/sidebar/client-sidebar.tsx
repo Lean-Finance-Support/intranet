@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { setActiveCompany } from "@/app/app/select-company/actions";
+import NotificationsDrawer from "@/components/notifications-drawer";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -69,29 +70,29 @@ function NavItem({
   icon,
   label,
   href,
+  onClick,
   active,
   collapsed,
   badge,
 }: {
   icon: React.ReactNode;
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
   active?: boolean;
   collapsed: boolean;
   badge?: number;
 }) {
-  return (
-    <Link
-      href={href}
-      className={`
-        relative flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
-        transition-all duration-150 group/item
-        ${active
-          ? "bg-brand-teal/5 text-brand-navy border-l-2 border-brand-teal pl-[10px] font-semibold"
-          : "text-text-muted hover:bg-gray-50 hover:text-text-body border-l-2 border-transparent pl-[10px]"
-        }
-      `}
-    >
+  const className = `
+    relative flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
+    transition-all duration-150 group/item cursor-pointer
+    ${active
+      ? "bg-brand-teal/5 text-brand-navy border-l-2 border-brand-teal pl-[10px] font-semibold"
+      : "text-text-muted hover:bg-gray-50 hover:text-text-body border-l-2 border-transparent pl-[10px]"
+    }
+  `;
+  const content = (
+    <>
       <span className="flex-shrink-0 w-5 h-5 relative">
         {icon}
         {badge !== undefined && badge > 0 && (
@@ -108,8 +109,12 @@ function NavItem({
           {label}{badge !== undefined && badge > 0 ? ` (${badge})` : ""}
         </span>
       )}
-    </Link>
+    </>
   );
+  if (href) {
+    return <Link href={href} className={className}>{content}</Link>;
+  }
+  return <button type="button" onClick={onClick} className={className}>{content}</button>;
 }
 
 // ---- Icons extra ----
@@ -160,15 +165,17 @@ interface ClientSidebarProps {
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount, companies, activeCompany }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
   const [switchingCompany, setSwitchingCompany] = useState(false);
-  const prevNonNotifPathRef = useRef<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [liveUnreadCount, setLiveUnreadCount] = useState(initialUnreadCount);
+  const unreadCount = liveUnreadCount;
+  const handleUnreadCountChange = useCallback((count: number) => setLiveUnreadCount(count), []);
 
   async function handleSwitchCompany(companyId: string) {
     setSwitchingCompany(true);
@@ -204,23 +211,10 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
   const modelosHref = `${linkPrefix}/modelos`;
   const enisaHref = `${linkPrefix}/enisa`;
   const empresaHref = `${linkPrefix}/empresa`;
-  const notifHref = `${linkPrefix}/notificaciones`;
-  const isNotifActive = (pathname ?? "").includes("/notificaciones");
-
-  // Recuerda la última ruta visitada que NO sea /notificaciones para poder volver
-  useEffect(() => {
-    if (pathname && !pathname.includes("/notificaciones")) {
-      prevNonNotifPathRef.current = pathname;
-    }
-  }, [pathname]);
 
   function handleNotifClick() {
     setMobileOpen(false);
-    if (isNotifActive) {
-      router.push(prevNonNotifPathRef.current ?? dashHref);
-    } else {
-      router.push(notifHref);
-    }
+    setDrawerOpen(true);
   }
 
   function isActive(href: string) {
@@ -315,14 +309,16 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
 
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
-      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} badge={unreadCount} />
+      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
       {hasEnisaDocs && (
         <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
+      <div className={`my-2 border-t border-gray-100 ${collapsed ? "mx-1" : "mx-2"}`} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={collapsed} />
+      <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
   );
 
@@ -387,12 +383,8 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
           <button
             type="button"
             onClick={handleNotifClick}
-            aria-label={isNotifActive ? "Cerrar notificaciones" : "Notificaciones"}
-            className={`relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              isNotifActive
-                ? "bg-brand-teal/10 text-brand-teal"
-                : "bg-gray-100 hover:bg-gray-200 text-text-muted"
-            }`}
+            aria-label="Notificaciones"
+            className="relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer bg-gray-100 hover:bg-gray-200 text-text-muted"
           >
             <BellIcon className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -471,18 +463,27 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
               </div>
             )}
             <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} badge={unreadCount} />
+              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
               )}
               {hasEnisaDocs && (
                 <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={false} />
               )}
+              <div className="my-2 border-t border-gray-100 mx-2" />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
+              <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={false} badge={unreadCount} />
             </nav>
           </div>
         </div>
       )}
+
+      <NotificationsDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        linkPrefix={linkPrefix}
+        onUnreadCountChange={handleUnreadCountChange}
+      />
     </>
   );
 }
