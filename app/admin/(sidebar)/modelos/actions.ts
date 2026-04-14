@@ -332,13 +332,14 @@ export async function notifyClient(
     .eq("company_id", companyId);
 
   const quarterLabel = `${quarter}T ${year}`;
+  const modelsLink = `/set-company?companyId=${companyId}&next=${encodeURIComponent(`/modelos?year=${year}&quarter=${quarter}`)}`;
   for (const link of profileLinks ?? []) {
     await supabase.from("notifications").insert({
       recipient_id: link.profile_id,
       company_id: companyId,
       title: "Modelos de impuestos actualizados",
       message: `Se han actualizado tus modelos de prestación de impuestos del ${quarterLabel}. Accede para revisarlos y validarlos.`,
-      link: "/modelos",
+      link: modelsLink,
     });
   }
   // El email lo gestiona la Edge Function notify-tax-models
@@ -531,12 +532,13 @@ export async function notifyPresentation(
     .select("profile_id")
     .eq("company_id", companyId);
 
+  const modelsLink = `/set-company?companyId=${companyId}&next=${encodeURIComponent(`/modelos?year=${year}&quarter=${quarter}`)}`;
   const notificationRows = (profileLinks ?? []).map((link) => ({
     recipient_id: link.profile_id,
     company_id: companyId,
     title: "Modelos de impuestos presentados",
     message: `Tu asesor ha presentado los modelos de impuestos del ${quarterLabel}.`,
-    link: "/modelos",
+    link: modelsLink,
   }));
 
   if (notificationRows.length > 0) {
