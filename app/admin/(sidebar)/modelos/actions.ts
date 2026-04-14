@@ -138,7 +138,7 @@ export async function getModelsWithEntries(
   const modelIds = models.map((m) => m.id);
   const { data: entries, error: entriesError } = await supabase
     .from("tax_entries")
-    .select("tax_model_id, amount, entry_type")
+    .select("tax_model_id, amount, entry_type, deferment_allowed")
     .eq("company_id", companyId)
     .in("tax_model_id", modelIds);
 
@@ -150,7 +150,11 @@ export async function getModelsWithEntries(
   const entriesByModel = new Map(
     (entries ?? []).map((e) => [
       e.tax_model_id,
-      { amount: Number(e.amount), entry_type: e.entry_type as "pagar" | "percibir" },
+      {
+        amount: Number(e.amount),
+        entry_type: e.entry_type as "pagar" | "percibir",
+        deferment_allowed: Boolean(e.deferment_allowed),
+      },
     ])
   );
 
@@ -197,6 +201,7 @@ export async function saveEntries(entries: EntryPayload[]): Promise<void> {
     tax_model_id: e.tax_model_id,
     amount: e.amount,
     entry_type: e.entry_type,
+    deferment_allowed: e.deferment_allowed ?? false,
     filled_by: user.id,
     updated_at: now,
   }));

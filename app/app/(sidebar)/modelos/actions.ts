@@ -71,7 +71,7 @@ export async function getClientQuarterData(
   const modelIds = models.map((m) => m.id);
   const { data: rawEntries, error: entriesError } = await supabase
     .from("tax_entries")
-    .select("id, tax_model_id, amount, entry_type")
+    .select("id, tax_model_id, amount, entry_type, deferment_allowed")
     .eq("company_id", companyId)
     .in("tax_model_id", modelIds);
 
@@ -95,13 +95,19 @@ export async function getClientQuarterData(
   const entryIds = filledEntries.map((e) => e.id);
   const { data: responses } = await supabase
     .from("tax_client_responses")
-    .select("tax_entry_id, status, bank_account_id")
+    .select("tax_entry_id, status, bank_account_id, deferment_requested, deferment_num_installments, deferment_first_payment_date")
     .in("tax_entry_id", entryIds);
 
   const responsesByEntry = new Map(
     (responses ?? []).map((r) => [
       r.tax_entry_id,
-      { status: r.status as TaxModelStatus, bank_account_id: r.bank_account_id },
+      {
+        status: r.status as TaxModelStatus,
+        bank_account_id: r.bank_account_id,
+        deferment_requested: Boolean(r.deferment_requested),
+        deferment_num_installments: (r.deferment_num_installments ?? null) as number | null,
+        deferment_first_payment_date: (r.deferment_first_payment_date ?? null) as string | null,
+      },
     ])
   );
 
@@ -127,6 +133,7 @@ export async function getClientQuarterData(
       amount: Number(e.amount),
       entry_type: e.entry_type as "pagar" | "percibir",
       is_informative: model.is_informative ?? false,
+      deferment_allowed: Boolean(e.deferment_allowed),
       client_response: responsesByEntry.get(e.id) ?? null,
     };
   });
