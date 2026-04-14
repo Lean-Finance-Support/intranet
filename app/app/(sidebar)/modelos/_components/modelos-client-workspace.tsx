@@ -18,8 +18,14 @@ const INITIAL_HEADER: HeaderState = {
   submittedAt: null,
 };
 
-export default function ModelosClientWorkspace() {
-  const [quarter, setQuarter] = useState(1);
+export default function ModelosClientWorkspace({
+  initialYear = new Date().getFullYear(),
+  initialQuarter = 1,
+}: {
+  initialYear?: number;
+  initialQuarter?: number;
+}) {
+  const [quarter, setQuarter] = useState(initialQuarter);
   const [header, setHeader] = useState<HeaderState>(INITIAL_HEADER);
 
   const handleQuarterChange = useCallback((q: number) => {
@@ -30,7 +36,7 @@ export default function ModelosClientWorkspace() {
   const mailtoHref =
     header.advisorEmails.length > 0
       ? `mailto:${header.advisorEmails.join(",")}?subject=${encodeURIComponent(
-          `Consulta modelos fiscales ${quarter}T 2026${header.companyName ? ` — ${header.companyName}` : ""}`
+          `Consulta modelos fiscales ${quarter}T ${initialYear}${header.companyName ? ` — ${header.companyName}` : ""}`
         )}`
       : null;
 
@@ -89,7 +95,7 @@ export default function ModelosClientWorkspace() {
         </div>
 
         <div className="pt-6 pb-12">
-          <ModelsClientList key={quarter} quarter={quarter} onHeaderState={setHeader} />
+          <ModelsClientList key={`${initialYear}-${quarter}`} quarter={quarter} year={initialYear} onHeaderState={setHeader} />
         </div>
       </div>
     </div>

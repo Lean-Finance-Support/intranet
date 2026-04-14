@@ -7,13 +7,18 @@ import {
   getCachedCompanyServiceSlugs,
 } from "@/lib/cached-queries";
 
-export default async function ClientModelosPage() {
+export default async function ClientModelosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string; quarter?: string }>;
+}) {
   const { user } = await getAuthUser();
   if (!user) redirect("/app/login");
 
-  const [headersList, activeCompanyId] = await Promise.all([
+  const [headersList, activeCompanyId, params] = await Promise.all([
     headers(),
     getActiveCompanyId(),
+    searchParams,
   ]);
   const host = headersList.get("host") ?? "";
   const isProd = host === "app.leanfinance.es";
@@ -27,9 +32,12 @@ export default async function ClientModelosPage() {
     redirect(`${prefix}/dashboard`);
   }
 
+  const initialYear = Math.max(2020, parseInt(params.year ?? "") || new Date().getFullYear());
+  const initialQuarter = Math.min(4, Math.max(1, parseInt(params.quarter ?? "") || 1));
+
   return (
     <div className="min-h-full">
-      <ModelosClientWorkspace />
+      <ModelosClientWorkspace initialYear={initialYear} initialQuarter={initialQuarter} />
     </div>
   );
 }
