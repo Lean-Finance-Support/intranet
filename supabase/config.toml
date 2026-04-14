@@ -1,0 +1,16 @@
+project_id = "intranet"
+
+[db]
+major_version = 17
+
+[functions.notify-tax-models]
+verify_jwt = false
+
+[functions.notify-tax-submission]
+verify_jwt = false
+
+[functions.notify-enisa-welcome]
+verify_jwt = false
+
+[functions.notify-enisa-submission]
+verify_jwt = false

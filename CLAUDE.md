@@ -135,6 +135,22 @@ Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthor
 Solo crea perfil si `NEW.raw_user_meta_data->>'role'` está presente.
 Los logins de cuentas no pre-creadas por admin no generan perfil → van a /unauthorized.
 
+### Triggers de notificaciones (`trigger_notify_*`)
+Tres triggers en `tax_notifications`, `enisa_notifications`, `enisa_submissions` llaman a edge functions via `net.http_post`. La URL del proyecto y el `webhook_secret` se leen de `public.app_settings` (no hardcoded) para que la misma migración funcione en dev y prod.
+
+---
+
+## Pipeline de migraciones Supabase
+
+`supabase/` es la fuente de verdad del schema y las edge functions. Ver `supabase/README.md` para detalles.
+
+- **Migraciones**: `supabase/migrations/YYYYMMDDhhmmss_<slug>.sql`. Aplicar con `supabase db push` (usa management API, solo necesita `SUPABASE_ACCESS_TOKEN`). Nunca tocar schema desde el dashboard.
+- **Edge functions**: `supabase/functions/<slug>/index.ts`. Deploy con `supabase functions deploy <slug> --project-ref <ref>`.
+- **Config por entorno**: tras aplicar migraciones en un proyecto nuevo, insertar en `public.app_settings` la `supabase_url` y `webhook_secret`. Secrets de edge functions (`RESEND_API_KEY`, `WEBHOOK_SECRET`) via `supabase secrets set`.
+- **pg_net**: debe estar instalado (la migración `20260414120100_parametrize_notifications.sql` lo crea). Sin él los triggers de notificación fallan con "schema 'net' does not exist".
+
+Proyectos: prod `wgxugccbatusioubnsfl` (eu-west-1), dev `rvnflidcbiinmlfpzsbf` (eu-north-1). Plan Free → sin Supabase Branches.
+
 ---
 
 ## Estructura de rutas
