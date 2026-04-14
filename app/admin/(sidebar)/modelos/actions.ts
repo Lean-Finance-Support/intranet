@@ -211,6 +211,59 @@ export async function saveEntries(entries: EntryPayload[]): Promise<void> {
   }
 }
 
+export async function getQuarterComment(
+  companyId: string,
+  year: number,
+  quarter: number
+): Promise<{ comment_text: string; edited_at: string | null }> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
+  const { supabase } = await requireFiscalAdmin();
+
+  const { data } = await supabase
+    .from("tax_quarter_comments")
+    .select("comment_text, edited_at")
+    .eq("company_id", companyId)
+    .eq("year", year)
+    .eq("quarter", quarter)
+    .maybeSingle();
+
+  return {
+    comment_text: data?.comment_text ?? "",
+    edited_at: data?.edited_at ?? null,
+  };
+}
+
+export async function saveQuarterComment(
+  companyId: string,
+  year: number,
+  quarter: number,
+  commentText: string
+): Promise<void> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
+  const { supabase, user } = await requireFiscalAdmin();
+
+  const { error } = await supabase
+    .from("tax_quarter_comments")
+    .upsert(
+      {
+        company_id: companyId,
+        year,
+        quarter,
+        comment_text: commentText,
+        edited_by: user.id,
+        edited_at: new Date().toISOString(),
+      },
+      { onConflict: "company_id,year,quarter" }
+    );
+
+  if (error) {
+    console.error("[admin/modelos] saveQuarterComment error:", error.code);
+    throw new Error("Error al guardar el comentario.");
+  }
+}
+
 export async function notifyClient(
   companyId: string,
   year: number,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { getModelsWithEntries, saveEntries, deleteEntry, getClientResponses } from "../actions";
+import { getModelsWithEntries, saveEntries, deleteEntry, getClientResponses, getQuarterComment, saveQuarterComment } from "../actions";
 import type { ClientResponseStatus } from "../actions";
 import type { TaxModelWithEntry } from "@/lib/types/tax";
 
@@ -42,15 +42,20 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [comment, setComment] = useState("");
+  const [commentInitial, setCommentInitial] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setSavedMessage("");
     try {
-      const [models, clientData] = await Promise.all([
+      const [models, clientData, commentData] = await Promise.all([
         getModelsWithEntries(companyId, year, quarter),
         getClientResponses(companyId, year, quarter),
+        getQuarterComment(companyId, year, quarter),
       ]);
+      setComment(commentData.comment_text);
+      setCommentInitial(commentData.comment_text);
       setEntries(
         models.map((m: TaxModelWithEntry) => ({
           tax_model_id: m.id,
@@ -134,13 +139,18 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
       }
     }
 
-    if (toSave.length === 0 && toDelete.length === 0) return;
+    const commentDirty = comment !== commentInitial;
+    if (toSave.length === 0 && toDelete.length === 0 && !commentDirty) return;
 
     setSaving(true);
     setSavedMessage("");
     try {
       if (toSave.length > 0) await saveEntries(toSave);
       for (const taxModelId of toDelete) await deleteEntry(companyId, taxModelId);
+      if (commentDirty) {
+        await saveQuarterComment(companyId, year, quarter, comment);
+        setCommentInitial(comment);
+      }
       setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
       setSavedMessage("Guardado correctamente");
       setTimeout(() => setSavedMessage(""), 3000);
@@ -152,9 +162,9 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
     }
   }
 
-  const hasDirty = entries.some((e) =>
-    e.is_informative ? e.dirty : (e.dirty && e.amount !== "")
-  );
+  const hasDirty =
+    entries.some((e) => (e.is_informative ? e.dirty : e.dirty && e.amount !== "")) ||
+    comment !== commentInitial;
 
   useImperativeHandle(ref, () => ({
     saveIfDirty: async () => {
@@ -176,9 +186,13 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
       }
       if (toSave.length > 0) await saveEntries(toSave);
       for (const taxModelId of toDelete) await deleteEntry(companyId, taxModelId);
+      if (comment !== commentInitial) {
+        await saveQuarterComment(companyId, year, quarter, comment);
+        setCommentInitial(comment);
+      }
       setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
     },
-  }), [entries, companyId]);
+  }), [entries, companyId, comment, commentInitial, year, quarter]);
 
   // Build a map of tax_model_id → client response for quick lookup
   const responsesByModel = new Map(
@@ -188,7 +202,7 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -262,7 +276,7 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div>
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
@@ -391,6 +405,25 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-text-body mb-1.5">
+          Observaciones del trimestre
+          <span className="ml-2 text-xs font-normal text-text-muted">Visible para el cliente cuando se le notifique</span>
+        </label>
+        <textarea
+          value={comment}
+          onChange={(e) => canEdit && !presented && setComment(e.target.value)}
+          readOnly={!canEdit || presented}
+          rows={3}
+          placeholder="Añade observaciones para el cliente sobre este trimestre (opcional)"
+          className={`w-full px-3 py-2 rounded-lg border text-sm text-text-body focus:outline-none transition-colors ${
+            canEdit && !presented
+              ? "border-gray-200 focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+              : "border-gray-100 bg-gray-50 text-text-muted cursor-default"
+          }`}
+        />
       </div>
 
       {canEdit && !presented && (

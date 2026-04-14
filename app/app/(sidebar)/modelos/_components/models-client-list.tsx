@@ -37,6 +37,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
   const [notified, setNotified] = useState(false);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [presented, setPresented] = useState(false);
+  const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -59,6 +60,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
       setNotified(quarterData.notified);
       setSubmittedAt(quarterData.submitted_at);
       setPresented(quarterData.presented);
+      setComment(quarterData.comment);
       setBankAccounts(accounts);
 
       const defaultAccount = accounts.find((a) => a.is_default);
@@ -269,6 +271,20 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
 
   return (
     <div>
+      {comment.trim() && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-brand-teal/5 border border-brand-teal/20">
+          <div className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-brand-navy mb-1">Observaciones de tu asesor</p>
+              <p className="text-sm text-text-body whitespace-pre-wrap break-words">{comment}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status summary */}
       {(acceptedCount > 0 || rejectedCount > 0) && (
         <div className="mb-4 flex gap-3 text-xs">

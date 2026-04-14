@@ -18,6 +18,7 @@ export async function getClientQuarterData(
   submitted: boolean;
   submitted_at: string | null;
   presented: boolean;
+  comment: string;
 }> {
   if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
   if (year < 2000 || year > 2100) throw new Error("Año inválido");
@@ -38,8 +39,17 @@ export async function getClientQuarterData(
   const latestUpdateNotification = allNotifications.find((n) => n.notification_type === "update") ?? null;
 
   if (!notification) {
-    return { notified: false, entries: [], submitted: false, submitted_at: null, presented: false };
+    return { notified: false, entries: [], submitted: false, submitted_at: null, presented: false, comment: "" };
   }
+
+  const { data: commentRow } = await supabase
+    .from("tax_quarter_comments")
+    .select("comment_text")
+    .eq("company_id", companyId)
+    .eq("year", year)
+    .eq("quarter", quarter)
+    .maybeSingle();
+  const comment = commentRow?.comment_text ?? "";
 
   // Get tax models for this quarter
   const { data: models, error: modelsError } = await supabase
@@ -54,7 +64,7 @@ export async function getClientQuarterData(
     throw new Error("Error al procesar la solicitud.");
   }
   if (!models || models.length === 0) {
-    return { notified: true, entries: [], submitted: false, submitted_at: null, presented };
+    return { notified: true, entries: [], submitted: false, submitted_at: null, presented, comment };
   }
 
   // Get entries (only those with amount filled by admin)
@@ -78,7 +88,7 @@ export async function getClientQuarterData(
   });
 
   if (filledEntries.length === 0) {
-    return { notified: true, entries: [], submitted: false, submitted_at: null, presented };
+    return { notified: true, entries: [], submitted: false, submitted_at: null, presented, comment };
   }
 
   // Get client responses for these entries
@@ -140,6 +150,7 @@ export async function getClientQuarterData(
     submitted: submissionIsActive,
     submitted_at: submissionIsActive ? submission!.submitted_at : null,
     presented,
+    comment,
   };
 }
 
