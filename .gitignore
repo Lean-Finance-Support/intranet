@@ -39,7 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude
 .claude/
+memory/
 
 # Supabase
 /supabase/.branches
