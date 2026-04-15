@@ -429,6 +429,18 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                             {response.bank_account_iban.replace(/(.{4})/g, "$1 ").trim()}
                           </span>
                         )}
+                        {response.deferment_requested && response.deferment_first_payment_date && response.deferment_num_installments && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-teal bg-brand-teal/10 rounded px-1.5 py-0.5 w-fit">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <circle cx="12" cy="12" r="9" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
+                            </svg>
+                            Aplazamiento: {response.deferment_num_installments} plazo{response.deferment_num_installments !== 1 ? "s" : ""} desde {(() => {
+                              const [y, m, d] = response.deferment_first_payment_date.split("-");
+                              return `${d}/${m}/${y}`;
+                            })()}
+                          </span>
+                        )}
                       </div>
                     )}
                   </td>

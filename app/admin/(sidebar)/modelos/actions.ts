@@ -356,6 +356,9 @@ export interface ClientResponseStatus {
   status: TaxModelStatus;
   bank_account_iban: string;
   bank_account_label: string | null;
+  deferment_requested: boolean;
+  deferment_num_installments: number | null;
+  deferment_first_payment_date: string | null;
 }
 
 export async function deleteEntry(companyId: string, taxModelId: string): Promise<void> {
@@ -434,7 +437,7 @@ export async function getClientResponses(
 
   const { data: rawResponses } = await supabase
     .from("tax_client_responses")
-    .select("tax_entry_id, status, bank_account:company_bank_accounts(iban, label)")
+    .select("tax_entry_id, status, deferment_requested, deferment_num_installments, deferment_first_payment_date, bank_account:company_bank_accounts(iban, label)")
     .in("tax_entry_id", entries.map((e) => e.id));
 
   const entryToModel = new Map(entries.map((e) => [e.id, e.tax_model_id]));
@@ -446,6 +449,9 @@ export async function getClientResponses(
       status: r.status as TaxModelStatus,
       bank_account_iban: bank?.iban ?? "",
       bank_account_label: bank?.label ?? null,
+      deferment_requested: Boolean(r.deferment_requested),
+      deferment_num_installments: (r.deferment_num_installments ?? null) as number | null,
+      deferment_first_payment_date: (r.deferment_first_payment_date ?? null) as string | null,
     };
   });
 
