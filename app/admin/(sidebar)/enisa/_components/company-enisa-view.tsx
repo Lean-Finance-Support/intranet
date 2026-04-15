@@ -79,13 +79,15 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
       <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
         <div className="flex flex-col items-center lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
-            <NotifyWelcomeButton
-              companyId={company.id}
-              alreadySent={welcomeEmailSent}
-              sentAt={welcomeEmailSentAt}
-              onSent={loadData}
-            />
-            {welcomeEmailSent && (
+            {company.canEdit && (
+              <NotifyWelcomeButton
+                companyId={company.id}
+                alreadySent={welcomeEmailSent}
+                sentAt={welcomeEmailSentAt}
+                onSent={loadData}
+              />
+            )}
+            {company.canEdit && welcomeEmailSent && (
               <>
                 <div className="hidden lg:block w-px self-stretch bg-gray-200" />
                 <NotifyUpdateButton
@@ -100,6 +102,15 @@ export default function CompanyEnisaView({ company }: CompanyEnisaViewProps) {
           <DownloadAllButton companyId={company.id} hasDocuments={totalDocs > 0} />
         </div>
       </div>
+
+      {!company.canEdit && (
+        <div className="px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 flex items-center gap-2">
+          <svg className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          <span className="text-sm text-text-muted">Solo lectura — no estás asignado como técnico de esta empresa</span>
+        </div>
+      )}
 
       {/* Status summary */}
       {lastSubmittedAt && (

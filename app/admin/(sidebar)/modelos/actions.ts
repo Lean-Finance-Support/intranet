@@ -2,65 +2,56 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { userScopeIds } from "@/lib/require-permission";
 import type { Company, TaxModelWithEntry, EntryPayload, TaxModelStatus } from "@/lib/types/tax";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 
-async function requireServiceAdmin(serviceSlug: string) {
-  const { supabase, user, isSuperadmin } = await requireAdmin();
+async function requireServiceAdmin(
+  serviceSlug: string,
+  viewPerm: string,
+  writePerm: string
+) {
+  const { supabase, user } = await requireAdmin();
 
-  // Superadmin siempre tiene acceso como chief a todos los servicios
-  if (isSuperadmin) {
-    return { supabase, user, isChief: true, isSuperadmin: true };
-  }
+  const { data: svc } = await supabase
+    .from("services")
+    .select("id")
+    .eq("slug", serviceSlug)
+    .single();
+  if (!svc) throw new Error("Servicio no existe");
 
-  // Get all user's departments
-  const { data: userDepts } = await supabase
-    .from("profile_departments")
-    .select("department_id")
-    .eq("profile_id", user.id);
-
-  const deptIds = (userDepts ?? []).map((d) => d.department_id as string);
-  if (deptIds.length === 0) throw new Error("Sin departamento asignado");
-
-  // Find if any of the user's departments has this service active
-  const { data: deptServices } = await supabase
+  const { data: deptSvcs } = await supabase
     .from("department_services")
-    .select("department_id, service:services(slug)")
-    .in("department_id", deptIds)
+    .select("department_id")
+    .eq("service_id", svc.id)
     .eq("is_active", true);
 
-  const hasService = (deptServices ?? []).some((ds) => {
-    const svc = (ds as unknown as { service: { slug: string } | null }).service;
-    return svc?.slug === serviceSlug;
-  });
+  const serviceDeptIds = new Set((deptSvcs ?? []).map((d) => d.department_id as string));
+  if (serviceDeptIds.size === 0) throw new Error("Sin departamento con este servicio");
 
-  if (!hasService) throw new Error("Sin permisos para este servicio");
+  const [viewable, writable] = await Promise.all([
+    userScopeIds(viewPerm, "department"),
+    userScopeIds(writePerm, "department"),
+  ]);
 
-  // Get departments with this service to determine chief status
-  const serviceDeptIds = (deptServices ?? [])
-    .filter((ds) => {
-      const svc = (ds as unknown as { service: { slug: string } | null }).service;
-      return svc?.slug === serviceSlug;
-    })
-    .map((ds) => ds.department_id as string);
+  const canView = viewable.some((id) => serviceDeptIds.has(id));
+  if (!canView) throw new Error("Sin permisos para este servicio");
 
-  const { data: chiefRecords } = await supabase
-    .from("department_chiefs")
-    .select("department_id")
-    .eq("profile_id", user.id)
-    .in("department_id", serviceDeptIds);
+  const isChief = writable.some((id) => serviceDeptIds.has(id));
 
-  const isChief = (chiefRecords ?? []).length > 0;
-
-  return { supabase, user, isChief, isSuperadmin: false };
+  return { supabase, user, isChief };
 }
 
 async function requireFiscalAdmin() {
-  return requireServiceAdmin(SERVICE_SLUGS.TAX_MODELS);
+  return requireServiceAdmin(
+    SERVICE_SLUGS.TAX_MODELS,
+    "view_tax_notifications",
+    "create_tax_notification"
+  );
 }
 
 export async function getAllCompanies(): Promise<Company[]> {
-  const { supabase, user, isChief, isSuperadmin } = await requireFiscalAdmin();
+  const { supabase, user, isChief } = await requireFiscalAdmin();
 
   // Get the service id for tax-models
   const { data: svc } = await supabase
@@ -81,15 +72,12 @@ export async function getAllCompanies(): Promise<Company[]> {
   const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
 
-  let companiesQuery = supabase
-    .from("companies")
-    .select("id, legal_name, company_name, nif")
-    .in("id", serviceCompanyIds)
-    .order("legal_name");
-  if (!isSuperadmin) companiesQuery = companiesQuery.eq("is_demo", false);
-
   const [{ data, error }, { data: assignments }] = await Promise.all([
-    companiesQuery,
+    supabase
+      .from("companies")
+      .select("id, legal_name, company_name, nif")
+      .in("id", serviceCompanyIds)
+      .order("legal_name"),
     supabase
       .from("company_technicians")
       .select("company_id")
@@ -108,7 +96,7 @@ export async function getAllCompanies(): Promise<Company[]> {
 
   return companies.map((c) => ({
     ...c,
-    canEdit: isChief || assignedIds.has(c.id), // chief/superadmin editan todo, técnico solo las suyas
+    canEdit: isChief || assignedIds.has(c.id),
     isAssigned: assignedIds.has(c.id),          // asignación explícita como técnico
   }));
 }

@@ -44,7 +44,7 @@ export interface Company {
   legal_name: string;
   company_name: string | null;
   nif: string | null;
-  canEdit?: boolean;    // true si el usuario puede modificar esta empresa (chief/superadmin=todas, técnico=solo asignadas)
+  canEdit?: boolean;    // true si el usuario puede modificar esta empresa (chief=todas, técnico=solo asignadas)
   isAssigned?: boolean; // true si el usuario está asignado como técnico de esta empresa
 }
 

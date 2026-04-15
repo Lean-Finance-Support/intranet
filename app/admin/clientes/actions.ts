@@ -1,7 +1,26 @@
 "use server";
 
 import { requireAdmin } from "@/lib/require-admin";
+import { requirePermission, userScopeIds } from "@/lib/require-permission";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+
+/**
+ * Resuelve el departamento activo para un servicio (vía department_services).
+ * Devuelve el department_id o lanza si el servicio no está activo en ninguno.
+ */
+async function resolveServiceDepartment(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  serviceId: string
+): Promise<string> {
+  const { data } = await supabase
+    .from("department_services")
+    .select("department_id")
+    .eq("service_id", serviceId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!data) throw new Error("Servicio no encontrado");
+  return data.department_id as string;
+}
 
 // ---------- Types ----------
 
@@ -50,7 +69,7 @@ export interface CompanyDetailInfo {
 // ---------- Main data loader ----------
 
 export async function getAllCompaniesData(): Promise<ClientesPageData> {
-  const { supabase, user, isSuperadmin } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   // 1. Batch: all departments, services, dept-service links, companies
   const [
@@ -63,9 +82,10 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     supabase.from("services").select("id, name, slug"),
     supabase.from("department_services").select("department_id, service_id").eq("is_active", true),
     (() => {
-      let q = supabase.from("companies").select("id, legal_name, company_name, nif").order("legal_name");
-      if (!isSuperadmin) q = q.eq("is_demo", false);
-      return q;
+      return supabase
+        .from("companies")
+        .select("id, legal_name, company_name, nif")
+        .order("legal_name");
     })(),
   ]);
 
@@ -84,17 +104,8 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   const companies = compResult.data ?? [];
   const companyIds = companies.map((c) => c.id);
 
-  // 2. User's chief depts
-  let userChiefDeptIds: string[];
-  if (isSuperadmin) {
-    userChiefDeptIds = departments.map((d) => d.id);
-  } else {
-    const { data: chiefLinks } = await supabase
-      .from("department_chiefs")
-      .select("department_id")
-      .eq("profile_id", user.id);
-    userChiefDeptIds = (chiefLinks ?? []).map((c) => c.department_id as string);
-  }
+  // 2. User's chief depts (departments donde puede asignar técnicos)
+  const userChiefDeptIds = await userScopeIds("assign_technician", "department");
 
   // 3. Company services + technicians
   let companyServicesData: { company_id: string; service_id: string }[] = [];
@@ -139,9 +150,8 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
       const p = link.profile as unknown as {
         id: string;
         full_name: string | null;
-        role: string;
       } | null;
-      if (!p || p.role === "superadmin") continue;
+      if (!p) continue;
       if (!deptMembersMap[link.department_id]) deptMembersMap[link.department_id] = [];
       deptMembersMap[link.department_id].push({ id: p.id, name: p.full_name });
     }
@@ -353,27 +363,9 @@ export async function addServiceToCompany(
   companyId: string,
   serviceId: string
 ): Promise<void> {
-  const { supabase, user, isSuperadmin } = await requireAdmin();
-
-  if (!isSuperadmin) {
-    const { data: deptSvc } = await supabase
-      .from("department_services")
-      .select("department_id")
-      .eq("service_id", serviceId)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!deptSvc) throw new Error("Servicio no encontrado");
-
-    const { data: chiefCheck } = await supabase
-      .from("department_chiefs")
-      .select("department_id")
-      .eq("department_id", deptSvc.department_id)
-      .eq("profile_id", user.id)
-      .maybeSingle();
-
-    if (!chiefCheck) throw new Error("Sin permisos para añadir este servicio");
-  }
+  const { supabase } = await requireAdmin();
+  const deptId = await resolveServiceDepartment(supabase, serviceId);
+  await requirePermission("add_company_service", { type: "department", id: deptId });
 
   const { error } = await supabase.from("company_services").upsert(
     { company_id: companyId, service_id: serviceId, is_active: true },
@@ -387,27 +379,9 @@ export async function removeServiceFromCompany(
   companyId: string,
   serviceId: string
 ): Promise<void> {
-  const { supabase, user, isSuperadmin } = await requireAdmin();
-
-  if (!isSuperadmin) {
-    const { data: deptSvc } = await supabase
-      .from("department_services")
-      .select("department_id")
-      .eq("service_id", serviceId)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!deptSvc) throw new Error("Servicio no encontrado");
-
-    const { data: chiefCheck } = await supabase
-      .from("department_chiefs")
-      .select("department_id")
-      .eq("department_id", deptSvc.department_id)
-      .eq("profile_id", user.id)
-      .maybeSingle();
-
-    if (!chiefCheck) throw new Error("Sin permisos para eliminar este servicio");
-  }
+  const { supabase } = await requireAdmin();
+  const deptId = await resolveServiceDepartment(supabase, serviceId);
+  await requirePermission("add_company_service", { type: "department", id: deptId });
 
   const { error } = await supabase
     .from("company_services")
@@ -426,6 +400,8 @@ export async function assignTechnicianAdmin(
   technicianId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
+  const deptId = await resolveServiceDepartment(supabase, serviceId);
+  await requirePermission("assign_technician", { type: "department", id: deptId });
   const { error } = await supabase
     .from("company_technicians")
     .insert({ company_id: companyId, service_id: serviceId, technician_id: technicianId });
@@ -438,6 +414,8 @@ export async function removeTechnicianAdmin(
   technicianId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
+  const deptId = await resolveServiceDepartment(supabase, serviceId);
+  await requirePermission("assign_technician", { type: "department", id: deptId });
   const { error } = await supabase
     .from("company_technicians")
     .delete()
@@ -453,6 +431,7 @@ export async function assignAllTechniciansAdmin(
   deptId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
+  await requirePermission("assign_technician", { type: "department", id: deptId });
 
   const [{ data: memberLinks }, { data: existing }] = await Promise.all([
     supabase.from("profile_departments").select("profile_id").eq("department_id", deptId),

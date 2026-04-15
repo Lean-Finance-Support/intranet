@@ -120,7 +120,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  const correctSpace = role === "admin" || role === "superadmin" ? "admin" : "app";
+  const correctSpace = role === "admin" ? "admin" : "app";
 
   // En login con sesión → redirigir al dashboard del espacio correcto
   if (isOnLoginPage) {

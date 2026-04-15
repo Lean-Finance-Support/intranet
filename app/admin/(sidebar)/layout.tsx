@@ -28,17 +28,13 @@ export default async function AdminSidebarLayout({
     getNotifications(),
   ]);
 
-  const isSuperadmin = profile?.role === "superadmin";
-
-  let hasTaxModels = isSuperadmin;
-  let hasEnisaDocs = isSuperadmin;
-  if (!isSuperadmin) {
-    const deptIds = departments.map((d) => d.id);
-    if (deptIds.length > 0) {
-      const slugs = await getCachedDepartmentServiceSlugs(deptIds);
-      hasTaxModels = slugs.includes("tax-models");
-      hasEnisaDocs = slugs.includes("enisa-docs");
-    }
+  let hasTaxModels = false;
+  let hasEnisaDocs = false;
+  const deptIds = departments.map((d) => d.id);
+  if (deptIds.length > 0) {
+    const slugs = await getCachedDepartmentServiceSlugs(deptIds);
+    hasTaxModels = slugs.includes("tax-models");
+    hasEnisaDocs = slugs.includes("enisa-docs");
   }
 
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
