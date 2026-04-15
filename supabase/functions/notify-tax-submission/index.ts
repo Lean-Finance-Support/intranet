@@ -30,6 +30,49 @@ Deno.serve(async (req: Request) => {
 
   const companyName = company?.company_name ?? company?.legal_name ?? "Cliente";
 
+  // ¿El cliente ha solicitado aplazamiento en el 303 de este trimestre?
+  let defermentInfo: {
+    num_installments: number;
+    first_payment_date: string;
+  } | null = null;
+  {
+    const { data: model303 } = await supabase
+      .from("tax_models")
+      .select("id")
+      .eq("year", year)
+      .eq("quarter", quarter)
+      .eq("model_code", "303")
+      .maybeSingle();
+
+    if (model303) {
+      const { data: entry303 } = await supabase
+        .from("tax_entries")
+        .select("id")
+        .eq("company_id", company_id)
+        .eq("tax_model_id", model303.id)
+        .maybeSingle();
+
+      if (entry303) {
+        const { data: resp303 } = await supabase
+          .from("tax_client_responses")
+          .select("deferment_requested, deferment_num_installments, deferment_first_payment_date")
+          .eq("tax_entry_id", entry303.id)
+          .maybeSingle();
+
+        if (
+          resp303?.deferment_requested
+          && resp303.deferment_num_installments
+          && resp303.deferment_first_payment_date
+        ) {
+          defermentInfo = {
+            num_installments: resp303.deferment_num_installments,
+            first_payment_date: resp303.deferment_first_payment_date,
+          };
+        }
+      }
+    }
+  }
+
   const recipientMap = new Map<string, { email: string; name: string }>();
 
   const { data: taxService } = await supabase
@@ -97,8 +140,8 @@ Deno.serve(async (req: Request) => {
           from: EMAIL_FROM,
           to: [email],
           subject: `${companyName} ha validado sus modelos fiscales del ${quarterLabel}`,
-          html: buildEmail(name, companyName, quarterLabel, link),
-          text: buildText(name, companyName, quarterLabel, link),
+          html: buildEmail(name, companyName, quarterLabel, link, defermentInfo),
+          text: buildText(name, companyName, quarterLabel, link, defermentInfo),
         }),
       }).then(async (res) => {
         if (!res.ok) throw new Error(`${email}: ${await res.text()}`);
@@ -119,7 +162,23 @@ Deno.serve(async (req: Request) => {
   });
 });
 
-function buildEmail(name: string, companyName: string, quarterLabel: string, link: string): string {
+function formatDateEs(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function buildEmail(
+  name: string,
+  companyName: string,
+  quarterLabel: string,
+  link: string,
+  deferment: { num_installments: number; first_payment_date: string } | null,
+): string {
+  const defermentBlock = deferment
+    ? `<p style="margin:0 0 24px;padding:12px 16px;background-color:#e6f7f8;border-left:3px solid #00B0B7;border-radius:4px;font-size:14px;color:#0f2444;line-height:1.6;">
+            <strong>Aplazamiento solicitado para el modelo 303:</strong> ${deferment.num_installments} plazo${deferment.num_installments !== 1 ? "s" : ""}, primer pago el ${formatDateEs(deferment.first_payment_date)}.
+          </p>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Modelos fiscales validados</title></head>
@@ -137,6 +196,7 @@ function buildEmail(name: string, companyName: string, quarterLabel: string, lin
           <p style="margin:0 0 24px;font-size:15px;color:#4b5563;line-height:1.6;">
             La empresa <strong>${companyName}</strong> ha validado sus respuestas de los modelos fiscales del <strong>${quarterLabel}</strong> y est\u00e1n pendientes de tu revisi\u00f3n.
           </p>
+          ${defermentBlock}
           <table cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
             <tr><td style="background-color:#00B0B7;border-radius:8px;">
               <a href="${link}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Ver modelos \u2192</a>
@@ -154,6 +214,15 @@ function buildEmail(name: string, companyName: string, quarterLabel: string, lin
 </html>`;
 }
 
-function buildText(name: string, companyName: string, quarterLabel: string, link: string): string {
-  return `Hola, ${name},\n\nLa empresa ${companyName} ha validado sus respuestas de los modelos fiscales del ${quarterLabel} y est\u00e1n pendientes de tu revisi\u00f3n.\n\nVer modelos: ${link}\n\n\u2014 Lean Finance`;
+function buildText(
+  name: string,
+  companyName: string,
+  quarterLabel: string,
+  link: string,
+  deferment: { num_installments: number; first_payment_date: string } | null,
+): string {
+  const defermentLine = deferment
+    ? `\n\nAplazamiento solicitado para el modelo 303: ${deferment.num_installments} plazo${deferment.num_installments !== 1 ? "s" : ""}, primer pago el ${formatDateEs(deferment.first_payment_date)}.`
+    : "";
+  return `Hola, ${name},\n\nLa empresa ${companyName} ha validado sus respuestas de los modelos fiscales del ${quarterLabel} y est\u00e1n pendientes de tu revisi\u00f3n.${defermentLine}\n\nVer modelos: ${link}\n\n\u2014 Lean Finance`;
 }
