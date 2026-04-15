@@ -74,11 +74,24 @@ Deno.serve(async (req: Request) => {
       const modelIds = models.map((m) => m.id);
       const { data: entries } = await supabase
         .from("tax_entries")
-        .select("tax_model_id, amount, entry_type")
+        .select("id, tax_model_id, amount, entry_type")
         .eq("company_id", company_id)
         .in("tax_model_id", modelIds);
 
       if (entries) {
+        // Cargar respuestas del cliente para detectar aplazamientos
+        const entryIds = entries.map((e) => e.id);
+        const { data: responses } = await supabase
+          .from("tax_client_responses")
+          .select("tax_entry_id, deferment_requested")
+          .in("tax_entry_id", entryIds);
+        const defermentByEntry = new Map(
+          (responses ?? []).map((r: { tax_entry_id: string; deferment_requested: boolean | null }) => [
+            r.tax_entry_id,
+            Boolean(r.deferment_requested),
+          ])
+        );
+
         const informativeIds = new Set(
           models.filter((m) => m.is_informative).map((m) => m.id)
         );
@@ -91,11 +104,17 @@ Deno.serve(async (req: Request) => {
           .map((e) => {
             const model = modelMap.get(e.tax_model_id);
             if (!model) return null;
+            const isDeferred =
+              model.model_code === "303"
+              && e.entry_type === "pagar"
+              && defermentByEntry.get(e.id) === true;
             return {
               code: model.model_code,
               amount: Number(e.amount),
               type: model.is_informative
                 ? "Informativo"
+                : isDeferred
+                ? "Aplazamiento"
                 : e.entry_type === "pagar"
                 ? "A pagar"
                 : "A compensar",
@@ -294,10 +313,12 @@ function buildPresentationHtml({ companyId, companyName, quarter, year, recipien
 
   const totalPay = modelSummary.filter((i) => !i.isInformative && i.type === "A pagar").reduce((s, i) => s + i.amount, 0);
   const totalComp = modelSummary.filter((i) => !i.isInformative && i.type === "A compensar").reduce((s, i) => s + i.amount, 0);
+  const totalDeferred = modelSummary.filter((i) => i.type === "Aplazamiento").reduce((s, i) => s + i.amount, 0);
 
-  const totalsHtml = (totalPay > 0 || totalComp > 0) ? `
+  const totalsHtml = (totalPay > 0 || totalComp > 0 || totalDeferred > 0) ? `
   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
     ${totalPay > 0 ? `<tr><td style="font-size:14px;color:#4b5563;padding:4px 0;">Total a pagar</td><td style="font-size:15px;font-weight:700;color:#dc2626;font-family:monospace;text-align:right;padding:4px 0;">${fmt(totalPay)}</td></tr>` : ""}
+    ${totalDeferred > 0 ? `<tr><td style="font-size:14px;color:#4b5563;padding:4px 0;">Total en aplazamiento</td><td style="font-size:15px;font-weight:700;color:#00B0B7;font-family:monospace;text-align:right;padding:4px 0;">${fmt(totalDeferred)}</td></tr>` : ""}
     ${totalComp > 0 ? `<tr><td style="font-size:14px;color:#4b5563;padding:4px 0;">Total a compensar</td><td style="font-size:15px;font-weight:700;color:#2563eb;font-family:monospace;text-align:right;padding:4px 0;">${fmt(totalComp)}</td></tr>` : ""}
   </table>` : "";
 
