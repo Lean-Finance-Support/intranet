@@ -138,7 +138,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
     onHeaderState?.({ advisorEmails, companyName, presented, submittedAt });
   }, [onHeaderState, advisorEmails, companyName, presented, submittedAt]);
 
-  function tryAccept(index: number) {
+  function tryAccept(index: number, withDeferment: boolean = false) {
     if (presented) return;
     const entry = entries[index];
     // For non-informative models, IBAN must be selected before accepting
@@ -149,11 +149,22 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
       return;
     }
     setEntries((prev) =>
-      prev.map((e, i) =>
-        i === index
-          ? { ...e, status: e.status === "accepted" ? "pending" : "accepted", dirty: true, ibanError: false }
-          : e
-      )
+      prev.map((e, i) => {
+        if (i !== index) return e;
+        // Toggle off if already in the same state
+        const alreadyAccepted = e.status === "accepted";
+        const sameMode = alreadyAccepted && e.defermentRequested === withDeferment;
+        if (sameMode) {
+          return { ...e, status: "pending", defermentRequested: false, dirty: true, ibanError: false };
+        }
+        return {
+          ...e,
+          status: "accepted",
+          defermentRequested: withDeferment,
+          dirty: true,
+          ibanError: false,
+        };
+      })
     );
   }
 
@@ -454,9 +465,9 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
                 )}
               </div>
 
-              {/* Reject (left) | Accept (right) — disabled when presented */}
+              {/* Botones — 3 opciones si es 303 a pagar con aplazamiento habilitado, 2 en el resto */}
               {!presented && (
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
                   <button
                     onClick={() => tryReject(index)}
                     className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
@@ -467,16 +478,43 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
                   >
                     No Validar
                   </button>
-                  <button
-                    onClick={() => tryAccept(index)}
-                    className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
-                      entry.status === "accepted"
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
-                    }`}
-                  >
-                    Validar
-                  </button>
+                  {entry.model_code === "303"
+                    && entry.entry_type === "pagar"
+                    && entry.deferment_allowed ? (
+                    <>
+                      <button
+                        onClick={() => tryAccept(index, false)}
+                        className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                          entry.status === "accepted" && !entry.defermentRequested
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                        }`}
+                      >
+                        Validar sin aplazamiento
+                      </button>
+                      <button
+                        onClick={() => tryAccept(index, true)}
+                        className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                          entry.status === "accepted" && entry.defermentRequested
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                        }`}
+                      >
+                        Validar con aplazamiento
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => tryAccept(index, false)}
+                      className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                        entry.status === "accepted"
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                      }`}
+                    >
+                      Validar
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -485,7 +523,8 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
             {entry.model_code === "303"
               && entry.entry_type === "pagar"
               && entry.deferment_allowed
-              && entry.status === "accepted" && (
+              && entry.status === "accepted"
+              && (entry.defermentRequested || presented) && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   {presented ? (
                     entry.defermentRequested ? (
@@ -497,18 +536,8 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
                     )
                   ) : (
                     <>
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={entry.defermentRequested}
-                          onChange={(e) => toggleDeferment(index, e.target.checked)}
-                          className="accent-brand-teal"
-                        />
-                        <span className="text-sm text-text-body">Solicitar aplazamiento</span>
-                      </label>
-
                       {entry.defermentRequested && (
-                        <div className="mt-3 flex flex-wrap gap-4">
+                        <div className="flex flex-wrap gap-4">
                           {/* Stepper de plazos */}
                           <div className="flex flex-col gap-1">
                             <label className="text-xs font-medium text-text-muted">Nº de plazos</label>
