@@ -28,6 +28,46 @@ interface LocalEntry extends TaxEntryForClient {
   selectedBankAccountId: string;
   dirty: boolean;
   ibanError: boolean; // tried to accept without IBAN
+  defermentRequested: boolean;
+  defermentInstallments: number; // 1-12
+  defermentDay: 5 | 20;
+  defermentMonthKey: string; // "YYYY-MM"
+}
+
+const MONTH_NAMES_ES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+interface UpcomingMonth {
+  key: string; // "YYYY-MM"
+  label: string;
+  year: number;
+  month: number; // 1-12
+}
+
+function getUpcomingMonths(from: Date = new Date()): UpcomingMonth[] {
+  // Los tres meses siguientes al actual (sin contar el mes en curso)
+  const base = new Date(from.getFullYear(), from.getMonth() + 1, 1);
+  return [0, 1, 2].map((offset) => {
+    const d = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    return {
+      key: `${y}-${String(m).padStart(2, "0")}`,
+      label: `${MONTH_NAMES_ES[d.getMonth()]} ${y}`,
+      year: y,
+      month: m,
+    };
+  });
+}
+
+function parseStoredDate(iso: string | null | undefined): { day: 5 | 20; monthKey: string } | null {
+  if (!iso) return null;
+  const [y, m, d] = iso.split("-").map((s) => parseInt(s, 10));
+  if (!y || !m || !d) return null;
+  if (d !== 5 && d !== 20) return null;
+  return { day: d as 5 | 20, monthKey: `${y}-${String(m).padStart(2, "0")}` };
 }
 
 export default function ModelsClientList({ quarter, year = 2026, onHeaderState }: ModelsClientListProps) {
@@ -64,16 +104,24 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
       setBankAccounts(accounts);
 
       const defaultAccount = accounts.find((a) => a.is_default);
+      const upcoming = getUpcomingMonths();
 
       setEntries(
-        quarterData.entries.map((e) => ({
-          ...e,
-          status: e.client_response?.status ?? "pending",
-          selectedBankAccountId:
-            e.client_response?.bank_account_id ?? defaultAccount?.id ?? "",
-          dirty: false,
-          ibanError: false,
-        }))
+        quarterData.entries.map((e) => {
+          const stored = parseStoredDate(e.client_response?.deferment_first_payment_date);
+          return {
+            ...e,
+            status: e.client_response?.status ?? "pending",
+            selectedBankAccountId:
+              e.client_response?.bank_account_id ?? defaultAccount?.id ?? "",
+            dirty: false,
+            ibanError: false,
+            defermentRequested: e.client_response?.deferment_requested ?? false,
+            defermentInstallments: e.client_response?.deferment_num_installments ?? 1,
+            defermentDay: stored?.day ?? 5,
+            defermentMonthKey: stored?.monthKey ?? upcoming[0].key,
+          };
+        })
       );
     } catch (err) {
       console.error("Error cargando datos:", err);
@@ -90,7 +138,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
     onHeaderState?.({ advisorEmails, companyName, presented, submittedAt });
   }, [onHeaderState, advisorEmails, companyName, presented, submittedAt]);
 
-  function tryAccept(index: number) {
+  function tryAccept(index: number, withDeferment: boolean = false) {
     if (presented) return;
     const entry = entries[index];
     // For non-informative models, IBAN must be selected before accepting
@@ -101,11 +149,22 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
       return;
     }
     setEntries((prev) =>
-      prev.map((e, i) =>
-        i === index
-          ? { ...e, status: e.status === "accepted" ? "pending" : "accepted", dirty: true, ibanError: false }
-          : e
-      )
+      prev.map((e, i) => {
+        if (i !== index) return e;
+        // Toggle off if already in the same state
+        const alreadyAccepted = e.status === "accepted";
+        const sameMode = alreadyAccepted && e.defermentRequested === withDeferment;
+        if (sameMode) {
+          return { ...e, status: "pending", defermentRequested: false, dirty: true, ibanError: false };
+        }
+        return {
+          ...e,
+          status: "accepted",
+          defermentRequested: withDeferment,
+          dirty: true,
+          ibanError: false,
+        };
+      })
     );
   }
 
@@ -118,6 +177,62 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
           : e
       )
     );
+  }
+
+  function toggleDeferment(index: number, checked: boolean) {
+    if (presented) return;
+    setEntries((prev) =>
+      prev.map((e, i) =>
+        i === index ? { ...e, defermentRequested: checked, dirty: true } : e
+      )
+    );
+  }
+
+  function changeDefermentInstallments(index: number, value: number) {
+    if (presented) return;
+    const clamped = Math.max(1, Math.min(12, value));
+    setEntries((prev) =>
+      prev.map((e, i) =>
+        i === index ? { ...e, defermentInstallments: clamped, dirty: true } : e
+      )
+    );
+  }
+
+  function changeDefermentDay(index: number, day: 5 | 20) {
+    if (presented) return;
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, defermentDay: day, dirty: true } : e))
+    );
+  }
+
+  function changeDefermentMonth(index: number, monthKey: string) {
+    if (presented) return;
+    setEntries((prev) =>
+      prev.map((e, i) => (i === index ? { ...e, defermentMonthKey: monthKey, dirty: true } : e))
+    );
+  }
+
+  function buildDefermentPayload(e: LocalEntry): {
+    deferment_requested: boolean;
+    deferment_num_installments: number | null;
+    deferment_first_payment_date: string | null;
+  } {
+    const isRequestable =
+      e.status === "accepted"
+      && e.model_code === "303"
+      && e.entry_type === "pagar"
+      && e.deferment_allowed
+      && e.defermentRequested;
+    if (!isRequestable) {
+      return { deferment_requested: false, deferment_num_installments: null, deferment_first_payment_date: null };
+    }
+    const [y, m] = e.defermentMonthKey.split("-");
+    const date = `${y}-${m}-${String(e.defermentDay).padStart(2, "0")}`;
+    return {
+      deferment_requested: true,
+      deferment_num_installments: e.defermentInstallments,
+      deferment_first_payment_date: date,
+    };
   }
 
   function changeBankAccount(index: number, bankAccountId: string) {
@@ -138,6 +253,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
         tax_entry_id: e.id,
         bank_account_id: e.is_informative ? null : (e.status === "accepted" ? e.selectedBankAccountId : null),
         status: e.status,
+        ...buildDefermentPayload(e),
       }));
 
     if (toSave.length === 0) return;
@@ -180,6 +296,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
         tax_entry_id: e.id,
         bank_account_id: e.is_informative ? null : (e.status === "accepted" ? e.selectedBankAccountId : null),
         status: e.status,
+        ...buildDefermentPayload(e),
       }));
 
     setSubmitting(true);
@@ -265,6 +382,8 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
   const allDecided = entries.every((e) => e.status === "accepted" || e.status === "rejected");
   const canSubmit = allDecided && !entries.some((e) => e.status === "accepted" && !e.is_informative && !e.selectedBankAccountId);
 
+  const upcomingMonths = getUpcomingMonths();
+
   const acceptedCount = entries.filter((e) => e.status === "accepted").length;
   const rejectedCount = entries.filter((e) => e.status === "rejected").length;
   const pendingCount = entries.filter((e) => e.status === "pending").length;
@@ -346,9 +465,9 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
                 )}
               </div>
 
-              {/* Reject (left) | Accept (right) — disabled when presented */}
+              {/* Botones — 3 opciones si es 303 a pagar con aplazamiento habilitado, 2 en el resto */}
               {!presented && (
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
                   <button
                     onClick={() => tryReject(index)}
                     className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
@@ -359,19 +478,134 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
                   >
                     No Validar
                   </button>
-                  <button
-                    onClick={() => tryAccept(index)}
-                    className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
-                      entry.status === "accepted"
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
-                    }`}
-                  >
-                    Validar
-                  </button>
+                  {entry.model_code === "303"
+                    && entry.entry_type === "pagar"
+                    && entry.deferment_allowed ? (
+                    <>
+                      <button
+                        onClick={() => tryAccept(index, false)}
+                        className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                          entry.status === "accepted" && !entry.defermentRequested
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                        }`}
+                      >
+                        Validar sin aplazamiento
+                      </button>
+                      <button
+                        onClick={() => tryAccept(index, true)}
+                        className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                          entry.status === "accepted" && entry.defermentRequested
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                        }`}
+                      >
+                        Validar con aplazamiento
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => tryAccept(index, false)}
+                      className={`h-10 px-4 rounded-full text-sm font-semibold flex items-center justify-center transition-colors cursor-pointer hover:opacity-80 ${
+                        entry.status === "accepted"
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-100 text-text-muted hover:bg-green-100 hover:text-green-600"
+                      }`}
+                    >
+                      Validar
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Aplazamiento — solo 303 a pagar, con el asesor que lo haya habilitado y estado aceptado */}
+            {entry.model_code === "303"
+              && entry.entry_type === "pagar"
+              && entry.deferment_allowed
+              && entry.status === "accepted"
+              && (entry.defermentRequested || presented) && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  {presented ? (
+                    entry.defermentRequested ? (
+                      <p className="text-xs text-brand-teal font-medium">
+                        Aplazamiento solicitado — {entry.defermentInstallments} plazo{entry.defermentInstallments !== 1 ? "s" : ""} desde el {entry.defermentDay}/{entry.defermentMonthKey.split("-")[1]}/{entry.defermentMonthKey.split("-")[0]}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-text-muted">Sin aplazamiento</p>
+                    )
+                  ) : (
+                    <>
+                      {entry.defermentRequested && (
+                        <div className="flex flex-wrap gap-4">
+                          {/* Stepper de plazos */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-xs font-medium text-text-muted">Nº de plazos</label>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => changeDefermentInstallments(index, entry.defermentInstallments - 1)}
+                                disabled={entry.defermentInstallments <= 1}
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-text-body hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Reducir plazos"
+                              >
+                                −
+                              </button>
+                              <span className="w-8 text-center text-sm font-medium text-text-body font-mono">
+                                {entry.defermentInstallments}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => changeDefermentInstallments(index, entry.defermentInstallments + 1)}
+                                disabled={entry.defermentInstallments >= 12}
+                                className="w-8 h-8 rounded-lg border border-gray-200 text-text-body hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Aumentar plazos"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Día del mes */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-xs font-medium text-text-muted">Día del primer pago</label>
+                            <div className="flex gap-1">
+                              {([5, 20] as const).map((day) => (
+                                <button
+                                  key={day}
+                                  type="button"
+                                  onClick={() => changeDefermentDay(index, day)}
+                                  className={`h-8 px-3 rounded-lg border text-sm font-medium transition-colors ${
+                                    entry.defermentDay === day
+                                      ? "border-brand-teal bg-brand-teal text-white"
+                                      : "border-gray-200 text-text-body hover:bg-gray-50"
+                                  }`}
+                                >
+                                  Día {day}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Mes */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-xs font-medium text-text-muted">Mes del primer pago</label>
+                            <select
+                              value={entry.defermentMonthKey}
+                              onChange={(e) => changeDefermentMonth(index, e.target.value)}
+                              className="h-8 px-3 rounded-lg border border-gray-200 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal transition-colors"
+                            >
+                              {upcomingMonths.map((m) => (
+                                <option key={m.key} value={m.key}>{m.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
 
             {/* IBAN selector — always visible for non-informative models */}
             {!entry.is_informative && (

@@ -17,6 +17,7 @@ export interface TaxEntry {
   amount: number;
   entry_type: "pagar" | "percibir";
   filled_by: string;
+  deferment_allowed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +35,7 @@ export interface TaxModelWithEntry extends TaxModel {
   entry: {
     amount: number;
     entry_type: "pagar" | "percibir";
+    deferment_allowed: boolean;
   } | null;
 }
 
@@ -51,6 +53,12 @@ export interface EntryPayload {
   company_id: string;
   amount: number;
   entry_type: "pagar" | "percibir";
+  deferment_allowed?: boolean;
+}
+
+export interface DefermentRequest {
+  num_installments: number;
+  first_payment_date: string;
 }
 
 export interface TaxEntryForClient {
@@ -61,9 +69,13 @@ export interface TaxEntryForClient {
   amount: number;
   entry_type: "pagar" | "percibir";
   is_informative: boolean;
+  deferment_allowed: boolean;
   client_response: {
     status: TaxModelStatus;
     bank_account_id: string;
+    deferment_requested: boolean;
+    deferment_num_installments: number | null;
+    deferment_first_payment_date: string | null;
   } | null;
 }
 
@@ -71,4 +83,7 @@ export interface TaxClientResponsePayload {
   tax_entry_id: string;
   bank_account_id: string | null;
   status: TaxModelStatus;
+  deferment_requested?: boolean;
+  deferment_num_installments?: number | null;
+  deferment_first_payment_date?: string | null;
 }

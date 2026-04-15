@@ -26,6 +26,7 @@ interface LocalEntry {
   entry_type: "pagar" | "percibir";
   is_informative: boolean;
   selected: boolean; // for informative models: whether included in the notification
+  deferment_allowed: boolean;
   dirty: boolean;
 }
 
@@ -68,6 +69,7 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
           entry_type: m.entry?.entry_type ?? "pagar",
           is_informative: m.is_informative ?? false,
           selected: m.is_informative ? m.entry !== null : true,
+          deferment_allowed: m.entry?.deferment_allowed ?? false,
           dirty: false,
         }))
       );
@@ -110,8 +112,16 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
     );
   }
 
+  function updateDefermentAllowed(index: number, checked: boolean) {
+    setEntries((prev) =>
+      prev.map((e, i) =>
+        i === index ? { ...e, deferment_allowed: checked, dirty: true } : e
+      )
+    );
+  }
+
   async function handleSave() {
-    const toSave: { tax_model_id: string; company_id: string; amount: number; entry_type: "pagar" | "percibir" }[] = [];
+    const toSave: { tax_model_id: string; company_id: string; amount: number; entry_type: "pagar" | "percibir"; deferment_allowed: boolean }[] = [];
     const toDelete: string[] = [];
 
     for (const e of entries) {
@@ -123,6 +133,7 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
             company_id: companyId,
             amount: e.amount !== "" ? parseFloat(e.amount) : 0,
             entry_type: e.entry_type as "pagar" | "percibir",
+            deferment_allowed: false,
           });
         } else {
           toDelete.push(e.tax_model_id);
@@ -134,6 +145,7 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
             company_id: companyId,
             amount: parseFloat(e.amount),
             entry_type: e.entry_type as "pagar" | "percibir",
+            deferment_allowed: e.deferment_allowed,
           });
         }
       }
@@ -168,19 +180,19 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
 
   useImperativeHandle(ref, () => ({
     saveIfDirty: async () => {
-      const toSave: { tax_model_id: string; company_id: string; amount: number; entry_type: "pagar" | "percibir" }[] = [];
+      const toSave: { tax_model_id: string; company_id: string; amount: number; entry_type: "pagar" | "percibir"; deferment_allowed: boolean }[] = [];
       const toDelete: string[] = [];
       for (const e of entries) {
         if (!e.dirty) continue;
         if (e.is_informative) {
           if (e.selected) {
-            toSave.push({ tax_model_id: e.tax_model_id, company_id: companyId, amount: e.amount !== "" ? parseFloat(e.amount) : 0, entry_type: e.entry_type as "pagar" | "percibir" });
+            toSave.push({ tax_model_id: e.tax_model_id, company_id: companyId, amount: e.amount !== "" ? parseFloat(e.amount) : 0, entry_type: e.entry_type as "pagar" | "percibir", deferment_allowed: false });
           } else {
             toDelete.push(e.tax_model_id);
           }
         } else {
           if (e.amount !== "") {
-            toSave.push({ tax_model_id: e.tax_model_id, company_id: companyId, amount: parseFloat(e.amount), entry_type: e.entry_type as "pagar" | "percibir" });
+            toSave.push({ tax_model_id: e.tax_model_id, company_id: companyId, amount: parseFloat(e.amount), entry_type: e.entry_type as "pagar" | "percibir", deferment_allowed: e.deferment_allowed });
           }
         }
       }
@@ -336,29 +348,49 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                         ) : null}
                       </div>
                     ) : (
-                      <div className="flex gap-4">
-                        <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>
-                          <input
-                            type="radio"
-                            name={`type-${entry.tax_model_id}`}
-                            checked={entry.entry_type === "pagar"}
-                            onChange={() => canEdit && !presented && updateEntry(index, "entry_type", "pagar")}
-                            disabled={!canEdit || presented}
-                            className="accent-brand-teal"
-                          />
-                          <span className="text-sm text-text-body">A pagar</span>
-                        </label>
-                        <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>
-                          <input
-                            type="radio"
-                            name={`type-${entry.tax_model_id}`}
-                            checked={entry.entry_type === "percibir"}
-                            onChange={() => canEdit && !presented && updateEntry(index, "entry_type", "percibir")}
-                            disabled={!canEdit || presented}
-                            className="accent-brand-teal"
-                          />
-                          <span className="text-sm text-text-body">A compensar</span>
-                        </label>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex gap-4">
+                          <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>
+                            <input
+                              type="radio"
+                              name={`type-${entry.tax_model_id}`}
+                              checked={entry.entry_type === "pagar"}
+                              onChange={() => canEdit && !presented && updateEntry(index, "entry_type", "pagar")}
+                              disabled={!canEdit || presented}
+                              className="accent-brand-teal"
+                            />
+                            <span className="text-sm text-text-body">A pagar</span>
+                          </label>
+                          <label className={`flex items-center gap-1.5 ${canEdit && !presented ? "cursor-pointer" : "cursor-default opacity-60"}`}>
+                            <input
+                              type="radio"
+                              name={`type-${entry.tax_model_id}`}
+                              checked={entry.entry_type === "percibir"}
+                              onChange={() => canEdit && !presented && updateEntry(index, "entry_type", "percibir")}
+                              disabled={!canEdit || presented}
+                              className="accent-brand-teal"
+                            />
+                            <span className="text-sm text-text-body">A compensar</span>
+                          </label>
+                        </div>
+                        {entry.model_code === "303"
+                          && entry.entry_type === "pagar"
+                          && entry.amount !== ""
+                          && parseFloat(entry.amount) > 0 && (
+                            canEdit && !presented ? (
+                              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={entry.deferment_allowed}
+                                  onChange={(e) => updateDefermentAllowed(index, e.target.checked)}
+                                  className="accent-brand-teal"
+                                />
+                                <span className="text-xs text-text-muted">Incluir posibilidad de aplazamiento</span>
+                              </label>
+                            ) : entry.deferment_allowed ? (
+                              <span className="text-xs text-brand-teal font-medium">Aplazamiento disponible</span>
+                            ) : null
+                          )}
                       </div>
                     )}
                   </td>
@@ -395,6 +427,18 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
                               <span className="font-sans text-text-body mr-1">{response.bank_account_label}:</span>
                             )}
                             {response.bank_account_iban.replace(/(.{4})/g, "$1 ").trim()}
+                          </span>
+                        )}
+                        {response.deferment_requested && response.deferment_first_payment_date && response.deferment_num_installments && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-teal bg-brand-teal/10 rounded px-1.5 py-0.5 w-fit">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <circle cx="12" cy="12" r="9" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
+                            </svg>
+                            Aplazamiento: {response.deferment_num_installments} plazo{response.deferment_num_installments !== 1 ? "s" : ""} desde {(() => {
+                              const [y, m, d] = response.deferment_first_payment_date.split("-");
+                              return `${d}/${m}/${y}`;
+                            })()}
                           </span>
                         )}
                       </div>

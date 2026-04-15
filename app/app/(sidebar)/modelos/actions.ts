@@ -71,7 +71,7 @@ export async function getClientQuarterData(
   const modelIds = models.map((m) => m.id);
   const { data: rawEntries, error: entriesError } = await supabase
     .from("tax_entries")
-    .select("id, tax_model_id, amount, entry_type")
+    .select("id, tax_model_id, amount, entry_type, deferment_allowed")
     .eq("company_id", companyId)
     .in("tax_model_id", modelIds);
 
@@ -95,13 +95,19 @@ export async function getClientQuarterData(
   const entryIds = filledEntries.map((e) => e.id);
   const { data: responses } = await supabase
     .from("tax_client_responses")
-    .select("tax_entry_id, status, bank_account_id")
+    .select("tax_entry_id, status, bank_account_id, deferment_requested, deferment_num_installments, deferment_first_payment_date")
     .in("tax_entry_id", entryIds);
 
   const responsesByEntry = new Map(
     (responses ?? []).map((r) => [
       r.tax_entry_id,
-      { status: r.status as TaxModelStatus, bank_account_id: r.bank_account_id },
+      {
+        status: r.status as TaxModelStatus,
+        bank_account_id: r.bank_account_id,
+        deferment_requested: Boolean(r.deferment_requested),
+        deferment_num_installments: (r.deferment_num_installments ?? null) as number | null,
+        deferment_first_payment_date: (r.deferment_first_payment_date ?? null) as string | null,
+      },
     ])
   );
 
@@ -127,6 +133,7 @@ export async function getClientQuarterData(
       amount: Number(e.amount),
       entry_type: e.entry_type as "pagar" | "percibir",
       is_informative: model.is_informative ?? false,
+      deferment_allowed: Boolean(e.deferment_allowed),
       client_response: responsesByEntry.get(e.id) ?? null,
     };
   });
@@ -210,6 +217,25 @@ export async function saveClientResponses(
   const { supabase, user } = await requireClient();
 
   const now = new Date().toISOString();
+
+  // Validación servidor: si deferment_requested=true, plazos 1-12 y fecha día 5 o 20.
+  // La UI ya filtra por 303/pagar/deferment_allowed, pero blindamos aquí igualmente.
+  for (const r of responses) {
+    if (!r.deferment_requested) continue;
+    const n = r.deferment_num_installments ?? 0;
+    if (n < 1 || n > 12) {
+      throw new Error("Número de plazos inválido.");
+    }
+    const date = r.deferment_first_payment_date ?? "";
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (!match) throw new Error("Fecha de aplazamiento inválida.");
+    const day = parseInt(match[3], 10);
+    if (day !== 5 && day !== 20) throw new Error("El día del aplazamiento debe ser 5 o 20.");
+    if (r.status !== "accepted") {
+      throw new Error("Solo se puede solicitar aplazamiento sobre un modelo aceptado.");
+    }
+  }
+
   const rows = responses.map((r) => ({
     tax_entry_id: r.tax_entry_id,
     bank_account_id: r.bank_account_id ?? null,
@@ -217,6 +243,9 @@ export async function saveClientResponses(
     approved: r.status === "accepted",
     approved_by: user.id,
     approved_at: now,
+    deferment_requested: r.deferment_requested ?? false,
+    deferment_num_installments: r.deferment_requested ? r.deferment_num_installments ?? null : null,
+    deferment_first_payment_date: r.deferment_requested ? r.deferment_first_payment_date ?? null : null,
   }));
 
   const { error } = await supabase
