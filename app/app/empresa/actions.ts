@@ -8,8 +8,6 @@ export interface CompanyInfo {
   legal_name: string;
   company_name: string | null;
   nif: string | null;
-  phone: string | null;
-  address: string | null;
   accounts: { id: string; full_name: string | null; email: string }[];
   bank_accounts: CompanyBankAccount[];
 }
@@ -19,11 +17,11 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, legal_name, company_name, nif, phone, address")
+    .select("id, legal_name, company_name, nif, deleted_at")
     .eq("id", companyId)
     .single();
 
-  if (companyError || !company) throw new Error("Empresa no encontrada");
+  if (companyError || !company || company.deleted_at) throw new Error("Empresa no encontrada");
 
   // Obtener usuarios asociados a esta empresa via profile_companies
   const { data: profileLinks } = await supabase
@@ -50,23 +48,6 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
     })),
     bank_accounts: (bankAccounts ?? []) as CompanyBankAccount[],
   };
-}
-
-export async function updateCompanyContact(
-  phone: string | null,
-  address: string | null
-): Promise<void> {
-  const { supabase, companyId } = await requireClient();
-
-  const { error } = await supabase
-    .from("companies")
-    .update({ phone, address, updated_at: new Date().toISOString() })
-    .eq("id", companyId);
-
-  if (error) {
-    console.error("[app/empresa] DB error:", error.code);
-    throw new Error("Error al procesar la solicitud.");
-  }
 }
 
 export async function addCompanyBankAccount(

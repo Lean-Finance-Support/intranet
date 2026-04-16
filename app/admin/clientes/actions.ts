@@ -1,7 +1,8 @@
 "use server";
 
 import { requireAdmin } from "@/lib/require-admin";
-import { requirePermission, userScopeIds } from "@/lib/require-permission";
+import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
+import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 
 /**
@@ -40,6 +41,7 @@ export interface ClienteCompany {
   nif: string | null;
   services: ClienteService[];
   is_assigned: boolean;
+  deleted_at: string | null;
 }
 
 export interface DeptMemberSlim {
@@ -53,6 +55,15 @@ export interface ClientesPageData {
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
   chiefAvailableServices: { service_id: string; service_name: string; department_id: string }[];
+  canCreateCompany: boolean;
+  canDeleteCompany: boolean;
+  canManageClientAccounts: boolean;
+}
+
+export interface ClientAccount {
+  id: string;
+  full_name: string | null;
+  email: string;
 }
 
 export interface CompanyDetailInfo {
@@ -60,8 +71,7 @@ export interface CompanyDetailInfo {
   legal_name: string;
   company_name: string | null;
   nif: string | null;
-  phone: string | null;
-  address: string | null;
+  deleted_at: string | null;
   profiles: { id: string; full_name: string | null; email: string }[];
   bank_accounts: CompanyBankAccount[];
 }
@@ -84,7 +94,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     (() => {
       return supabase
         .from("companies")
-        .select("id, legal_name, company_name, nif")
+        .select("id, legal_name, company_name, nif, deleted_at")
         .order("legal_name");
     })(),
   ]);
@@ -104,8 +114,13 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   const companies = compResult.data ?? [];
   const companyIds = companies.map((c) => c.id);
 
-  // 2. User's chief depts (departments donde puede asignar técnicos)
-  const userChiefDeptIds = await userScopeIds("assign_technician", "department");
+  // 2. User's chief depts + permisos globales para gestionar empresas/cuentas
+  const [userChiefDeptIds, canCreateCompany, canDeleteCompany, canManageClientAccounts] = await Promise.all([
+    userScopeIds("assign_technician", "department"),
+    hasPermission("create_company"),
+    hasPermission("delete_company"),
+    hasPermission("manage_client_accounts"),
+  ]);
 
   // 3. Company services + technicians
   let companyServicesData: { company_id: string; service_id: string }[] = [];
@@ -210,6 +225,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     nif: c.nif,
     services: compSvcMap.get(c.id) ?? [],
     is_assigned: myAssignedCompanyIds.has(c.id),
+    deleted_at: c.deleted_at as string | null,
   }));
 
   return {
@@ -218,6 +234,9 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     userChiefDeptIds,
     deptMembers: deptMembersMap,
     chiefAvailableServices,
+    canCreateCompany,
+    canDeleteCompany,
+    canManageClientAccounts,
   };
 }
 
@@ -229,7 +248,7 @@ export async function getCompanyDetail(companyId: string): Promise<CompanyDetail
   const [{ data: company }, { data: profileLinks }, { data: bankAccounts }] = await Promise.all([
     supabase
       .from("companies")
-      .select("id, legal_name, company_name, nif, phone, address")
+      .select("id, legal_name, company_name, nif, deleted_at")
       .eq("id", companyId)
       .single(),
     supabase
@@ -275,21 +294,6 @@ export async function updateCompanyNameAdmin(
     .update({ company_name: name || null, updated_at: new Date().toISOString() })
     .eq("id", companyId);
   if (error) throw new Error("Error al actualizar el nombre comercial.");
-}
-
-// ---------- Update company contact ----------
-
-export async function updateCompanyContactAdmin(
-  companyId: string,
-  phone: string | null,
-  address: string | null
-): Promise<void> {
-  const { supabase } = await requireAdmin();
-  const { error } = await supabase
-    .from("companies")
-    .update({ phone, address, updated_at: new Date().toISOString() })
-    .eq("id", companyId);
-  if (error) throw new Error("Error al actualizar los datos de contacto.");
 }
 
 // ---------- Bank accounts (admin) ----------
@@ -453,4 +457,215 @@ export async function assignAllTechniciansAdmin(
     .from("company_technicians")
     .insert(toInsert.map((techId) => ({ company_id: companyId, service_id: serviceId, technician_id: techId })));
   if (error && error.code !== "23505") throw new Error("Error al asignar técnicos.");
+}
+
+// ---------- Crear empresa ----------
+
+export interface CreateCompanyInput {
+  legal_name: string;
+  company_name: string;
+  nif: string;
+}
+
+export async function createCompanyAdmin(input: CreateCompanyInput): Promise<ClienteCompany> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("create_company");
+
+  const legalName = input.legal_name.trim();
+  const companyName = input.company_name.trim();
+  const nif = input.nif.trim().toUpperCase();
+  if (!legalName || !companyName || !nif) {
+    throw new Error("Razón social, nombre comercial y NIF/CIF son obligatorios.");
+  }
+
+  const { data, error } = await supabase
+    .from("companies")
+    .insert({ legal_name: legalName, company_name: companyName, nif })
+    .select("id, legal_name, company_name, nif")
+    .single();
+
+  if (error || !data) throw new Error("Error al crear la empresa.");
+
+  return {
+    id: data.id,
+    legal_name: data.legal_name,
+    company_name: data.company_name,
+    nif: data.nif,
+    services: [],
+    is_assigned: false,
+    deleted_at: null,
+  };
+}
+
+// ---------- Cuentas cliente asociadas ----------
+
+export async function findClientProfileByEmail(email: string): Promise<ClientAccount | null> {
+  await requirePermission("manage_client_accounts");
+  const admin = createAdminClient();
+
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return null;
+
+  const { data } = await admin
+    .from("profiles")
+    .select("id, full_name, email, role")
+    .eq("email", cleanEmail)
+    .eq("role", "client")
+    .maybeSingle();
+
+  if (!data) return null;
+  return { id: data.id, full_name: data.full_name, email: data.email };
+}
+
+export async function createClientAccount(
+  companyId: string,
+  input: { email: string; full_name: string | null }
+): Promise<ClientAccount> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("manage_client_accounts");
+
+  const email = input.email.trim().toLowerCase();
+  const fullName = input.full_name?.trim() || null;
+  if (!email) throw new Error("El email es obligatorio.");
+
+  const admin = createAdminClient();
+
+  // 1. Crear o reutilizar auth.users
+  let authUserId: string | null = null;
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { role: "client", full_name: fullName },
+  });
+
+  if (createErr) {
+    const msg = createErr.message?.toLowerCase() ?? "";
+    const alreadyExists =
+      createErr.status === 422 ||
+      createErr.code === "email_exists" ||
+      msg.includes("already") ||
+      msg.includes("registered");
+    if (!alreadyExists) throw new Error("Error al crear la cuenta de autenticación.");
+
+    // Buscar el id del usuario existente por email
+    const { data: existing } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (!existing) throw new Error("El email ya está registrado pero no se pudo localizar.");
+    authUserId = existing.id;
+  } else {
+    authUserId = created.user?.id ?? null;
+  }
+
+  if (!authUserId) throw new Error("No se pudo determinar el usuario creado.");
+
+  // 2. Asegurar full_name en profiles (el trigger solo setea id/email/role)
+  if (fullName) {
+    await admin.from("profiles").update({ full_name: fullName }).eq("id", authUserId);
+  }
+
+  // 3. Vincular con la empresa (idempotente)
+  const { error: linkErr } = await supabase
+    .from("profile_companies")
+    .upsert(
+      { profile_id: authUserId, company_id: companyId },
+      { onConflict: "profile_id,company_id", ignoreDuplicates: true }
+    );
+  if (linkErr) throw new Error("Error al vincular la cuenta con la empresa.");
+
+  return { id: authUserId, full_name: fullName, email };
+}
+
+export async function updateClientAccount(
+  profileId: string,
+  input: { email?: string; full_name?: string | null }
+): Promise<ClientAccount> {
+  await requirePermission("manage_client_accounts");
+
+  const admin = createAdminClient();
+  const updates: { email?: string; full_name?: string | null } = {};
+
+  if (input.full_name !== undefined) {
+    updates.full_name = input.full_name?.trim() || null;
+  }
+  if (input.email !== undefined) {
+    const newEmail = input.email.trim().toLowerCase();
+    if (!newEmail) throw new Error("El email no puede estar vacío.");
+    updates.email = newEmail;
+  }
+
+  if (updates.email) {
+    const { error: authErr } = await admin.auth.admin.updateUserById(profileId, {
+      email: updates.email,
+      email_confirm: true,
+    });
+    if (authErr) throw new Error("Error al actualizar el email de la cuenta.");
+  }
+
+  const { data, error } = await admin
+    .from("profiles")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", profileId)
+    .select("id, full_name, email")
+    .single();
+
+  if (error || !data) throw new Error("Error al actualizar la cuenta.");
+  return { id: data.id, full_name: data.full_name, email: data.email };
+}
+
+export async function unlinkClientFromCompany(
+  companyId: string,
+  profileId: string
+): Promise<void> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("manage_client_accounts");
+
+  const { error } = await supabase
+    .from("profile_companies")
+    .delete()
+    .eq("company_id", companyId)
+    .eq("profile_id", profileId);
+
+  if (error) throw new Error("Error al desvincular la cuenta.");
+}
+
+// ---------- Soft delete / restore de empresa ----------
+
+export async function deleteCompanyAdmin(
+  companyId: string,
+  confirmNif: string
+): Promise<void> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("delete_company");
+
+  // Verificación NIF: defensa en profundidad por si la UI fallara
+  const { data: company, error: readErr } = await supabase
+    .from("companies")
+    .select("nif, deleted_at")
+    .eq("id", companyId)
+    .single();
+  if (readErr || !company) throw new Error("Empresa no encontrada.");
+  if (company.deleted_at) throw new Error("La empresa ya está eliminada.");
+  if ((company.nif ?? "").trim().toUpperCase() !== confirmNif.trim().toUpperCase()) {
+    throw new Error("El NIF de confirmación no coincide.");
+  }
+
+  const { error } = await supabase
+    .from("companies")
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+  if (error) throw new Error("Error al eliminar la empresa.");
+}
+
+export async function restoreCompanyAdmin(companyId: string): Promise<void> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("create_company");
+
+  const { error } = await supabase
+    .from("companies")
+    .update({ deleted_at: null, updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+  if (error) throw new Error("Error al restaurar la empresa.");
 }

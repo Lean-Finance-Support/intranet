@@ -1,8 +1,8 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import ClientSidebar from "@/components/sidebar/client-sidebar";
 import { getNotifications } from "@/lib/actions/notifications";
 import { getActiveCompanyId } from "@/lib/active-company";
+import { getLinkPrefix } from "@/lib/link-prefix";
 import {
   getAuthUser,
   getCachedProfile,
@@ -18,14 +18,9 @@ export default async function AppSidebarLayout({
   const { user } = await getAuthUser();
   if (!user) redirect("/app/login");
 
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "app.leanfinance.es";
-  const prefix = isProd ? "" : "/app";
-
-  const activeCompanyId = await getActiveCompanyId();
-
-  const [profile, companies, allNotifications] = await Promise.all([
+  const [prefix, activeCompanyId, profile, companies, allNotifications] = await Promise.all([
+    getLinkPrefix("app"),
+    getActiveCompanyId(),
     getCachedProfile(user.id),
     getCachedUserCompanies(user.id),
     getNotifications(),

@@ -1,7 +1,7 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/sidebar/admin-sidebar";
 import { getNotifications } from "@/lib/actions/notifications";
+import { getLinkPrefix } from "@/lib/link-prefix";
 import {
   getAuthUser,
   getCachedProfile,
@@ -17,25 +17,17 @@ export default async function AdminSidebarLayout({
   const { user } = await getAuthUser();
   if (!user) redirect("/admin/login");
 
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "admin.leanfinance.es";
-  const prefix = isProd ? "" : "/admin";
-
-  const [profile, departments, allNotifications] = await Promise.all([
+  const [prefix, profile, departments, allNotifications] = await Promise.all([
+    getLinkPrefix("admin"),
     getCachedProfile(user.id),
     getCachedUserDepartments(user.id),
     getNotifications(),
   ]);
 
-  let hasTaxModels = false;
-  let hasEnisaDocs = false;
   const deptIds = departments.map((d) => d.id);
-  if (deptIds.length > 0) {
-    const slugs = await getCachedDepartmentServiceSlugs(deptIds);
-    hasTaxModels = slugs.includes("tax-models");
-    hasEnisaDocs = slugs.includes("enisa-docs");
-  }
+  const slugs = deptIds.length > 0 ? await getCachedDepartmentServiceSlugs(deptIds) : [];
+  const hasTaxModels = slugs.includes("tax-models");
+  const hasEnisaDocs = slugs.includes("enisa-docs");
 
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
 

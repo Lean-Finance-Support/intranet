@@ -1,25 +1,20 @@
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getMyCompanies } from "./actions";
-import { setActiveCompanyCookieOnResponse } from "@/lib/active-company";
+import { getLinkPrefix } from "@/lib/link-prefix";
 import CompanySelector from "./company-selector";
 
 export default async function SelectCompanyPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "app.leanfinance.es";
-  const prefix = isProd ? "" : "/app";
+  const [{ data: { user } }, prefix, companies] = await Promise.all([
+    supabase.auth.getUser(),
+    getLinkPrefix("app"),
+    getMyCompanies(),
+  ]);
 
   if (!user) redirect(`${prefix}/login`);
-
-  const companies = await getMyCompanies();
 
   if (companies.length === 0) redirect("/unauthorized");
 

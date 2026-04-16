@@ -28,15 +28,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/app/login", origin));
   }
 
-  // Verificar que el usuario tiene acceso a esta empresa
+  // Verificar acceso y que la empresa no esté eliminada
   const { data: access } = await supabase
     .from("profile_companies")
-    .select("company_id")
+    .select("company:companies(id, deleted_at)")
     .eq("profile_id", user.id)
     .eq("company_id", companyId)
     .single();
 
-  if (!access) {
+  const company = (access?.company ?? null) as { id: string; deleted_at: string | null } | null;
+  if (!access || !company || company.deleted_at) {
     return NextResponse.redirect(new URL("/unauthorized", origin));
   }
 

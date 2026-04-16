@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { getLinkPrefix } from "@/lib/link-prefix";
 
 export default async function AppRootPage() {
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "app.leanfinance.es";
-
-  redirect(isProd ? "/dashboard" : "/app/dashboard");
+  const prefix = await getLinkPrefix("app");
+  redirect(`${prefix}/dashboard`);
 }

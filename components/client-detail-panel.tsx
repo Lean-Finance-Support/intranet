@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClienteCompany, ClienteService, DeptMemberSlim, CompanyDetailInfo } from "@/app/admin/clientes/actions";
+import type { ClienteCompany, ClienteService, ClientAccount, DeptMemberSlim, CompanyDetailInfo } from "@/app/admin/clientes/actions";
 import {
   getCompanyDetail,
   updateCompanyNameAdmin,
-  updateCompanyContactAdmin,
   addCompanyBankAccountAdmin,
   updateCompanyBankAccountAdmin,
   deleteCompanyBankAccountAdmin,
@@ -14,8 +13,20 @@ import {
   assignTechnicianAdmin,
   removeTechnicianAdmin,
   assignAllTechniciansAdmin,
+  createClientAccount,
+  updateClientAccount,
+  unlinkClientFromCompany,
+  findClientProfileByEmail,
+  deleteCompanyAdmin,
+  restoreCompanyAdmin,
 } from "@/app/admin/clientes/actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import ConfirmDialog from "@/components/confirm-dialog";
+import DeleteCompanyModal from "@/components/delete-company-modal";
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+}
 
 function formatIBAN(iban: string) {
   return iban.replace(/(.{4})/g, "$1 ").trim();
@@ -180,12 +191,213 @@ function ServiceDetailSection({
   );
 }
 
+// ---- Edit Client Account Form ----
+function EditClientAccountForm({
+  initial,
+  onSave,
+  onCancel,
+}: {
+  initial: ClientAccount;
+  onSave: (input: { email: string; full_name: string | null }) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [email, setEmail] = useState(initial.email);
+  const [fullName, setFullName] = useState(initial.full_name ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) { setError("El email es obligatorio"); return; }
+    setSaving(true); setError("");
+    try { await onSave({ email: email.trim(), full_name: fullName.trim() || null }); }
+    catch (err) { setError(err instanceof Error ? err.message : "Error al guardar"); setSaving(false); }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 bg-gray-50 rounded-lg p-3">
+      <div>
+        <label className="block text-xs font-medium text-text-muted mb-1">Email *</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="cliente@empresa.com"
+          required
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-text-muted mb-1">Nombre</label>
+        <input
+          type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Nombre y apellidos"
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+        />
+      </div>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="text-xs text-text-muted hover:text-text-body px-3 py-1.5 rounded-lg cursor-pointer">Cancelar</button>
+        <button type="submit" disabled={saving} className="text-xs bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 cursor-pointer">
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ---- Add Client Account Form (con detección automática de email existente) ----
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function AddClientAccountForm({
+  existingProfileIds,
+  onSubmit,
+  onCancel,
+}: {
+  existingProfileIds: string[];
+  onSubmit: (input: { email: string; full_name: string | null }) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [found, setFound] = useState<ClientAccount | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // Búsqueda con debounce al teclear el email
+  useEffect(() => {
+    const clean = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(clean)) {
+      setFound(null);
+      setSearched(false);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const result = await findClientProfileByEmail(clean);
+        if (!cancelled) {
+          setFound(result);
+          setSearched(true);
+        }
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+      setSearching(false);
+    };
+  }, [email]);
+
+  const alreadyLinked = !!found && existingProfileIds.includes(found.id);
+  const canSubmit = !saving && EMAIL_RE.test(email.trim()) && !alreadyLinked && (found !== null || fullName.trim().length > 0);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setSaving(true); setError("");
+    try {
+      await onSubmit({
+        email: email.trim().toLowerCase(),
+        full_name: found ? found.full_name : (fullName.trim() || null),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 bg-gray-50 rounded-lg p-3">
+      <div>
+        <label className="block text-xs font-medium text-text-muted mb-1">Email *</label>
+        <div className="relative">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="cliente@empresa.com"
+            required
+            autoFocus
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 pr-9 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+          />
+          {searching && (
+            <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
+            </svg>
+          )}
+        </div>
+      </div>
+
+      {/* Resultado de la búsqueda */}
+      {searched && found && alreadyLinked && (
+        <div className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <span>Esta cuenta ya está vinculada a esta empresa.</span>
+        </div>
+      )}
+
+      {searched && found && !alreadyLinked && (
+        <div className="flex items-center gap-3 bg-brand-teal/5 border border-brand-teal/30 rounded-lg px-3 py-2">
+          <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-text-muted">Cliente existente — se vinculará a esta empresa</p>
+            <p className="text-sm font-medium text-text-body truncate">{found.full_name ?? "Sin nombre"}</p>
+          </div>
+        </div>
+      )}
+
+      {searched && !found && (
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">Nombre *</label>
+          <input
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Nombre y apellidos"
+            required
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+          />
+          <p className="text-[11px] text-text-muted mt-1">No existe ningún cliente con este email — se creará una cuenta nueva.</p>
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="text-xs text-text-muted hover:text-text-body px-3 py-1.5 rounded-lg cursor-pointer">Cancelar</button>
+        <button type="submit" disabled={!canSubmit} className="text-xs bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 cursor-pointer">
+          {saving ? "Guardando..." : found ? "Vincular" : "Crear cuenta"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ---- Main Panel ----
 interface ClientDetailPanelProps {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
   chiefAvailableServices: { service_id: string; service_name: string; department_id: string }[];
+  canManageClientAccounts: boolean;
+  canDeleteCompany: boolean;
+  canCreateCompany: boolean;
   linkPrefix: string;
   onClose: () => void;
   onUpdateName: (companyId: string, name: string | null) => void;
@@ -193,6 +405,8 @@ interface ClientDetailPanelProps {
   onServiceRemoved: (companyId: string, serviceId: string) => void;
   onTechAssigned: (companyId: string, serviceId: string, tech: { id: string; name: string | null }) => void;
   onTechRemoved: (companyId: string, serviceId: string, techId: string) => void;
+  onDeleted: (companyId: string, deletedAt: string) => void;
+  onRestored: (companyId: string) => void;
 }
 
 export default function ClientDetailPanel({
@@ -200,6 +414,9 @@ export default function ClientDetailPanel({
   userChiefDeptIds,
   deptMembers,
   chiefAvailableServices,
+  canManageClientAccounts,
+  canDeleteCompany,
+  canCreateCompany,
   linkPrefix,
   onClose,
   onUpdateName,
@@ -207,6 +424,8 @@ export default function ClientDetailPanel({
   onServiceRemoved,
   onTechAssigned,
   onTechRemoved,
+  onDeleted,
+  onRestored,
 }: ClientDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -219,13 +438,6 @@ export default function ClientDetailPanel({
   const [nameValue, setNameValue] = useState(company.company_name ?? "");
   const [savingName, setSavingName] = useState(false);
 
-  // Contact
-  const [editingContact, setEditingContact] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [savingContact, setSavingContact] = useState(false);
-  const [contactSaved, setContactSaved] = useState(false);
-
   // Bank accounts
   const [addingBank, setAddingBank] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
@@ -235,13 +447,23 @@ export default function ClientDetailPanel({
   const [addingService, setAddingService] = useState(false);
   const [savingService, setSavingService] = useState(false);
 
+  // Client accounts
+  const [addingAccount, setAddingAccount] = useState(false);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+  const [unlinkConfirmAccount, setUnlinkConfirmAccount] = useState<ClientAccount | null>(null);
+
+  // Delete / restore
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+
+  const isDeleted = detail?.deleted_at != null;
+  const canEditCompany = !isDeleted;
+
   const loadDetail = useCallback(async () => {
     setLoadingDetail(true);
     try {
       const d = await getCompanyDetail(company.id);
       setDetail(d);
-      setPhone(d.phone ?? "");
-      setAddress(d.address ?? "");
     } finally {
       setLoadingDetail(false);
     }
@@ -265,17 +487,6 @@ export default function ClientDetailPanel({
       onUpdateName(company.id, nameValue || null);
       setEditingName(false);
     } finally { setSavingName(false); }
-  }
-
-  async function handleSaveContact() {
-    setSavingContact(true);
-    try {
-      await updateCompanyContactAdmin(company.id, phone || null, address || null);
-      setDetail((prev) => prev ? { ...prev, phone: phone || null, address: address || null } : prev);
-      setEditingContact(false);
-      setContactSaved(true);
-      setTimeout(() => setContactSaved(false), 2000);
-    } finally { setSavingContact(false); }
   }
 
   async function handleAddBank(iban: string, label: string | null, bankName: string | null) {
@@ -344,6 +555,44 @@ export default function ClientDetailPanel({
     removeTechnicianAdmin(company.id, serviceId, techId).catch(() => {});
   }
 
+  async function handleAddAccount(input: { email: string; full_name: string | null }) {
+    const created = await createClientAccount(company.id, input);
+    setDetail((prev) => {
+      if (!prev) return prev;
+      const exists = prev.profiles.some((p) => p.id === created.id);
+      return exists ? prev : { ...prev, profiles: [...prev.profiles, created] };
+    });
+    setAddingAccount(false);
+  }
+
+  async function handleUpdateAccount(profileId: string, input: { email: string; full_name: string | null }) {
+    const updated = await updateClientAccount(profileId, input);
+    setDetail((prev) =>
+      prev ? { ...prev, profiles: prev.profiles.map((p) => (p.id === profileId ? updated : p)) } : prev
+    );
+    setEditingAccountId(null);
+  }
+
+  async function handleConfirmDelete(typedNif: string) {
+    await deleteCompanyAdmin(company.id, typedNif);
+    setShowDeleteModal(false);
+    onDeleted(company.id, new Date().toISOString());
+  }
+
+  async function handleConfirmRestore() {
+    await restoreCompanyAdmin(company.id);
+    setShowRestoreConfirm(false);
+    onRestored(company.id);
+  }
+
+  async function handleConfirmUnlink(profileId: string) {
+    await unlinkClientFromCompany(company.id, profileId);
+    setDetail((prev) =>
+      prev ? { ...prev, profiles: prev.profiles.filter((p) => p.id !== profileId) } : prev
+    );
+    setUnlinkConfirmAccount(null);
+  }
+
   function handleAssignAll(serviceId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
@@ -386,6 +635,15 @@ export default function ClientDetailPanel({
                 <button onClick={handleSaveName} disabled={savingName} className="text-xs text-brand-teal font-medium disabled:opacity-50 cursor-pointer">{savingName ? "..." : "OK"}</button>
                 <button onClick={() => { setNameValue(company.company_name ?? ""); setEditingName(false); }} className="text-xs text-text-muted cursor-pointer">&times;</button>
               </div>
+            ) : isDeleted ? (
+              <div className="text-left">
+                <h2 className="text-lg font-bold font-heading text-text-muted truncate line-through decoration-gray-300">
+                  {company.company_name || company.legal_name}
+                </h2>
+                {company.company_name && (
+                  <p className="text-xs text-text-muted mt-0.5 truncate">{company.legal_name}</p>
+                )}
+              </div>
             ) : (
               <button onClick={() => setEditingName(true)} className="text-left group/name cursor-pointer" title="Editar nombre comercial">
                 <div className="flex items-center gap-1.5">
@@ -402,6 +660,14 @@ export default function ClientDetailPanel({
               </button>
             )}
             {company.nif && <p className="text-xs text-text-muted font-mono mt-1">{company.nif}</p>}
+            {isDeleted && detail?.deleted_at && (
+              <span className="inline-flex items-center gap-1 mt-2 text-[10px] bg-gray-200 text-text-muted px-2 py-0.5 rounded-full font-medium">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M5.272 5.79c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+                Eliminada el {formatDate(detail.deleted_at)}
+              </span>
+            )}
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0">
             <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -415,7 +681,7 @@ export default function ClientDetailPanel({
           <section>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Servicios contratados</h3>
-              {isChiefOfAny && availableToAdd.length > 0 && !addingService && (
+              {canEditCompany && isChiefOfAny && availableToAdd.length > 0 && !addingService && (
                 <button onClick={() => setAddingService(true)} className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                   Añadir
@@ -445,7 +711,7 @@ export default function ClientDetailPanel({
             ) : (
               <div className="space-y-2">
                 {company.services.map((svc) => {
-                  const isChiefOfDept = userChiefDeptIds.includes(svc.department_id);
+                  const isChiefOfDept = canEditCompany && userChiefDeptIds.includes(svc.department_id);
                   const members = deptMembers[svc.department_id] ?? [];
                   return (
                     <ServiceDetailSection
@@ -466,60 +732,11 @@ export default function ClientDetailPanel({
             )}
           </section>
 
-          {/* ---- Contact (lazy) ---- */}
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Contacto</h3>
-              {!editingContact && !loadingDetail && detail && (
-                <button onClick={() => setEditingContact(true)} className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer flex items-center gap-1">
-                  {contactSaved ? (
-                    <><svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg><span className="text-green-500">Guardado</span></>
-                  ) : "Editar"}
-                </button>
-              )}
-            </div>
-
-            {loadingDetail ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-12 bg-gray-100 rounded-lg" />
-                <div className="h-12 bg-gray-100 rounded-lg" />
-              </div>
-            ) : editingContact ? (
-              <div className="space-y-3 bg-gray-50 rounded-lg p-3">
-                <div>
-                  <label className="block text-xs font-medium text-text-muted mb-1">Teléfono</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: +34 912 345 678"
-                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-text-muted mb-1">Dirección</label>
-                  <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ej: Calle Gran Vía 1, Madrid" rows={2}
-                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal resize-none" />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => { setPhone(detail?.phone ?? ""); setAddress(detail?.address ?? ""); setEditingContact(false); }} className="text-xs text-text-muted hover:text-text-body px-3 py-1.5 rounded-lg cursor-pointer">Cancelar</button>
-                  <button onClick={handleSaveContact} disabled={savingContact} className="text-xs bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 cursor-pointer">{savingContact ? "Guardando..." : "Guardar"}</button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="bg-gray-50 rounded-lg px-4 py-3">
-                  <p className="text-xs text-text-muted">Teléfono</p>
-                  <p className="text-sm font-medium font-mono text-text-body">{detail?.phone ?? "—"}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg px-4 py-3">
-                  <p className="text-xs text-text-muted">Dirección</p>
-                  <p className="text-sm font-medium text-text-body">{detail?.address ?? "—"}</p>
-                </div>
-              </div>
-            )}
-          </section>
-
           {/* ---- Bank accounts ---- */}
           <section>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Cuentas bancarias</h3>
-              {!addingBank && !loadingDetail && (
+              {canEditCompany && !addingBank && !loadingDetail && (
                 <button onClick={() => setAddingBank(true)} className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                   Añadir
@@ -548,14 +765,16 @@ export default function ClientDetailPanel({
                           <p className="text-sm font-mono text-text-body">{formatIBAN(ba.iban)}</p>
                           {ba.bank_name && <p className="text-xs text-text-muted mt-0.5">{ba.bank_name}</p>}
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setEditingBankId(ba.id)} className="p-1 rounded hover:bg-gray-200 cursor-pointer" title="Editar">
-                            <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /></svg>
-                          </button>
-                          <button onClick={() => handleDeleteBank(ba.id)} disabled={deletingBankId === ba.id} className="p-1 rounded hover:bg-red-100 cursor-pointer disabled:opacity-50" title="Eliminar">
-                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                          </button>
-                        </div>
+                        {canEditCompany && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setEditingBankId(ba.id)} className="p-1 rounded hover:bg-gray-200 cursor-pointer" title="Editar">
+                              <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /></svg>
+                            </button>
+                            <button onClick={() => handleDeleteBank(ba.id)} disabled={deletingBankId === ba.id} className="p-1 rounded hover:bg-red-100 cursor-pointer disabled:opacity-50" title="Eliminar">
+                              <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
@@ -567,33 +786,150 @@ export default function ClientDetailPanel({
 
           {/* ---- Profiles (lazy) ---- */}
           <section>
-            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Cuentas asociadas</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Cuentas asociadas</h3>
+              {canEditCompany && canManageClientAccounts && !addingAccount && !loadingDetail && (
+                <button
+                  onClick={() => { setAddingAccount(true); setEditingAccountId(null); }}
+                  className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  Añadir
+                </button>
+              )}
+            </div>
+
             {loadingDetail ? (
               <div className="space-y-2 animate-pulse">
                 <div className="h-12 bg-gray-100 rounded-lg" />
               </div>
-            ) : (detail?.profiles ?? []).length === 0 ? (
-              <p className="text-sm text-text-muted">Sin cuentas asociadas</p>
             ) : (
               <div className="space-y-2">
-                {(detail?.profiles ?? []).map((acc) => (
-                  <div key={acc.id} className="bg-gray-50 rounded-lg px-4 py-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                      </svg>
+                {(detail?.profiles ?? []).length === 0 && !addingAccount && (
+                  <p className="text-sm text-text-muted">Sin cuentas asociadas</p>
+                )}
+                {(detail?.profiles ?? []).map((acc) =>
+                  editingAccountId === acc.id ? (
+                    <EditClientAccountForm
+                      key={acc.id}
+                      initial={acc}
+                      onSave={(input) => handleUpdateAccount(acc.id, input)}
+                      onCancel={() => setEditingAccountId(null)}
+                    />
+                  ) : (
+                    <div key={acc.id} className="bg-gray-50 rounded-lg px-4 py-3 flex items-center gap-3 group">
+                      <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-text-body truncate">{acc.full_name ?? "Sin nombre"}</p>
+                        <p className="text-xs text-text-muted truncate">{acc.email}</p>
+                      </div>
+                      {canEditCompany && canManageClientAccounts && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => { setEditingAccountId(acc.id); setAddingAccount(false); }}
+                            className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                            title="Editar"
+                          >
+                            <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setUnlinkConfirmAccount(acc)}
+                            className="p-1 rounded hover:bg-red-100 cursor-pointer"
+                            title="Desvincular"
+                          >
+                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-text-body truncate">{acc.full_name ?? "Sin nombre"}</p>
-                      <p className="text-xs text-text-muted truncate">{acc.email}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                )}
+                {addingAccount && (
+                  <AddClientAccountForm
+                    existingProfileIds={(detail?.profiles ?? []).map((p) => p.id)}
+                    onSubmit={handleAddAccount}
+                    onCancel={() => setAddingAccount(false)}
+                  />
+                )}
               </div>
             )}
           </section>
+
+          {/* ---- Zona de peligro ---- */}
+          {!loadingDetail && detail && (
+            (isDeleted && canCreateCompany) || (!isDeleted && canDeleteCompany)
+          ) && (
+            <section className="border-t border-gray-100 pt-5">
+              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Zona de peligro</h3>
+              {isDeleted ? (
+                <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-text-body">Restaurar cliente</p>
+                    <p className="text-xs text-text-muted mt-0.5">Volverá a estar activo y visible.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowRestoreConfirm(true)}
+                    className="text-xs font-medium bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 cursor-pointer flex-shrink-0"
+                  >
+                    Restaurar
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3 bg-red-50/50 border border-red-100 rounded-lg px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-red-700">Eliminar cliente</p>
+                    <p className="text-xs text-red-600/80 mt-0.5">Queda inactivo pero se conserva el histórico. Se puede restaurar.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="text-xs font-medium bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 cursor-pointer flex-shrink-0"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
         </div>
       </div>
+
+      {showDeleteModal && detail && (
+        <DeleteCompanyModal
+          legalName={detail.legal_name}
+          nif={detail.nif ?? ""}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
+
+      {showRestoreConfirm && detail && (
+        <ConfirmDialog
+          title="Restaurar empresa"
+          message={`¿Restaurar ${detail.legal_name}? Volverá a aparecer en los listados y podrá editarse de nuevo.`}
+          confirmLabel="Restaurar"
+          onConfirm={handleConfirmRestore}
+          onCancel={() => setShowRestoreConfirm(false)}
+        />
+      )}
+
+      {unlinkConfirmAccount && (
+        <ConfirmDialog
+          title="Desvincular cuenta"
+          message={`¿Desvincular ${unlinkConfirmAccount.full_name ?? unlinkConfirmAccount.email} de esta empresa? La cuenta seguirá existiendo y podrás volver a vincularla más tarde.`}
+          confirmLabel="Desvincular"
+          destructive
+          onConfirm={() => handleConfirmUnlink(unlinkConfirmAccount.id)}
+          onCancel={() => setUnlinkConfirmAccount(null)}
+        />
+      )}
     </div>
   );
 }

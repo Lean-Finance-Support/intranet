@@ -69,14 +69,14 @@ export async function getCachedUserDepartments(userId: string) {
   )();
 }
 
-/** Companies linked to a client user. Cached 5 min. */
+/** Companies linked to a client user. Cached 5 min. Excluye soft-deleted. */
 export async function getCachedUserCompanies(userId: string) {
   return unstable_cache(
     async () => {
       const admin = createAdminClient();
       const { data } = await admin
         .from("profile_companies")
-        .select("company:companies(id, legal_name, company_name)")
+        .select("company:companies(id, legal_name, company_name, deleted_at)")
         .eq("profile_id", userId);
       return (data ?? [])
         .map((row: Record<string, unknown>) => {
@@ -84,8 +84,10 @@ export async function getCachedUserCompanies(userId: string) {
             id: string;
             legal_name: string;
             company_name: string | null;
+            deleted_at: string | null;
           } | null;
-          return c ?? null;
+          if (!c || c.deleted_at) return null;
+          return { id: c.id, legal_name: c.legal_name, company_name: c.company_name };
         })
         .filter((c): c is NonNullable<typeof c> => c !== null);
     },
