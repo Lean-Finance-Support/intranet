@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 
 export const ACTIVE_COMPANY_COOKIE = "x-active-company-id";
@@ -10,11 +11,12 @@ const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 7, // 7 días
 };
 
-/** Lee la empresa activa desde la cookie (server components / server actions) */
-export async function getActiveCompanyId(): Promise<string | null> {
+/** Lee la empresa activa desde la cookie (server components / server actions).
+ *  Dedup per-request via React cache(). */
+export const getActiveCompanyId = cache(async (): Promise<string | null> => {
   const cookieStore = await cookies();
   return cookieStore.get(ACTIVE_COMPANY_COOKIE)?.value ?? null;
-}
+});
 
 /** Setea la cookie de empresa activa en una respuesta NextResponse (route handlers) */
 export function setActiveCompanyCookieOnResponse(

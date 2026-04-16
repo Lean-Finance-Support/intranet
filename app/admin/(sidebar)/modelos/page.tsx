@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { getLinkPrefix } from "@/lib/link-prefix";
 import ModelosWorkspace from "./_components/modelos-workspace";
 import {
   getAuthUser,
@@ -16,16 +16,12 @@ export default async function ModelosPage({
   const { user } = await getAuthUser();
   if (!user) redirect("/admin/login");
 
-  const [profile, departments, headersList, resolvedParams] = await Promise.all([
+  const [profile, departments, prefix, resolvedParams] = await Promise.all([
     getCachedProfile(user.id),
     getCachedUserDepartments(user.id),
-    headers(),
+    getLinkPrefix("admin"),
     searchParams,
   ]);
-
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "admin.leanfinance.es";
-  const prefix = isProd ? "" : "/admin";
 
   if (!profile || profile.role !== "admin") {
     redirect(`${prefix}/dashboard`);

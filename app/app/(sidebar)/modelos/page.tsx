@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getActiveCompanyId } from "@/lib/active-company";
+import { getLinkPrefix } from "@/lib/link-prefix";
 import ModelosClientWorkspace from "./_components/modelos-client-workspace";
 import {
   getAuthUser,
@@ -15,14 +15,11 @@ export default async function ClientModelosPage({
   const { user } = await getAuthUser();
   if (!user) redirect("/app/login");
 
-  const [headersList, activeCompanyId, params] = await Promise.all([
-    headers(),
+  const [prefix, activeCompanyId, params] = await Promise.all([
+    getLinkPrefix("app"),
     getActiveCompanyId(),
     searchParams,
   ]);
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "app.leanfinance.es";
-  const prefix = isProd ? "" : "/app";
   if (!activeCompanyId) {
     redirect(`${prefix}/select-company`);
   }

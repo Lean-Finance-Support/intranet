@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { getLinkPrefix } from "@/lib/link-prefix";
 
 export default async function AdminRootPage() {
-  const headersList = await headers();
-  const host = headersList.get("host") ?? "";
-  const isProd = host === "admin.leanfinance.es";
-
-  redirect(isProd ? "/dashboard" : "/admin/dashboard");
+  const prefix = await getLinkPrefix("admin");
+  redirect(`${prefix}/dashboard`);
 }

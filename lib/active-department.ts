@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 
 export const ACTIVE_DEPARTMENT_COOKIE = "x-active-department-id";
@@ -10,11 +11,12 @@ const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 30, // 30 días
 };
 
-/** Lee el departamento activo desde la cookie (server components / server actions) */
-export async function getActiveDepartmentId(): Promise<string | null> {
+/** Lee el departamento activo desde la cookie (server components / server actions).
+ *  Dedup per-request via React cache(). */
+export const getActiveDepartmentId = cache(async (): Promise<string | null> => {
   const cookieStore = await cookies();
   return cookieStore.get(ACTIVE_DEPARTMENT_COOKIE)?.value ?? null;
-}
+});
 
 /** Setea la cookie de departamento activo en una respuesta NextResponse (route handlers) */
 export function setActiveDepartmentCookieOnResponse(
