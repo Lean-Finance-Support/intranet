@@ -227,6 +227,29 @@ export async function getQuarterComment(
   };
 }
 
+export async function getClientQuarterComment(
+  companyId: string,
+  year: number,
+  quarter: number
+): Promise<{ comment_text: string; edited_at: string | null }> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
+  const { supabase } = await requireFiscalAdmin();
+
+  const { data } = await supabase
+    .from("tax_quarter_client_comments")
+    .select("comment_text, edited_at")
+    .eq("company_id", companyId)
+    .eq("year", year)
+    .eq("quarter", quarter)
+    .maybeSingle();
+
+  return {
+    comment_text: data?.comment_text ?? "",
+    edited_at: data?.edited_at ?? null,
+  };
+}
+
 export async function saveQuarterComment(
   companyId: string,
   year: number,

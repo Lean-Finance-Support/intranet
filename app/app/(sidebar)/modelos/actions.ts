@@ -19,6 +19,7 @@ export async function getClientQuarterData(
   submitted_at: string | null;
   presented: boolean;
   comment: string;
+  clientComment: string;
 }> {
   if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
   if (year < 2000 || year > 2100) throw new Error("Año inválido");
@@ -39,17 +40,27 @@ export async function getClientQuarterData(
   const latestUpdateNotification = allNotifications.find((n) => n.notification_type === "update") ?? null;
 
   if (!notification) {
-    return { notified: false, entries: [], submitted: false, submitted_at: null, presented: false, comment: "" };
+    return { notified: false, entries: [], submitted: false, submitted_at: null, presented: false, comment: "", clientComment: "" };
   }
 
-  const { data: commentRow } = await supabase
-    .from("tax_quarter_comments")
-    .select("comment_text")
-    .eq("company_id", companyId)
-    .eq("year", year)
-    .eq("quarter", quarter)
-    .maybeSingle();
+  const [{ data: commentRow }, { data: clientCommentRow }] = await Promise.all([
+    supabase
+      .from("tax_quarter_comments")
+      .select("comment_text")
+      .eq("company_id", companyId)
+      .eq("year", year)
+      .eq("quarter", quarter)
+      .maybeSingle(),
+    supabase
+      .from("tax_quarter_client_comments")
+      .select("comment_text")
+      .eq("company_id", companyId)
+      .eq("year", year)
+      .eq("quarter", quarter)
+      .maybeSingle(),
+  ]);
   const comment = commentRow?.comment_text ?? "";
+  const clientComment = clientCommentRow?.comment_text ?? "";
 
   // Get tax models for this quarter
   const { data: models, error: modelsError } = await supabase
@@ -64,7 +75,7 @@ export async function getClientQuarterData(
     throw new Error("Error al procesar la solicitud.");
   }
   if (!models || models.length === 0) {
-    return { notified: true, entries: [], submitted: false, submitted_at: null, presented, comment };
+    return { notified: true, entries: [], submitted: false, submitted_at: null, presented, comment, clientComment };
   }
 
   // Get entries (only those with amount filled by admin)
@@ -88,7 +99,7 @@ export async function getClientQuarterData(
   });
 
   if (filledEntries.length === 0) {
-    return { notified: true, entries: [], submitted: false, submitted_at: null, presented, comment };
+    return { notified: true, entries: [], submitted: false, submitted_at: null, presented, comment, clientComment };
   }
 
   // Get client responses for these entries
@@ -158,7 +169,51 @@ export async function getClientQuarterData(
     submitted_at: submissionIsActive ? submission!.submitted_at : null,
     presented,
     comment,
+    clientComment,
   };
+}
+
+export async function saveClientQuarterComment(
+  year: number,
+  quarter: number,
+  commentText: string
+): Promise<void> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
+  const { supabase, user, companyId } = await requireClient();
+
+  // Si el trimestre ya está presentado, no se admiten cambios.
+  const { data: presentedRow } = await supabase
+    .from("tax_notifications")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("year", year)
+    .eq("quarter", quarter)
+    .eq("notification_type", "presentation")
+    .limit(1)
+    .maybeSingle();
+  if (presentedRow) {
+    throw new Error("Este trimestre ya está presentado y no admite cambios.");
+  }
+
+  const { error } = await supabase
+    .from("tax_quarter_client_comments")
+    .upsert(
+      {
+        company_id: companyId,
+        year,
+        quarter,
+        comment_text: commentText,
+        edited_by: user.id,
+        edited_at: new Date().toISOString(),
+      },
+      { onConflict: "company_id,year,quarter" }
+    );
+
+  if (error) {
+    console.error("[app/modelos] saveClientQuarterComment error:", error.code);
+    throw new Error("Error al guardar el comentario.");
+  }
 }
 
 export async function getBankAccounts(): Promise<CompanyBankAccount[]> {
