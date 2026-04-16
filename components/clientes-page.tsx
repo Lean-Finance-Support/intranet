@@ -2,7 +2,9 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { ClienteCompany, ClienteService, ClientesPageData } from "@/app/admin/clientes/actions";
+import { createCompanyAdmin } from "@/app/admin/clientes/actions";
 import ClientDetailPanel from "@/components/client-detail-panel";
+import NewCompanyModal from "@/components/new-company-modal";
 
 // ---- Company Card ----
 function CompanyCard({
@@ -94,6 +96,7 @@ export default function ClientesPage({
 }) {
   const [companies, setCompanies] = useState<ClienteCompany[]>(data.companies);
   const [selectedCompany, setSelectedCompany] = useState<ClienteCompany | null>(null);
+  const [creatingCompany, setCreatingCompany] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -197,6 +200,12 @@ export default function ClientesPage({
     setSelectedCompany((prev) => prev ? update(prev) : prev);
   }
 
+  function handleCompanyCreated(company: ClienteCompany) {
+    setCompanies((prev) => [company, ...prev]);
+    setCreatingCompany(false);
+    setSelectedCompany(company);
+  }
+
   const hasAssignedCompanies = data.companies.some((c) => c.is_assigned);
 
   return (
@@ -204,9 +213,22 @@ export default function ClientesPage({
       <div className="max-w-6xl">
         <div className="sticky top-0 bg-surface-gray z-20 pt-12 pb-4 border-b border-gray-200 space-y-4">
           {/* Header */}
-          <div>
-            <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
-            <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">Clientes</h1>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
+              <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">Clientes</h1>
+            </div>
+            {data.canCreateCompany && (
+              <button
+                onClick={() => setCreatingCompany(true)}
+                className="mt-2 inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nuevo cliente
+              </button>
+            )}
           </div>
 
           {/* Search + filters */}
@@ -319,6 +341,7 @@ export default function ClientesPage({
           userChiefDeptIds={data.userChiefDeptIds}
           deptMembers={data.deptMembers}
           chiefAvailableServices={data.chiefAvailableServices}
+          canManageClientAccounts={data.canManageClientAccounts}
           linkPrefix={linkPrefix}
           onClose={() => setSelectedCompany(null)}
           onUpdateName={handleUpdateName}
@@ -326,6 +349,17 @@ export default function ClientesPage({
           onServiceRemoved={handleServiceRemoved}
           onTechAssigned={handleTechAssigned}
           onTechRemoved={handleTechRemoved}
+        />
+      )}
+
+      {/* Nueva empresa modal */}
+      {creatingCompany && (
+        <NewCompanyModal
+          onClose={() => setCreatingCompany(false)}
+          onCreate={async (input) => {
+            const created = await createCompanyAdmin(input);
+            handleCompanyCreated(created);
+          }}
         />
       )}
     </div>

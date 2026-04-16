@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import type { CompanyInfo } from "@/app/app/empresa/actions";
 import {
   getCompanyInfo,
-  updateCompanyContact,
   addCompanyBankAccount,
   updateCompanyBankAccount,
   deleteCompanyBankAccount,
@@ -81,12 +80,6 @@ export default function EmpresaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [editingContact, setEditingContact] = useState(false);
-  const [savingContact, setSavingContact] = useState(false);
-  const [contactSaved, setContactSaved] = useState(false);
-
   const [addingBank, setAddingBank] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
@@ -97,8 +90,6 @@ export default function EmpresaPage() {
     try {
       const data = await getCompanyInfo();
       setInfo(data);
-      setPhone(data.phone ?? "");
-      setAddress(data.address ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar");
     } finally {
@@ -107,19 +98,6 @@ export default function EmpresaPage() {
   }, []);
 
   useEffect(() => { loadInfo(); }, [loadInfo]);
-
-  async function handleSaveContact() {
-    setSavingContact(true);
-    try {
-      await updateCompanyContact(phone || null, address || null);
-      setInfo((prev) => prev ? { ...prev, phone: phone || null, address: address || null } : prev);
-      setEditingContact(false);
-      setContactSaved(true);
-      setTimeout(() => setContactSaved(false), 2000);
-    } finally {
-      setSavingContact(false);
-    }
-  }
 
   async function handleAddBank(iban: string, label: string | null, bankName: string | null) {
     const newAccount = await addCompanyBankAccount(iban, label, bankName);
@@ -158,7 +136,7 @@ export default function EmpresaPage() {
 
         {loading && (
           <div className="space-y-6 animate-pulse">
-            {[{ w: "w-32", rows: 3 }, { w: "w-28", rows: 2 }, { w: "w-20", rows: 2 }, { w: "w-24", rows: 1 }].map((s, i) => (
+            {[{ w: "w-32", rows: 3 }, { w: "w-28", rows: 2 }, { w: "w-24", rows: 1 }].map((s, i) => (
               <div key={i}>
                 <div className={`h-3 ${s.w} bg-gray-300 rounded mb-3`} />
                 <div className="space-y-2">
@@ -203,47 +181,6 @@ export default function EmpresaPage() {
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-            </section>
-
-            {/* Contacto */}
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">Contacto</p>
-                {!editingContact && (
-                  <button onClick={() => setEditingContact(true)} className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer flex items-center gap-1">
-                    {contactSaved ? (
-                      <><svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg><span className="text-green-500">Guardado</span></>
-                    ) : "Editar"}
-                  </button>
-                )}
-              </div>
-              {editingContact ? (
-                <div className="space-y-3 bg-white rounded-xl p-4 border border-gray-100">
-                  <div>
-                    <label className="block text-xs font-medium text-text-muted mb-1">Teléfono</label>
-                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 912 345 678"
-                      className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-text-muted mb-1">Dirección</label>
-                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Calle Gran Vía 1, Madrid" rows={2}
-                      className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal resize-none" />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => { setPhone(info.phone ?? ""); setAddress(info.address ?? ""); setEditingContact(false); }}
-                      className="text-xs text-text-muted hover:text-text-body px-3 py-1.5 rounded-lg cursor-pointer">Cancelar</button>
-                    <button onClick={handleSaveContact} disabled={savingContact}
-                      className="text-xs bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 cursor-pointer">
-                      {savingContact ? "Guardando..." : "Guardar"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <InfoRow label="Teléfono" value={info.phone ?? "—"} mono />
-                  <InfoRow label="Dirección" value={info.address ?? "—"} />
                 </div>
               )}
             </section>
