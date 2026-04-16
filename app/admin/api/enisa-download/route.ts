@@ -1,32 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { createAdminClient } from "@/lib/supabase/server";
 import { ENISA_DOCUMENT_TYPES } from "@/lib/types/enisa";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 import archiver from "archiver";
 import { PassThrough } from "stream";
 
 export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
-  } catch {
-    return new NextResponse("No autorizado", { status: 401 });
-  }
-
   const companyId = request.nextUrl.searchParams.get("companyId");
   if (!companyId) {
     return new NextResponse("companyId requerido", { status: 400 });
   }
 
+  try {
+    const { supabase } = await requireAdmin();
+
+    const { data: svc } = await supabase
+      .from("services")
+      .select("id")
+      .eq("slug", SERVICE_SLUGS.ENISA_DOCS)
+      .single();
+    if (!svc) return new NextResponse("Servicio no existe", { status: 404 });
+
+    const { data: deptSvcs } = await supabase
+      .from("department_services")
+      .select("department_id")
+      .eq("service_id", svc.id)
+      .eq("is_active", true);
+
+    const serviceDeptIds = new Set((deptSvcs ?? []).map((d) => d.department_id as string));
+    if (serviceDeptIds.size === 0) {
+      return new NextResponse("Sin departamento con este servicio", { status: 403 });
+    }
+
+    const [viewable, writable] = await Promise.all([
+      userScopeIds("view_enisa_submissions", "department"),
+      userScopeIds("review_enisa_submission", "department"),
+    ]);
+
+    const canView = viewable.some((id) => serviceDeptIds.has(id));
+    if (!canView) {
+      return new NextResponse("Sin permisos para este servicio", { status: 403 });
+    }
+
+    const isChief = writable.some((id) => serviceDeptIds.has(id));
+
+    if (!isChief) {
+      const { data: cs } = await supabase
+        .from("company_services")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("service_id", svc.id)
+        .maybeSingle();
+      if (!cs) {
+        return new NextResponse("Empresa sin servicio ENISA contratado", { status: 403 });
+      }
+
+      const ok = await hasPermission("view_assigned_company", {
+        type: "company_service",
+        companyServiceId: cs.id,
+      });
+      if (!ok) {
+        return new NextResponse("Sin permisos sobre esta empresa", { status: 403 });
+      }
+    }
+  } catch {
+    return new NextResponse("No autorizado", { status: 401 });
+  }
+
   const admin = createAdminClient();
 
-  // Get company name for the zip filename
   const { data: company } = await admin
     .from("companies")
     .select("legal_name")
     .eq("id", companyId)
     .single();
 
-  // Get all documents for this company
   const { data: documents } = await admin
     .from("enisa_documents")
     .select("*")
@@ -37,17 +87,14 @@ export async function GET(request: NextRequest) {
     return new NextResponse("No hay documentos para descargar", { status: 404 });
   }
 
-  // Build a map of type key to title for folder names
   const typeMap = new Map(
     ENISA_DOCUMENT_TYPES.map((dt) => [dt.key, `${dt.order.toString().padStart(2, "0")}_${sanitizeFolderName(dt.title)}`])
   );
 
-  // Create archive
   const archive = archiver("zip", { zlib: { level: 5 } });
   const passthrough = new PassThrough();
   archive.pipe(passthrough);
 
-  // Download each file and add to archive
   for (const doc of documents) {
     const { data: fileData, error } = await admin.storage
       .from("enisa-documents")
@@ -65,7 +112,6 @@ export async function GET(request: NextRequest) {
 
   archive.finalize();
 
-  // Convert passthrough stream to ReadableStream
   const readable = new ReadableStream({
     start(controller) {
       passthrough.on("data", (chunk: Buffer) => {

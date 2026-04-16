@@ -23,6 +23,61 @@ async function resolveServiceDepartment(
   return data.department_id as string;
 }
 
+/**
+ * Autoriza acceso a los datos sensibles de una empresa concreta.
+ *
+ * Un admin puede acceder a una empresa si:
+ *   - Tiene un permiso global (create_company / delete_company / manage_client_accounts /
+ *     edit_company_info / manage_bank_accounts) — suele aplicarse a perfiles con
+ *     responsabilidades transversales (finanzas, backoffice).
+ *   - Es miembro (o chief) de un departamento que presta servicios a la empresa.
+ *   - Está asignado como técnico a alguno de los servicios de la empresa.
+ */
+async function requireCompanyAccess(companyId: string) {
+  const { supabase, user } = await requireAdmin();
+
+  const [canCreate, canDelete, canManageAccounts, canEditInfo, canManageBanks] =
+    await Promise.all([
+      hasPermission("create_company"),
+      hasPermission("delete_company"),
+      hasPermission("manage_client_accounts"),
+      hasPermission("edit_company_info"),
+      hasPermission("manage_bank_accounts"),
+    ]);
+  if (canCreate || canDelete || canManageAccounts || canEditInfo || canManageBanks) {
+    return { supabase, user };
+  }
+
+  const { data: companyServices } = await supabase
+    .from("company_services")
+    .select("id, service_id")
+    .eq("company_id", companyId)
+    .eq("is_active", true);
+  const serviceIds = (companyServices ?? []).map((cs) => cs.service_id as string);
+  const companyServiceIds = (companyServices ?? []).map((cs) => cs.id as string);
+
+  if (serviceIds.length > 0) {
+    const memberDeptIds = await userScopeIds("view_department_companies", "department");
+    if (memberDeptIds.length > 0) {
+      const { data: deptLinks } = await supabase
+        .from("department_services")
+        .select("department_id")
+        .in("service_id", serviceIds)
+        .eq("is_active", true);
+      const companyDeptIds = new Set((deptLinks ?? []).map((d) => d.department_id as string));
+      if (memberDeptIds.some((id) => companyDeptIds.has(id))) return { supabase, user };
+    }
+  }
+
+  if (companyServiceIds.length > 0) {
+    const assignedCsIds = await userScopeIds("view_assigned_company", "company_service");
+    const csIdSet = new Set(companyServiceIds);
+    if (assignedCsIds.some((id) => csIdSet.has(id))) return { supabase, user };
+  }
+
+  throw new Error("Sin permisos sobre esta empresa");
+}
+
 // ---------- Types ----------
 
 export interface ClienteService {
@@ -243,7 +298,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
 // ---------- Company detail (lazy, on panel open) ----------
 
 export async function getCompanyDetail(companyId: string): Promise<CompanyDetailInfo> {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireCompanyAccess(companyId);
 
   const [{ data: company }, { data: profileLinks }, { data: bankAccounts }] = await Promise.all([
     supabase
@@ -288,7 +343,7 @@ export async function updateCompanyNameAdmin(
   companyId: string,
   name: string | null
 ): Promise<void> {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("edit_company_info");
   const { error } = await supabase
     .from("companies")
     .update({ company_name: name || null, updated_at: new Date().toISOString() })
@@ -304,7 +359,7 @@ export async function addCompanyBankAccountAdmin(
   label: string | null,
   bankName: string | null
 ): Promise<CompanyBankAccount> {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("manage_bank_accounts");
 
   const { count } = await supabase
     .from("company_bank_accounts")
@@ -334,7 +389,7 @@ export async function updateCompanyBankAccountAdmin(
   label: string | null,
   bankName: string | null
 ): Promise<void> {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("manage_bank_accounts");
   const { error } = await supabase
     .from("company_bank_accounts")
     .update({
@@ -352,7 +407,7 @@ export async function deleteCompanyBankAccountAdmin(
   companyId: string,
   accountId: string
 ): Promise<void> {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("manage_bank_accounts");
   const { error } = await supabase
     .from("company_bank_accounts")
     .delete()

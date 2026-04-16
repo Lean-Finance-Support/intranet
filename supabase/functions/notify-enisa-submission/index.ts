@@ -1,7 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
+
 Deno.serve(async (req: Request) => {
+  const secret = req.headers.get("x-webhook-secret");
+  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const payload = await req.json();
   const record = payload.record as { company_id: string; submitted_by: string };
   const company_id = record?.company_id;

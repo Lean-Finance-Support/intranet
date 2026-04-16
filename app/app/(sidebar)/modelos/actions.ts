@@ -459,11 +459,17 @@ export async function submitQuarter(
 
   // Fire-and-forget email notifications via edge function
   try {
-    const { error: fnError } = await admin.functions.invoke("notify-tax-submission", {
-      body: { company_id: companyId, year, quarter },
-    });
-    if (fnError) {
-      console.error("[app/modelos] notify-tax-submission error:", fnError.message);
+    const webhookSecret = process.env.WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error("[app/modelos] WEBHOOK_SECRET no configurado — omitiendo notificación");
+    } else {
+      const { error: fnError } = await admin.functions.invoke("notify-tax-submission", {
+        body: { company_id: companyId, year, quarter },
+        headers: { "x-webhook-secret": webhookSecret },
+      });
+      if (fnError) {
+        console.error("[app/modelos] notify-tax-submission error:", fnError.message);
+      }
     }
   } catch (err) {
     console.error("[app/modelos] notify-tax-submission threw:", err);
