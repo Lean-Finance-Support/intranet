@@ -5,6 +5,7 @@ import {
   getClientQuarterData,
   getBankAccounts,
   saveClientResponses,
+  saveClientQuarterComment,
   submitQuarter,
   getAdvisorContactInfo,
 } from "../actions";
@@ -78,6 +79,8 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [presented, setPresented] = useState(false);
   const [comment, setComment] = useState("");
+  const [clientComment, setClientComment] = useState("");
+  const [clientCommentInitial, setClientCommentInitial] = useState("");
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -101,6 +104,8 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
       setSubmittedAt(quarterData.submitted_at);
       setPresented(quarterData.presented);
       setComment(quarterData.comment);
+      setClientComment(quarterData.clientComment);
+      setClientCommentInitial(quarterData.clientComment);
       setBankAccounts(accounts);
 
       const defaultAccount = accounts.find((a) => a.is_default);
@@ -256,12 +261,17 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
         ...buildDefermentPayload(e),
       }));
 
-    if (toSave.length === 0) return;
+    const commentDirty = clientComment !== clientCommentInitial;
+    if (toSave.length === 0 && !commentDirty) return;
 
     setSaving(true);
     setMessage("");
     try {
-      await saveClientResponses(toSave);
+      if (toSave.length > 0) await saveClientResponses(toSave);
+      if (commentDirty) {
+        await saveClientQuarterComment(year, quarter, clientComment);
+        setClientCommentInitial(clientComment);
+      }
       setEntries((prev) => prev.map((e) => ({ ...e, dirty: false })));
       setMessage("Guardado correctamente");
       setTimeout(() => setMessage(""), 3000);
@@ -299,11 +309,17 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
         ...buildDefermentPayload(e),
       }));
 
+    const commentDirty = clientComment !== clientCommentInitial;
+
     setSubmitting(true);
     setMessage("");
     try {
       if (toSave.length > 0) {
         await saveClientResponses(toSave);
+      }
+      if (commentDirty) {
+        await saveClientQuarterComment(year, quarter, clientComment);
+        setClientCommentInitial(clientComment);
       }
       await submitQuarter(year, quarter);
       setSubmittedAt(new Date().toISOString());
@@ -378,7 +394,7 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
     );
   }
 
-  const hasDirty = entries.some((e) => e.dirty);
+  const hasDirty = entries.some((e) => e.dirty) || clientComment !== clientCommentInitial;
   const allDecided = entries.every((e) => e.status === "accepted" || e.status === "rejected");
   const canSubmit = allDecided && !entries.some((e) => e.status === "accepted" && !e.is_informative && !e.selectedBankAccountId);
 
@@ -649,6 +665,26 @@ export default function ModelsClientList({ quarter, year = 2026, onHeaderState }
             )}
           </div>
         ))}
+      </div>
+
+      {/* Comentarios para el asesor — espejo de la caja del asesor */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-text-body mb-1.5">
+          Comentarios para tu asesor
+          <span className="ml-2 text-xs font-normal text-text-muted">Visible cuando envíes tus respuestas</span>
+        </label>
+        <textarea
+          value={clientComment}
+          onChange={(e) => !presented && setClientComment(e.target.value)}
+          readOnly={presented}
+          rows={3}
+          placeholder="Añade comentarios para tu asesor sobre este trimestre (opcional)"
+          className={`w-full px-3 py-2 rounded-lg border text-sm text-text-body focus:outline-none transition-colors ${
+            !presented
+              ? "border-gray-200 focus:ring-2 focus:ring-brand-teal/50 focus:border-brand-teal"
+              : "border-gray-100 bg-gray-50 text-text-muted cursor-default"
+          }`}
+        />
       </div>
 
       {/* Actions — hidden when presented */}

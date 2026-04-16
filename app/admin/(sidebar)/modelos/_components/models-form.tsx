@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { getModelsWithEntries, saveEntries, deleteEntry, getClientResponses, getQuarterComment, saveQuarterComment } from "../actions";
+import { getModelsWithEntries, saveEntries, deleteEntry, getClientResponses, getQuarterComment, getClientQuarterComment, saveQuarterComment } from "../actions";
 import type { ClientResponseStatus } from "../actions";
 import type { TaxModelWithEntry } from "@/lib/types/tax";
 
@@ -45,18 +45,21 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
   const [savedMessage, setSavedMessage] = useState("");
   const [comment, setComment] = useState("");
   const [commentInitial, setCommentInitial] = useState("");
+  const [clientComment, setClientComment] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setSavedMessage("");
     try {
-      const [models, clientData, commentData] = await Promise.all([
+      const [models, clientData, commentData, clientCommentData] = await Promise.all([
         getModelsWithEntries(companyId, year, quarter),
         getClientResponses(companyId, year, quarter),
         getQuarterComment(companyId, year, quarter),
+        getClientQuarterComment(companyId, year, quarter),
       ]);
       setComment(commentData.comment_text);
       setCommentInitial(commentData.comment_text);
+      setClientComment(clientCommentData.comment_text);
       setEntries(
         models.map((m: TaxModelWithEntry) => ({
           tax_model_id: m.id,
@@ -243,6 +246,21 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
 
   return (
     <div>
+      {/* Comentarios del cliente — siempre arriba, read-only */}
+      {clientComment.trim() && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-brand-teal/5 border border-brand-teal/20">
+          <div className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-brand-teal shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-brand-navy mb-1">Comentarios del cliente</p>
+              <p className="text-sm text-text-body whitespace-pre-wrap break-words">{clientComment}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banner presentación — bloqueo definitivo */}
       {presented && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-brand-navy/5 border border-brand-navy/20 flex items-center gap-2">
