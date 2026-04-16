@@ -41,6 +41,7 @@ export interface ClienteCompany {
   nif: string | null;
   services: ClienteService[];
   is_assigned: boolean;
+  deleted_at: string | null;
 }
 
 export interface DeptMemberSlim {
@@ -55,6 +56,7 @@ export interface ClientesPageData {
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
   chiefAvailableServices: { service_id: string; service_name: string; department_id: string }[];
   canCreateCompany: boolean;
+  canDeleteCompany: boolean;
   canManageClientAccounts: boolean;
 }
 
@@ -69,6 +71,7 @@ export interface CompanyDetailInfo {
   legal_name: string;
   company_name: string | null;
   nif: string | null;
+  deleted_at: string | null;
   profiles: { id: string; full_name: string | null; email: string }[];
   bank_accounts: CompanyBankAccount[];
 }
@@ -91,7 +94,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     (() => {
       return supabase
         .from("companies")
-        .select("id, legal_name, company_name, nif")
+        .select("id, legal_name, company_name, nif, deleted_at")
         .order("legal_name");
     })(),
   ]);
@@ -112,9 +115,10 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   const companyIds = companies.map((c) => c.id);
 
   // 2. User's chief depts + permisos globales para gestionar empresas/cuentas
-  const [userChiefDeptIds, canCreateCompany, canManageClientAccounts] = await Promise.all([
+  const [userChiefDeptIds, canCreateCompany, canDeleteCompany, canManageClientAccounts] = await Promise.all([
     userScopeIds("assign_technician", "department"),
     hasPermission("create_company"),
+    hasPermission("delete_company"),
     hasPermission("manage_client_accounts"),
   ]);
 
@@ -221,6 +225,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     nif: c.nif,
     services: compSvcMap.get(c.id) ?? [],
     is_assigned: myAssignedCompanyIds.has(c.id),
+    deleted_at: c.deleted_at as string | null,
   }));
 
   return {
@@ -230,6 +235,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     deptMembers: deptMembersMap,
     chiefAvailableServices,
     canCreateCompany,
+    canDeleteCompany,
     canManageClientAccounts,
   };
 }
@@ -242,7 +248,7 @@ export async function getCompanyDetail(companyId: string): Promise<CompanyDetail
   const [{ data: company }, { data: profileLinks }, { data: bankAccounts }] = await Promise.all([
     supabase
       .from("companies")
-      .select("id, legal_name, company_name, nif")
+      .select("id, legal_name, company_name, nif, deleted_at")
       .eq("id", companyId)
       .single(),
     supabase
@@ -487,6 +493,7 @@ export async function createCompanyAdmin(input: CreateCompanyInput): Promise<Cli
     nif: data.nif,
     services: [],
     is_assigned: false,
+    deleted_at: null,
   };
 }
 
@@ -622,4 +629,43 @@ export async function unlinkClientFromCompany(
     .eq("profile_id", profileId);
 
   if (error) throw new Error("Error al desvincular la cuenta.");
+}
+
+// ---------- Soft delete / restore de empresa ----------
+
+export async function deleteCompanyAdmin(
+  companyId: string,
+  confirmNif: string
+): Promise<void> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("delete_company");
+
+  // Verificación NIF: defensa en profundidad por si la UI fallara
+  const { data: company, error: readErr } = await supabase
+    .from("companies")
+    .select("nif, deleted_at")
+    .eq("id", companyId)
+    .single();
+  if (readErr || !company) throw new Error("Empresa no encontrada.");
+  if (company.deleted_at) throw new Error("La empresa ya está eliminada.");
+  if ((company.nif ?? "").trim().toUpperCase() !== confirmNif.trim().toUpperCase()) {
+    throw new Error("El NIF de confirmación no coincide.");
+  }
+
+  const { error } = await supabase
+    .from("companies")
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+  if (error) throw new Error("Error al eliminar la empresa.");
+}
+
+export async function restoreCompanyAdmin(companyId: string): Promise<void> {
+  const { supabase } = await requireAdmin();
+  await requirePermission("create_company");
+
+  const { error } = await supabase
+    .from("companies")
+    .update({ deleted_at: null, updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+  if (error) throw new Error("Error al restaurar la empresa.");
 }

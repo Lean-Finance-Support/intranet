@@ -1,10 +1,15 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ClienteCompany, ClienteService, ClientesPageData } from "@/app/admin/clientes/actions";
 import { createCompanyAdmin } from "@/app/admin/clientes/actions";
 import ClientDetailPanel from "@/components/client-detail-panel";
 import NewCompanyModal from "@/components/new-company-modal";
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+}
 
 // ---- Company Card ----
 function CompanyCard({
@@ -62,6 +67,42 @@ function CompanyCard({
   );
 }
 
+// ---- Deleted Company Card ----
+function DeletedCompanyCard({
+  company,
+  onClick,
+}: {
+  company: ClienteCompany;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-left bg-gray-50 rounded-xl border border-gray-200 px-5 py-4 hover:bg-gray-100 hover:border-gray-300 transition-all cursor-pointer w-full opacity-70"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-text-muted truncate">{company.legal_name}</p>
+          {company.company_name && (
+            <p className="text-xs text-text-muted truncate mt-0.5">{company.company_name}</p>
+          )}
+          {company.nif && (
+            <p className="text-xs text-text-muted font-mono mt-0.5">{company.nif}</p>
+          )}
+        </div>
+        {company.deleted_at && (
+          <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] bg-gray-200 text-text-muted px-1.5 py-0.5 rounded-full font-medium">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M5.272 5.79c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+            Eliminada {formatDate(company.deleted_at)}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
 // ---- Filter pill ----
 function FilterPill({
   label,
@@ -94,6 +135,7 @@ export default function ClientesPage({
   data: ClientesPageData;
   linkPrefix: string;
 }) {
+  const router = useRouter();
   const [companies, setCompanies] = useState<ClienteCompany[]>(data.companies);
   const [selectedCompany, setSelectedCompany] = useState<ClienteCompany | null>(null);
   const [creatingCompany, setCreatingCompany] = useState(false);
@@ -206,7 +248,25 @@ export default function ClientesPage({
     setSelectedCompany(company);
   }
 
-  const hasAssignedCompanies = data.companies.some((c) => c.is_assigned);
+  function handleCompanyDeleted(companyId: string, deletedAt: string) {
+    setCompanies((prev) =>
+      prev.map((c) => (c.id === companyId ? { ...c, deleted_at: deletedAt } : c))
+    );
+    setSelectedCompany(null);
+  }
+
+  function handleCompanyRestored(companyId: string) {
+    setCompanies((prev) =>
+      prev.map((c) => (c.id === companyId ? { ...c, deleted_at: null } : c))
+    );
+    setSelectedCompany(null);
+    // Refresca para recuperar metadata viva de la empresa restaurada
+    // (servicios, técnicos…). El soft delete no la borró, solo no estaba viva.
+    router.refresh();
+  }
+
+  const activeCount = companies.filter((c) => !c.deleted_at).length;
+  const hasAssignedCompanies = data.companies.some((c) => c.is_assigned && !c.deleted_at);
 
   return (
     <div className="min-h-full px-8">
@@ -254,12 +314,11 @@ export default function ClientesPage({
               )}
             </div>
 
-            {/* Result count */}
+            {/* Result count: solo cuenta empresas activas */}
             <p className="text-sm text-text-muted">
               {search.trim() || hasFilters
-                ? `${filtered.length} de ${companies.length}`
-                : companies.length}{" "}
-              {companies.length === 1 ? "cliente" : "clientes"}
+                ? `${filtered.filter((c) => !c.deleted_at).length} de ${activeCount}`
+                : `${activeCount} ${activeCount === 1 ? "cliente" : "clientes"}`}
             </p>
 
             {/* Clear filters */}
@@ -278,7 +337,7 @@ export default function ClientesPage({
             {hasAssignedCompanies && (
               <div className="flex items-center gap-2 flex-wrap">
                 <FilterPill
-                  label="Mis asignadas"
+                  label="Mis clientes"
                   active={assignedOnly}
                   onClick={() => setAssignedOnly((v) => !v)}
                 />
@@ -326,9 +385,13 @@ export default function ClientesPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {filtered.map((c) => (
-                <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
-              ))}
+              {filtered.map((c) =>
+                c.deleted_at ? (
+                  <DeletedCompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+                ) : (
+                  <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+                )
+              )}
             </div>
           )}
         </div>
@@ -342,6 +405,8 @@ export default function ClientesPage({
           deptMembers={data.deptMembers}
           chiefAvailableServices={data.chiefAvailableServices}
           canManageClientAccounts={data.canManageClientAccounts}
+          canDeleteCompany={data.canDeleteCompany}
+          canCreateCompany={data.canCreateCompany}
           linkPrefix={linkPrefix}
           onClose={() => setSelectedCompany(null)}
           onUpdateName={handleUpdateName}
@@ -349,6 +414,8 @@ export default function ClientesPage({
           onServiceRemoved={handleServiceRemoved}
           onTechAssigned={handleTechAssigned}
           onTechRemoved={handleTechRemoved}
+          onDeleted={handleCompanyDeleted}
+          onRestored={handleCompanyRestored}
         />
       )}
 

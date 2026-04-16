@@ -17,11 +17,11 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
 
   const { data: company, error: companyError } = await supabase
     .from("companies")
-    .select("id, legal_name, company_name, nif")
+    .select("id, legal_name, company_name, nif, deleted_at")
     .eq("id", companyId)
     .single();
 
-  if (companyError || !company) throw new Error("Empresa no encontrada");
+  if (companyError || !company || company.deleted_at) throw new Error("Empresa no encontrada");
 
   // Obtener usuarios asociados a esta empresa via profile_companies
   const { data: profileLinks } = await supabase

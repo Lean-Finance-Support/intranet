@@ -40,13 +40,16 @@ export async function handlePostAuthRedirect(
     return NextResponse.redirect(new URL(`${adminPrefix}/dashboard`, adminUrl));
   }
 
-  // Client: check associated companies
+  // Client: check associated companies (excluye soft-deleted)
   const { data: profileCompanies } = await supabase
     .from("profile_companies")
-    .select("company_id")
+    .select("company_id, company:companies(deleted_at)")
     .eq("profile_id", user.id);
 
-  const companies = profileCompanies ?? [];
+  const companies = (profileCompanies ?? []).filter((row) => {
+    const c = row.company as unknown as { deleted_at: string | null } | null;
+    return c && !c.deleted_at;
+  });
 
   if (companies.length === 0) {
     await supabase.auth.signOut();

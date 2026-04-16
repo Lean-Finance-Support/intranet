@@ -160,11 +160,12 @@ export async function getDepartmentInfo(departmentId: string): Promise<Departmen
     return { department_id: departmentId, department_name: dept.name, is_chief: isChief, members: deptMembers, companies: [] };
   }
 
-  // 6. Get company details
+  // 6. Get company details (excluye soft-deleted)
   const { data: companies } = await supabase
     .from("companies")
     .select("id, legal_name, company_name, nif")
     .in("id", filteredCompanyIds)
+    .is("deleted_at", null)
     .order("legal_name");
 
   // Build member name map
@@ -266,6 +267,7 @@ export async function getAllDepartmentsInfo(): Promise<DepartmentInfo[]> {
         .from("companies")
         .select("id, legal_name, company_name, nif")
         .in("id", allCompanyIds)
+        .is("deleted_at", null)
         .order("legal_name");
       companies = compData ?? [];
     }

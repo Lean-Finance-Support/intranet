@@ -18,15 +18,16 @@ export async function getMyCompanies(): Promise<CompanyOption[]> {
 
   const { data } = await supabase
     .from("profile_companies")
-    .select("company:companies(id, legal_name, company_name)")
+    .select("company:companies(id, legal_name, company_name, deleted_at)")
     .eq("profile_id", user.id);
 
   if (!data) return [];
 
   return data
     .map((row) => {
-      const c = row.company as unknown as CompanyOption | null;
-      return c ? { id: c.id, legal_name: c.legal_name, company_name: c.company_name } : null;
+      const c = row.company as unknown as (CompanyOption & { deleted_at: string | null }) | null;
+      if (!c || c.deleted_at) return null;
+      return { id: c.id, legal_name: c.legal_name, company_name: c.company_name };
     })
     .filter((c): c is CompanyOption => c !== null);
 }
@@ -38,15 +39,16 @@ export async function setActiveCompany(companyId: string): Promise<{ ok: boolean
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
-  // Verificar que el usuario tiene acceso a esta empresa
+  // Verificar que el usuario tiene acceso a esta empresa y que no está eliminada
   const { data: access } = await supabase
     .from("profile_companies")
-    .select("company_id")
+    .select("company:companies(id, deleted_at)")
     .eq("profile_id", user.id)
     .eq("company_id", companyId)
     .single();
 
-  if (!access) throw new Error("Sin acceso a esta empresa");
+  const company = (access?.company ?? null) as { id: string; deleted_at: string | null } | null;
+  if (!access || !company || company.deleted_at) throw new Error("Sin acceso a esta empresa");
 
   await setActiveCompanyIdInCookies(companyId);
 

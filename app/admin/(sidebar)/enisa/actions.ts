@@ -111,6 +111,7 @@ export async function getAllEnisaCompanies(): Promise<EnisaCompany[]> {
       .from("companies")
       .select("id, legal_name, company_name, nif")
       .in("id", serviceCompanyIds)
+      .is("deleted_at", null)
       .order("legal_name"),
     supabase
       .from("company_technicians")
