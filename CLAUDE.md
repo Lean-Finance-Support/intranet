@@ -41,8 +41,10 @@ Una única app Next.js sirve ambos dominios. El middleware detecta el host (`adm
 2. En "User Metadata" JSON del formulario, incluir: `{ "role": "admin" }` o `{ "role": "client" }`
 3. El trigger `handle_new_user` creará automáticamente la fila en `public.profiles`
 4. Si es client: crear fila(s) en `public.profile_companies` vinculando el profile con la(s) empresa(s)
-5. Si es admin: crear fila(s) en `public.profile_departments` vinculando el profile con su(s) departamento(s)
-6. Si es chief: crear fila(s) en `public.department_chiefs` vinculando el profile con el/los departamento(s) que lidera
+5. Si es admin: asignarle el rol apropiado en `public.profile_roles`:
+   - "Miembro de departamento" con scope `department` (para cada dept al que pertenezca)
+   - "Chief" con scope `department` (si lidera) — incluye ya la pertenencia al dept
+   - "Técnico" con scope `company_service` (para cada empresa+servicio que gestione)
 
 **IMPORTANTE:** El trigger solo crea perfil si `raw_user_meta_data.role` está explícitamente presente.
 Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthorized`.
@@ -83,21 +85,17 @@ Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthor
 - ~~`chief_id`~~ eliminado — ahora se usa `department_chiefs`
 - `created_at`
 
-### `public.profile_departments` — relación N:M entre profiles (admins) y departments
-- `profile_id` uuid FK → profiles.id (ON DELETE CASCADE)
-- `department_id` uuid FK → departments.id (ON DELETE CASCADE)
-- `created_at` timestamptz
-- PRIMARY KEY (profile_id, department_id)
-- **Cookie `x-active-department-id`** almacena el departamento activo en sesión (7 días, httpOnly)
-- Al login: 1 departamento → auto-setea cookie + va a /dashboard; N departamentos → va a /select-department
+### `public.profile_departments` — (legacy) relación admins ↔ departments
+- La pertenencia a un departamento se resuelve ahora vía el permiso `member_of_department`
+  (rol "Miembro de departamento" o "Chief") en `profile_roles`.
+- La tabla se conserva por compatibilidad temporal; los consumidores nuevos deben leer desde
+  `profile_roles` / `user_scope_ids`.
+- **Cookie `x-active-department-id`** almacena el departamento activo en sesión (7 días, httpOnly).
+  Al login: 1 departamento → auto-setea cookie + va a /dashboard; N departamentos → va a /select-department.
 
-### `public.department_chiefs` — relación N:M entre departments y profiles (jefes)
-- `department_id` uuid FK → departments.id (ON DELETE CASCADE)
-- `profile_id` uuid FK → profiles.id (ON DELETE CASCADE)
-- `created_at` timestamptz
-- PRIMARY KEY (department_id, profile_id)
-- Un departamento puede tener varios chiefs; un admin puede ser chief de varios departamentos
-- Los chiefs ven TODAS las empresas con servicios en su departamento
+### `public.department_chiefs` — (legacy) chiefs de departamentos
+- El rol "Chief" (en `profile_roles` con scope `department`) es la fuente de verdad.
+- Se conserva por compatibilidad; los consumidores nuevos comprueban `has_permission(..., 'assign_technician', 'department', ...)`.
 
 ### `public.services` — servicios que ofrece LeanFinance
 - `id` uuid PK
@@ -115,21 +113,41 @@ Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthor
 - `service_id` uuid FK → services.id
 - PRIMARY KEY (company_id, service_id)
 
-### `public.company_technicians` — asignación de técnicos por empresa+servicio
-- `id` uuid PK
-- `company_id` uuid FK → companies.id (ON DELETE CASCADE)
-- `service_id` uuid FK → services.id (ON DELETE CASCADE)
-- `technician_id` uuid FK → profiles.id (ON DELETE CASCADE)
-- `created_at` timestamptz
-- UNIQUE (company_id, service_id, technician_id)
-- Un técnico solo ve las empresas donde está asignado (por servicio)
-- Se pueden asignar múltiples técnicos a un mismo company+service
+### `public.company_technicians` — (legacy) asignación de técnicos por empresa+servicio
+- Se mantiene por compatibilidad con consumidores que aún la leen (listar técnicos de una empresa en la UI del dept).
+- La fuente de verdad para autorización es ahora `profile_roles` con el rol "Técnico" y scope `company_service`.
 
-### Modelo de permisos (admin)
-- **No existe rol superadmin** — un "superadmin" es simplemente un admin que es chief de todos los departamentos
-- **Técnico**: solo ve empresas donde está asignado como `company_technicians` para servicios del departamento activo
-- **Chief**: ve TODAS las empresas que tienen servicios en su departamento
-- La vista se filtra por departamento activo (cookie `x-active-department-id`)
+### Sistema de permisos (admin)
+
+Autorización basada en **permisos atómicos + roles**. Cada permiso declara qué `scope_type` admite
+(`none` | `department` | `company` | `service` | `company_service`). Al asignar un rol o permiso a un
+empleado se fija el scope concreto.
+
+Tablas:
+- `permissions` — catálogo (código, descripción, scope_type).
+- `roles` — agrupaciones de permisos.
+- `role_permissions` — qué permisos incluye cada rol.
+- `profile_roles` — rol concedido a un empleado con scope concreto.
+- `profile_permissions` — permiso suelto concedido directamente (excepcional).
+
+Función central: `has_permission(uid, perm, scope_type default 'none', scope_id default NULL) returns bool`.
+Helper para listar scopes: `user_scope_ids(uid, perm, scope_type) returns setof uuid`.
+
+Roles semilla:
+- **Miembro de departamento** — lectura básica (miembro, ver empresas/notificaciones/ENISA del dept). Scope `department`.
+- **Chief** — incluye "Miembro" + operaciones (asignar técnico, añadir servicio, crear notificaciones, validar ENISA). Scope `department`.
+- **Técnico** — `view_assigned_company` sobre una combinación empresa×servicio. Scope `company_service` (el `scope_id` referencia `company_services.id`).
+
+Para escalada de privilegios: solo quien tenga el permiso `manage_users` puede escribir en las tablas
+del propio sistema de permisos (RLS lo impone). Se bootstrapea manualmente por SQL o service role.
+
+Evaluación desde app: helper `lib/require-permission.ts` (`requirePermission`, `hasPermission`,
+`userScopeIds`). Las server actions llaman a `requirePermission(perm, scope)` antes de operar.
+La RLS de las tablas de negocio sigue usando `is_admin(auth.uid())`/`is_client(auth.uid())` como
+gate grueso — la autorización fina vive en los server actions.
+
+La cookie `x-active-department-id` se puebla con los departamentos donde el usuario tiene
+`member_of_department` (ver `getCachedUserDepartments`).
 
 ### Trigger `handle_new_user`
 Solo crea perfil si `NEW.raw_user_meta_data->>'role'` está presente.

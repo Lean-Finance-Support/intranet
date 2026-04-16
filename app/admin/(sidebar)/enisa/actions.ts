@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/require-admin";
+import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { createAdminClient } from "@/lib/supabase/server";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 import type {
@@ -22,53 +23,71 @@ export interface EnisaCompany {
 }
 
 async function requireEnisaAdmin() {
-  const { supabase, user, isSuperadmin } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
-  if (isSuperadmin) {
-    return { supabase, user, isChief: true, isSuperadmin: true };
-  }
+  const { data: svc } = await supabase
+    .from("services")
+    .select("id")
+    .eq("slug", SERVICE_SLUGS.ENISA_DOCS)
+    .single();
+  if (!svc) throw new Error("Servicio no existe");
 
-  const { data: userDepts } = await supabase
-    .from("profile_departments")
-    .select("department_id")
-    .eq("profile_id", user.id);
-
-  const deptIds = (userDepts ?? []).map((d) => d.department_id as string);
-  if (deptIds.length === 0) throw new Error("Sin departamento asignado");
-
-  const { data: deptServices } = await supabase
+  const { data: deptSvcs } = await supabase
     .from("department_services")
-    .select("department_id, service:services(slug)")
-    .in("department_id", deptIds)
+    .select("department_id")
+    .eq("service_id", svc.id)
     .eq("is_active", true);
 
-  const hasService = (deptServices ?? []).some((ds) => {
-    const svc = (ds as unknown as { service: { slug: string } | null }).service;
-    return svc?.slug === SERVICE_SLUGS.ENISA_DOCS;
+  const serviceDeptIds = new Set((deptSvcs ?? []).map((d) => d.department_id as string));
+  if (serviceDeptIds.size === 0) throw new Error("Sin departamento con este servicio");
+
+  const [viewable, writable] = await Promise.all([
+    userScopeIds("view_enisa_submissions", "department"),
+    userScopeIds("review_enisa_submission", "department"),
+  ]);
+
+  const canView = viewable.some((id) => serviceDeptIds.has(id));
+  if (!canView) throw new Error("Sin permisos para este servicio");
+
+  const isChief = writable.some((id) => serviceDeptIds.has(id));
+
+  return { supabase, user, isChief };
+}
+
+/**
+ * Exige que el usuario pueda escribir (validar/notificar) sobre una empresa
+ * concreta en el servicio ENISA: chief del dept o técnico asignado.
+ */
+async function requireEnisaWriteForCompany(companyId: string) {
+  const ctx = await requireEnisaAdmin();
+  if (ctx.isChief) return ctx;
+
+  const { data: svc } = await ctx.supabase
+    .from("services")
+    .select("id")
+    .eq("slug", SERVICE_SLUGS.ENISA_DOCS)
+    .single();
+  if (!svc) throw new Error("Servicio no existe");
+
+  const { data: cs } = await ctx.supabase
+    .from("company_services")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("service_id", svc.id)
+    .maybeSingle();
+  if (!cs) throw new Error("Empresa sin servicio ENISA contratado");
+
+  const ok = await hasPermission("view_assigned_company", {
+    type: "company_service",
+    companyServiceId: cs.id,
   });
+  if (!ok) throw new Error("Sin permisos sobre esta empresa");
 
-  if (!hasService) throw new Error("Sin permisos para este servicio");
-
-  const serviceDeptIds = (deptServices ?? [])
-    .filter((ds) => {
-      const svc = (ds as unknown as { service: { slug: string } | null }).service;
-      return svc?.slug === SERVICE_SLUGS.ENISA_DOCS;
-    })
-    .map((ds) => ds.department_id as string);
-
-  const { data: chiefRecords } = await supabase
-    .from("department_chiefs")
-    .select("department_id")
-    .eq("profile_id", user.id)
-    .in("department_id", serviceDeptIds);
-
-  const isChief = (chiefRecords ?? []).length > 0;
-
-  return { supabase, user, isChief, isSuperadmin: false };
+  return ctx;
 }
 
 export async function getAllEnisaCompanies(): Promise<EnisaCompany[]> {
-  const { supabase, user, isChief, isSuperadmin } = await requireEnisaAdmin();
+  const { supabase, user, isChief } = await requireEnisaAdmin();
 
   const { data: svc } = await supabase
     .from("services")
@@ -87,15 +106,12 @@ export async function getAllEnisaCompanies(): Promise<EnisaCompany[]> {
   const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
 
-  let companiesQuery = supabase
-    .from("companies")
-    .select("id, legal_name, company_name, nif")
-    .in("id", serviceCompanyIds)
-    .order("legal_name");
-  if (!isSuperadmin) companiesQuery = companiesQuery.eq("is_demo", false);
-
   const [{ data, error }, { data: assignments }] = await Promise.all([
-    companiesQuery,
+    supabase
+      .from("companies")
+      .select("id, legal_name, company_name, nif")
+      .in("id", serviceCompanyIds)
+      .order("legal_name"),
     supabase
       .from("company_technicians")
       .select("company_id")
@@ -207,7 +223,7 @@ export async function getCompanyEnisaData(companyId: string): Promise<{
 }
 
 export async function validateBox(companyId: string, typeKey: string): Promise<void> {
-  const { user } = await requireEnisaAdmin();
+  const { user } = await requireEnisaWriteForCompany(companyId);
   const admin = createAdminClient();
 
   await admin
@@ -233,7 +249,7 @@ export async function rejectBox(
 ): Promise<void> {
   if (!comment.trim()) throw new Error("El comentario es obligatorio.");
 
-  const { user } = await requireEnisaAdmin();
+  const { user } = await requireEnisaWriteForCompany(companyId);
   const admin = createAdminClient();
 
   await admin
@@ -278,7 +294,7 @@ export async function getDownloadUrl(
 }
 
 export async function sendWelcomeEmail(companyId: string): Promise<void> {
-  const { user } = await requireEnisaAdmin();
+  const { user } = await requireEnisaWriteForCompany(companyId);
   const admin = createAdminClient();
 
   // Only one welcome per company
@@ -325,7 +341,7 @@ export async function sendWelcomeEmail(companyId: string): Promise<void> {
 }
 
 export async function sendUpdateEmail(companyId: string): Promise<void> {
-  const { user } = await requireEnisaAdmin();
+  const { user } = await requireEnisaWriteForCompany(companyId);
   const admin = createAdminClient();
 
   // Welcome must be sent first

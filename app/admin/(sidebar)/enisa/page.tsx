@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   getAuthUser,
-  getCachedProfile,
   getCachedUserDepartments,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
@@ -25,18 +24,13 @@ export default async function AdminEnisaPage({
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  const profile = await getCachedProfile(user.id);
-  const isSuperadmin = profile?.role === "superadmin";
+  const departments = await getCachedUserDepartments(user.id);
+  const deptIds = departments.map((d) => d.id);
+  if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
 
-  if (!isSuperadmin) {
-    const departments = await getCachedUserDepartments(user.id);
-    const deptIds = departments.map((d) => d.id);
-    if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
-
-    const slugs = await getCachedDepartmentServiceSlugs(deptIds);
-    if (!slugs.includes("enisa-docs")) {
-      redirect(`${prefix}/dashboard`);
-    }
+  const slugs = await getCachedDepartmentServiceSlugs(deptIds);
+  if (!slugs.includes("enisa-docs")) {
+    redirect(`${prefix}/dashboard`);
   }
 
   return (

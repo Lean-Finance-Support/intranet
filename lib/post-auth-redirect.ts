@@ -32,7 +32,7 @@ export async function handlePostAuthRedirect(
   const isAppHost = request.headers.get("host")?.startsWith("app.");
   const isProd = isAdminHost || isAppHost;
 
-  if (profile.role === "admin" || profile.role === "superadmin") {
+  if (profile.role === "admin") {
     const adminPrefix = isProd ? "" : "/admin";
     const adminUrl = isProd
       ? process.env.NEXT_PUBLIC_ADMIN_URL || origin

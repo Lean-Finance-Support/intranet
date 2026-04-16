@@ -40,25 +40,29 @@ export async function getCachedProfile(userId: string) {
   )();
 }
 
-/** Departments linked to an admin user. Cached 5 min. */
+/**
+ * Departments where the user has the `member_of_department` permission
+ * (incluyendo los que le llegan vía el rol Chief).
+ * Cached 5 min.
+ */
 export async function getCachedUserDepartments(userId: string) {
   return unstable_cache(
     async () => {
       const admin = createAdminClient();
+      const { data: scopeRows } = await admin.rpc("user_scope_ids", {
+        uid: userId,
+        perm: "member_of_department",
+        p_scope_type: "department",
+      });
+      const deptIds = (scopeRows ?? [])
+        .map((r: { scope_id: string }) => r.scope_id)
+        .filter(Boolean);
+      if (deptIds.length === 0) return [];
       const { data } = await admin
-        .from("profile_departments")
-        .select("department:departments(id, name, slug)")
-        .eq("profile_id", userId);
-      return (data ?? [])
-        .map((row: Record<string, unknown>) => {
-          const d = row.department as {
-            id: string;
-            name: string;
-            slug: string;
-          } | null;
-          return d ?? null;
-        })
-        .filter((d): d is NonNullable<typeof d> => d !== null);
+        .from("departments")
+        .select("id, name, slug")
+        .in("id", deptIds);
+      return (data ?? []) as { id: string; name: string; slug: string }[];
     },
     ["user-departments", userId],
     { tags: [`user-departments:${userId}`], revalidate: 300 }

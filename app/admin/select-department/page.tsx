@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
 import DepartmentPicker from "./department-picker";
 import { getActiveDepartmentId } from "@/lib/active-department";
+import { getCachedUserDepartments } from "@/lib/cached-queries";
 
 export default async function SelectDepartmentPage() {
   const supabase = await createClient();
@@ -23,29 +24,11 @@ export default async function SelectDepartmentPage() {
     headers(),
   ]);
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
+  if (!profile || profile.role !== "admin") {
     redirect("/admin/dashboard");
   }
 
-  const isSuperadmin = profile.role === "superadmin";
-
-  let departments: { id: string; name: string; slug: string }[] = [];
-
-  if (isSuperadmin) {
-    const { data: allDepts } = await supabase
-      .from("departments")
-      .select("id, name, slug")
-      .order("name");
-    departments = allDepts ?? [];
-  } else {
-    const { data: profileDepts } = await supabase
-      .from("profile_departments")
-      .select("department:departments(id, name, slug)")
-      .eq("profile_id", user.id);
-    departments = (profileDepts ?? [])
-      .map((row) => row.department as unknown as { id: string; name: string; slug: string } | null)
-      .filter((d): d is NonNullable<typeof d> => d !== null);
-  }
+  const departments = await getCachedUserDepartments(user.id);
 
   // Si solo tiene 1, auto-seleccionar
   if (departments.length <= 1) {

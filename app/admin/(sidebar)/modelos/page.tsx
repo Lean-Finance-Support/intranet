@@ -27,19 +27,15 @@ export default async function ModelosPage({
   const isProd = host === "admin.leanfinance.es";
   const prefix = isProd ? "" : "/admin";
 
-  if (!profile || (profile.role !== "admin" && profile.role !== "superadmin")) {
+  if (!profile || profile.role !== "admin") {
     redirect(`${prefix}/dashboard`);
   }
 
-  const isSuperadmin = profile.role === "superadmin";
+  const deptIds = departments.map((d) => d.id);
+  if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
 
-  if (!isSuperadmin) {
-    const deptIds = departments.map((d) => d.id);
-    if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
-
-    const slugs = await getCachedDepartmentServiceSlugs(deptIds);
-    if (!slugs.includes("tax-models")) redirect(`${prefix}/dashboard`);
-  }
+  const slugs = await getCachedDepartmentServiceSlugs(deptIds);
+  if (!slugs.includes("tax-models")) redirect(`${prefix}/dashboard`);
 
   return (
     <div className="min-h-full">
