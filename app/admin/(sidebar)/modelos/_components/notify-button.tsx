@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { getNotificationStatus, notifyClient, notifyPresentation } from "../actions";
+import { useState, useEffect } from "react";
+import { notifyClient, notifyPresentation } from "../actions";
 
 interface NotifyButtonProps {
   companyId: string;
@@ -11,10 +11,11 @@ interface NotifyButtonProps {
   canEdit?: boolean;
   allAccepted?: boolean;
   presented?: boolean;
+  loading?: boolean;
+  initialNotifiedAt?: string | null;
   onBeforeSend?: () => Promise<void>;
-  onNotified?: () => void;
+  onNotified?: (notifiedAt?: string) => void;
   onPresentationSent?: () => void;
-  onStatusLoaded?: (presented: boolean) => void;
 }
 
 export default function NotifyButton({
@@ -25,42 +26,23 @@ export default function NotifyButton({
   canEdit = true,
   allAccepted = false,
   presented = false,
+  loading = false,
+  initialNotifiedAt = null,
   onBeforeSend,
   onNotified,
   onPresentationSent,
-  onStatusLoaded,
 }: NotifyButtonProps) {
-  const [notifiedAt, setNotifiedAt] = useState<string | null>(null);
+  const [notifiedAt, setNotifiedAt] = useState<string | null>(initialNotifiedAt);
   const [sending, setSending] = useState(false);
   const [sendingPresentation, setSendingPresentation] = useState(false);
-  const [confirmStep, setConfirmStep] = useState(0); // 0=idle, 1=confirm notify, 2=sending
+  const [confirmStep, setConfirmStep] = useState(0);
   const [confirmPresentationStep, setConfirmPresentationStep] = useState(0);
   const [presentationSent, setPresentationSent] = useState(false);
 
-  const [localPresented, setLocalPresented] = useState(presented);
-
-  const loadStatus = useCallback(async () => {
-    try {
-      const status = await getNotificationStatus(companyId, year, quarter);
-      setNotifiedAt(status.notified_at);
-      setLocalPresented(status.presented);
-      onStatusLoaded?.(status.presented);
-    } catch {
-      // ignore
-    }
-  }, [companyId, year, quarter, onStatusLoaded]);
-
+  // Sync notifiedAt when parent provides initial data
   useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
-
-  // Reset confirm steps if user changes company/quarter
-  useEffect(() => {
-    setConfirmStep(0);
-    setConfirmPresentationStep(0);
-    setPresentationSent(false);
-    setLocalPresented(presented);
-  }, [companyId, quarter, year, presented]);
+    setNotifiedAt(initialNotifiedAt);
+  }, [initialNotifiedAt]);
 
   // Auto-reset confirm steps after 5 seconds
   useEffect(() => {
@@ -88,8 +70,9 @@ export default function NotifyButton({
     try {
       await onBeforeSend?.();
       await notifyClient(companyId, year, quarter);
-      setNotifiedAt(new Date().toISOString());
-      onNotified?.();
+      const now = new Date().toISOString();
+      setNotifiedAt(now);
+      onNotified?.(now);
     } catch (err) {
       console.error("Error notificando:", err);
     } finally {
@@ -109,7 +92,6 @@ export default function NotifyButton({
     try {
       await notifyPresentation(companyId, year, quarter);
       setPresentationSent(true);
-      setLocalPresented(true);
       setNotifiedAt(new Date().toISOString());
       onPresentationSent?.();
     } catch (err) {
@@ -122,8 +104,12 @@ export default function NotifyButton({
 
   if (!canEdit) return null;
 
+  if (loading) {
+    return <div className="h-9 w-36 rounded-lg bg-gray-200 animate-pulse flex-shrink-0" />;
+  }
+
   // If presentation has been sent, show locked state
-  if (localPresented) {
+  if (presented) {
     return (
       <div className="flex flex-col items-end gap-1">
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 border border-green-200 text-sm font-medium text-green-700">
@@ -159,12 +145,47 @@ export default function NotifyButton({
         : "Notificar presentación";
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2 flex-wrap justify-end">
+        {/* Botón: Notificar presentación (aparece antes si está disponible) */}
+        {allAccepted && !presentationSent && (
+          <>
+            <button
+              onClick={handlePresentationClick}
+              disabled={sendingPresentation}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                confirmPresentationStep === 1
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
+            >
+              {presentationLabel}
+            </button>
+            {confirmPresentationStep === 1 && (
+              <button
+                onClick={() => setConfirmPresentationStep(0)}
+                className="text-sm text-text-muted hover:text-text-body transition-colors"
+              >
+                Cancelar
+              </button>
+            )}
+          </>
+        )}
+
+        {presentationSent && (
+          <span className="text-sm text-green-600 flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Presentación notificada
+          </span>
+        )}
+
+        {/* Botón: Notificar al cliente */}
         <button
           onClick={handleNotifyClick}
           disabled={sending}
-          className={`px-5 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             confirmStep === 1
               ? "bg-red-500 hover:bg-red-600 text-white"
               : "bg-brand-navy hover:bg-brand-navy/90 text-white"
@@ -181,40 +202,6 @@ export default function NotifyButton({
           </button>
         )}
       </div>
-
-      {/* Presentation button — only when all models accepted */}
-      {allAccepted && !presentationSent && (
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handlePresentationClick}
-            disabled={sendingPresentation}
-            className={`px-5 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              confirmPresentationStep === 1
-                ? "bg-red-500 hover:bg-red-600 text-white"
-                : "bg-green-600 hover:bg-green-700 text-white"
-            }`}
-          >
-            {presentationLabel}
-          </button>
-          {confirmPresentationStep === 1 && (
-            <button
-              onClick={() => setConfirmPresentationStep(0)}
-              className="text-sm text-text-muted hover:text-text-body transition-colors"
-            >
-              Cancelar
-            </button>
-          )}
-        </div>
-      )}
-
-      {presentationSent && (
-        <span className="text-sm text-green-600 flex items-center gap-1">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          Presentación notificada
-        </span>
-      )}
 
       {notifiedAt && (
         <span className="text-xs text-text-muted">

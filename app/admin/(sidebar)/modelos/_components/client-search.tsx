@@ -138,17 +138,7 @@ export default function ClientSearch({ selected, initialCompanyId, onSelect, onC
 
       {/* Lista de empresas */}
       {loading ? (
-        <div className="border border-gray-100 rounded-lg divide-y divide-gray-100 animate-pulse">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3.5 w-36 bg-gray-200 rounded" />
-                <div className="h-3 w-24 bg-gray-100 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <div className="h-11 rounded-lg bg-gray-100 animate-pulse" />
       ) : filtered.length === 0 ? (
         <p className="text-center text-text-muted text-sm py-6">
           {query

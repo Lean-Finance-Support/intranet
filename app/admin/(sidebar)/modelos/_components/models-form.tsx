@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
-import { getModelsWithEntries, saveEntries, deleteEntry, getClientResponses, getQuarterComment, getClientQuarterComment, saveQuarterComment } from "../actions";
+import { loadQuarterData, saveEntries, deleteEntry, saveQuarterComment } from "../actions";
 import type { ClientResponseStatus } from "../actions";
 import type { TaxModelWithEntry } from "@/lib/types/tax";
 
@@ -15,7 +15,7 @@ interface ModelsFormProps {
   year?: number;
   canEdit?: boolean;
   presented?: boolean;
-  onClientDataLoaded?: (data: { allAccepted: boolean; submitted: boolean }) => void;
+  onClientDataLoaded?: (data: { allAccepted: boolean; submitted: boolean; notifiedAt: string | null; presented: boolean }) => void;
 }
 
 interface LocalEntry {
@@ -51,12 +51,8 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
     setLoading(true);
     setSavedMessage("");
     try {
-      const [models, clientData, commentData, clientCommentData] = await Promise.all([
-        getModelsWithEntries(companyId, year, quarter),
-        getClientResponses(companyId, year, quarter),
-        getQuarterComment(companyId, year, quarter),
-        getClientQuarterComment(companyId, year, quarter),
-      ]);
+      const { models, clientData, notificationStatus, comment: commentData, clientComment: clientCommentData } =
+        await loadQuarterData(companyId, year, quarter);
       setComment(commentData.comment_text);
       setCommentInitial(commentData.comment_text);
       setClientComment(clientCommentData.comment_text);
@@ -65,7 +61,6 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
           tax_model_id: m.id,
           model_code: m.model_code,
           description: m.description,
-          // For informative models: show amount only if > 0 (amount=0 means "selected with no amount")
           amount: m.is_informative
             ? (m.entry?.amount && Number(m.entry.amount) !== 0 ? m.entry.amount.toString() : "")
             : (m.entry?.amount?.toString() ?? ""),
@@ -80,6 +75,8 @@ const ModelsForm = forwardRef<ModelsFormHandle, ModelsFormProps>(function Models
       onClientDataLoaded?.({
         allAccepted: clientData.allAccepted,
         submitted: clientData.submitted,
+        notifiedAt: notificationStatus.notified_at,
+        presented: notificationStatus.presented,
       });
     } catch (err) {
       console.error("Error cargando modelos:", err);
