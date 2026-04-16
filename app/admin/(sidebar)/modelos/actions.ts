@@ -488,6 +488,29 @@ export async function getClientResponses(
   };
 }
 
+export async function loadQuarterData(
+  companyId: string,
+  year: number,
+  quarter: number
+): Promise<{
+  models: TaxModelWithEntry[];
+  clientData: Awaited<ReturnType<typeof getClientResponses>>;
+  notificationStatus: Awaited<ReturnType<typeof getNotificationStatus>>;
+  comment: { comment_text: string; edited_at: string | null };
+  clientComment: { comment_text: string; edited_at: string | null };
+}> {
+  if (quarter < 1 || quarter > 4) throw new Error("Trimestre inválido");
+  if (year < 2000 || year > 2100) throw new Error("Año inválido");
+  const [models, clientData, notificationStatus, comment, clientComment] = await Promise.all([
+    getModelsWithEntries(companyId, year, quarter),
+    getClientResponses(companyId, year, quarter),
+    getNotificationStatus(companyId, year, quarter),
+    getQuarterComment(companyId, year, quarter),
+    getClientQuarterComment(companyId, year, quarter),
+  ]);
+  return { models, clientData, notificationStatus, comment, clientComment };
+}
+
 export async function notifyPresentation(
   companyId: string,
   year: number,
