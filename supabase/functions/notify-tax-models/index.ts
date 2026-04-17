@@ -204,7 +204,7 @@ async function getContactEmails(supabase: any, companyId: string): Promise<strin
   const { data: fiscalDept } = await supabase
     .from("departments")
     .select("id")
-    .eq("slug", "asesoria-fiscal-y-laboral")
+    .eq("slug", "asesoria-fiscal-y-contable")
     .single();
 
   if (!fiscalDept) return [];
