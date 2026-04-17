@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
     const { data: fiscalDept } = await supabase
       .from("departments")
       .select("id")
-      .eq("slug", "asesoria-fiscal-y-laboral")
+      .eq("slug", "asesoria-fiscal-y-contable")
       .single();
 
     if (fiscalDept) {
