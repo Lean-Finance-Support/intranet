@@ -87,19 +87,36 @@ export async function getAllCompanies(): Promise<Company[]> {
   const companies = data ?? [];
 
   // Empresas asignadas al usuario como Técnico para este servicio.
-  const { data: myTecnicoRoles } = await supabase
-    .from("profile_roles")
-    .select("cs:company_services!inner(company_id, service_id), role:roles!inner(name)")
-    .eq("scope_type", "company_service")
-    .eq("profile_id", user.id)
-    .eq("cs.service_id", svc.id);
+  // scope_id de profile_roles no tiene FK a company_services, así que hacemos JOIN a mano.
+  const { data: allCss } = await supabase
+    .from("company_services")
+    .select("id, company_id")
+    .eq("service_id", svc.id);
+  const csToCompany = new Map<string, string>();
+  for (const c of allCss ?? []) csToCompany.set(c.id as string, c.company_id as string);
+  const csIds = [...csToCompany.keys()];
 
-  const assignedIds = new Set(
-    (myTecnicoRoles ?? [])
-      .filter((r) => (r.role as unknown as { name: string } | null)?.name === "Técnico")
-      .map((r) => (r.cs as unknown as { company_id: string } | null)?.company_id)
-      .filter((id): id is string => typeof id === "string")
-  );
+  const { data: tecnicoRole } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "Técnico")
+    .maybeSingle();
+
+  let assignedIds = new Set<string>();
+  if (tecnicoRole?.id && csIds.length > 0) {
+    const { data: myRoles } = await supabase
+      .from("profile_roles")
+      .select("scope_id")
+      .eq("scope_type", "company_service")
+      .eq("profile_id", user.id)
+      .eq("role_id", tecnicoRole.id)
+      .in("scope_id", csIds);
+    assignedIds = new Set(
+      (myRoles ?? [])
+        .map((r) => csToCompany.get(r.scope_id as string))
+        .filter((id): id is string => typeof id === "string")
+    );
+  }
 
   return companies.map((c) => ({
     ...c,

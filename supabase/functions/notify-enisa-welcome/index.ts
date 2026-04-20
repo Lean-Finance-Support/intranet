@@ -69,20 +69,31 @@ Deno.serve(async (req: Request) => {
 
   let ccEmails: string[] = [];
   if (enisaService) {
-    const { data: techRoles } = await supabase
-      .from("profile_roles")
-      .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
-      .eq("scope_type", "company_service")
-      .eq("cs.company_id", company_id)
-      .eq("cs.service_id", enisaService.id);
-    const techIds = [
-      ...new Set(
-        (techRoles ?? [])
-          .filter((r: { role: { name: string } | null }) => r.role?.name === "T\u00e9cnico")
-          .map((r: { profile_id: string }) => r.profile_id)
-      ),
-    ];
-    ccEmails = await emailsByProfileIds(techIds);
+    const { data: cs } = await supabase
+      .from("company_services")
+      .select("id")
+      .eq("company_id", company_id)
+      .eq("service_id", enisaService.id)
+      .maybeSingle();
+
+    const { data: tecnicoRole } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("name", "T\u00e9cnico")
+      .maybeSingle();
+
+    if (cs?.id && tecnicoRole?.id) {
+      const { data: techRoles } = await supabase
+        .from("profile_roles")
+        .select("profile_id")
+        .eq("scope_type", "company_service")
+        .eq("role_id", tecnicoRole.id)
+        .eq("scope_id", cs.id);
+      const techIds = [
+        ...new Set((techRoles ?? []).map((r: { profile_id: string }) => r.profile_id)),
+      ];
+      ccEmails = await emailsByProfileIds(techIds);
+    }
   }
 
   let contactEmails = ccEmails;
