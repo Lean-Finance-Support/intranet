@@ -5,6 +5,11 @@
  *  - role Técnico: scope=company_service, scope_id=company_services.id
  *  - role Chief:   scope=department,      scope_id=departments.id
  *  - role Miembro/Operador/Observador: scope=department también
+ *
+ * NOTA: profile_roles.scope_id es un uuid genérico sin FK a company_services
+ * ni a departments (el scope se elige según scope_type). Por eso hacemos
+ * siempre dos queries y un JOIN en TS, en lugar de usar embeds PostgREST
+ * que dependen de FK declarada.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -17,6 +22,24 @@ export interface TechRow {
   full_name: string | null;
 }
 
+async function fetchTecnicoRoleId(supabase: DB): Promise<string | null> {
+  const { data } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "Técnico")
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+async function fetchChiefRoleId(supabase: DB): Promise<string | null> {
+  const { data } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "Chief")
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
 /**
  * Técnicos asignados a una company × service concreta.
  */
@@ -25,22 +48,30 @@ export async function fetchTechniciansForService(
   companyId: string,
   serviceId: string
 ): Promise<TechRow[]> {
+  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  if (!tecnicoRoleId) return [];
+
+  // 1. Buscar el company_services.id para este (company, service)
+  const { data: cs } = await supabase
+    .from("company_services")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("service_id", serviceId)
+    .maybeSingle();
+  if (!cs?.id) return [];
+
+  // 2. Técnicos con scope_id = ese company_services.id
   const { data: rolesData } = await supabase
     .from("profile_roles")
-    .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
+    .select("profile_id")
     .eq("scope_type", "company_service")
-    .eq("cs.company_id", companyId)
-    .eq("cs.service_id", serviceId);
+    .eq("role_id", tecnicoRoleId)
+    .eq("scope_id", cs.id);
 
-  const ids = [
-    ...new Set(
-      (rolesData ?? [])
-        .filter((r) => (r.role as unknown as { name: string } | null)?.name === "Técnico")
-        .map((r) => r.profile_id as string)
-    ),
-  ];
+  const ids = [...new Set((rolesData ?? []).map((r) => r.profile_id as string))];
   if (ids.length === 0) return [];
 
+  // 3. Datos de perfiles
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, email, full_name")
@@ -64,17 +95,38 @@ export async function fetchTechniciansByServiceIds(
 ): Promise<Array<{ company_id: string; service_id: string; technician_id: string }>> {
   if (serviceIds.length === 0) return [];
 
-  const { data } = await supabase
+  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  if (!tecnicoRoleId) return [];
+
+  // 1. Todos los company_services con esos service_ids
+  const { data: css } = await supabase
+    .from("company_services")
+    .select("id, company_id, service_id")
+    .in("service_id", serviceIds);
+
+  const csList = css ?? [];
+  if (csList.length === 0) return [];
+
+  const csById = new Map<string, { company_id: string; service_id: string }>();
+  for (const row of csList) {
+    csById.set(row.id as string, {
+      company_id: row.company_id as string,
+      service_id: row.service_id as string,
+    });
+  }
+  const csIds = [...csById.keys()];
+
+  // 2. profile_roles Técnico con scope_id en esos company_services.id
+  const { data: rolesData } = await supabase
     .from("profile_roles")
-    .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
+    .select("profile_id, scope_id")
     .eq("scope_type", "company_service")
-    .in("cs.service_id", serviceIds);
+    .eq("role_id", tecnicoRoleId)
+    .in("scope_id", csIds);
 
   const rows: Array<{ company_id: string; service_id: string; technician_id: string }> = [];
-  for (const r of data ?? []) {
-    const role = r.role as unknown as { name: string } | null;
-    if (role?.name !== "Técnico") continue;
-    const cs = r.cs as unknown as { company_id: string; service_id: string } | null;
+  for (const r of rolesData ?? []) {
+    const cs = csById.get(r.scope_id as string);
     if (!cs) continue;
     rows.push({
       company_id: cs.company_id,
@@ -92,19 +144,17 @@ export async function fetchChiefsForDepartment(
   supabase: DB,
   departmentId: string
 ): Promise<TechRow[]> {
+  const chiefRoleId = await fetchChiefRoleId(supabase);
+  if (!chiefRoleId) return [];
+
   const { data: rolesData } = await supabase
     .from("profile_roles")
-    .select("profile_id, role:roles!inner(name)")
+    .select("profile_id")
     .eq("scope_type", "department")
+    .eq("role_id", chiefRoleId)
     .eq("scope_id", departmentId);
 
-  const ids = [
-    ...new Set(
-      (rolesData ?? [])
-        .filter((r) => (r.role as unknown as { name: string } | null)?.name === "Chief")
-        .map((r) => r.profile_id as string)
-    ),
-  ];
+  const ids = [...new Set((rolesData ?? []).map((r) => r.profile_id as string))];
   if (ids.length === 0) return [];
 
   const { data: profiles } = await supabase
@@ -128,13 +178,24 @@ export async function isTechnicianOf(
   companyId: string,
   serviceId: string
 ): Promise<boolean> {
+  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  if (!tecnicoRoleId) return false;
+
+  const { data: cs } = await supabase
+    .from("company_services")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("service_id", serviceId)
+    .maybeSingle();
+  if (!cs?.id) return false;
+
   const { data } = await supabase
     .from("profile_roles")
-    .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
+    .select("profile_id")
     .eq("scope_type", "company_service")
-    .eq("profile_id", profileId)
-    .eq("cs.company_id", companyId)
-    .eq("cs.service_id", serviceId);
+    .eq("role_id", tecnicoRoleId)
+    .eq("scope_id", cs.id)
+    .eq("profile_id", profileId);
 
-  return (data ?? []).some((r) => (r.role as unknown as { name: string } | null)?.name === "Técnico");
+  return (data ?? []).length > 0;
 }
