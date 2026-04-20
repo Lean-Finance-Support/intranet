@@ -31,13 +31,13 @@ export default function CompanySelector({ companies, linkPrefix = "/app" }: { co
           key={company.id}
           onClick={() => handleSelect(company.id)}
           disabled={isPending}
-          className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-brand-teal hover:shadow-md transition-all duration-150 text-left cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+          className={`w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 hover:border-brand-teal hover:bg-teal-50/50 transition-all text-left ${isPending ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
         >
-          <div className="w-10 h-10 rounded-lg bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-surface-gray flex items-center justify-center flex-shrink-0">
             <BuildingIcon className="w-5 h-5 text-brand-teal" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-brand-navy truncate">
+            <p className="font-medium text-text-body truncate">
               {company.company_name || company.legal_name}
             </p>
             {company.company_name && (

@@ -3,12 +3,12 @@ import LoginForm from "@/components/login-form";
 
 export default function ClientLoginPage() {
   return (
-    <main className="min-h-screen bg-surface-gray flex items-center justify-center px-4">
+    <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8 animate-fade-in-up">
           <Image
-            src="/logo-leanfinance.png"
+            src="/logo-leanfinance-white.png"
             alt="LeanFinance"
             width={279}
             height={96}
@@ -18,7 +18,7 @@ export default function ClientLoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 animate-fade-in-up animate-delay-75">
+        <div className="bg-white rounded-2xl shadow-lg p-8 animate-fade-in-up animate-delay-75">
           <p className="text-brand-teal text-sm font-medium mb-1">
             Portal de clientes
           </p>
@@ -34,9 +34,12 @@ export default function ClientLoginPage() {
           <LoginForm />
         </div>
 
-        <p className="text-center text-text-muted text-xs mt-6 animate-fade-in-up animate-delay-225">
+        <p className="text-center text-white/40 text-xs mt-6 animate-fade-in-up animate-delay-225">
           ¿Problemas para acceder?{" "}
-          <a href="mailto:tech@leanfinance.es" className="text-brand-teal hover:underline">
+          <a
+            href="mailto:tech@leanfinance.es"
+            className="text-white/70 hover:text-white transition-colors"
+          >
             Contacta con nosotros
           </a>
         </p>
