@@ -378,7 +378,7 @@ export async function addServiceToCompany(
 ): Promise<void> {
   const { supabase } = await requireAdmin();
   const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("add_company_service", { type: "department", id: deptId });
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
 
   const { error } = await supabase.from("company_services").upsert(
     { company_id: companyId, service_id: serviceId, is_active: true },
@@ -394,7 +394,7 @@ export async function removeServiceFromCompany(
 ): Promise<void> {
   const { supabase } = await requireAdmin();
   const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("add_company_service", { type: "department", id: deptId });
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
 
   const { error } = await supabase
     .from("company_services")
