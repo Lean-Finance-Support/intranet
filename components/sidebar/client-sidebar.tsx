@@ -87,8 +87,8 @@ function NavItem({
     relative flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
     transition-all duration-150 group/item cursor-pointer
     ${active
-      ? "bg-brand-teal/5 text-brand-navy border-l-2 border-brand-teal pl-[10px] font-semibold"
-      : "text-text-muted hover:bg-gray-50 hover:text-text-body border-l-2 border-transparent pl-[10px]"
+      ? "bg-white/10 text-white border-l-2 border-brand-teal pl-[10px]"
+      : "text-white/60 hover:bg-white/5 hover:text-white border-l-2 border-transparent pl-[10px]"
     }
   `;
   const content = (
@@ -247,28 +247,28 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
     : "Sin empresa";
 
   const companySwitcher = activeCompany && (
-    <div ref={switcherRef} className="relative px-2 py-3 border-b border-gray-100 flex-shrink-0">
+    <div ref={switcherRef} className="relative px-2 py-3 border-b border-white/10 flex-shrink-0">
       <button
         onClick={() => hasMultipleCompanies && setCompanySwitcherOpen((v) => !v)}
         className={`
           flex items-center gap-3 w-full px-2 py-2 rounded-lg transition-colors
-          ${hasMultipleCompanies ? "hover:bg-gray-50 cursor-pointer" : "cursor-default"}
+          ${hasMultipleCompanies ? "hover:bg-white/10 cursor-pointer" : "cursor-default"}
           ${collapsed ? "justify-center" : ""}
         `}
       >
-        <div className="w-8 h-8 rounded-lg bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-          <BuildingIcon className="w-4 h-4 text-brand-teal" />
+        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+          <BuildingIcon className="w-4 h-4 text-white" />
         </div>
         {!collapsed && (
           <>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-semibold text-brand-navy truncate">{activeLabel}</p>
+              <p className="text-xs font-semibold text-white truncate">{activeLabel}</p>
               {hasMultipleCompanies && (
-                <p className="text-[10px] text-text-muted">{companies.length} empresas</p>
+                <p className="text-[10px] text-white/50">{companies.length} empresas</p>
               )}
             </div>
             {hasMultipleCompanies && (
-              <ChevronUpDownIcon className="w-4 h-4 text-text-muted flex-shrink-0" />
+              <ChevronUpDownIcon className="w-4 h-4 text-white/60 flex-shrink-0" />
             )}
           </>
         )}
@@ -316,29 +316,29 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
       {hasEnisaDocs && (
         <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
-      <div className={`my-2 border-t border-gray-100 ${collapsed ? "mx-1" : "mx-2"}`} />
+      <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={collapsed} />
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
   );
 
   const userSection = (
-    <div className="border-t border-gray-100 px-2 py-3 flex-shrink-0">
+    <div className="border-t border-white/10 px-2 py-3 flex-shrink-0">
       <div className={`flex items-center gap-3 px-2 py-2 ${collapsed ? "justify-center" : ""}`}>
-        <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0 text-brand-teal text-xs font-semibold">
+        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-white text-xs font-semibold">
           {initials}
         </div>
         {!collapsed && (
           <>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-text-body truncate">{profile.full_name ?? profile.email ?? "Usuario"}</p>
-              <p className="text-[10px] text-text-muted truncate">Portal de clientes</p>
+              <p className="text-xs font-medium text-white truncate">{profile.full_name ?? profile.email ?? "Usuario"}</p>
+              <p className="text-[10px] text-white/50 truncate">Portal de clientes</p>
             </div>
             <button
               onClick={handleLogout}
               disabled={loggingOut}
               title="Cerrar sesión"
-              className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors text-text-muted hover:text-red-500 flex-shrink-0 cursor-pointer disabled:opacity-50"
+              className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors text-white/50 hover:text-red-400 flex-shrink-0 cursor-pointer disabled:opacity-50"
             >
               <LogoutIcon className="w-4 h-4" />
             </button>
@@ -350,7 +350,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
           onClick={handleLogout}
           disabled={loggingOut}
           title="Cerrar sesión"
-          className="w-full mt-1 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors text-text-muted hover:text-red-500 cursor-pointer disabled:opacity-50"
+          className="w-full mt-1 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors text-white/50 hover:text-red-400 cursor-pointer disabled:opacity-50"
         >
           <LogoutIcon className="w-4 h-4" />
         </button>
@@ -361,20 +361,20 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
   return (
     <>
       {/* Mobile bottom bar: user+logout (left) | notifications + hamburger (right) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-14 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] flex items-center justify-between px-3 gap-2">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden h-14 bg-brand-navy border-t border-white/10 shadow-[0_-2px_8px_rgba(0,0,0,0.15)] flex items-center justify-between px-3 gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0 text-brand-teal text-xs font-semibold">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 text-white text-xs font-semibold">
             {initials}
           </div>
           <div className="min-w-0 max-w-[110px]">
-            <p className="text-xs font-medium text-text-body truncate leading-tight">{profile.full_name ?? profile.email ?? "Usuario"}</p>
-            <p className="text-[10px] text-text-muted truncate leading-tight">Portal de clientes</p>
+            <p className="text-xs font-medium text-white truncate leading-tight">{profile.full_name ?? profile.email ?? "Usuario"}</p>
+            <p className="text-[10px] text-white/50 truncate leading-tight">Portal de clientes</p>
           </div>
           <button
             onClick={handleLogout}
             disabled={loggingOut}
             aria-label="Cerrar sesión"
-            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-text-muted hover:text-red-500 cursor-pointer disabled:opacity-50 flex-shrink-0 transition-colors"
+            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-red-400 cursor-pointer disabled:opacity-50 flex-shrink-0 transition-colors"
           >
             <LogoutIcon className="w-4 h-4" />
           </button>
@@ -384,7 +384,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
             type="button"
             onClick={handleNotifClick}
             aria-label="Notificaciones"
-            className="relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer bg-gray-100 hover:bg-gray-200 text-text-muted"
+            className="relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer bg-white/10 hover:bg-white/15 text-white/80 hover:text-white"
           >
             <BellIcon className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -396,7 +396,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
           <button
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
-            className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-text-muted transition-colors"
+            className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/15 flex items-center justify-center text-white transition-colors"
           >
             {mobileOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
           </button>
@@ -404,12 +404,12 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
       </div>
 
       {/* Desktop sidebar */}
-      <div className={`hidden lg:flex flex-col h-full flex-shrink-0 bg-white border-r border-gray-100 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
+      <div className={`hidden lg:flex flex-col h-full flex-shrink-0 bg-brand-navy border-r border-white/10 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"}`}>
         {/* Collapse button */}
-        <div className="flex items-center justify-end px-3 py-3 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-end px-3 py-3 border-b border-white/10 flex-shrink-0">
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors text-text-muted hover:text-text-body"
+            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors text-white/60 hover:text-white"
             title={collapsed ? "Expandir" : "Colapsar"}
           >
             <ChevronLeftIcon className={`w-4 h-4 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
@@ -424,9 +424,9 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
       {mobileOpen && (
         <div className="fixed top-0 left-0 right-0 bottom-14 z-40 flex justify-end lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-64 h-full flex flex-col bg-white border-l border-gray-100 animate-slide-in-right">
+          <div className="relative w-64 h-full flex flex-col bg-brand-navy border-l border-white/10 animate-slide-in-right">
             {activeCompany && (
-              <div className="px-2 py-3 border-b border-gray-100">
+              <div className="px-2 py-3 border-b border-white/10">
                 {hasMultipleCompanies ? (
                   <div className="space-y-1">
                     {companies.map((company) => {
@@ -439,14 +439,14 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
                           onClick={() => handleSwitchCompany(company.id)}
                           className={`
                             w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors
-                            ${isActive ? "bg-brand-teal/5" : "hover:bg-gray-50 cursor-pointer"}
+                            ${isActive ? "bg-white/10" : "hover:bg-white/5 cursor-pointer"}
                             disabled:cursor-default
                           `}
                         >
-                          <div className="w-7 h-7 rounded-md bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                            <BuildingIcon className="w-3.5 h-3.5 text-brand-teal" />
+                          <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center flex-shrink-0">
+                            <BuildingIcon className="w-3.5 h-3.5 text-white" />
                           </div>
-                          <p className="text-xs font-medium text-brand-navy truncate flex-1">{label}</p>
+                          <p className="text-xs font-medium text-white truncate flex-1">{label}</p>
                           {isActive && <CheckIcon className="w-4 h-4 text-brand-teal flex-shrink-0" />}
                         </button>
                       );
@@ -454,10 +454,10 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 px-2 py-2">
-                    <div className="w-7 h-7 rounded-md bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                      <BuildingIcon className="w-3.5 h-3.5 text-brand-teal" />
+                    <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <BuildingIcon className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <p className="text-xs font-semibold text-brand-navy truncate">{activeLabel}</p>
+                    <p className="text-xs font-semibold text-white truncate">{activeLabel}</p>
                   </div>
                 )}
               </div>
@@ -470,7 +470,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
               {hasEnisaDocs && (
                 <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={false} />
               )}
-              <div className="my-2 border-t border-gray-100 mx-2" />
+              <div className="my-2 border-t border-white/10 mx-2" />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
             </nav>
           </div>

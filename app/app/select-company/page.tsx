@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getMyCompanies } from "./actions";
@@ -26,26 +25,20 @@ export default async function SelectCompanyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-gray flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        <div className="text-center mb-8">
-          <Image
-            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
-            alt="LeanFinance"
-            width={279}
-            height={96}
-            className="h-20 w-auto mx-auto mb-6"
-            priority
-          />
-          <h1 className="text-xl font-semibold text-brand-navy">
-            Selecciona un espacio
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            Tienes acceso a varios espacios. Elige con cuál quieres trabajar.
-          </p>
+    <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
+      <div className="max-w-lg w-full space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm p-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold font-heading text-brand-navy mb-2">
+              Selecciona un espacio
+            </h1>
+            <p className="text-text-muted text-sm mb-6">
+              Tienes acceso a varios espacios. Elige con cuál quieres trabajar.
+            </p>
+          </div>
+          <CompanySelector companies={companies} linkPrefix={prefix} />
         </div>
-        <CompanySelector companies={companies} linkPrefix={prefix} />
       </div>
-    </div>
+    </main>
   );
 }
