@@ -2,6 +2,7 @@
 
 import { requireClient } from "@/lib/require-client";
 import { createAdminClient } from "@/lib/supabase/server";
+import { fetchTechniciansForService, fetchChiefsForDepartment } from "@/lib/team-queries";
 import type {
   EnisaDocument,
   EnisaBoxReview,
@@ -65,15 +66,8 @@ export async function getEnisaData(): Promise<{
   // Resolve advisor emails
   let advisorEmails: string[] = [];
   if (enisaService) {
-    const { data: technicians } = await supabase
-      .from("company_technicians")
-      .select("profile:profiles(email)")
-      .eq("company_id", companyId)
-      .eq("service_id", enisaService.id);
-
-    advisorEmails = (technicians ?? [])
-      .map((t) => (t.profile as unknown as { email: string } | null)?.email)
-      .filter(Boolean) as string[];
+    const techs = await fetchTechniciansForService(supabase, companyId, enisaService.id);
+    advisorEmails = techs.map((t) => t.email).filter(Boolean);
   }
 
   if (advisorEmails.length === 0) {
@@ -85,14 +79,8 @@ export async function getEnisaData(): Promise<{
       .maybeSingle();
 
     if (fpDept) {
-      const { data: chiefs } = await admin
-        .from("department_chiefs")
-        .select("profile:profiles(email)")
-        .eq("department_id", fpDept.id);
-
-      advisorEmails = (chiefs ?? [])
-        .map((c) => (c.profile as unknown as { email: string } | null)?.email)
-        .filter(Boolean) as string[];
+      const chiefs = await fetchChiefsForDepartment(admin, fpDept.id);
+      advisorEmails = chiefs.map((c) => c.email).filter(Boolean);
     }
   }
 
@@ -388,17 +376,11 @@ export async function submitDocumentation(
   const recipientMap = new Map<string, { email: string; name: string }>();
 
   if (enisaService) {
-    const { data: technicians } = await admin
-      .from("company_technicians")
-      .select("technician_id, profile:profiles(email, full_name)")
-      .eq("company_id", companyId)
-      .eq("service_id", enisaService.id);
-
-    for (const t of technicians ?? []) {
-      // Supabase tipa la relación como array aunque a runtime sea un objeto único
-      const raw = t.profile as unknown as { email: string; full_name: string | null } | { email: string; full_name: string | null }[] | null;
-      const p = Array.isArray(raw) ? raw[0] ?? null : raw;
-      if (p?.email) recipientMap.set(t.technician_id, { email: p.email, name: p.full_name ?? "Técnico" });
+    const techs = await fetchTechniciansForService(admin, companyId, enisaService.id);
+    for (const t of techs) {
+      if (t.email) {
+        recipientMap.set(t.profile_id, { email: t.email, name: t.full_name ?? "Técnico" });
+      }
     }
   }
 
@@ -410,17 +392,10 @@ export async function submitDocumentation(
     .single();
 
   if (fpDept) {
-    const { data: chiefs } = await admin
-      .from("department_chiefs")
-      .select("profile_id, profile:profiles(email, full_name)")
-      .eq("department_id", fpDept.id);
-
-    for (const c of chiefs ?? []) {
-      // Supabase tipa la relación como array aunque a runtime sea un objeto único
-      const raw = c.profile as unknown as { email: string; full_name: string | null } | { email: string; full_name: string | null }[] | null;
-      const p = Array.isArray(raw) ? raw[0] ?? null : raw;
-      if (p?.email && !recipientMap.has(c.profile_id)) {
-        recipientMap.set(c.profile_id, { email: p.email, name: p.full_name ?? "Responsable" });
+    const chiefs = await fetchChiefsForDepartment(admin, fpDept.id);
+    for (const c of chiefs) {
+      if (c.email && !recipientMap.has(c.profile_id)) {
+        recipientMap.set(c.profile_id, { email: c.email, name: c.full_name ?? "Responsable" });
       }
     }
   }
@@ -462,16 +437,8 @@ export async function getAdvisorContactInfoEnisa(): Promise<{
 
   if (!enisaService) return { emails: [], companyName };
 
-  const { data: technicians } = await admin
-    .from("company_technicians")
-    .select("profile:profiles(email)")
-    .eq("company_id", companyId)
-    .eq("service_id", enisaService.id);
-
-  const techEmails = (technicians ?? [])
-    .map((t) => (t.profile as unknown as { email: string } | null)?.email)
-    .filter(Boolean) as string[];
-
+  const techs = await fetchTechniciansForService(admin, companyId, enisaService.id);
+  const techEmails = techs.map((t) => t.email).filter(Boolean);
   if (techEmails.length > 0) return { emails: techEmails, companyName };
 
   // Fallback: chiefs del departamento de financiación pública
@@ -483,14 +450,6 @@ export async function getAdvisorContactInfoEnisa(): Promise<{
 
   if (!fpDept) return { emails: [], companyName };
 
-  const { data: chiefs } = await admin
-    .from("department_chiefs")
-    .select("profile:profiles(email)")
-    .eq("department_id", fpDept.id);
-
-  const chiefEmails = (chiefs ?? [])
-    .map((c) => (c.profile as unknown as { email: string } | null)?.email)
-    .filter(Boolean) as string[];
-
-  return { emails: chiefEmails, companyName };
+  const chiefs = await fetchChiefsForDepartment(admin, fpDept.id);
+  return { emails: chiefs.map((c) => c.email).filter(Boolean), companyName };
 }

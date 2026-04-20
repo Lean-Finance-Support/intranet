@@ -44,18 +44,35 @@ Deno.serve(async (req: Request) => {
     .eq("slug", "tax-models")
     .single();
 
-  if (taxService) {
-    const { data: technicians } = await supabase
-      .from("company_technicians")
-      .select("technician_id, profile:profiles(email, full_name)")
-      .eq("company_id", company_id)
-      .eq("service_id", taxService.id);
-
-    for (const t of technicians ?? []) {
-      const p = t.profile as { email: string; full_name: string | null } | null;
-      if (p?.email)
-        recipientMap.set(t.technician_id, { email: p.email, name: p.full_name ?? "T\u00e9cnico" });
+  async function addProfilesById(ids: string[], fallbackName: string) {
+    if (ids.length === 0) return;
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .in("id", ids);
+    for (const p of profiles ?? []) {
+      if (p.email && !recipientMap.has(p.id as string)) {
+        recipientMap.set(p.id as string, { email: p.email, name: p.full_name ?? fallbackName });
+      }
     }
+  }
+
+  if (taxService) {
+    const { data: techRoles } = await supabase
+      .from("profile_roles")
+      .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
+      .eq("scope_type", "company_service")
+      .eq("cs.company_id", company_id)
+      .eq("cs.service_id", taxService.id);
+
+    const techIds = [
+      ...new Set(
+        (techRoles ?? [])
+          .filter((r) => (r.role as { name: string } | null)?.name === "T\u00e9cnico")
+          .map((r) => r.profile_id as string)
+      ),
+    ];
+    await addProfilesById(techIds, "T\u00e9cnico");
   }
 
   if (recipientMap.size === 0) {
@@ -66,16 +83,20 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (fiscalDept) {
-      const { data: chiefs } = await supabase
-        .from("department_chiefs")
-        .select("profile_id, profile:profiles(email, full_name)")
-        .eq("department_id", fiscalDept.id);
+      const { data: chiefRoles } = await supabase
+        .from("profile_roles")
+        .select("profile_id, role:roles!inner(name)")
+        .eq("scope_type", "department")
+        .eq("scope_id", fiscalDept.id);
 
-      for (const c of chiefs ?? []) {
-        const p = c.profile as { email: string; full_name: string | null } | null;
-        if (p?.email)
-          recipientMap.set(c.profile_id, { email: p.email, name: p.full_name ?? "Responsable" });
-      }
+      const chiefIds = [
+        ...new Set(
+          (chiefRoles ?? [])
+            .filter((r) => (r.role as { name: string } | null)?.name === "Chief")
+            .map((r) => r.profile_id as string)
+        ),
+      ];
+      await addProfilesById(chiefIds, "Responsable");
     }
   }
 

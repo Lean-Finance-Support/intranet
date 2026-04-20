@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
     }
 
     const [viewable, writable] = await Promise.all([
-      userScopeIds("view_enisa_submissions", "department"),
-      userScopeIds("review_enisa_submission", "department"),
+      userScopeIds("read_dept_service", "department"),
+      userScopeIds("write_dept_service", "department"),
     ]);
 
     const canView = viewable.some((id) => serviceDeptIds.has(id));
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         return new NextResponse("Empresa sin servicio ENISA contratado", { status: 403 });
       }
 
-      const ok = await hasPermission("view_assigned_company", {
+      const ok = await hasPermission("write_assigned_company", {
         type: "company_service",
         companyServiceId: cs.id,
       });

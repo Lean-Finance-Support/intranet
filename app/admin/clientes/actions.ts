@@ -2,6 +2,7 @@
 
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
+import { fetchTechniciansByServiceIds } from "@/lib/team-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 
@@ -23,60 +24,10 @@ async function resolveServiceDepartment(
   return data.department_id as string;
 }
 
-/**
- * Autoriza acceso a los datos sensibles de una empresa concreta.
- *
- * Un admin puede acceder a una empresa si:
- *   - Tiene un permiso global (create_company / delete_company / manage_client_accounts /
- *     edit_company_info / manage_bank_accounts) — suele aplicarse a perfiles con
- *     responsabilidades transversales (finanzas, backoffice).
- *   - Es miembro (o chief) de un departamento que presta servicios a la empresa.
- *   - Está asignado como técnico a alguno de los servicios de la empresa.
- */
-async function requireCompanyAccess(companyId: string) {
-  const { supabase, user } = await requireAdmin();
-
-  const [canCreate, canDelete, canManageAccounts, canEditInfo, canManageBanks] =
-    await Promise.all([
-      hasPermission("create_company"),
-      hasPermission("delete_company"),
-      hasPermission("manage_client_accounts"),
-      hasPermission("edit_company_info"),
-      hasPermission("manage_bank_accounts"),
-    ]);
-  if (canCreate || canDelete || canManageAccounts || canEditInfo || canManageBanks) {
-    return { supabase, user };
-  }
-
-  const { data: companyServices } = await supabase
-    .from("company_services")
-    .select("id, service_id")
-    .eq("company_id", companyId)
-    .eq("is_active", true);
-  const serviceIds = (companyServices ?? []).map((cs) => cs.service_id as string);
-  const companyServiceIds = (companyServices ?? []).map((cs) => cs.id as string);
-
-  if (serviceIds.length > 0) {
-    const memberDeptIds = await userScopeIds("view_department_companies", "department");
-    if (memberDeptIds.length > 0) {
-      const { data: deptLinks } = await supabase
-        .from("department_services")
-        .select("department_id")
-        .in("service_id", serviceIds)
-        .eq("is_active", true);
-      const companyDeptIds = new Set((deptLinks ?? []).map((d) => d.department_id as string));
-      if (memberDeptIds.some((id) => companyDeptIds.has(id))) return { supabase, user };
-    }
-  }
-
-  if (companyServiceIds.length > 0) {
-    const assignedCsIds = await userScopeIds("view_assigned_company", "company_service");
-    const csIdSet = new Set(companyServiceIds);
-    if (assignedCsIds.some((id) => csIdSet.has(id))) return { supabase, user };
-  }
-
-  throw new Error("Sin permisos sobre esta empresa");
-}
+// La lectura del listado y detalle de clientes es abierta a cualquier admin
+// (información pública interna). Las acciones de escritura mantienen su propia
+// comprobación de permiso específica (edit_company_info, manage_bank_accounts,
+// manage_client_accounts, write_dept_service, etc.).
 
 // ---------- Types ----------
 
@@ -171,7 +122,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
 
   // 2. User's chief depts + permisos globales para gestionar empresas/cuentas
   const [userChiefDeptIds, canCreateCompany, canDeleteCompany, canManageClientAccounts] = await Promise.all([
-    userScopeIds("assign_technician", "department"),
+    userScopeIds("write_dept_service", "department"),
     hasPermission("create_company"),
     hasPermission("delete_company"),
     hasPermission("manage_client_accounts"),
@@ -182,19 +133,17 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   let techData: { company_id: string; service_id: string; technician_id: string }[] = [];
 
   if (companyIds.length > 0) {
-    const [csRes, techRes] = await Promise.all([
-      supabase
-        .from("company_services")
-        .select("company_id, service_id")
-        .in("company_id", companyIds)
-        .eq("is_active", true),
-      supabase
-        .from("company_technicians")
-        .select("company_id, service_id, technician_id")
-        .in("company_id", companyIds),
-    ]);
+    const csRes = await supabase
+      .from("company_services")
+      .select("company_id, service_id")
+      .in("company_id", companyIds)
+      .eq("is_active", true);
     companyServicesData = csRes.data ?? [];
-    techData = techRes.data ?? [];
+
+    const allServiceIds = [...new Set(companyServicesData.map((cs) => cs.service_id))];
+    const techRows = await fetchTechniciansByServiceIds(supabase, allServiceIds);
+    const companyIdSet = new Set(companyIds);
+    techData = techRows.filter((t) => companyIdSet.has(t.company_id));
   }
 
   // 4. Technician names
@@ -208,22 +157,27 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     for (const p of techProfiles ?? []) techNameMap.set(p.id, p.full_name);
   }
 
-  // 5. Dept members for chief depts (for technician assignment)
+  // 5. Dept members for chief depts (for technician assignment) — vía profile_roles
+  // Miembros/Chiefs son elegibles como técnicos; Observadores NO.
   const deptMembersMap: { [deptId: string]: DeptMemberSlim[] } = {};
   if (userChiefDeptIds.length > 0) {
-    const { data: memberLinks } = await supabase
-      .from("profile_departments")
-      .select("department_id, profile:profiles(id, full_name, role)")
-      .in("department_id", userChiefDeptIds);
+    const { data: memberRoles } = await supabase
+      .from("profile_roles")
+      .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
+      .eq("scope_type", "department")
+      .in("scope_id", userChiefDeptIds);
 
-    for (const link of memberLinks ?? []) {
-      const p = link.profile as unknown as {
-        id: string;
-        full_name: string | null;
-      } | null;
-      if (!p) continue;
-      if (!deptMembersMap[link.department_id]) deptMembersMap[link.department_id] = [];
-      deptMembersMap[link.department_id].push({ id: p.id, name: p.full_name });
+    const seen = new Set<string>(); // scope_id|profile_id
+    for (const link of memberRoles ?? []) {
+      const role = link.role as unknown as { name: string } | null;
+      if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief")) continue;
+      const p = link.profile as unknown as { id: string; full_name: string | null } | null;
+      if (!p || !link.scope_id) continue;
+      const key = `${link.scope_id}|${p.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (!deptMembersMap[link.scope_id]) deptMembersMap[link.scope_id] = [];
+      deptMembersMap[link.scope_id].push({ id: p.id, name: p.full_name });
     }
   }
 
@@ -298,7 +252,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
 // ---------- Company detail (lazy, on panel open) ----------
 
 export async function getCompanyDetail(companyId: string): Promise<CompanyDetailInfo> {
-  const { supabase } = await requireCompanyAccess(companyId);
+  const { supabase } = await requireAdmin();
 
   const [{ data: company }, { data: profileLinks }, { data: bankAccounts }] = await Promise.all([
     supabase
@@ -453,6 +407,29 @@ export async function removeServiceFromCompany(
 
 // ---------- Assign / remove technician ----------
 
+async function lookupCompanyServiceId(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  companyId: string,
+  serviceId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("company_services")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("service_id", serviceId)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+async function lookupRoleId(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  name: string
+): Promise<string> {
+  const { data } = await supabase.from("roles").select("id").eq("name", name).maybeSingle();
+  if (!data) throw new Error(`Rol '${name}' no encontrado`);
+  return data.id as string;
+}
+
 export async function assignTechnicianAdmin(
   companyId: string,
   serviceId: string,
@@ -460,11 +437,29 @@ export async function assignTechnicianAdmin(
 ): Promise<void> {
   const { supabase } = await requireAdmin();
   const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("assign_technician", { type: "department", id: deptId });
-  const { error } = await supabase
-    .from("company_technicians")
-    .insert({ company_id: companyId, service_id: serviceId, technician_id: technicianId });
-  if (error && error.code !== "23505") throw new Error("Error al asignar el técnico.");
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
+
+  // Asegurar Miembro del dept (idempotente)
+  const miembroRoleId = await lookupRoleId(supabase, "Miembro de departamento");
+  const { error: mErr } = await supabase.from("profile_roles").insert({
+    profile_id: technicianId,
+    role_id: miembroRoleId,
+    scope_type: "department",
+    scope_id: deptId,
+  });
+  if (mErr && mErr.code !== "23505") throw new Error("No se pudo añadir al departamento.");
+
+  const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
+  if (!csId) throw new Error("Servicio no contratado por esta empresa.");
+
+  const tecnicoRoleId = await lookupRoleId(supabase, "Técnico");
+  const { error: tErr } = await supabase.from("profile_roles").insert({
+    profile_id: technicianId,
+    role_id: tecnicoRoleId,
+    scope_type: "company_service",
+    scope_id: csId,
+  });
+  if (tErr && tErr.code !== "23505") throw new Error("Error al asignar el técnico.");
 }
 
 export async function removeTechnicianAdmin(
@@ -474,13 +469,19 @@ export async function removeTechnicianAdmin(
 ): Promise<void> {
   const { supabase } = await requireAdmin();
   const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("assign_technician", { type: "department", id: deptId });
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
+
+  const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
+  if (!csId) return;
+
+  const tecnicoRoleId = await lookupRoleId(supabase, "Técnico");
   const { error } = await supabase
-    .from("company_technicians")
+    .from("profile_roles")
     .delete()
-    .eq("company_id", companyId)
-    .eq("service_id", serviceId)
-    .eq("technician_id", technicianId);
+    .eq("profile_id", technicianId)
+    .eq("role_id", tecnicoRoleId)
+    .eq("scope_type", "company_service")
+    .eq("scope_id", csId);
   if (error) throw new Error("Error al quitar el técnico.");
 }
 
@@ -490,27 +491,46 @@ export async function assignAllTechniciansAdmin(
   deptId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  await requirePermission("assign_technician", { type: "department", id: deptId });
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
 
-  const [{ data: memberLinks }, { data: existing }] = await Promise.all([
-    supabase.from("profile_departments").select("profile_id").eq("department_id", deptId),
+  const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
+  if (!csId) throw new Error("Servicio no contratado por esta empresa.");
+
+  const tecnicoRoleId = await lookupRoleId(supabase, "Técnico");
+
+  const [{ data: memberRoles }, { data: existingTec }] = await Promise.all([
     supabase
-      .from("company_technicians")
-      .select("technician_id")
-      .eq("company_id", companyId)
-      .eq("service_id", serviceId),
+      .from("profile_roles")
+      .select("profile_id, role:roles!inner(name)")
+      .eq("scope_type", "department")
+      .eq("scope_id", deptId),
+    supabase
+      .from("profile_roles")
+      .select("profile_id")
+      .eq("scope_type", "company_service")
+      .eq("scope_id", csId)
+      .eq("role_id", tecnicoRoleId),
   ]);
 
-  const existingIds = new Set((existing ?? []).map((e) => e.technician_id));
-  const toInsert = (memberLinks ?? [])
-    .map((m) => m.profile_id)
-    .filter((id) => !existingIds.has(id));
-
+  const existingIds = new Set((existingTec ?? []).map((e) => e.profile_id as string));
+  const memberIdsSet = new Set<string>();
+  for (const row of memberRoles ?? []) {
+    const role = row.role as unknown as { name: string } | null;
+    if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief")) continue;
+    memberIdsSet.add(row.profile_id as string);
+  }
+  const toInsert = [...memberIdsSet].filter((id) => !existingIds.has(id));
   if (toInsert.length === 0) return;
 
-  const { error } = await supabase
-    .from("company_technicians")
-    .insert(toInsert.map((techId) => ({ company_id: companyId, service_id: serviceId, technician_id: techId })));
+  const { error } = await supabase.from("profile_roles").upsert(
+    toInsert.map((techId) => ({
+      profile_id: techId,
+      role_id: tecnicoRoleId,
+      scope_type: "company_service" as const,
+      scope_id: csId,
+    })),
+    { onConflict: "profile_id,role_id,scope_type,scope_id", ignoreDuplicates: true }
+  );
   if (error && error.code !== "23505") throw new Error("Error al asignar técnicos.");
 }
 

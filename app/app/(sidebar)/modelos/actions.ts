@@ -2,6 +2,7 @@
 
 import { requireClient } from "@/lib/require-client";
 import { createAdminClient } from "@/lib/supabase/server";
+import { fetchTechniciansForService, fetchChiefsForDepartment } from "@/lib/team-queries";
 import type {
   TaxEntryForClient,
   TaxClientResponsePayload,
@@ -337,16 +338,8 @@ export async function getAdvisorContactInfo(): Promise<{
 
   if (!taxService) return { emails: [], companyName };
 
-  const { data: technicians } = await admin
-    .from("company_technicians")
-    .select("profile:profiles(email)")
-    .eq("company_id", companyId)
-    .eq("service_id", taxService.id);
-
-  const techEmails = (technicians ?? [])
-    .map((t) => (t.profile as unknown as { email: string } | null)?.email)
-    .filter(Boolean) as string[];
-
+  const techs = await fetchTechniciansForService(admin, companyId, taxService.id);
+  const techEmails = techs.map((t) => t.email).filter(Boolean);
   if (techEmails.length > 0) return { emails: techEmails, companyName };
 
   // Fallback: chiefs del departamento fiscal
@@ -358,16 +351,8 @@ export async function getAdvisorContactInfo(): Promise<{
 
   if (!fiscalDept) return { emails: [], companyName };
 
-  const { data: chiefs } = await admin
-    .from("department_chiefs")
-    .select("profile:profiles(email)")
-    .eq("department_id", fiscalDept.id);
-
-  const chiefEmails = (chiefs ?? [])
-    .map((c) => (c.profile as unknown as { email: string } | null)?.email)
-    .filter(Boolean) as string[];
-
-  return { emails: chiefEmails, companyName };
+  const chiefs = await fetchChiefsForDepartment(admin, fiscalDept.id);
+  return { emails: chiefs.map((c) => c.email).filter(Boolean), companyName };
 }
 
 export async function submitQuarter(
@@ -393,8 +378,7 @@ export async function submitQuarter(
     throw new Error("Error al enviar el trimestre.");
   }
 
-  // Lookups + notification insert must bypass RLS (client user can't read
-  // company_technicians / department_chiefs ni insertar notifications ajenas)
+  // Lookups + notification insert must bypass RLS (client user no lee perms)
   const admin = createAdminClient();
 
   const { data: company } = await admin
@@ -412,12 +396,8 @@ export async function submitQuarter(
   const recipients = new Set<string>();
 
   if (taxService) {
-    const { data: technicians } = await admin
-      .from("company_technicians")
-      .select("technician_id")
-      .eq("company_id", companyId)
-      .eq("service_id", taxService.id);
-    for (const t of technicians ?? []) recipients.add(t.technician_id);
+    const techs = await fetchTechniciansForService(admin, companyId, taxService.id);
+    for (const t of techs) recipients.add(t.profile_id);
   }
 
   // Fallback a chiefs SOLO si no hay técnicos asignados
@@ -429,11 +409,8 @@ export async function submitQuarter(
       .single();
 
     if (fiscalDept) {
-      const { data: chiefs } = await admin
-        .from("department_chiefs")
-        .select("profile_id")
-        .eq("department_id", fiscalDept.id);
-      for (const c of chiefs ?? []) recipients.add(c.profile_id);
+      const chiefs = await fetchChiefsForDepartment(admin, fiscalDept.id);
+      for (const c of chiefs) recipients.add(c.profile_id);
     }
   }
 

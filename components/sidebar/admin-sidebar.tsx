@@ -206,7 +206,7 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
         <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Documentación ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={collapsed} />
       )}
       <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
-      <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={collapsed} />
+      <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
@@ -323,7 +323,7 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
                 <NavItem icon={<FolderIcon className="w-5 h-5" />} label="Doc. ENISA" href={enisaHref} active={isActive(enisaHref)} collapsed={false} />
               )}
               <div className="my-2 border-t border-white/10 mx-2" />
-              <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi departamento" href={deptHref} active={isDeptActive} collapsed={false} />
+              <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={false} />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
             </nav>
           </div>

@@ -92,3 +92,42 @@ export async function requireAnyPermission(
   }
   throw new Error("Sin permisos");
 }
+
+export type GrantLevel = 0 | 1 | 2 | 3;
+
+export async function userGrantLevel(
+  perm: string,
+  scope: PermissionScope = { type: "none" }
+): Promise<GrantLevel> {
+  const { supabase, user } = await getAuthUser();
+  if (!user) return 0;
+
+  const { data, error } = await supabase.rpc("user_grant_level", {
+    uid: user.id,
+    perm,
+    ...scopeArgs(scope),
+  });
+
+  if (error) throw error;
+  const n = Number(data ?? 0);
+  return (n >= 0 && n <= 3 ? n : 0) as GrantLevel;
+}
+
+export async function canGrantToLevel(
+  perm: string,
+  scope: PermissionScope,
+  targetLevel: 1 | 2
+): Promise<boolean> {
+  const { supabase, user } = await getAuthUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase.rpc("can_grant_to_level", {
+    uid: user.id,
+    perm,
+    ...scopeArgs(scope),
+    target_level: targetLevel,
+  });
+
+  if (error) throw error;
+  return data === true;
+}

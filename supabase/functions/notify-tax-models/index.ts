@@ -187,17 +187,33 @@ async function getContactEmails(supabase: any, companyId: string): Promise<strin
     .eq("slug", "tax-models")
     .single();
 
+  async function emailsByProfileIds(ids: string[]): Promise<string[]> {
+    if (ids.length === 0) return [];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("email")
+      .in("id", ids);
+    return (profiles ?? [])
+      .map((p: { email: string | null }) => p.email)
+      .filter((e: string | null): e is string => !!e);
+  }
+
   if (taxService) {
-    const { data: technicians } = await supabase
-      .from("company_technicians")
-      .select("profile:profiles(email)")
-      .eq("company_id", companyId)
-      .eq("service_id", taxService.id);
+    const { data: techRoles } = await supabase
+      .from("profile_roles")
+      .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
+      .eq("scope_type", "company_service")
+      .eq("cs.company_id", companyId)
+      .eq("cs.service_id", taxService.id);
 
-    const techEmails = (technicians ?? [])
-      .map((t: { profile: { email: string } | null }) => t.profile?.email)
-      .filter((e: string | undefined): e is string => !!e);
-
+    const techIds = [
+      ...new Set(
+        (techRoles ?? [])
+          .filter((r: { role: { name: string } | null }) => r.role?.name === "T\u00e9cnico")
+          .map((r: { profile_id: string }) => r.profile_id)
+      ),
+    ];
+    const techEmails = await emailsByProfileIds(techIds);
     if (techEmails.length > 0) return techEmails;
   }
 
@@ -209,14 +225,20 @@ async function getContactEmails(supabase: any, companyId: string): Promise<strin
 
   if (!fiscalDept) return [];
 
-  const { data: chiefs } = await supabase
-    .from("department_chiefs")
-    .select("profile:profiles(email)")
-    .eq("department_id", fiscalDept.id);
+  const { data: chiefRoles } = await supabase
+    .from("profile_roles")
+    .select("profile_id, role:roles!inner(name)")
+    .eq("scope_type", "department")
+    .eq("scope_id", fiscalDept.id);
 
-  return (chiefs ?? [])
-    .map((c: { profile: { email: string } | null }) => c.profile?.email)
-    .filter((e: string | undefined): e is string => !!e);
+  const chiefIds = [
+    ...new Set(
+      (chiefRoles ?? [])
+        .filter((r: { role: { name: string } | null }) => r.role?.name === "Chief")
+        .map((r: { profile_id: string }) => r.profile_id)
+    ),
+  ];
+  return emailsByProfileIds(chiefIds);
 }
 
 function buildContactButtonHtml(emails: string[], companyName: string, subjectTopic: string): string {
