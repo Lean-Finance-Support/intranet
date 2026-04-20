@@ -42,8 +42,8 @@ async function requireEnisaAdmin() {
   if (serviceDeptIds.size === 0) throw new Error("Sin departamento con este servicio");
 
   const [viewable, writable] = await Promise.all([
-    userScopeIds("view_enisa_submissions", "department"),
-    userScopeIds("review_enisa_submission", "department"),
+    userScopeIds("read_dept_service", "department"),
+    userScopeIds("write_dept_service", "department"),
   ]);
 
   const canView = viewable.some((id) => serviceDeptIds.has(id));
@@ -77,7 +77,7 @@ async function requireEnisaWriteForCompany(companyId: string) {
     .maybeSingle();
   if (!cs) throw new Error("Empresa sin servicio ENISA contratado");
 
-  const ok = await hasPermission("view_assigned_company", {
+  const ok = await hasPermission("write_assigned_company", {
     type: "company_service",
     companyServiceId: cs.id,
   });
@@ -106,23 +106,29 @@ export async function getAllEnisaCompanies(): Promise<EnisaCompany[]> {
   const serviceCompanyIds = (companyServices ?? []).map((cs) => cs.company_id as string);
   if (serviceCompanyIds.length === 0) return [];
 
-  const [{ data, error }, { data: assignments }] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("id, legal_name, company_name, nif")
-      .in("id", serviceCompanyIds)
-      .is("deleted_at", null)
-      .order("legal_name"),
-    supabase
-      .from("company_technicians")
-      .select("company_id")
-      .eq("technician_id", user.id)
-      .eq("service_id", svc.id),
-  ]);
+  const { data, error } = await supabase
+    .from("companies")
+    .select("id, legal_name, company_name, nif")
+    .in("id", serviceCompanyIds)
+    .is("deleted_at", null)
+    .order("legal_name");
 
   if (error) throw new Error("Error al procesar la solicitud.");
 
-  const assignedIds = new Set((assignments ?? []).map((a) => a.company_id as string));
+  // Empresas en las que el usuario está asignado como Técnico de ENISA.
+  const { data: myTecnicoRoles } = await supabase
+    .from("profile_roles")
+    .select("cs:company_services!inner(company_id, service_id), role:roles!inner(name)")
+    .eq("scope_type", "company_service")
+    .eq("profile_id", user.id)
+    .eq("cs.service_id", svc.id);
+
+  const assignedIds = new Set(
+    (myTecnicoRoles ?? [])
+      .filter((r) => (r.role as unknown as { name: string } | null)?.name === "Técnico")
+      .map((r) => (r.cs as unknown as { company_id: string } | null)?.company_id)
+      .filter((id): id is string => typeof id === "string")
+  );
 
   return (data ?? []).map((c) => ({
     ...c,

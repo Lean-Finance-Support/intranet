@@ -56,17 +56,33 @@ Deno.serve(async (req: Request) => {
     .eq("slug", "enisa-docs")
     .single();
 
+  async function emailsByProfileIds(ids: string[]): Promise<string[]> {
+    if (ids.length === 0) return [];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("email")
+      .in("id", ids);
+    return (profiles ?? [])
+      .map((p: { email: string | null }) => p.email)
+      .filter((e: string | null): e is string => !!e);
+  }
+
   let ccEmails: string[] = [];
   if (enisaService) {
-    const { data: techLinks } = await supabase
-      .from("company_technicians")
-      .select("profile:profiles(email)")
-      .eq("company_id", company_id)
-      .eq("service_id", enisaService.id);
-
-    ccEmails = (techLinks ?? [])
-      .map((t: { profile: { email: string } | null }) => t.profile?.email)
-      .filter((e: string | undefined): e is string => !!e);
+    const { data: techRoles } = await supabase
+      .from("profile_roles")
+      .select("profile_id, role:roles!inner(name), cs:company_services!inner(company_id, service_id)")
+      .eq("scope_type", "company_service")
+      .eq("cs.company_id", company_id)
+      .eq("cs.service_id", enisaService.id);
+    const techIds = [
+      ...new Set(
+        (techRoles ?? [])
+          .filter((r: { role: { name: string } | null }) => r.role?.name === "T\u00e9cnico")
+          .map((r: { profile_id: string }) => r.profile_id)
+      ),
+    ];
+    ccEmails = await emailsByProfileIds(techIds);
   }
 
   let contactEmails = ccEmails;
@@ -77,13 +93,19 @@ Deno.serve(async (req: Request) => {
       .eq("slug", "financiacion-publica")
       .single();
     if (fpDept) {
-      const { data: chiefs } = await supabase
-        .from("department_chiefs")
-        .select("profile:profiles(email)")
-        .eq("department_id", fpDept.id);
-      contactEmails = (chiefs ?? [])
-        .map((c: { profile: { email: string } | null }) => c.profile?.email)
-        .filter((e: string | undefined): e is string => !!e);
+      const { data: chiefRoles } = await supabase
+        .from("profile_roles")
+        .select("profile_id, role:roles!inner(name)")
+        .eq("scope_type", "department")
+        .eq("scope_id", fpDept.id);
+      const chiefIds = [
+        ...new Set(
+          (chiefRoles ?? [])
+            .filter((r: { role: { name: string } | null }) => r.role?.name === "Chief")
+            .map((r: { profile_id: string }) => r.profile_id)
+        ),
+      ];
+      contactEmails = await emailsByProfileIds(chiefIds);
     }
   }
 
