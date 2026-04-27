@@ -171,6 +171,17 @@ Proyectos: prod `wgxugccbatusioubnsfl` (eu-west-1), dev `rvnflidcbiinmlfpzsbf` (
 
 ---
 
+## Backups de la base de datos
+
+`pg_dump` diario cifrado a Cloudflare R2 + verificación semanal en contenedor efímero. Detalle, secrets y procedimiento de restore en `docs/backups.md`.
+
+- Workflow diario: `.github/workflows/backup-db.yml` (03:00 UTC, schemas `public` + `auth` + `storage`).
+- Workflow de verificación: `.github/workflows/backup-restore-test.yml` (domingos 05:00 UTC).
+- Script de restore manual: `scripts/restore-backup.sh`.
+- Bucket: `leanfinance-db-backups` (retención: 30 días `daily/`, 180 días `monthly/`).
+
+---
+
 ## Estructura de rutas
 
 ```
