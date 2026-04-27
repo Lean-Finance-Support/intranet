@@ -13,9 +13,20 @@ const COOKIE_OPTIONS = {
 };
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams, origin, pathname } = new URL(request.url);
   const companyId = searchParams.get("companyId");
-  const next = searchParams.get("next") ?? "/app/dashboard";
+  const rawNext = searchParams.get("next") ?? "/app/dashboard";
+
+  // En dev (localhost) la ruta se sirve como /app/set-company y el middleware no
+  // reescribe rutas. Si `next` viene sin prefijo de espacio, hay que añadir /app
+  // para que el destino exista. En prod (host app.leanfinance.es) la ruta entra
+  // como /set-company y el middleware reescribe el destino, así que se deja tal cual.
+  const needsAppPrefix =
+    pathname.startsWith("/app/") &&
+    rawNext.startsWith("/") &&
+    !rawNext.startsWith("/app/") &&
+    !rawNext.startsWith("/admin/");
+  const next = needsAppPrefix ? `/app${rawNext}` : rawNext;
 
   if (!companyId) {
     return NextResponse.redirect(new URL("/unauthorized", origin));
