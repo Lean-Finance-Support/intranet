@@ -59,6 +59,7 @@ export default async function AppSidebarLayout({
         hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
+        userId={user.id}
         unreadCount={unreadCount}
         companies={companies}
         activeCompany={activeCompany}

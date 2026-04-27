@@ -42,6 +42,7 @@ export default async function AdminSidebarLayout({
         hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
+        userId={user.id}
         unreadCount={unreadCount}
       />
       <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">

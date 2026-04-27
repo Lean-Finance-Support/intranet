@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { setActiveCompany } from "@/app/app/select-company/actions";
 import NotificationsDrawer from "@/components/notifications-drawer";
+import { useUnreadNotifications } from "@/lib/hooks/use-unread-notifications";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -159,13 +160,14 @@ interface ClientSidebarProps {
   hasEnisaDocs: boolean;
   loginPath: string;
   linkPrefix: string;
+  userId: string;
   unreadCount: number;
   companies: SidebarCompany[];
   activeCompany: SidebarCompany | null;
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -173,9 +175,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
   const [switchingCompany, setSwitchingCompany] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [liveUnreadCount, setLiveUnreadCount] = useState(initialUnreadCount);
-  const unreadCount = liveUnreadCount;
-  const handleUnreadCountChange = useCallback((count: number) => setLiveUnreadCount(count), []);
+  const unreadCount = useUnreadNotifications(userId, initialUnreadCount);
 
   async function handleSwitchCompany(companyId: string) {
     setSwitchingCompany(true);
@@ -481,7 +481,6 @@ export default function ClientSidebar({ profile, hasTaxModels, hasEnisaDocs, log
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         linkPrefix={linkPrefix}
-        onUnreadCountChange={handleUnreadCountChange}
       />
     </>
   );

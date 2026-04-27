@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import NotificationsDrawer from "@/components/notifications-drawer";
+import { useUnreadNotifications } from "@/lib/hooks/use-unread-notifications";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -143,19 +144,18 @@ interface AdminSidebarProps {
   hasEnisaDocs: boolean;
   loginPath: string;
   linkPrefix: string;
+  userId: string;
   unreadCount: number;
 }
 
 // ---- Main Component ----
-export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, unreadCount: initialUnreadCount }: AdminSidebarProps) {
+export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [liveUnreadCount, setLiveUnreadCount] = useState(initialUnreadCount);
-  const unreadCount = liveUnreadCount;
-  const handleUnreadCountChange = useCallback((count: number) => setLiveUnreadCount(count), []);
+  const unreadCount = useUnreadNotifications(userId, initialUnreadCount);
   useEffect(() => {
     const stored = localStorage.getItem("admin-sidebar-collapsed");
     if (stored !== null) setCollapsed(stored === "true");
@@ -334,7 +334,6 @@ export default function AdminSidebar({ profile, hasTaxModels, hasEnisaDocs, logi
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         linkPrefix={linkPrefix}
-        onUnreadCountChange={handleUnreadCountChange}
       />
     </>
   );

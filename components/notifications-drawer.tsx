@@ -98,14 +98,12 @@ interface NotificationsDrawerProps {
   open: boolean;
   onClose: () => void;
   linkPrefix?: string;
-  onUnreadCountChange?: (count: number) => void;
 }
 
 export default function NotificationsDrawer({
   open,
   onClose,
   linkPrefix = "",
-  onUnreadCountChange,
 }: NotificationsDrawerProps) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -130,10 +128,6 @@ export default function NotificationsDrawer({
   }, [open]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
-
-  useEffect(() => {
-    onUnreadCountChange?.(unreadCount);
-  }, [unreadCount, onUnreadCountChange]);
 
   const handleMarkRead = useCallback(
     async (id: string) => {
