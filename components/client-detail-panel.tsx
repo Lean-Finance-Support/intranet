@@ -35,7 +35,6 @@ function formatIBAN(iban: string) {
 // ---- Service routes ----
 const SERVICE_ROUTES: Record<string, string> = {
   "tax-models": "/modelos",
-  "enisa-docs": "/enisa",
 };
 
 // ---- Bank Account Form ----

@@ -50,7 +50,6 @@ export interface DepartmentServiceWithDetails extends DepartmentService {
 
 export const SERVICE_SLUGS = {
   TAX_MODELS: "tax-models",
-  ENISA_DOCS: "enisa-docs",
 } as const;
 
 export type ServiceSlug = (typeof SERVICE_SLUGS)[keyof typeof SERVICE_SLUGS];

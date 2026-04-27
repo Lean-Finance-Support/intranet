@@ -44,7 +44,6 @@ export default async function AppSidebarLayout({
     : [];
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
-  const hasEnisaDocs = serviceSlugs.includes("enisa-docs");
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
   const activeCompany = companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
 
@@ -56,7 +55,6 @@ export default async function AppSidebarLayout({
           email: profile?.email ?? user.email ?? null,
         }}
         hasTaxModels={hasTaxModels}
-        hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
         userId={user.id}

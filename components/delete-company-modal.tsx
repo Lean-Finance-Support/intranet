@@ -45,7 +45,7 @@ export default function DeleteCompanyModal({ legalName, nif, onConfirm, onCancel
           <h2 className="text-lg font-bold font-heading text-brand-navy">Eliminar empresa</h2>
           <p className="text-sm text-text-muted mt-2">
             Vas a eliminar <span className="font-semibold text-text-body">{legalName}</span>. La empresa
-            desaparecerá de los listados pero el histórico fiscal y ENISA se conservará.
+            desaparecerá de los listados pero el histórico fiscal se conservará.
             Podrás restaurarla desde la papelera.
           </p>
         </div>

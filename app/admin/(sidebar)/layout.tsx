@@ -27,7 +27,6 @@ export default async function AdminSidebarLayout({
   const deptIds = departments.map((d) => d.id);
   const slugs = deptIds.length > 0 ? await getCachedDepartmentServiceSlugs(deptIds) : [];
   const hasTaxModels = slugs.includes("tax-models");
-  const hasEnisaDocs = slugs.includes("enisa-docs");
 
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
 
@@ -39,7 +38,6 @@ export default async function AdminSidebarLayout({
           email: profile?.email ?? user.email ?? null,
         }}
         hasTaxModels={hasTaxModels}
-        hasEnisaDocs={hasEnisaDocs}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
         userId={user.id}
