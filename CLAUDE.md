@@ -134,8 +134,8 @@ Función central: `has_permission(uid, perm, scope_type default 'none', scope_id
 Helper para listar scopes: `user_scope_ids(uid, perm, scope_type) returns setof uuid`.
 
 Roles semilla:
-- **Miembro de departamento** — lectura básica (miembro, ver empresas/notificaciones/ENISA del dept). Scope `department`.
-- **Chief** — incluye "Miembro" + operaciones (asignar técnico, añadir servicio, crear notificaciones, validar ENISA). Scope `department`.
+- **Miembro de departamento** — lectura básica (miembro, ver empresas/notificaciones del dept). Scope `department`.
+- **Chief** — incluye "Miembro" + operaciones (asignar técnico, añadir servicio, crear notificaciones). Scope `department`.
 - **Técnico** — `view_assigned_company` sobre una combinación empresa×servicio. Scope `company_service` (el `scope_id` referencia `company_services.id`).
 
 Para escalada de privilegios: solo quien tenga el permiso `manage_users` puede escribir en las tablas
@@ -154,7 +154,7 @@ Solo crea perfil si `NEW.raw_user_meta_data->>'role'` está presente.
 Los logins de cuentas no pre-creadas por admin no generan perfil → van a /unauthorized.
 
 ### Triggers de notificaciones (`trigger_notify_*`)
-Tres triggers en `tax_notifications`, `enisa_notifications`, `enisa_submissions` llaman a edge functions via `net.http_post`. La URL del proyecto y el `webhook_secret` se leen de `public.app_settings` (no hardcoded) para que la misma migración funcione en dev y prod.
+Trigger en `tax_notifications` llama a edge functions via `net.http_post`. La URL del proyecto y el `webhook_secret` se leen de `public.app_settings` (no hardcoded) para que la misma migración funcione en dev y prod.
 
 ---
 
