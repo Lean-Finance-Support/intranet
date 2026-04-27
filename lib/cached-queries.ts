@@ -69,6 +69,35 @@ export async function getCachedUserDepartments(userId: string) {
   )();
 }
 
+/**
+ * Departments where the user has `read_dept_service` (Miembro, Chief, Operador, Observador).
+ * Used to gate service pages and sidebar service links.
+ * Cached 5 min.
+ */
+export async function getCachedUserServiceDepts(userId: string) {
+  return unstable_cache(
+    async () => {
+      const admin = createAdminClient();
+      const { data: scopeRows } = await admin.rpc("user_scope_ids", {
+        uid: userId,
+        perm: "read_dept_service",
+        p_scope_type: "department",
+      });
+      const deptIds = (scopeRows ?? [])
+        .map((r: { scope_id: string }) => r.scope_id)
+        .filter(Boolean);
+      if (deptIds.length === 0) return [];
+      const { data } = await admin
+        .from("departments")
+        .select("id, name, slug")
+        .in("id", deptIds);
+      return (data ?? []) as { id: string; name: string; slug: string }[];
+    },
+    ["user-service-depts", userId],
+    { tags: [`user-departments:${userId}`], revalidate: 300 }
+  )();
+}
+
 /** Companies linked to a client user. Cached 5 min. Excluye soft-deleted. */
 export async function getCachedUserCompanies(userId: string) {
   return unstable_cache(

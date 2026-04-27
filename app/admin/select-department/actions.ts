@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { setActiveDepartmentIdInCookies } from "@/lib/active-department";
-import { getCachedUserDepartments } from "@/lib/cached-queries";
+import { getCachedUserServiceDepts } from "@/lib/cached-queries";
 import { hasPermission } from "@/lib/require-permission";
 
 export async function getMyDepartments() {
@@ -12,7 +12,7 @@ export async function getMyDepartments() {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
-  return getCachedUserDepartments(user.id);
+  return getCachedUserServiceDepts(user.id);
 }
 
 export async function setActiveDepartment(departmentId: string) {
@@ -22,7 +22,7 @@ export async function setActiveDepartment(departmentId: string) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autenticado");
 
-  const ok = await hasPermission("member_of_department", {
+  const ok = await hasPermission("read_dept_service", {
     type: "department",
     id: departmentId,
   });

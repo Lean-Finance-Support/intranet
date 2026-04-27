@@ -4,7 +4,7 @@ import ModelosWorkspace from "./_components/modelos-workspace";
 import {
   getAuthUser,
   getCachedProfile,
-  getCachedUserDepartments,
+  getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
 
@@ -18,7 +18,7 @@ export default async function ModelosPage({
 
   const [profile, departments, prefix, resolvedParams] = await Promise.all([
     getCachedProfile(user.id),
-    getCachedUserDepartments(user.id),
+    getCachedUserServiceDepts(user.id),
     getLinkPrefix("admin"),
     searchParams,
   ]);

@@ -5,7 +5,7 @@ import { getLinkPrefix } from "@/lib/link-prefix";
 import {
   getAuthUser,
   getCachedProfile,
-  getCachedUserDepartments,
+  getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
 
@@ -20,7 +20,7 @@ export default async function AdminSidebarLayout({
   const [prefix, profile, departments, allNotifications] = await Promise.all([
     getLinkPrefix("admin"),
     getCachedProfile(user.id),
-    getCachedUserDepartments(user.id),
+    getCachedUserServiceDepts(user.id),
     getNotifications(),
   ]);
 

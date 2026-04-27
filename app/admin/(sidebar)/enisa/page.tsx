@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getLinkPrefix } from "@/lib/link-prefix";
 import {
   getAuthUser,
-  getCachedUserDepartments,
+  getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
 import EnisaAdminWorkspace from "./_components/enisa-admin-workspace";
@@ -18,7 +18,7 @@ export default async function AdminEnisaPage({
   const [prefix, resolvedParams, departments] = await Promise.all([
     getLinkPrefix("admin"),
     searchParams,
-    getCachedUserDepartments(user.id),
+    getCachedUserServiceDepts(user.id),
   ]);
 
   const deptIds = departments.map((d) => d.id);
