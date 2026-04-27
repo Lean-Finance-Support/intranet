@@ -1,0 +1,118 @@
+name: Backup Restore Test
+
+on:
+  schedule:
+    - cron: '0 5 * * 0'
+  workflow_dispatch:
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: restoretest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Find latest daily backup
+        id: latest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: |
+          KEY=$(aws s3 ls "s3://${{ secrets.R2_BUCKET }}/daily/" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" \
+            | sort | tail -n 1 | awk '{print $4}')
+          if [ -z "$KEY" ]; then
+            echo "No daily backups found"
+            exit 1
+          fi
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+          echo "Latest backup: $KEY"
+
+      - name: Download backup
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: |
+          aws s3 cp "s3://${{ secrets.R2_BUCKET }}/daily/${{ steps.latest.outputs.key }}" \
+            backup.dump.gpg \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" \
+            --only-show-errors
+          ls -lh backup.dump.gpg
+
+      - name: Decrypt
+        env:
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+        run: |
+          gpg --batch --yes \
+            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+            -o backup.dump -d backup.dump.gpg
+          rm -f backup.dump.gpg
+          ls -lh backup.dump
+
+      - name: Verify dump table of contents
+        run: |
+          pg_restore --list backup.dump > toc.txt
+          echo "TOC entries: $(wc -l < toc.txt)"
+          for table in profiles companies departments services; do
+            if ! grep -q "TABLE DATA public $table" toc.txt; then
+              echo "ERROR: table public.$table missing from dump"
+              exit 1
+            fi
+          done
+
+      - name: Restore public schema into ephemeral postgres
+        env:
+          PGPASSWORD: testpass
+        run: |
+          pg_restore --no-owner --no-acl \
+            --schema=public \
+            -h localhost -U postgres -d restoretest \
+            backup.dump || true
+
+      - name: Sanity-check row counts
+        env:
+          PGPASSWORD: testpass
+        run: |
+          fail=0
+          for table in profiles companies departments services; do
+            COUNT=$(psql -h localhost -U postgres -d restoretest -tAc \
+              "SELECT COUNT(*) FROM public.$table" 2>/dev/null || echo "ERR")
+            echo "public.$table: $COUNT rows"
+            if [ "$COUNT" = "ERR" ] || [ -z "$COUNT" ]; then
+              echo "  -> table not restored"
+              fail=1
+            fi
+          done
+          if [ "$fail" = "1" ]; then
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: rm -f backup.dump backup.dump.gpg toc.txt

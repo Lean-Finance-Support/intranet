@@ -1,0 +1,72 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: backup-db
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Compute object key
+        id: key
+        run: |
+          DAY=$(date -u +%d)
+          DATE=$(date -u +%Y-%m-%d)
+          if [ "$DAY" = "01" ]; then
+            echo "prefix=monthly" >> "$GITHUB_OUTPUT"
+          else
+            echo "prefix=daily" >> "$GITHUB_OUTPUT"
+          fi
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          pg_dump -Fc --no-owner --no-acl \
+            --schema=public --schema=auth --schema=storage \
+            -f backup.dump \
+            "$SUPABASE_DB_URL"
+          ls -lh backup.dump
+
+      - name: Encrypt with GPG
+        env:
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+        run: |
+          gpg --batch --yes \
+            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 \
+            -o backup.dump.gpg backup.dump
+          rm -f backup.dump
+          ls -lh backup.dump.gpg
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: |
+          aws s3 cp backup.dump.gpg \
+            "s3://${{ secrets.R2_BUCKET }}/${{ steps.key.outputs.prefix }}/${{ steps.key.outputs.date }}.dump.gpg" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}" \
+            --only-show-errors
+          echo "Uploaded ${{ steps.key.outputs.prefix }}/${{ steps.key.outputs.date }}.dump.gpg"
