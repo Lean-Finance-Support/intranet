@@ -1,28 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClienteCompany, ClienteService, ClientAccount, DeptMemberSlim, CompanyDetailInfo } from "@/app/admin/clientes/actions";
+import type { ClienteCompany, ClientAccount, CompanyDetailInfo } from "@/app/admin/clientes/actions";
 import {
   getCompanyDetail,
   updateCompanyNameAdmin,
   addCompanyBankAccountAdmin,
   updateCompanyBankAccountAdmin,
   deleteCompanyBankAccountAdmin,
-  addServiceToCompany,
-  removeServiceFromCompany,
-  assignTechnicianAdmin,
-  removeTechnicianAdmin,
-  assignAllTechniciansAdmin,
   createClientAccount,
   updateClientAccount,
   unlinkClientFromCompany,
   findClientProfileByEmail,
-  deleteCompanyAdmin,
-  restoreCompanyAdmin,
 } from "@/app/admin/clientes/actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import ConfirmDialog from "@/components/confirm-dialog";
-import DeleteCompanyModal from "@/components/delete-company-modal";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
@@ -32,13 +24,8 @@ function formatIBAN(iban: string) {
   return iban.replace(/(.{4})/g, "$1 ").trim();
 }
 
-// ---- Service routes ----
-const SERVICE_ROUTES: Record<string, string> = {
-  "tax-models": "/modelos",
-};
-
 // ---- Bank Account Form ----
-function BankAccountForm({
+export function BankAccountForm({
   initial,
   onSave,
   onCancel,
@@ -93,105 +80,8 @@ function BankAccountForm({
   );
 }
 
-// ---- Service Section in detail panel ----
-function ServiceDetailSection({
-  service,
-  isChiefOfDept,
-  members,
-  linkPrefix,
-  companyId,
-  onAssign,
-  onRemove,
-  onRemoveService,
-  onAssignAll,
-}: {
-  service: ClienteService;
-  isChiefOfDept: boolean;
-  members: DeptMemberSlim[];
-  linkPrefix: string;
-  companyId: string;
-  onAssign: (serviceId: string, techId: string) => void;
-  onRemove: (serviceId: string, techId: string) => void;
-  onRemoveService: (serviceId: string) => void;
-  onAssignAll: (serviceId: string) => void;
-}) {
-  const existingIds = new Set(service.technicians.map((t) => t.id));
-  const available = members.filter((m) => !existingIds.has(m.id));
-  const serviceRoute = SERVICE_ROUTES[service.service_slug];
-
-  return (
-    <div className="border border-gray-100 rounded-lg p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-text-body">{service.service_name}</span>
-          <span className="text-[10px] bg-gray-100 text-text-muted px-1.5 py-0.5 rounded-full">{service.department_name}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {serviceRoute && (
-            <a
-              href={`${linkPrefix}${serviceRoute}?company=${companyId}`}
-              className="p-1 rounded hover:bg-brand-teal/10 text-brand-teal transition-colors"
-              title={`Ir a ${service.service_name}`}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-              </svg>
-            </a>
-          )}
-          {isChiefOfDept && (
-            <button onClick={() => onRemoveService(service.service_id)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Quitar servicio">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Technicians */}
-      <div>
-        <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider mb-1.5">Técnicos</p>
-        {service.technicians.length === 0 ? (
-          <p className="text-xs text-text-muted italic">Sin técnicos asignados</p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {service.technicians.map((t) => (
-              <span key={t.id} className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">
-                <span className="text-text-body">{t.name ?? "Desconocido"}</span>
-                {isChiefOfDept && (
-                  <button onClick={() => onRemove(service.service_id, t.id)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer" title="Quitar">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
-        {isChiefOfDept && available.length > 0 && (
-          <div className="mt-2 flex items-center gap-2">
-            <select
-              onChange={(e) => { if (e.target.value) { onAssign(service.service_id, e.target.value); e.target.value = ""; } }}
-              defaultValue=""
-              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal bg-white cursor-pointer"
-            >
-              <option value="" disabled>+ Añadir técnico</option>
-              {available.map((m) => <option key={m.id} value={m.id}>{m.name ?? m.id}</option>)}
-            </select>
-            <button
-              onClick={() => onAssignAll(service.service_id)}
-              className="text-[11px] text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
-            >
-              Asignar todos
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ---- Edit Client Account Form ----
-function EditClientAccountForm({
+export function EditClientAccountForm({
   initial,
   onSave,
   onCancel,
@@ -248,9 +138,9 @@ function EditClientAccountForm({
 }
 
 // ---- Add Client Account Form (con detección automática de email existente) ----
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function AddClientAccountForm({
+export function AddClientAccountForm({
   existingProfileIds,
   onSubmit,
   onCancel,
@@ -388,43 +278,25 @@ function AddClientAccountForm({
   );
 }
 
+const SERVICE_ROUTES: Record<string, string> = {
+  "tax-models": "/modelos",
+};
+
 // ---- Main Panel ----
 interface ClientDetailPanelProps {
   company: ClienteCompany;
-  userChiefDeptIds: string[];
-  deptMembers: { [deptId: string]: DeptMemberSlim[] };
-  chiefAvailableServices: { service_id: string; service_name: string; department_id: string }[];
   canManageClientAccounts: boolean;
-  canDeleteCompany: boolean;
-  canCreateCompany: boolean;
   linkPrefix: string;
   onClose: () => void;
   onUpdateName: (companyId: string, name: string | null) => void;
-  onServiceAdded: (companyId: string, service: ClienteService) => void;
-  onServiceRemoved: (companyId: string, serviceId: string) => void;
-  onTechAssigned: (companyId: string, serviceId: string, tech: { id: string; name: string | null }) => void;
-  onTechRemoved: (companyId: string, serviceId: string, techId: string) => void;
-  onDeleted: (companyId: string, deletedAt: string) => void;
-  onRestored: (companyId: string) => void;
 }
 
 export default function ClientDetailPanel({
   company,
-  userChiefDeptIds,
-  deptMembers,
-  chiefAvailableServices,
   canManageClientAccounts,
-  canDeleteCompany,
-  canCreateCompany,
   linkPrefix,
   onClose,
   onUpdateName,
-  onServiceAdded,
-  onServiceRemoved,
-  onTechAssigned,
-  onTechRemoved,
-  onDeleted,
-  onRestored,
 }: ClientDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -442,18 +314,10 @@ export default function ClientDetailPanel({
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
 
-  // Add service
-  const [addingService, setAddingService] = useState(false);
-  const [savingService, setSavingService] = useState(false);
-
   // Client accounts
   const [addingAccount, setAddingAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [unlinkConfirmAccount, setUnlinkConfirmAccount] = useState<ClientAccount | null>(null);
-
-  // Delete / restore
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
 
   const isDeleted = detail?.deleted_at != null;
   const canEditCompany = !isDeleted;
@@ -513,47 +377,6 @@ export default function ClientDetailPanel({
     } finally { setDeletingBankId(null); }
   }
 
-  async function handleAddService(serviceId: string) {
-    const svcMeta = chiefAvailableServices.find((s) => s.service_id === serviceId);
-    if (!svcMeta) return;
-    setSavingService(true);
-    try {
-      await addServiceToCompany(company.id, serviceId);
-      // Build minimal ClienteService for optimistic update
-      const newSvc: ClienteService = {
-        service_id: svcMeta.service_id,
-        service_name: svcMeta.service_name,
-        service_slug: "",
-        department_id: svcMeta.department_id,
-        department_name: "",
-        technicians: [],
-      };
-      onServiceAdded(company.id, newSvc);
-      setAddingService(false);
-    } finally { setSavingService(false); }
-  }
-
-  async function handleRemoveService(serviceId: string) {
-    try {
-      await removeServiceFromCompany(company.id, serviceId);
-      onServiceRemoved(company.id, serviceId);
-    } catch { /* keep state */ }
-  }
-
-  function handleAssignTech(serviceId: string, techId: string) {
-    // Find tech name from deptMembers
-    const svc = company.services.find((s) => s.service_id === serviceId);
-    const members = deptMembers[svc?.department_id ?? ""] ?? [];
-    const member = members.find((m) => m.id === techId);
-    onTechAssigned(company.id, serviceId, { id: techId, name: member?.name ?? null });
-    assignTechnicianAdmin(company.id, serviceId, techId).catch(() => {});
-  }
-
-  function handleRemoveTech(serviceId: string, techId: string) {
-    onTechRemoved(company.id, serviceId, techId);
-    removeTechnicianAdmin(company.id, serviceId, techId).catch(() => {});
-  }
-
   async function handleAddAccount(input: { email: string; full_name: string | null }) {
     const created = await createClientAccount(company.id, input);
     setDetail((prev) => {
@@ -572,18 +395,6 @@ export default function ClientDetailPanel({
     setEditingAccountId(null);
   }
 
-  async function handleConfirmDelete(typedNif: string) {
-    await deleteCompanyAdmin(company.id, typedNif);
-    setShowDeleteModal(false);
-    onDeleted(company.id, new Date().toISOString());
-  }
-
-  async function handleConfirmRestore() {
-    await restoreCompanyAdmin(company.id);
-    setShowRestoreConfirm(false);
-    onRestored(company.id);
-  }
-
   async function handleConfirmUnlink(profileId: string) {
     await unlinkClientFromCompany(company.id, profileId);
     setDetail((prev) =>
@@ -592,34 +403,26 @@ export default function ClientDetailPanel({
     setUnlinkConfirmAccount(null);
   }
 
-  function handleAssignAll(serviceId: string) {
-    const svc = company.services.find((s) => s.service_id === serviceId);
-    if (!svc) return;
-    const members = deptMembers[svc.department_id] ?? [];
-    const existingIds = new Set(svc.technicians.map((t) => t.id));
-    for (const m of members) {
-      if (!existingIds.has(m.id)) {
-        onTechAssigned(company.id, serviceId, { id: m.id, name: m.name });
-      }
-    }
-    assignAllTechniciansAdmin(company.id, serviceId, svc.department_id).catch(() => {});
-  }
-
-  // Services user can add: chief services NOT already on this company
-  const existingServiceIds = new Set(company.services.map((s) => s.service_id));
-  const availableToAdd = chiefAvailableServices.filter((s) => !existingServiceIds.has(s.service_id));
-  const isChiefOfAny = userChiefDeptIds.length > 0;
-
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <div
         ref={panelRef}
         className="relative w-full max-w-lg bg-white shadow-2xl h-full overflow-y-auto animate-slide-in-right"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between z-10">
-          <div className="flex-1 min-w-0 pr-4">
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-4 flex items-start gap-2 z-10">
+          {/* Expand button — top-left inside the panel */}
+          <a
+            href={`${linkPrefix}/clientes/${company.id}`}
+            title="Ver detalle completo"
+            className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-brand-teal hover:bg-brand-teal/5 transition-colors cursor-pointer border border-gray-200"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </a>
+          <div className="flex-1 min-w-0">
             {editingName ? (
               <div className="flex items-center gap-2">
                 <input
@@ -676,55 +479,38 @@ export default function ClientDetailPanel({
         </div>
 
         <div className="px-6 py-5 space-y-6">
-          {/* ---- Services ---- */}
+          {/* ---- Services (read-only en el drawer; gestión en /clientes/[id]) ---- */}
           <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Servicios contratados</h3>
-              {canEditCompany && isChiefOfAny && availableToAdd.length > 0 && !addingService && (
-                <button onClick={() => setAddingService(true)} className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  Añadir
-                </button>
-              )}
-            </div>
-
-            {addingService && (
-              <div className="flex items-center gap-2 mb-3">
-                <select
-                  onChange={(e) => { if (e.target.value) handleAddService(e.target.value); }}
-                  defaultValue=""
-                  disabled={savingService}
-                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal bg-white cursor-pointer disabled:opacity-50"
-                >
-                  <option value="" disabled>Selecciona un servicio...</option>
-                  {availableToAdd.map((s) => (
-                    <option key={s.service_id} value={s.service_id}>{s.service_name}</option>
-                  ))}
-                </select>
-                <button onClick={() => setAddingService(false)} className="text-xs text-text-muted hover:text-text-body cursor-pointer">Cancelar</button>
-              </div>
-            )}
-
+            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+              Servicios contratados
+            </h3>
             {company.services.length === 0 ? (
               <p className="text-sm text-text-muted italic">Sin servicios contratados</p>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
                 {company.services.map((svc) => {
-                  const isChiefOfDept = canEditCompany && userChiefDeptIds.includes(svc.department_id);
-                  const members = deptMembers[svc.department_id] ?? [];
+                  const route = SERVICE_ROUTES[svc.service_slug];
                   return (
-                    <ServiceDetailSection
+                    <span
                       key={svc.service_id}
-                      service={svc}
-                      isChiefOfDept={isChiefOfDept}
-                      members={members}
-                      linkPrefix={linkPrefix}
-                      companyId={company.id}
-                      onAssign={handleAssignTech}
-                      onRemove={handleRemoveTech}
-                      onRemoveService={handleRemoveService}
-                      onAssignAll={handleAssignAll}
-                    />
+                      className="inline-flex items-center gap-1.5 text-xs bg-gray-50 border border-gray-100 rounded-full pl-3 pr-2 py-1"
+                    >
+                      <span className="font-medium text-text-body">{svc.service_name}</span>
+                      <span className="text-[10px] text-text-muted">·</span>
+                      <span className="text-[10px] text-text-muted">{svc.department_name}</span>
+                      {route && (
+                        <a
+                          href={`${linkPrefix}${route}?company=${company.id}`}
+                          title={`Ir a ${svc.service_name}`}
+                          className="ml-0.5 text-brand-teal hover:text-brand-teal/70 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                          </svg>
+                        </a>
+                      )}
+                    </span>
                   );
                 })}
               </div>
@@ -862,62 +648,8 @@ export default function ClientDetailPanel({
             )}
           </section>
 
-          {/* ---- Zona de peligro ---- */}
-          {!loadingDetail && detail && (
-            (isDeleted && canCreateCompany) || (!isDeleted && canDeleteCompany)
-          ) && (
-            <section className="border-t border-gray-100 pt-5">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Zona de peligro</h3>
-              {isDeleted ? (
-                <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium text-text-body">Restaurar cliente</p>
-                    <p className="text-xs text-text-muted mt-0.5">Volverá a estar activo y visible.</p>
-                  </div>
-                  <button
-                    onClick={() => setShowRestoreConfirm(true)}
-                    className="text-xs font-medium bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 cursor-pointer flex-shrink-0"
-                  >
-                    Restaurar
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-3 bg-red-50/50 border border-red-100 rounded-lg px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium text-red-700">Eliminar cliente</p>
-                    <p className="text-xs text-red-600/80 mt-0.5">Queda inactivo pero se conserva el histórico. Se puede restaurar.</p>
-                  </div>
-                  <button
-                    onClick={() => setShowDeleteModal(true)}
-                    className="text-xs font-medium bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 cursor-pointer flex-shrink-0"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              )}
-            </section>
-          )}
         </div>
       </div>
-
-      {showDeleteModal && detail && (
-        <DeleteCompanyModal
-          legalName={detail.legal_name}
-          nif={detail.nif ?? ""}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setShowDeleteModal(false)}
-        />
-      )}
-
-      {showRestoreConfirm && detail && (
-        <ConfirmDialog
-          title="Restaurar empresa"
-          message={`¿Restaurar ${detail.legal_name}? Volverá a aparecer en los listados y podrá editarse de nuevo.`}
-          confirmLabel="Restaurar"
-          onConfirm={handleConfirmRestore}
-          onCancel={() => setShowRestoreConfirm(false)}
-        />
-      )}
 
       {unlinkConfirmAccount && (
         <ConfirmDialog

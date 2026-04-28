@@ -182,6 +182,20 @@ Proyectos: prod `wgxugccbatusioubnsfl` (eu-west-1), dev `rvnflidcbiinmlfpzsbf` (
 
 ---
 
+## Documentación por cliente (schema `documentation`)
+
+Catálogo de **bloques** y **apartados** validables que se asignan a cada cliente. Cada apartado tiene un estado (`pendiente | enviado | validado | rechazado`), N supervisores (cualquier miembro/chief de los departamentos del apartado, incluso de varios deptos a la vez), archivos del cliente, comentarios bidireccionales y un historial de transiciones. Los apartados del catálogo pueden tener **plantillas** descargables como ayuda al cliente.
+
+- Schema y RLS: `supabase/migrations/20260428100000_documentation_schema.sql` + `..._permissions.sql` + `..._storage.sql`. Migraciones posteriores: `20260428100300_rename_supervisor_id.sql`, `20260428110000_documentation_supervisors_nm.sql` (drop columna escalar, tabla N:M `client_apartado_supervisors`), `20260428110100_documentation_apartado_templates.sql`.
+- Bucket `client-documentation` (privado): paths `{company_id}/{client_apartado_id}/{file_id}/{filename}` para archivos del cliente y `templates/{apartado_id}/{template_id}/{filename}` para plantillas del catálogo. Helpers en `lib/storage/documentation.ts`.
+- Permisos (todos `scope_type='department'`): `manage_documentation_catalog`, `request_client_documentation`, `validate_client_documentation`. El rol `Chief` los tiene de serie.
+- Server actions: catálogo en `app/admin/(sidebar)/documentacion/actions.ts`; instancias por cliente en `app/admin/clientes/[id]/documentation-actions.ts`; lado cliente en `app/app/empresa/documentation-actions.ts`.
+- UI compartida: `components/documentation/{documentation-master-detail,apartado-detail,apartado-files,apartado-comments,status-badge,apartado-templates-list}.tsx`. Modo dual (`'admin' | 'client'`).
+- Tipos: `lib/types/documentation.ts`. **Importante**: los supervisores están en `apartado.supervisors` (array), no como `supervisor_id` escalar.
+- IMPORTANTE para deploy: el schema `documentation` debe estar añadido a "Exposed schemas" en Supabase Dashboard → API Settings (una vez por proyecto). Sin esto el SDK devuelve 404 al hacer `.schema('documentation')`.
+
+---
+
 ## Estructura de rutas
 
 ```

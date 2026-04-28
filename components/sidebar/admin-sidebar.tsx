@@ -36,6 +36,13 @@ function BuildingIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function BookIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+    </svg>
+  );
+}
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -133,6 +140,7 @@ export interface AdminSidebarProfile {
 interface AdminSidebarProps {
   profile: AdminSidebarProfile;
   hasTaxModels: boolean;
+  canManageDocCatalog: boolean;
   loginPath: string;
   linkPrefix: string;
   userId: string;
@@ -140,7 +148,7 @@ interface AdminSidebarProps {
 }
 
 // ---- Main Component ----
-export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount }: AdminSidebarProps) {
+export default function AdminSidebar({ profile, hasTaxModels, canManageDocCatalog, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -168,6 +176,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
   const modelosHref = `${linkPrefix}/modelos`;
   const deptHref = `${linkPrefix}/departamento`;
   const clientesHref = `${linkPrefix}/clientes`;
+  const docCatalogHref = `${linkPrefix}/documentacion`;
 
   const isActive = (href: string) => {
     const path = pathname ?? "";
@@ -195,6 +204,9 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
       <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
+      {canManageDocCatalog && (
+        <NavItem icon={<BookIcon className="w-5 h-5" />} label="Catálogo Doc." href={docCatalogHref} active={isActive(docCatalogHref)} collapsed={collapsed} />
+      )}
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
   );
@@ -309,6 +321,9 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
               <div className="my-2 border-t border-white/10 mx-2" />
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={false} />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
+              {canManageDocCatalog && (
+                <NavItem icon={<BookIcon className="w-5 h-5" />} label="Catálogo Doc." href={docCatalogHref} active={isActive(docCatalogHref)} collapsed={false} />
+              )}
             </nav>
           </div>
         </div>

@@ -64,7 +64,7 @@ export default function AddDeptMemberModal({ deptId, deptName, onClose, onAdded 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        className="absolute inset-0"
         onClick={() => !pending && onClose()}
       />
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4">
