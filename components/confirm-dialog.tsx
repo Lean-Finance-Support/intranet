@@ -42,12 +42,8 @@ export default function ConfirmDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
-      <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-        onClick={() => !confirming && onCancel()}
-      />
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 space-y-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
+      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 space-y-4 pointer-events-auto">
         <div>
           <h2 className="text-lg font-bold font-heading text-brand-navy">{title}</h2>
           <p className="text-sm text-text-muted mt-2">{message}</p>

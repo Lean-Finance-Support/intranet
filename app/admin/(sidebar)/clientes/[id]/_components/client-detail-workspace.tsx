@@ -37,12 +37,15 @@ import {
   addApartadoToClient,
   addBlockToClient,
   addSupervisor,
+  adminSoftDeleteApartadoFile,
   adminUploadApartadoFile,
   getApartadoFileSignedUrl,
   getApartadoTemplateSignedUrl,
   rejectApartado,
   removeApartadoFromClient,
+  removeBlockFromClient,
   removeSupervisor,
+  reopenApartado,
   validateApartado,
 } from "@/app/admin/clientes/[id]/documentation-actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
@@ -157,6 +160,7 @@ export default function ClientDetailWorkspace({
   const [addingAccount, setAddingAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [unlinkConfirmAccount, setUnlinkConfirmAccount] = useState<ClientAccount | null>(null);
+  const [pendingRemoveService, setPendingRemoveService] = useState<ClienteService | null>(null);
 
   const isDeleted = detail.deleted_at != null;
   const canEditCompany = !isDeleted;
@@ -262,18 +266,24 @@ export default function ClientDetailWorkspace({
     }
   }
 
-  async function handleRemoveService(serviceId: string) {
+  function handleRemoveService(serviceId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
-    if (!confirm(`¿Quitar el servicio "${svc.service_name}" de este cliente?`)) return;
+    setPendingRemoveService(svc);
+  }
+
+  async function confirmRemoveService() {
+    if (!pendingRemoveService) return;
     try {
-      await removeServiceFromCompany(company.id, serviceId);
+      await removeServiceFromCompany(company.id, pendingRemoveService.service_id);
       setCompany((prev) => ({
         ...prev,
-        services: prev.services.filter((s) => s.service_id !== serviceId),
+        services: prev.services.filter((s) => s.service_id !== pendingRemoveService.service_id),
       }));
+      setPendingRemoveService(null);
     } catch (e) {
       setServiceError(e instanceof Error ? e.message : "Error al quitar servicio");
+      setPendingRemoveService(null);
     }
   }
 
@@ -362,18 +372,6 @@ export default function ClientDetailWorkspace({
               </span>
             )}
           </div>
-          {company.services.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {company.services.map((s) => (
-                <span
-                  key={s.service_id}
-                  className="text-[11px] bg-brand-teal/10 text-brand-teal px-2 py-0.5 rounded-full"
-                >
-                  {s.service_name}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Tabs */}
@@ -419,20 +417,38 @@ export default function ClientDetailWorkspace({
                 fileBase64: base64,
                 mimeType: file.type || "application/octet-stream",
               });
+              router.refresh();
             },
             downloadFile: (fileId) => getApartadoFileSignedUrl(fileId),
             downloadTemplate: (templateId) => getApartadoTemplateSignedUrl(templateId),
+            deleteFile: async (fileId) => {
+              await adminSoftDeleteApartadoFile(fileId);
+              router.refresh();
+            },
             addComment: (clientApartadoId, body) =>
               addAdminComment(detail.id, clientApartadoId, body),
-            validate: (clientApartadoId) => validateApartado(detail.id, clientApartadoId),
-            reject: (clientApartadoId, reason) =>
-              rejectApartado({ companyId: detail.id, clientApartadoId, reason }),
+            validate: async (clientApartadoId) => {
+              await validateApartado(detail.id, clientApartadoId);
+              router.refresh();
+            },
+            reject: async (clientApartadoId, reason) => {
+              await rejectApartado({ companyId: detail.id, clientApartadoId, reason });
+              router.refresh();
+            },
+            reopen: async (clientApartadoId) => {
+              await reopenApartado(detail.id, clientApartadoId);
+              router.refresh();
+            },
             addSupervisor: (clientApartadoId, profileId) =>
               addSupervisor({ companyId: detail.id, clientApartadoId, profileId }),
             removeSupervisor: (clientApartadoId, profileId) =>
               removeSupervisor({ companyId: detail.id, clientApartadoId, profileId }),
             removeApartado: (clientApartadoId) =>
               removeApartadoFromClient(detail.id, clientApartadoId),
+            removeBlock: async (clientBlockId) => {
+              await removeBlockFromClient(detail.id, clientBlockId);
+              router.refresh();
+            },
           }}
           topRightSlot={
             assignableCatalog.canRequest && (
@@ -849,6 +865,17 @@ export default function ClientDetailWorkspace({
           destructive
           onConfirm={() => handleConfirmUnlink(unlinkConfirmAccount.id)}
           onCancel={() => setUnlinkConfirmAccount(null)}
+        />
+      )}
+
+      {pendingRemoveService && (
+        <ConfirmDialog
+          title="Quitar servicio"
+          message={`¿Quitar el servicio "${pendingRemoveService.service_name}" de este cliente?`}
+          confirmLabel="Quitar"
+          destructive
+          onConfirm={confirmRemoveService}
+          onCancel={() => setPendingRemoveService(null)}
         />
       )}
     </div>

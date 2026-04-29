@@ -20,6 +20,11 @@ function CompanyCard({
 }) {
   // Unique departments across services
   const deptNames = [...new Set(company.services.map((s) => s.department_name))].filter(Boolean);
+  const docProgress = company.documentation_progress;
+  const docPct =
+    docProgress && docProgress.total > 0
+      ? Math.round((docProgress.validated / docProgress.total) * 100)
+      : 0;
 
   return (
     <button
@@ -60,6 +65,22 @@ function CompanyCard({
               {d}
             </span>
           ))}
+        </div>
+      )}
+
+      {docProgress && docProgress.total > 0 && (
+        <div className="mt-2 flex items-center gap-1.5">
+          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-brand-teal transition-all" style={{ width: `${docPct}%` }} />
+          </div>
+          <span className="text-[10px] text-text-muted font-medium tabular-nums">
+            {docPct}%
+          </span>
+          {docProgress.in_review > 0 && (
+            <span className="text-[10px] text-status-review font-medium tabular-nums">
+              {docProgress.in_review} a revisar
+            </span>
+          )}
         </div>
       )}
     </button>

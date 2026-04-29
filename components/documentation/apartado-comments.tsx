@@ -46,6 +46,13 @@ export default function ApartadoComments({ comments, currentUserId, onAdd }: Pro
     }
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
+    }
+  }
+
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
@@ -89,6 +96,7 @@ export default function ApartadoComments({ comments, currentUserId, onAdd }: Pro
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          onKeyDown={handleKeyDown}
           rows={2}
           placeholder="Escribe un comentario..."
           className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal resize-none"

@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import type { ApartadoTemplate } from "@/lib/types/documentation";
+import { useRef, useState } from "react";
+import type { ApartadoTemplate, ApartadoTemplateFile } from "@/lib/types/documentation";
 
 interface Props {
   blockId: string;
   departments: { id: string; name: string }[];
   initial?: ApartadoTemplate;
+  templates?: ApartadoTemplateFile[];
+  onUploadTemplate?: (file: File) => Promise<void> | void;
+  onDeleteTemplate?: (templateId: string) => Promise<void> | void;
+  onDownloadTemplate?: (templateId: string) => Promise<string>;
   onSubmit: (input: {
     name: string;
     description: string | null;
@@ -17,15 +21,51 @@ interface Props {
   onClose: () => void;
 }
 
-export default function ApartadoForm({ departments, initial, onSubmit, onClose }: Props) {
+export default function ApartadoForm({
+  departments,
+  initial,
+  templates,
+  onUploadTemplate,
+  onDeleteTemplate,
+  onDownloadTemplate,
+  onSubmit,
+  onClose,
+}: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [isGlobal, setIsGlobal] = useState(initial?.is_global ?? false);
   const [deptIds, setDeptIds] = useState<string[]>(initial?.department_ids ?? []);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   function toggleDept(id: string) {
-    setDeptIds((prev) => (prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]));
+    const next = deptIds.includes(id) ? deptIds.filter((d) => d !== id) : [...deptIds, id];
+    if (departments.length > 0 && next.length === departments.length) {
+      setIsGlobal(true);
+      setDeptIds([]);
+    } else {
+      setDeptIds(next);
+    }
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0 || !onUploadTemplate) return;
+    setUploading(true);
+    try {
+      for (const f of Array.from(files)) {
+        await onUploadTemplate(f);
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDownloadTemplate(templateId: string) {
+    if (!onDownloadTemplate) return;
+    const url = await onDownloadTemplate(templateId);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -117,6 +157,66 @@ export default function ApartadoForm({ departments, initial, onSubmit, onClose }
                 </label>
               ))}
             </div>
+          </div>
+        )}
+        {onUploadTemplate && (
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-text-muted mb-2">Plantillas</p>
+            {!initial ? (
+              <p className="text-xs text-text-muted/80 italic">
+                Guarda el apartado y reábrelo para añadir plantillas.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {(templates ?? []).length === 0 && (
+                  <p className="text-xs text-text-muted/80 italic">
+                    No hay plantillas todavía.
+                  </p>
+                )}
+                {(templates ?? []).map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between gap-2 text-xs bg-gray-50 rounded-lg px-2.5 py-1.5"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadTemplate(t.id)}
+                      className="text-brand-teal hover:underline cursor-pointer truncate text-left flex-1"
+                      title={t.file_name}
+                    >
+                      {t.file_name}
+                    </button>
+                    {onDeleteTemplate && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTemplate(t.id)}
+                        className="w-4 h-4 rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 cursor-pointer flex items-center justify-center transition-colors flex-shrink-0"
+                        title="Eliminar plantilla"
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="text-xs text-brand-teal hover:text-brand-teal/80 px-2.5 py-1 rounded-lg border border-dashed border-brand-teal/40 hover:border-brand-teal/60 disabled:opacity-50 cursor-pointer mt-1"
+                >
+                  {uploading ? "Subiendo..." : "+ Añadir plantilla"}
+                </button>
+              </div>
+            )}
           </div>
         )}
         <div className="flex justify-end gap-2 pt-2">

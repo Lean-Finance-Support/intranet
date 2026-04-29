@@ -180,8 +180,6 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
   return (
     <div className="min-h-full px-8 py-8">
       <div className="max-w-6xl">
-        <p className="text-brand-teal text-sm font-medium mb-2">Portal de clientes</p>
-
         {loading && (
           <div className="space-y-4 animate-pulse">
             <div className="h-9 bg-gray-300 rounded w-72" />
@@ -201,6 +199,7 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
           <div>
             {/* Sticky header + tabs */}
             <div className="sticky top-0 z-20 bg-surface-gray pt-1 -mt-1">
+              <p className="text-brand-teal text-sm font-medium mb-2">Portal de clientes</p>
               {/* Header */}
               <div>
                 <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
@@ -255,7 +254,7 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
                   },
                   downloadFile: (id) => getApartadoFileSignedUrlForClient(id),
                   downloadTemplate: (id) => getApartadoTemplateSignedUrlForClient(id),
-                  deleteOwnFile: async (id) => {
+                  deleteFile: async (id) => {
                     await softDeleteApartadoFile(id);
                     await refreshDocumentation();
                   },

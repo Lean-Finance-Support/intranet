@@ -5,6 +5,7 @@ import { requireClient } from "@/lib/require-client";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   DOCUMENTATION_BUCKET,
+  buildClientTemplateDownloadName,
   buildDocumentationStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
@@ -28,6 +29,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
     { data: apartados },
     { data: deptLinks },
     { data: deptRows },
+    { data: company },
   ] = await Promise.all([
     admin
       .schema("documentation")
@@ -53,7 +55,10 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
       .from("apartado_departments")
       .select("apartado_id, department_id"),
     admin.from("departments").select("id, name"),
+    admin.from("companies").select("legal_name").eq("id", companyId).single(),
   ]);
+
+  const legalName = (company?.legal_name as string) ?? null;
 
   const blockIds = new Set((clientBlocks ?? []).map((cb) => cb.id as string));
   const myApartados = (clientApartados ?? []).filter((ca) =>
@@ -188,7 +193,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
     list.push({
       id: t.id as string,
       apartado_id: aid,
-      file_name: t.file_name as string,
+      file_name: buildClientTemplateDownloadName(t.file_name as string, legalName),
       file_size: t.file_size as number,
       mime_type: t.mime_type as string,
       uploaded_at: t.uploaded_at as string,
@@ -386,6 +391,9 @@ export async function uploadApartadoFile(input: {
 }): Promise<void> {
   const { user, companyId } = await requireClient();
   const { status } = await ensureClientOwnsApartado(input.clientApartadoId);
+  if (status === "validado") {
+    throw new Error("No se pueden adjuntar archivos a un apartado validado");
+  }
 
   const admin = createAdminClient();
   const buffer = Buffer.from(input.fileBase64, "base64");
@@ -445,9 +453,12 @@ export async function softDeleteApartadoFile(fileId: string): Promise<void> {
     .single();
   if (!file) throw new Error("Archivo no encontrado");
   if (file.deleted_at) throw new Error("Archivo ya eliminado");
-  if (file.uploaded_by !== user.id) throw new Error("Solo puedes eliminar tus propios archivos");
 
-  await ensureClientOwnsApartado(file.client_apartado_id as string);
+  const clientApartadoId = file.client_apartado_id as string;
+  const { status } = await ensureClientOwnsApartado(clientApartadoId);
+  if (status === "validado") {
+    throw new Error("No se pueden eliminar archivos de un apartado validado");
+  }
 
   const { error } = await admin
     .schema("documentation")
@@ -455,7 +466,40 @@ export async function softDeleteApartadoFile(fileId: string): Promise<void> {
     .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
     .eq("id", fileId);
   if (error) throw new Error(error.message);
+
+  await maybeResetToPendiente(clientApartadoId, status, user.id);
   revalidatePath("/app/empresa");
+}
+
+/** Si tras una operación no quedan archivos vivos y el status no es ya `pendiente` ni `validado`, lo lleva a `pendiente`. */
+async function maybeResetToPendiente(
+  clientApartadoId: string,
+  currentStatus: ApartadoStatus,
+  userId: string
+): Promise<void> {
+  if (currentStatus === "pendiente" || currentStatus === "validado") return;
+  const admin = createAdminClient();
+  const { count } = await admin
+    .schema("documentation")
+    .from("apartado_files")
+    .select("id", { count: "exact", head: true })
+    .eq("client_apartado_id", clientApartadoId)
+    .is("deleted_at", null);
+  if ((count ?? 0) > 0) return;
+  const { error } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .update({
+      status: "pendiente",
+      validated_at: null,
+      validated_by: null,
+      rejected_at: null,
+      rejected_by: null,
+      last_rejection_reason: null,
+    })
+    .eq("id", clientApartadoId);
+  if (error) throw new Error(error.message);
+  await logStatusChange(clientApartadoId, currentStatus, "pendiente", userId, "__event:no_files_left__");
 }
 
 export async function addClientComment(
@@ -497,18 +541,25 @@ export async function getApartadoFileSignedUrlForClient(fileId: string): Promise
 }
 
 export async function getApartadoTemplateSignedUrlForClient(templateId: string): Promise<string> {
-  await requireClient();
+  const { companyId } = await requireClient();
   const admin = createAdminClient();
-  const { data: t } = await admin
-    .schema("documentation")
-    .from("apartado_templates")
-    .select("storage_path, file_name")
-    .eq("id", templateId)
-    .single();
+  const [{ data: t }, { data: company }] = await Promise.all([
+    admin
+      .schema("documentation")
+      .from("apartado_templates")
+      .select("storage_path, file_name")
+      .eq("id", templateId)
+      .single(),
+    admin
+      .from("companies")
+      .select("legal_name")
+      .eq("id", companyId)
+      .single(),
+  ]);
   if (!t) throw new Error("Plantilla no encontrada");
-  return getDocumentationSignedUrl(
-    admin,
-    t.storage_path as string,
-    (t.file_name as string) ?? undefined
+  const downloadName = buildClientTemplateDownloadName(
+    t.file_name as string,
+    (company?.legal_name as string) ?? null
   );
+  return getDocumentationSignedUrl(admin, t.storage_path as string, downloadName);
 }

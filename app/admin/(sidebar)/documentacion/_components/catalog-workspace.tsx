@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import type {
   BlockTemplate,
   ApartadoTemplate,
@@ -21,6 +21,7 @@ import {
 } from "../actions";
 import BlockForm from "./block-form";
 import ApartadoForm from "./apartado-form";
+import ConfirmDialog from "@/components/confirm-dialog";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -52,10 +53,20 @@ export default function CatalogWorkspace({ initial }: Props) {
   const [editingBlock, setEditingBlock] = useState<BlockTemplate | null>(null);
   const [creatingApartadoBlockId, setCreatingApartadoBlockId] = useState<string | null>(null);
   const [editingApartado, setEditingApartado] = useState<{
-    block: BlockTemplate;
-    apartado: ApartadoTemplate;
+    blockId: string;
+    apartadoId: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDeleteBlock, setPendingDeleteBlock] = useState<string | null>(null);
+  const [pendingDeleteApartado, setPendingDeleteApartado] = useState<{
+    apartadoId: string;
+    blockId: string;
+  } | null>(null);
+  const [pendingDeleteTemplate, setPendingDeleteTemplate] = useState<{
+    templateId: string;
+    apartadoId: string;
+    blockId: string;
+  } | null>(null);
 
   // Drag & drop state
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
@@ -170,7 +181,6 @@ export default function CatalogWorkspace({ initial }: Props) {
   }
 
   async function handleDeleteBlock(blockId: string) {
-    if (!confirm("¿Eliminar este bloque del catálogo?")) return;
     startTransition(async () => {
       try {
         await deleteBlock(blockId);
@@ -244,7 +254,6 @@ export default function CatalogWorkspace({ initial }: Props) {
   }
 
   async function handleDeleteApartado(apartadoId: string, blockId: string) {
-    if (!confirm("¿Eliminar este apartado del catálogo?")) return;
     startTransition(async () => {
       try {
         await deleteApartado(apartadoId);
@@ -288,7 +297,6 @@ export default function CatalogWorkspace({ initial }: Props) {
   }
 
   async function handleDeleteTemplate(templateId: string, apartadoId: string, blockId: string) {
-    if (!confirm("¿Eliminar esta plantilla?")) return;
     try {
       await deleteApartadoTemplate(templateId);
       setBlocks((prev) =>
@@ -454,7 +462,7 @@ export default function CatalogWorkspace({ initial }: Props) {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDeleteBlock(block.id)}
+                      onClick={() => setPendingDeleteBlock(block.id)}
                       className="text-xs text-text-muted hover:text-red-500 px-2 py-1 rounded cursor-pointer"
                     >
                       Eliminar
@@ -526,10 +534,8 @@ export default function CatalogWorkspace({ initial }: Props) {
                       clearApartadoDrop();
                     }}
                     onDragEnd={clearApartadoDrop}
-                    onEdit={() => setEditingApartado({ block, apartado })}
-                    onDelete={() => handleDeleteApartado(apartado.id, block.id)}
-                    onUploadTemplate={(file) => handleUploadTemplate(apartado.id, block.id, file)}
-                    onDeleteTemplate={(templateId) => handleDeleteTemplate(templateId, apartado.id, block.id)}
+                    onEdit={() => setEditingApartado({ blockId: block.id, apartadoId: apartado.id })}
+                    onDelete={() => setPendingDeleteApartado({ apartadoId: apartado.id, blockId: block.id })}
                   />
                 ))}
                 {initial.canManage && (
@@ -574,13 +580,76 @@ export default function CatalogWorkspace({ initial }: Props) {
           onClose={() => setCreatingApartadoBlockId(null)}
         />
       )}
-      {editingApartado && (
-        <ApartadoForm
-          blockId={editingApartado.block.id}
-          departments={initial.departments}
-          initial={editingApartado.apartado}
-          onSubmit={(input) => handleUpdateApartado(editingApartado.apartado.id, editingApartado.block.id, input)}
-          onClose={() => setEditingApartado(null)}
+      {editingApartado && (() => {
+        const block = blocks.find((b) => b.id === editingApartado.blockId);
+        const apartado = block?.apartados.find((a) => a.id === editingApartado.apartadoId);
+        if (!block || !apartado) return null;
+        return (
+          <ApartadoForm
+            blockId={block.id}
+            departments={initial.departments}
+            initial={apartado}
+            templates={apartado.templates}
+            onUploadTemplate={
+              initial.canManage
+                ? (file) => handleUploadTemplate(apartado.id, block.id, file)
+                : undefined
+            }
+            onDeleteTemplate={
+              initial.canManage
+                ? (templateId) =>
+                    setPendingDeleteTemplate({ templateId, apartadoId: apartado.id, blockId: block.id })
+                : undefined
+            }
+            onDownloadTemplate={(templateId) => getApartadoTemplateSignedUrlAdmin(templateId)}
+            onSubmit={(input) => handleUpdateApartado(apartado.id, block.id, input)}
+            onClose={() => setEditingApartado(null)}
+          />
+        );
+      })()}
+
+      {pendingDeleteBlock && (
+        <ConfirmDialog
+          title="Eliminar bloque"
+          message="¿Eliminar este bloque del catálogo? Se borrarán también sus apartados."
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={async () => {
+            const id = pendingDeleteBlock;
+            setPendingDeleteBlock(null);
+            await handleDeleteBlock(id);
+          }}
+          onCancel={() => setPendingDeleteBlock(null)}
+        />
+      )}
+
+      {pendingDeleteApartado && (
+        <ConfirmDialog
+          title="Eliminar apartado"
+          message="¿Eliminar este apartado del catálogo?"
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={async () => {
+            const target = pendingDeleteApartado;
+            setPendingDeleteApartado(null);
+            await handleDeleteApartado(target.apartadoId, target.blockId);
+          }}
+          onCancel={() => setPendingDeleteApartado(null)}
+        />
+      )}
+
+      {pendingDeleteTemplate && (
+        <ConfirmDialog
+          title="Eliminar plantilla"
+          message="¿Eliminar esta plantilla?"
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={async () => {
+            const target = pendingDeleteTemplate;
+            setPendingDeleteTemplate(null);
+            await handleDeleteTemplate(target.templateId, target.apartadoId, target.blockId);
+          }}
+          onCancel={() => setPendingDeleteTemplate(null)}
         />
       )}
     </div>
@@ -601,8 +670,6 @@ function ApartadoRow({
   onDragEnd,
   onEdit,
   onDelete,
-  onUploadTemplate,
-  onDeleteTemplate,
 }: {
   apartado: ApartadoTemplate;
   departments: Departments;
@@ -617,29 +684,12 @@ function ApartadoRow({
   onDragEnd: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onUploadTemplate: (file: File) => void | Promise<void>;
-  onDeleteTemplate: (templateId: string) => void | Promise<void>;
 }) {
   const deptNames = apartado.is_global
     ? ["Global"]
     : departments
         .filter((d) => apartado.department_ids.includes(d.id))
         .map((d) => d.name);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    try {
-      for (const f of Array.from(files)) {
-        await onUploadTemplate(f);
-      }
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  }
 
   async function handleDownloadTemplate(t: ApartadoTemplateFile) {
     const url = await getApartadoTemplateSignedUrlAdmin(t.id);
@@ -725,61 +775,28 @@ function ApartadoRow({
           ))}
         </div>
 
-        {/* Plantillas */}
-        {(apartado.templates.length > 0 || canManage) && (
+        {/* Plantillas (solo lectura: la subida/eliminación vive dentro del modal de edición) */}
+        {apartado.templates.length > 0 && (
           <div className="mt-2 pt-2 border-t border-gray-200/60">
             <div className="flex items-center gap-1.5 mb-1">
               <svg className="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                Plantillas {apartado.templates.length > 0 && `(${apartado.templates.length})`}
+                Plantillas ({apartado.templates.length})
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {apartado.templates.map((t) => (
-                <span
+                <button
                   key={t.id}
-                  className="inline-flex items-center gap-1 text-[11px] bg-white border border-gray-200 rounded-full pl-2 pr-1 py-0.5 group/tpl"
+                  onClick={() => handleDownloadTemplate(t)}
+                  className="inline-flex items-center text-[11px] bg-white border border-gray-200 rounded-full px-2 py-0.5 text-brand-teal hover:underline cursor-pointer truncate max-w-[200px]"
+                  title={t.file_name}
                 >
-                  <button
-                    onClick={() => handleDownloadTemplate(t)}
-                    className="text-brand-teal hover:underline cursor-pointer truncate max-w-[180px]"
-                    title={t.file_name}
-                  >
-                    {t.file_name}
-                  </button>
-                  {canManage && (
-                    <button
-                      onClick={() => onDeleteTemplate(t.id)}
-                      className="ml-0.5 w-3.5 h-3.5 rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 cursor-pointer flex items-center justify-center transition-colors"
-                      title="Eliminar plantilla"
-                    >
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </span>
+                  {t.file_name}
+                </button>
               ))}
-              {canManage && (
-                <>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleFiles(e.target.files)}
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="text-[11px] text-brand-teal hover:text-brand-teal/80 px-2 py-0.5 rounded-full border border-dashed border-brand-teal/40 hover:border-brand-teal/60 disabled:opacity-50 cursor-pointer"
-                  >
-                    {uploading ? "Subiendo..." : "+ Plantilla"}
-                  </button>
-                </>
-              )}
             </div>
           </div>
         )}

@@ -981,6 +981,48 @@ export async function rejectApartado(input: {
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
+/**
+ * Revierte un apartado en estado `validado` o `rechazado` y lo deja en
+ * `pendiente`. Limpia los campos `validated_*` / `rejected_*` y deja huella
+ * en el historial. Los archivos no se tocan.
+ */
+export async function reopenApartado(
+  companyId: string,
+  clientApartadoId: string
+): Promise<void> {
+  await requireAdmin();
+  const { userId } = await authorizeValidation(clientApartadoId);
+  const admin = createAdminClient();
+
+  const { data: ca } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("status")
+    .eq("id", clientApartadoId)
+    .single();
+  if (!ca) throw new Error("Apartado no encontrado");
+  const fromStatus = ca.status as ApartadoStatus;
+  if (fromStatus !== "validado" && fromStatus !== "rechazado") {
+    throw new Error("Solo se puede reabrir un apartado validado o rechazado");
+  }
+
+  const { error } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .update({
+      status: "pendiente",
+      validated_at: null,
+      validated_by: null,
+      rejected_at: null,
+      rejected_by: null,
+      last_rejection_reason: null,
+    })
+    .eq("id", clientApartadoId);
+  if (error) throw new Error(error.message);
+  await logStatusChange(clientApartadoId, fromStatus, "pendiente", userId, "__event:reopened__");
+  revalidatePath(`/admin/clientes/${companyId}`);
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Comentarios admin
 // ────────────────────────────────────────────────────────────────────────────
@@ -1031,6 +1073,9 @@ export async function adminUploadApartadoFile(input: {
     .eq("id", input.clientApartadoId)
     .single();
   if (!ca) throw new Error("Apartado no encontrado");
+  if ((ca.status as string) === "validado") {
+    throw new Error("No se pueden adjuntar archivos a un apartado validado");
+  }
   const meta = await getApartadoMeta(ca.apartado_id as string);
   if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
     throw new Error("Sin permisos");
@@ -1071,17 +1116,101 @@ export async function adminUploadApartadoFile(input: {
     });
   if (insertError) throw new Error(insertError.message);
 
-  const fromStatus = ca.status as ApartadoStatus;
-  if (fromStatus === "pendiente" || fromStatus === "rechazado") {
-    await admin
-      .schema("documentation")
-      .from("client_apartados")
-      .update({ status: "enviado" })
-      .eq("id", input.clientApartadoId);
-    await logStatusChange(input.clientApartadoId, fromStatus, "enviado", user.id);
-  }
+  const currentStatus = ca.status as ApartadoStatus;
+  await admin.schema("documentation").from("apartado_status_history").insert({
+    client_apartado_id: input.clientApartadoId,
+    from_status: currentStatus,
+    to_status: currentStatus,
+    changed_by: user.id,
+    reason: "__event:file_uploaded__",
+  });
 
   revalidatePath(`/admin/clientes/${input.companyId}`);
+}
+
+export async function adminSoftDeleteApartadoFile(fileId: string): Promise<void> {
+  await requireAdmin();
+  const { user } = await getAuthUser();
+  if (!user) throw new Error("No autenticado");
+  const admin = createAdminClient();
+
+  const { data: file } = await admin
+    .schema("documentation")
+    .from("apartado_files")
+    .select("id, client_apartado_id, deleted_at")
+    .eq("id", fileId)
+    .single();
+  if (!file) throw new Error("Archivo no encontrado");
+  if (file.deleted_at) throw new Error("Archivo ya eliminado");
+
+  const clientApartadoId = file.client_apartado_id as string;
+  const { data: ca } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("apartado_id, client_block_id, status")
+    .eq("id", clientApartadoId)
+    .single();
+  if (!ca) throw new Error("Apartado no encontrado");
+  const currentStatus = ca.status as ApartadoStatus;
+  if (currentStatus === "validado") {
+    throw new Error("No se pueden eliminar archivos de un apartado validado");
+  }
+
+  const meta = await getApartadoMeta(ca.apartado_id as string);
+  if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
+    throw new Error("Sin permisos");
+  }
+
+  const { data: cb } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("company_id")
+    .eq("id", ca.client_block_id as string)
+    .single();
+
+  const { error } = await admin
+    .schema("documentation")
+    .from("apartado_files")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
+    .eq("id", fileId);
+  if (error) throw new Error(error.message);
+
+  await maybeResetToPendiente(clientApartadoId, currentStatus, user.id);
+
+  if (cb?.company_id) {
+    revalidatePath(`/admin/clientes/${cb.company_id as string}`);
+  }
+}
+
+/** Si tras un borrado no quedan archivos vivos y el status no es ya `pendiente` ni `validado`, lo lleva a `pendiente`. */
+async function maybeResetToPendiente(
+  clientApartadoId: string,
+  currentStatus: ApartadoStatus,
+  userId: string
+): Promise<void> {
+  if (currentStatus === "pendiente" || currentStatus === "validado") return;
+  const admin = createAdminClient();
+  const { count } = await admin
+    .schema("documentation")
+    .from("apartado_files")
+    .select("id", { count: "exact", head: true })
+    .eq("client_apartado_id", clientApartadoId)
+    .is("deleted_at", null);
+  if ((count ?? 0) > 0) return;
+  const { error } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .update({
+      status: "pendiente",
+      validated_at: null,
+      validated_by: null,
+      rejected_at: null,
+      rejected_by: null,
+      last_rejection_reason: null,
+    })
+    .eq("id", clientApartadoId);
+  if (error) throw new Error(error.message);
+  await logStatusChange(clientApartadoId, currentStatus, "pendiente", userId, "__event:no_files_left__");
 }
 
 // ────────────────────────────────────────────────────────────────────────────

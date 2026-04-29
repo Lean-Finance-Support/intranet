@@ -23,6 +23,8 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
   );
   // apartadoId -> supervisor profile ids
   const [supervisorsByApartado, setSupervisorsByApartado] = useState<Record<string, string[]>>({});
+  // Apartados excluidos del bloque actual (por defecto todos van incluidos).
+  const [excludedApartadoIds, setExcludedApartadoIds] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,16 +67,30 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
       [apartadoId]: (prev[apartadoId] ?? []).filter((id) => id !== profileId),
     }));
   }
+  function toggleApartado(apartadoId: string) {
+    setExcludedApartadoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(apartadoId)) next.delete(apartadoId);
+      else next.add(apartadoId);
+      return next;
+    });
+  }
+
+  const includedApartados = (block?.apartados ?? []).filter((a) => !excludedApartadoIds.has(a.id));
 
   async function handleSubmit() {
     if (!block) return;
+    if (includedApartados.length === 0) {
+      setError("Selecciona al menos un apartado.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       await onSubmit({
         companyId,
         blockId: block.id,
-        apartados: block.apartados.map((a) => ({
+        apartados: includedApartados.map((a) => ({
           apartadoId: a.id,
           supervisorIds: supervisorsByApartado[a.id] ?? [],
         })),
@@ -125,6 +141,7 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
                   onChange={(e) => {
                     setSelectedBlockId(e.target.value || null);
                     setSupervisorsByApartado({});
+                    setExcludedApartadoIds(new Set());
                   }}
                   className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal focus:bg-white transition-colors"
                 >
@@ -140,12 +157,15 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
               {block && block.apartados.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                    Supervisores — {block.apartados.length} apartado{block.apartados.length !== 1 ? "s" : ""}
+                    Apartados — {includedApartados.length} de {block.apartados.length} seleccionado
+                    {block.apartados.length !== 1 ? "s" : ""}
                   </p>
                   {block.apartados.map((a) => (
                     <ApartadoSupervisorRow
                       key={a.id}
                       apartado={a}
+                      included={!excludedApartadoIds.has(a.id)}
+                      onToggle={() => toggleApartado(a.id)}
                       candidates={candidatesByApartado[a.id] ?? []}
                       selectedIds={supervisorsByApartado[a.id] ?? []}
                       onAdd={(id) => addSupervisor(a.id, id)}
@@ -170,7 +190,7 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
           </button>
           <button
             onClick={handleSubmit}
-            disabled={submitting || !block}
+            disabled={submitting || !block || includedApartados.length === 0}
             className="text-sm bg-brand-teal text-white px-4 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 transition-colors cursor-pointer font-medium"
           >
             {submitting ? "Añadiendo..." : "Añadir bloque"}
@@ -183,12 +203,16 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
 
 function ApartadoSupervisorRow({
   apartado,
+  included,
+  onToggle,
   candidates,
   selectedIds,
   onAdd,
   onRemove,
 }: {
   apartado: { id: string; name: string; description: string | null };
+  included: boolean;
+  onToggle: () => void;
   candidates: DepartmentMember[];
   selectedIds: string[];
   onAdd: (id: string) => void;
@@ -213,57 +237,79 @@ function ApartadoSupervisorRow({
   const hasMultipleDepts = grouped.length > 1;
 
   return (
-    <div className="bg-gray-50 rounded-lg px-3 py-2 space-y-1.5">
-      <p className="text-xs font-medium text-text-body">{apartado.name}</p>
-
-      {selectedIds.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {selectedIds.map((id) => {
-            const m = candidateMap.get(id);
-            if (!m) return null;
-            return (
-              <span
-                key={id}
-                className="inline-flex items-center gap-1 text-xs bg-white border border-gray-200 rounded-full pl-2 pr-0.5 py-0.5"
-              >
-                <span className="text-text-body">{m.full_name ?? m.email}</span>
-                <button
-                  onClick={() => onRemove(id)}
-                  className="w-3.5 h-3.5 rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 cursor-pointer flex items-center justify-center transition-colors"
-                >
-                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      {remaining.length > 0 ? (
-        <select
-          value=""
-          onChange={(e) => onAdd(e.target.value)}
-          className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+    <div
+      className={`rounded-lg px-3 py-2 space-y-1.5 transition-colors ${
+        included ? "bg-gray-50" : "bg-gray-50/40"
+      }`}
+    >
+      <label className="flex items-center gap-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={included}
+          onChange={onToggle}
+          className="w-3.5 h-3.5 rounded border-gray-300 text-brand-teal focus:ring-brand-teal/30 cursor-pointer"
+        />
+        <span
+          className={`text-xs font-medium ${
+            included ? "text-text-body" : "text-text-muted line-through"
+          }`}
         >
-          <option value="">+ Añadir supervisor</option>
-          {hasMultipleDepts
-            ? grouped.map((g) => (
-                <optgroup key={g.id} label={g.name}>
-                  {g.members.map((m) => (
+          {apartado.name}
+        </span>
+      </label>
+
+      {included && (
+        <div className="space-y-1.5 pl-[1.375rem]">
+          {selectedIds.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selectedIds.map((id) => {
+                const m = candidateMap.get(id);
+                if (!m) return null;
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 text-xs bg-white border border-gray-200 rounded-full pl-2 pr-0.5 py-0.5"
+                  >
+                    <span className="text-text-body">{m.full_name ?? m.email}</span>
+                    <button
+                      onClick={() => onRemove(id)}
+                      className="w-3.5 h-3.5 rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 cursor-pointer flex items-center justify-center transition-colors"
+                    >
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {remaining.length > 0 ? (
+            <select
+              value=""
+              onChange={(e) => onAdd(e.target.value)}
+              className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+            >
+              <option value="">+ Añadir supervisor</option>
+              {hasMultipleDepts
+                ? grouped.map((g) => (
+                    <optgroup key={g.id} label={g.name}>
+                      {g.members.map((m) => (
+                        <option key={m.id} value={m.id}>{m.full_name ?? m.email}</option>
+                      ))}
+                    </optgroup>
+                  ))
+                : remaining.map((m) => (
                     <option key={m.id} value={m.id}>{m.full_name ?? m.email}</option>
                   ))}
-                </optgroup>
-              ))
-            : remaining.map((m) => (
-                <option key={m.id} value={m.id}>{m.full_name ?? m.email}</option>
-              ))}
-        </select>
-      ) : (
-        selectedIds.length === 0 && (
-          <p className="text-[11px] text-text-muted italic">Sin candidatos.</p>
-        )
+            </select>
+          ) : (
+            selectedIds.length === 0 && (
+              <p className="text-[11px] text-text-muted italic">Sin candidatos.</p>
+            )
+          )}
+        </div>
       )}
     </div>
   );

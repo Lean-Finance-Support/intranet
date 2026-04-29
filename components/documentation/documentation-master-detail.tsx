@@ -8,20 +8,22 @@ import type {
 } from "@/lib/types/documentation";
 import BlockList from "./block-list";
 import ApartadoDetail from "./apartado-detail";
-import StatusBadge from "./status-badge";
+import ConfirmDialog from "@/components/confirm-dialog";
 
 export interface DocumentationActionHandlers {
   uploadFile: (clientApartadoId: string, file: File) => Promise<void>;
   downloadFile: (fileId: string) => Promise<string>;
   downloadTemplate: (templateId: string) => Promise<string>;
-  deleteOwnFile?: (fileId: string) => Promise<void>;
+  deleteFile?: (fileId: string) => Promise<void>;
   addComment: (clientApartadoId: string, body: string) => Promise<void>;
   // Solo admin
   validate?: (clientApartadoId: string) => Promise<void>;
   reject?: (clientApartadoId: string, reason: string) => Promise<void>;
+  reopen?: (clientApartadoId: string) => Promise<void>;
   addSupervisor?: (clientApartadoId: string, profileId: string) => Promise<void>;
   removeSupervisor?: (clientApartadoId: string, profileId: string) => Promise<void>;
   removeApartado?: (clientApartadoId: string) => Promise<void>;
+  removeBlock?: (clientBlockId: string) => Promise<void>;
 }
 
 interface Props {
@@ -55,6 +57,7 @@ export default function DocumentationMasterDetail({
   const [selectedApartadoId, setSelectedApartadoId] = useState<string | null>(
     data.blocks[0]?.apartados[0]?.id ?? null
   );
+  const [pendingRemoveBlockId, setPendingRemoveBlockId] = useState<string | null>(null);
 
   // Resolver selección efectiva en cada render: si la actual ya no existe (datos
   // revalidados), caemos al primer bloque/apartado disponible.
@@ -104,7 +107,7 @@ export default function DocumentationMasterDetail({
               <span className="text-base font-medium text-text-muted">%</span>
             </p>
             <p className="text-[11px] text-text-muted">
-              {validatedApartados} / {totalApartados} validados
+              {validatedApartados} de {totalApartados} validados
             </p>
           </div>
           <div className="hidden md:flex w-72 h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -130,7 +133,11 @@ export default function DocumentationMasterDetail({
             <BlockList
               blocks={data.blocks}
               selectedBlockId={selectedBlockId}
+              selectedApartadoId={selectedApartadoId}
               onSelectBlock={handleSelectBlock}
+              onSelectApartado={(id) => setSelectedApartadoId(id)}
+              showInReview={mode === "admin"}
+              badgeVariant={mode === "client" ? "client" : "default"}
             />
           </div>
 
@@ -148,37 +155,34 @@ export default function DocumentationMasterDetail({
                         <p className="text-xs text-text-muted mt-0.5">{selectedBlock.description}</p>
                       )}
                     </div>
-                    {mode === "admin" && canManage && onAddApartado && (
-                      <button
-                        onClick={() => onAddApartado(selectedBlock.id, selectedBlock.block_id)}
-                        className="flex-shrink-0 inline-flex items-center gap-1 text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
-                        title="Añadir apartado a este bloque"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        Añadir apartado
-                      </button>
+                    {mode === "admin" && canManage && (
+                      <div className="flex-shrink-0 flex items-center gap-3">
+                        {onAddApartado && (
+                          <button
+                            onClick={() => onAddApartado(selectedBlock.id, selectedBlock.block_id)}
+                            className="inline-flex items-center gap-1 text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
+                            title="Añadir apartado a este bloque"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Añadir apartado
+                          </button>
+                        )}
+                        {handlers.removeBlock && (
+                          <button
+                            onClick={() => setPendingRemoveBlockId(selectedBlock.id)}
+                            className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-red-500 font-medium cursor-pointer"
+                            title="Eliminar bloque del cliente"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                            Eliminar bloque
+                          </button>
+                        )}
+                      </div>
                     )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {selectedBlock.apartados.map((a) => {
-                      const active = a.id === selectedApartadoId;
-                      return (
-                        <button
-                          key={a.id}
-                          onClick={() => setSelectedApartadoId(a.id)}
-                          className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
-                            active
-                              ? "bg-brand-navy text-white border-brand-navy"
-                              : "bg-white text-text-body border-gray-200 hover:border-gray-300"
-                          }`}
-                        >
-                          <span className="truncate max-w-[160px]">{a.name}</span>
-                          <StatusBadge status={a.status} size="xs" />
-                        </button>
-                      );
-                    })}
                   </div>
                 </div>
 
@@ -193,8 +197,8 @@ export default function DocumentationMasterDetail({
                       onDownloadFile={(id) => handlers.downloadFile(id)}
                       onDownloadTemplate={(id) => handlers.downloadTemplate(id)}
                       onDeleteOwnFile={
-                        handlers.deleteOwnFile
-                          ? (id) => handlers.deleteOwnFile!(id)
+                        handlers.deleteFile
+                          ? (id) => handlers.deleteFile!(id)
                           : undefined
                       }
                       onAddComment={(body) => handlers.addComment(selectedApartado.id, body)}
@@ -206,6 +210,11 @@ export default function DocumentationMasterDetail({
                       onReject={
                         handlers.reject
                           ? (reason) => handlers.reject!(selectedApartado.id, reason)
+                          : undefined
+                      }
+                      onReopen={
+                        handlers.reopen
+                          ? () => handlers.reopen!(selectedApartado.id)
                           : undefined
                       }
                       onAddSupervisor={
@@ -226,6 +235,7 @@ export default function DocumentationMasterDetail({
                       candidateMembers={candidates}
                       canManage={canManage}
                       canValidate={resolveCanValidate?.(selectedApartado) ?? false}
+                      canDeleteAll={!!handlers.deleteFile}
                     />
                   ) : (
                     <p className="text-sm text-text-muted italic">
@@ -237,6 +247,19 @@ export default function DocumentationMasterDetail({
             )}
           </div>
         </div>
+      )}
+      {pendingRemoveBlockId && handlers.removeBlock && (
+        <ConfirmDialog
+          title="Eliminar bloque"
+          message="¿Eliminar este bloque y sus apartados de este cliente?"
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={async () => {
+            await handlers.removeBlock!(pendingRemoveBlockId);
+            setPendingRemoveBlockId(null);
+          }}
+          onCancel={() => setPendingRemoveBlockId(null)}
+        />
       )}
     </div>
   );
