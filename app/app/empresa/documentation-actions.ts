@@ -40,7 +40,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
       .schema("documentation")
       .from("client_apartados")
       .select(
-        "id, client_block_id, apartado_id, status, display_order, validated_at, rejected_at, last_rejection_reason"
+        "id, client_block_id, apartado_id, status, display_order, is_optional, validated_at, rejected_at, last_rejection_reason"
       ),
     admin
       .schema("documentation")
@@ -255,7 +255,8 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
         name: block.name as string,
         slug: block.slug as string,
         description: (block.description as string | null) ?? null,
-        display_order: cb.display_order as number,
+        // Orden del catálogo, no de client_blocks (que está siempre a 0).
+        display_order: block.display_order as number,
         apartados: apartadosOfBlock
           .map((ca) => {
             const ap = apartadoMap.get(ca.apartado_id as string);
@@ -269,6 +270,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
               display_order: ca.display_order as number,
               status: ca.status as ApartadoStatus,
               is_global: ap.is_global as boolean,
+              is_optional: (ca.is_optional as boolean | null) ?? false,
               department_ids: deptByApartado.get(ca.apartado_id as string) ?? [],
               supervisors: supervisorsByApartado.get(ca.id as string) ?? [],
               templates: templatesByApartado.get(ca.apartado_id as string) ?? [],
@@ -328,10 +330,12 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
     .filter((b): b is NonNullable<typeof b> => b !== null)
     .sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
 
+  // Apartados opcionales no cuentan para el progreso global.
   let total = 0;
   let validated = 0;
   for (const b of resultBlocks) {
     for (const a of b.apartados) {
+      if (a.is_optional) continue;
       total++;
       if (a.status === "validado") validated++;
     }

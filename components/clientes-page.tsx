@@ -77,7 +77,7 @@ function CompanyCard({
             {docPct}%
           </span>
           {docProgress.in_review > 0 && (
-            <span className="text-[10px] text-status-review font-medium tabular-nums">
+            <span className="text-[10px] text-brand-blue font-medium tabular-nums">
               {docProgress.in_review} a revisar
             </span>
           )}

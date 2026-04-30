@@ -18,6 +18,7 @@ interface Props {
     clientBlockId: string;
     apartadoId: string;
     supervisorIds: string[];
+    isOptional?: boolean;
   }) => Promise<void>;
 }
 
@@ -36,6 +37,7 @@ export default function AddApartadoModal({
 
   const [apartadoId, setApartadoId] = useState<string>(availableApartados[0]?.id ?? "");
   const [supervisorIds, setSupervisorIds] = useState<string[]>([]);
+  const [isOptional, setIsOptional] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +83,7 @@ export default function AddApartadoModal({
   function handleApartadoChange(id: string) {
     setApartadoId(id);
     setSupervisorIds([]);
+    setIsOptional(false);
   }
 
   function handleAddSupervisor(id: string) {
@@ -97,7 +100,7 @@ export default function AddApartadoModal({
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit({ companyId, clientBlockId, apartadoId, supervisorIds });
+      await onSubmit({ companyId, clientBlockId, apartadoId, supervisorIds, isOptional });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al añadir apartado");
       setSubmitting(false);
@@ -152,6 +155,26 @@ export default function AddApartadoModal({
                   ))}
                 </select>
               </div>
+
+              {apartadoId && (
+                <label
+                  className="flex items-center gap-2 cursor-pointer select-none"
+                  title="Si es opcional, no cuenta en el progreso del cliente"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isOptional}
+                    onChange={(e) => setIsOptional(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded border-gray-300 text-brand-navy focus:ring-brand-navy/30 cursor-pointer"
+                  />
+                  <span className={`text-xs font-medium ${isOptional ? "text-brand-navy" : "text-text-body"}`}>
+                    Apartado opcional
+                  </span>
+                  <span className="text-[11px] text-text-muted">
+                    — no cuenta en el progreso global
+                  </span>
+                </label>
+              )}
 
               {apartadoId && (
                 <div className="space-y-1.5">

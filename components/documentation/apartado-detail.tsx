@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from "react";
 import type {
-  ApartadoStatus,
-  ApartadoStatusHistoryEntry,
   ApartadoSupervisor,
   ApartadoTemplateFile,
   ClientApartado,
+  ClientBlock,
   DepartmentMember,
 } from "@/lib/types/documentation";
 import StatusBadge from "./status-badge";
@@ -16,6 +15,7 @@ import ApartadoTemplatesList from "./apartado-templates-list";
 import ConfirmDialog from "@/components/confirm-dialog";
 
 interface Props {
+  block: ClientBlock;
   apartado: ClientApartado;
   mode: "client" | "admin";
   currentUserId: string;
@@ -24,13 +24,15 @@ interface Props {
   onDownloadTemplate: (templateId: string) => Promise<string>;
   onDeleteOwnFile?: (fileId: string) => Promise<void>;
   onAddComment: (body: string) => Promise<void>;
-  // Solo admin
   onValidate?: () => Promise<void>;
   onReject?: (reason: string) => Promise<void>;
   onReopen?: () => Promise<void>;
   onAddSupervisor?: (profileId: string) => Promise<void>;
   onRemoveSupervisor?: (profileId: string) => Promise<void>;
   onRemoveApartado?: () => Promise<void>;
+  onToggleOptional?: (isOptional: boolean) => Promise<void>;
+  onAddApartadoToBlock?: () => void;
+  onRemoveBlock?: () => void;
   candidateMembers?: DepartmentMember[];
   canManage?: boolean;
   canValidate?: boolean;
@@ -38,6 +40,7 @@ interface Props {
 }
 
 export default function ApartadoDetail({
+  block,
   apartado,
   mode,
   currentUserId,
@@ -52,6 +55,9 @@ export default function ApartadoDetail({
   onAddSupervisor,
   onRemoveSupervisor,
   onRemoveApartado,
+  onToggleOptional,
+  onAddApartadoToBlock,
+  onRemoveBlock,
   candidateMembers,
   canManage,
   canValidate,
@@ -64,8 +70,10 @@ export default function ApartadoDetail({
   const [confirmRemoveApartado, setConfirmRemoveApartado] = useState(false);
   const [confirmReopen, setConfirmReopen] = useState(false);
 
+  const isAdmin = mode === "admin";
   const hasFiles = apartado.files.some((f) => !f.deleted_at);
-  const isFinalStatus = apartado.status === "validado" || apartado.status === "rechazado";
+  const isFinalStatus =
+    apartado.status === "validado" || apartado.status === "rechazado";
   const canActOnStatus = !isFinalStatus && hasFiles;
 
   async function handleValidate() {
@@ -83,7 +91,10 @@ export default function ApartadoDetail({
 
   async function handleReject() {
     if (!onReject) return;
-    if (!rejectReason.trim()) { setActionError("Indica un motivo de rechazo"); return; }
+    if (!rejectReason.trim()) {
+      setActionError("Indica un motivo de rechazo");
+      return;
+    }
     setSubmitting(true);
     setActionError(null);
     try {
@@ -111,175 +122,299 @@ export default function ApartadoDetail({
     }
   }
 
-  return (
-    <div className="space-y-5">
+  const lastHistory = apartado.history[apartado.history.length - 1];
 
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-base font-semibold text-brand-navy">{apartado.name}</h3>
-            <StatusBadge
-              status={apartado.status}
-              variant={mode === "client" ? "client" : "default"}
-            />
+  const showBlockActions =
+    isAdmin && canManage && (onAddApartadoToBlock || onRemoveBlock);
+
+  return (
+    <div className="space-y-4">
+      {/* Section card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-gray-100">
+          {/* Eyebrow: Bloque XX · Block Name + acciones de bloque (admin) */}
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <p className="text-[11px] font-medium text-brand-teal uppercase tracking-wider truncate">
+              Bloque {String(block.display_order || 1).padStart(2, "0")} · {block.name}
+            </p>
+            {showBlockActions && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {onAddApartadoToBlock && (
+                  <button
+                    onClick={onAddApartadoToBlock}
+                    className="text-xs font-medium text-brand-teal hover:bg-brand-teal/10 bg-brand-teal/5 px-3 py-1.5 rounded-lg cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                  >
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Añadir apartado
+                  </button>
+                )}
+                {onRemoveBlock && (
+                  <button
+                    onClick={onRemoveBlock}
+                    className="text-xs font-medium text-text-muted hover:text-red-600 hover:bg-red-50/60 px-3 py-1.5 rounded-lg cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                  >
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Eliminar bloque
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          {apartado.description && (
-            <p className="text-sm text-text-muted mt-1">{apartado.description}</p>
-          )}
+
+          {/* Título + estado + acciones del apartado (admin) */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-xl font-bold tracking-tight text-brand-navy font-heading">
+                  {apartado.name}
+                </h2>
+                <StatusBadge status={apartado.status} variant={isAdmin ? "admin" : "client"} />
+                {apartado.is_optional && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-brand-navy/8 text-brand-navy border border-brand-navy/15"
+                    title="Apartado opcional — no cuenta en el progreso"
+                  >
+                    Opcional
+                  </span>
+                )}
+              </div>
+              {apartado.description && (
+                <p className="text-sm text-text-muted mt-1.5" style={{ textWrap: "pretty" }}>
+                  {apartado.description}
+                </p>
+              )}
+            </div>
+            {isAdmin && canManage && (onToggleOptional || onRemoveApartado) && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {onToggleOptional && (
+                  <button
+                    onClick={async () => {
+                      setSubmitting(true);
+                      setActionError(null);
+                      try {
+                        await onToggleOptional(!apartado.is_optional);
+                      } catch (e) {
+                        setActionError(e instanceof Error ? e.message : "Error");
+                      } finally {
+                        setSubmitting(false);
+                      }
+                    }}
+                    disabled={submitting}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg cursor-pointer inline-flex items-center gap-1 disabled:opacity-50 ${
+                      apartado.is_optional
+                        ? "text-brand-navy bg-brand-navy/8 hover:bg-brand-navy/15"
+                        : "text-text-muted hover:text-brand-navy hover:bg-brand-navy/8"
+                    }`}
+                    title={
+                      apartado.is_optional
+                        ? "Quitar marca de opcional (volverá a contar en el progreso)"
+                        : "Marcar como opcional (no contará en el progreso)"
+                    }
+                  >
+                    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      {apartado.is_optional ? (
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      ) : (
+                        <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      )}
+                    </svg>
+                    {apartado.is_optional ? "Opcional" : "Marcar opcional"}
+                  </button>
+                )}
+                {onRemoveApartado && (
+                  <button
+                    onClick={() => setConfirmRemoveApartado(true)}
+                    className="text-xs text-text-muted hover:text-red-600 px-2.5 py-1.5 rounded-lg cursor-pointer inline-flex items-center gap-1"
+                    title="Quitar apartado del cliente"
+                  >
+                    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" />
+                    </svg>
+                    Eliminar apartado
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Banner motivo de rechazo (full-width) */}
           {apartado.status === "rechazado" && apartado.last_rejection_reason && (
-            <div className="mt-2 text-xs bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-red-700">
+            <div
+              className="mt-3 text-xs rounded-lg px-3 py-2"
+              style={{
+                color: "#B91C1C",
+                backgroundColor: "rgba(185,28,28,0.06)",
+                border: "1px solid rgba(185,28,28,0.20)",
+              }}
+            >
               <span className="font-semibold">Motivo del rechazo:</span>{" "}
               {apartado.last_rejection_reason}
             </div>
           )}
         </div>
-        {mode === "admin" && canManage && onRemoveApartado && (
-          <button
-            onClick={() => setConfirmRemoveApartado(true)}
-            className="flex-shrink-0 inline-flex items-center gap-1 text-xs text-text-muted hover:text-red-500 font-medium cursor-pointer"
-            title="Quitar apartado del cliente"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-            </svg>
-            Eliminar apartado
-          </button>
-        )}
-      </div>
 
-      {/* Supervisores (admin) */}
-      {mode === "admin" && onAddSupervisor && onRemoveSupervisor && canManage && candidateMembers && (
-        <div className="border border-gray-100 rounded-xl bg-gray-50/50 px-4 py-3">
-          <SupervisorAssign
-            supervisors={apartado.supervisors}
-            members={candidateMembers}
-            onAdd={onAddSupervisor}
-            onRemove={onRemoveSupervisor}
+        {/* Body */}
+        <div className="p-6 space-y-6 bg-gray-50/30">
+          {isAdmin && onAddSupervisor && onRemoveSupervisor && canManage && candidateMembers && (
+            <SupervisorAssign
+              supervisors={apartado.supervisors}
+              members={candidateMembers}
+              onAdd={onAddSupervisor}
+              onRemove={onRemoveSupervisor}
+            />
+          )}
+
+          {apartado.templates.length > 0 && (
+            <ApartadoTemplatesList
+              templates={apartado.templates}
+              onDownload={onDownloadTemplate}
+              helperLabel={!isAdmin ? "Plantillas que Lean Finance pone a tu disposición" : undefined}
+            />
+          )}
+
+          <ApartadoFiles
+            files={apartado.files}
+            canUpload={
+              apartado.status !== "validado" &&
+              (mode === "client" || (mode === "admin" && !!canManage))
+            }
+            canDeleteOwn={mode === "client" && apartado.status !== "validado"}
+            canDeleteAll={!!canDeleteAll && apartado.status !== "validado"}
+            ownerId={currentUserId}
+            onUpload={onUploadFile}
+            onDelete={onDeleteOwnFile}
+            onDownload={onDownloadFile}
           />
-        </div>
-      )}
 
-      {/* Plantillas */}
-      {apartado.templates.length > 0 && (
-        <ApartadoTemplatesList
-          templates={apartado.templates}
-          onDownload={onDownloadTemplate}
-        />
-      )}
-
-      <div className="border-t border-gray-100" />
-
-      {/* Archivos */}
-      <ApartadoFiles
-        files={apartado.files}
-        canUpload={
-          apartado.status !== "validado" &&
-          (mode === "client" || (mode === "admin" && !!canManage))
-        }
-        canDeleteOwn={mode === "client" && apartado.status !== "validado"}
-        canDeleteAll={!!canDeleteAll && apartado.status !== "validado"}
-        ownerId={currentUserId}
-        onUpload={onUploadFile}
-        onDelete={onDeleteOwnFile}
-        onDownload={onDownloadFile}
-      />
-
-      {/* Validar / Rechazar / Reabrir (solo admin con permiso) */}
-      {mode === "admin" && canValidate && (
-        <div className="space-y-2">
-          {isFinalStatus ? (
-            onReopen && (
-              <button
-                onClick={() => { setConfirmReopen(true); setActionError(null); }}
-                disabled={submitting}
-                className="w-full text-sm font-semibold bg-white text-brand-navy border border-gray-200 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
-              >
-                Reabrir apartado
-              </button>
-            )
-          ) : !canActOnStatus ? (
-            <p className="text-xs text-text-muted text-center py-2">
-              Adjunta documentación para poder validar o rechazar.
-            </p>
-          ) : !rejecting ? (
-            <div className="flex gap-2 w-full">
-              <button
-                onClick={handleValidate}
-                disabled={submitting}
-                className="flex-1 text-sm font-semibold bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 cursor-pointer"
-              >
-                Validar
-              </button>
-              <button
-                onClick={() => { setRejecting(true); setActionError(null); }}
-                disabled={submitting}
-                className="flex-1 text-sm font-semibold bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 cursor-pointer"
-              >
-                Rechazar
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <input
-                autoFocus
-                type="text"
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Motivo del rechazo"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/30"
-              />
-              <div className="flex gap-2 w-full">
-                <button
-                  onClick={handleReject}
-                  disabled={submitting}
-                  className="flex-1 text-sm font-semibold bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 cursor-pointer"
-                >
-                  Confirmar
-                </button>
-                <button
-                  onClick={() => { setRejecting(false); setRejectReason(""); setActionError(null); }}
-                  disabled={submitting}
-                  className="flex-1 text-sm font-semibold bg-white text-text-muted border border-gray-200 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
-                >
-                  Cancelar
-                </button>
-              </div>
+          {/* Acciones validar/rechazar (solo admin con permiso) */}
+          {isAdmin && canValidate && (
+            <div className="space-y-2 pt-1">
+              {isFinalStatus ? (
+                onReopen && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-text-muted">
+                      {apartado.status === "validado"
+                        ? "Apartado validado. Puedes reabrirlo si necesitas ajustes."
+                        : "Apartado rechazado. Reabrir lo deja de nuevo pendiente al cliente."}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setConfirmReopen(true);
+                        setActionError(null);
+                      }}
+                      disabled={submitting}
+                      className="text-sm font-medium px-4 py-2 rounded-lg cursor-pointer disabled:opacity-50 inline-flex items-center gap-2 border border-gray-200 bg-white text-brand-navy hover:bg-gray-50"
+                    >
+                      Reabrir apartado
+                    </button>
+                  </div>
+                )
+              ) : !canActOnStatus ? (
+                <p className="text-[11px] text-text-muted">
+                  El cliente aún no ha subido archivos.
+                </p>
+              ) : !rejecting ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleValidate}
+                    disabled={submitting}
+                    className="text-sm font-semibold text-white px-4 py-2 rounded-lg cursor-pointer hover:opacity-90 disabled:opacity-40 inline-flex items-center gap-2 bg-brand-teal"
+                  >
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Validar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRejecting(true);
+                      setActionError(null);
+                    }}
+                    disabled={submitting}
+                    className="text-sm font-medium px-4 py-2 rounded-lg cursor-pointer disabled:opacity-40 inline-flex items-center gap-2 border bg-white hover:bg-red-50/40"
+                    style={{
+                      color: "#B91C1C",
+                      borderColor: "rgba(185,28,28,0.30)",
+                    }}
+                  >
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 6l12 12M6 18L18 6" />
+                    </svg>
+                    Rechazar
+                  </button>
+                  {lastHistory && (
+                    <span className="text-[11px] text-text-muted ml-auto">
+                      Última actividad:{" "}
+                      {new Date(lastHistory.changed_at).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Motivo del rechazo (visible para el cliente)"
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
+                    style={{ boxShadow: "none" }}
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "rgba(185,28,28,0.4)")
+                    }
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleReject}
+                      disabled={submitting}
+                      className="text-sm font-medium px-4 py-2 rounded-lg cursor-pointer disabled:opacity-40 inline-flex items-center gap-2 border bg-white"
+                      style={{
+                        color: "#B91C1C",
+                        borderColor: "rgba(185,28,28,0.30)",
+                      }}
+                    >
+                      Confirmar rechazo
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRejecting(false);
+                        setRejectReason("");
+                        setActionError(null);
+                      }}
+                      disabled={submitting}
+                      className="text-sm font-medium text-text-muted hover:text-text-body px-4 py-2 rounded-lg cursor-pointer disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+              {actionError && (
+                <p className="text-xs text-red-500">{actionError}</p>
+              )}
             </div>
           )}
-          {actionError && <p className="text-xs text-red-500 text-center">{actionError}</p>}
         </div>
-      )}
+      </div>
 
-      <div className="border-t border-gray-100" />
-
-      {/* Comentarios */}
+      {/* Comentarios + historial */}
       <ApartadoComments
         comments={apartado.comments}
+        history={isAdmin ? apartado.history : []}
         currentUserId={currentUserId}
         onAdd={onAddComment}
       />
-
-      {/* Historial */}
-      {mode === "admin" && apartado.history.length > 0 && (
-        <details className="text-xs text-text-muted">
-          <summary className="cursor-pointer font-medium hover:text-text-body">
-            Ver historial de cambios ({apartado.history.length})
-          </summary>
-          <ul className="mt-2 space-y-1.5 pl-3">
-            {apartado.history.map((h) => (
-              <li key={h.id} className="flex gap-2">
-                <span className="font-mono text-[10px] flex-shrink-0 text-text-muted/70 mt-0.5">
-                  {new Date(h.changed_at).toLocaleDateString("es-ES", {
-                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-                  })}
-                </span>
-                <span className="text-text-body">{describeHistoryEntry(h)}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
 
       {confirmRemoveApartado && onRemoveApartado && (
         <ConfirmDialog
@@ -317,42 +452,7 @@ export default function ApartadoDetail({
   );
 }
 
-// ── Historial: descripción humana ───────────────────────────────────────────
-
-function describeHistoryEntry(h: ApartadoStatusHistoryEntry): string {
-  const actor = h.changed_by_name ?? "Alguien";
-  const from = h.from_status as ApartadoStatus | null;
-  const to = h.to_status;
-  if (h.reason === "__event:file_uploaded__") return `${actor} adjuntó documentos`;
-  if (h.reason === "__event:reopened__") {
-    if (from === "validado") return `${actor} reabrió el apartado (revertió la validación)`;
-    if (from === "rechazado") return `${actor} reabrió el apartado (revertió el rechazo)`;
-    return `${actor} reabrió el apartado`;
-  }
-  if (h.reason === "__event:no_files_left__") {
-    return `${actor} eliminó el último archivo (vuelve a pendiente)`;
-  }
-  if (from === null && to === "pendiente") return `${actor} añadió este apartado`;
-  if ((from === "pendiente" || from === null) && to === "enviado") {
-    return `${actor} envió documentos para revisión`;
-  }
-  if (from === "rechazado" && to === "enviado") {
-    return `${actor} reenvió documentos tras el rechazo`;
-  }
-  if (from === "validado" && to === "enviado") {
-    return `${actor} reabrió el apartado y subió nuevos documentos`;
-  }
-  if (to === "validado") return `${actor} validó el apartado`;
-  if (to === "rechazado") {
-    const motivo = h.reason ? ` — ${h.reason}` : "";
-    return `${actor} rechazó el apartado${motivo}`;
-  }
-  if (to === "pendiente") return `${actor} reinició el apartado`;
-  return `${actor} cambió el estado a ${to}`;
-}
-
-// ── Multi-supervisor: chips + selector dept→persona ─────────────────────────
-
+// ── Multi-supervisor: chips + selector ──────────────────────────────────────
 function SupervisorAssign({
   supervisors,
   members,
@@ -386,9 +486,10 @@ function SupervisorAssign({
   }, [candidates]);
 
   const hasMultipleDepts = depts.length > 1;
-  const filteredCandidates = hasMultipleDepts && selectedDeptId
-    ? candidates.filter((m) => m.department_id === selectedDeptId)
-    : candidates;
+  const filteredCandidates =
+    hasMultipleDepts && selectedDeptId
+      ? candidates.filter((m) => m.department_id === selectedDeptId)
+      : candidates;
 
   async function handleSelect(id: string) {
     if (!id) return;
@@ -418,89 +519,101 @@ function SupervisorAssign({
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-        Supervisores {supervisors.length > 0 && `(${supervisors.length})`}
+    <section>
+      <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">
+        Supervisores
+        <span className="font-normal normal-case tracking-normal text-text-muted/80">
+          {" "}
+          · {supervisors.length}
+        </span>
       </p>
 
-      {/* Chips */}
-      {supervisors.length === 0 && !adding ? (
-        <p className="text-xs text-text-muted italic">Sin supervisores asignados</p>
-      ) : (
-        <div className="flex flex-wrap gap-1.5">
-          {supervisors.map((s) => (
-            <span
-              key={s.id}
-              className="inline-flex items-center gap-1.5 text-xs bg-white border border-gray-200 rounded-full pl-2.5 pr-1 py-0.5"
-            >
-              <span className="text-text-body font-medium">{s.full_name ?? s.email}</span>
-              <button
-                onClick={() => handleRemove(s.id)}
-                disabled={pending}
-                className="ml-0.5 w-4 h-4 rounded-full text-text-muted hover:text-red-500 hover:bg-red-50 disabled:opacity-50 cursor-pointer flex items-center justify-center transition-colors"
-                title="Quitar supervisor"
-              >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Selector add */}
-      {!adding ? (
-        candidates.length > 0 && (
-          <button
-            onClick={() => { setAdding(true); setError(null); }}
-            className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
+      <div className="flex flex-wrap items-center gap-1.5">
+        {supervisors.map((s) => (
+          <span
+            key={s.id}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white border border-gray-200 text-text-body"
           >
-            + Añadir supervisor
+            {s.full_name ?? s.email}
+            <button
+              onClick={() => handleRemove(s.id)}
+              disabled={pending}
+              className="text-text-muted hover:text-red-600 cursor-pointer disabled:opacity-50"
+              aria-label={`Quitar ${s.full_name ?? s.email}`}
+            >
+              <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 6l12 12M6 18L18 6" />
+              </svg>
+            </button>
+          </span>
+        ))}
+        {supervisors.length === 0 && !adding && (
+          <span className="text-xs text-text-muted italic">
+            Sin supervisores asignados
+          </span>
+        )}
+        {!adding && candidates.length > 0 && (
+          <button
+            onClick={() => {
+              setAdding(true);
+              setError(null);
+            }}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-brand-teal hover:bg-brand-teal/8 cursor-pointer"
+          >
+            <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Añadir supervisor
           </button>
-        )
-      ) : (
-        <div className="space-y-2 pt-1">
+        )}
+      </div>
+
+      {adding && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           {hasMultipleDepts && (
             <select
               value={selectedDeptId}
               onChange={(e) => setSelectedDeptId(e.target.value)}
               disabled={pending}
-              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:opacity-50"
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-brand-teal disabled:opacity-50"
             >
               <option value="">— Departamento —</option>
               {depts.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
               ))}
             </select>
           )}
-          <div className="flex items-center gap-2">
-            <select
-              defaultValue=""
-              onChange={(e) => handleSelect(e.target.value)}
-              disabled={pending}
-              className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:opacity-50"
-            >
-              <option value="">— Persona —</option>
-              {filteredCandidates.map((m) => (
-                <option key={m.id} value={m.id}>{m.full_name ?? m.email}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => { setAdding(false); setSelectedDeptId(""); setError(null); }}
-              className="text-xs text-text-muted hover:text-text-body cursor-pointer"
-            >
-              Cancelar
-            </button>
-          </div>
+          <select
+            defaultValue=""
+            onChange={(e) => handleSelect(e.target.value)}
+            disabled={pending}
+            className="flex-1 min-w-[200px] text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-brand-teal disabled:opacity-50"
+          >
+            <option value="">— Persona —</option>
+            {filteredCandidates.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name ?? m.email}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => {
+              setAdding(false);
+              setSelectedDeptId("");
+              setError(null);
+            }}
+            className="text-xs text-text-muted hover:text-text-body cursor-pointer"
+          >
+            Cancelar
+          </button>
         </div>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </section>
   );
 }
-
-// ───────── Plantillas (componente local) ─────────
 
 export type { ApartadoTemplateFile };

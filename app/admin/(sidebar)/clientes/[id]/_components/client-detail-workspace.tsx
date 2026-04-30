@@ -46,6 +46,7 @@ import {
   removeBlockFromClient,
   removeSupervisor,
   reopenApartado,
+  setApartadoOptional,
   validateApartado,
 } from "@/app/admin/clientes/[id]/documentation-actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
@@ -236,6 +237,15 @@ export default function ClientDetailWorkspace({
       supervisors: a.supervisors.filter((s) => s.id !== profileId),
     }));
     removeSupervisor({ companyId: detail.id, clientApartadoId, profileId }).catch(() => {
+      setDocState(snapshot);
+    });
+    return Promise.resolve();
+  }
+
+  function optimisticToggleOptional(clientApartadoId: string, isOptional: boolean) {
+    const snapshot = docState;
+    mutateApartado(clientApartadoId, (a) => ({ ...a, is_optional: isOptional }));
+    setApartadoOptional({ companyId: detail.id, clientApartadoId, isOptional }).catch(() => {
       setDocState(snapshot);
     });
     return Promise.resolve();
@@ -513,19 +523,11 @@ export default function ClientDetailWorkspace({
               await removeBlockFromClient(detail.id, clientBlockId);
               router.refresh();
             },
+            toggleOptional: (clientApartadoId, isOptional) =>
+              optimisticToggleOptional(clientApartadoId, isOptional),
           }}
-          topRightSlot={
-            assignableCatalog.canRequest && (
-              <button
-                onClick={() => setAddingBlock(true)}
-                className="inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-1.5 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Añadir bloque
-              </button>
-            )
+          onAddBlock={
+            assignableCatalog.canRequest ? () => setAddingBlock(true) : undefined
           }
           onAddApartado={
             assignableCatalog.canRequest
@@ -533,6 +535,12 @@ export default function ClientDetailWorkspace({
                   setAddingApartado({ clientBlockId, blockId: catalogBlockId })
               : undefined
           }
+          onRemindClient={() => {
+            // TODO: enviar email al cliente con apartados pendientes/rechazados
+            alert(
+              "Pronto: enviaremos un email al cliente con los apartados pendientes y rechazados."
+            );
+          }}
         />
       )}
 

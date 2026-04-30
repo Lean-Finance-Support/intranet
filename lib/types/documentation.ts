@@ -77,6 +77,7 @@ export interface ClientApartado {
   display_order: number;
   status: ApartadoStatus;
   is_global: boolean;
+  is_optional: boolean;
   department_ids: string[];
   supervisors: ApartadoSupervisor[];
   templates: ApartadoTemplateFile[];
@@ -103,7 +104,9 @@ export interface ClientBlock {
 
 export interface ClientDocumentation {
   blocks: ClientBlock[];
-  // Stats globales sobre apartados validados / total (excluye rechazados como "no listos")
+  // Stats globales sobre apartados validados / total. Excluye los marcados como
+  // opcionales (is_optional=true): el cliente puede subirlos pero no cuentan
+  // para el progreso.
   total_apartados: number;
   validated_apartados: number;
 }

@@ -13,7 +13,7 @@ interface Props {
   onSubmit: (input: {
     companyId: string;
     blockId: string;
-    apartados: { apartadoId: string; supervisorIds: string[] }[];
+    apartados: { apartadoId: string; supervisorIds: string[]; isOptional?: boolean }[];
   }) => Promise<void>;
 }
 
@@ -25,6 +25,8 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
   const [supervisorsByApartado, setSupervisorsByApartado] = useState<Record<string, string[]>>({});
   // Apartados excluidos del bloque actual (por defecto todos van incluidos).
   const [excludedApartadoIds, setExcludedApartadoIds] = useState<Set<string>>(new Set());
+  // Apartados marcados como opcionales.
+  const [optionalApartadoIds, setOptionalApartadoIds] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +77,14 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
       return next;
     });
   }
+  function toggleOptional(apartadoId: string) {
+    setOptionalApartadoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(apartadoId)) next.delete(apartadoId);
+      else next.add(apartadoId);
+      return next;
+    });
+  }
 
   const includedApartados = (block?.apartados ?? []).filter((a) => !excludedApartadoIds.has(a.id));
 
@@ -93,6 +103,7 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
         apartados: includedApartados.map((a) => ({
           apartadoId: a.id,
           supervisorIds: supervisorsByApartado[a.id] ?? [],
+          isOptional: optionalApartadoIds.has(a.id),
         })),
       });
     } catch (e) {
@@ -142,6 +153,7 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
                     setSelectedBlockId(e.target.value || null);
                     setSupervisorsByApartado({});
                     setExcludedApartadoIds(new Set());
+                    setOptionalApartadoIds(new Set());
                   }}
                   className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal focus:bg-white transition-colors"
                 >
@@ -165,7 +177,9 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
                       key={a.id}
                       apartado={a}
                       included={!excludedApartadoIds.has(a.id)}
+                      optional={optionalApartadoIds.has(a.id)}
                       onToggle={() => toggleApartado(a.id)}
+                      onToggleOptional={() => toggleOptional(a.id)}
                       candidates={candidatesByApartado[a.id] ?? []}
                       selectedIds={supervisorsByApartado[a.id] ?? []}
                       onAdd={(id) => addSupervisor(a.id, id)}
@@ -204,7 +218,9 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
 function ApartadoSupervisorRow({
   apartado,
   included,
+  optional,
   onToggle,
+  onToggleOptional,
   candidates,
   selectedIds,
   onAdd,
@@ -212,7 +228,9 @@ function ApartadoSupervisorRow({
 }: {
   apartado: { id: string; name: string; description: string | null };
   included: boolean;
+  optional: boolean;
   onToggle: () => void;
+  onToggleOptional: () => void;
   candidates: DepartmentMember[];
   selectedIds: string[];
   onAdd: (id: string) => void;
@@ -242,21 +260,43 @@ function ApartadoSupervisorRow({
         included ? "bg-gray-50" : "bg-gray-50/40"
       }`}
     >
-      <label className="flex items-center gap-2 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={included}
-          onChange={onToggle}
-          className="w-3.5 h-3.5 rounded border-gray-300 text-brand-teal focus:ring-brand-teal/30 cursor-pointer"
-        />
-        <span
-          className={`text-xs font-medium ${
-            included ? "text-text-body" : "text-text-muted line-through"
-          }`}
-        >
-          {apartado.name}
-        </span>
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none flex-1 min-w-0">
+          <input
+            type="checkbox"
+            checked={included}
+            onChange={onToggle}
+            className="w-3.5 h-3.5 rounded border-gray-300 text-brand-teal focus:ring-brand-teal/30 cursor-pointer"
+          />
+          <span
+            className={`text-xs font-medium truncate ${
+              included ? "text-text-body" : "text-text-muted line-through"
+            }`}
+          >
+            {apartado.name}
+          </span>
+        </label>
+        {included && (
+          <label
+            className="flex items-center gap-1 cursor-pointer select-none flex-shrink-0"
+            title="Si es opcional, no cuenta en el progreso del cliente"
+          >
+            <input
+              type="checkbox"
+              checked={optional}
+              onChange={onToggleOptional}
+              className="w-3 h-3 rounded border-gray-300 text-brand-navy focus:ring-brand-navy/30 cursor-pointer"
+            />
+            <span
+              className={`text-[10px] uppercase tracking-wider font-semibold ${
+                optional ? "text-brand-navy" : "text-text-muted"
+              }`}
+            >
+              Opcional
+            </span>
+          </label>
+        )}
+      </div>
 
       {included && (
         <div className="space-y-1.5 pl-[1.375rem]">

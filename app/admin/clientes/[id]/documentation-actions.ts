@@ -121,7 +121,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
       .schema("documentation")
       .from("client_apartados")
       .select(
-        "id, client_block_id, apartado_id, status, display_order, validated_at, validated_by, rejected_at, rejected_by, last_rejection_reason"
+        "id, client_block_id, apartado_id, status, display_order, is_optional, validated_at, validated_by, rejected_at, rejected_by, last_rejection_reason"
       ),
     admin
       .schema("documentation")
@@ -350,7 +350,8 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
         name: block.name,
         slug: block.slug,
         description: block.description,
-        display_order: cb.display_order as number,
+        // Orden del catálogo, no de client_blocks (que está siempre a 0).
+        display_order: block.display_order,
         apartados: apartadosOfBlock
           .map((ca) => {
             const ap = apartadoMap.get(ca.apartado_id as string);
@@ -364,6 +365,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
               display_order: ca.display_order as number,
               status: ca.status as ApartadoStatus,
               is_global: ap.is_global,
+              is_optional: (ca.is_optional as boolean | null) ?? false,
               department_ids: deptByApartado.get(ca.apartado_id as string) ?? [],
               supervisors: supervisorsByApartado.get(ca.id as string) ?? [],
               templates: templatesByApartado.get(ca.apartado_id as string) ?? [],
@@ -423,10 +425,12 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     .filter((b): b is NonNullable<typeof b> => b !== null)
     .sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
 
+  // Apartados opcionales no cuentan para el progreso global.
   let total = 0;
   let validated = 0;
   for (const b of resultBlocks) {
     for (const a of b.apartados) {
+      if (a.is_optional) continue;
       total++;
       if (a.status === "validado") validated++;
     }
@@ -609,7 +613,7 @@ function toApartadoTemplate(
 export async function addBlockToClient(input: {
   companyId: string;
   blockId: string;
-  apartados: { apartadoId: string; supervisorIds: string[] }[];
+  apartados: { apartadoId: string; supervisorIds: string[]; isOptional?: boolean }[];
 }): Promise<void> {
   await requireAdmin();
   await requireRequestPermission();
@@ -650,6 +654,7 @@ export async function addBlockToClient(input: {
           apartado_id: a.apartadoId,
           added_by: user.id,
           display_order: idx,
+          is_optional: a.isOptional ?? false,
         }))
       )
       .select("id, apartado_id");
@@ -696,6 +701,7 @@ export async function addApartadoToClient(input: {
   clientBlockId: string;
   apartadoId: string;
   supervisorIds: string[];
+  isOptional?: boolean;
 }): Promise<void> {
   await requireAdmin();
   await requireRequestPermission();
@@ -715,6 +721,7 @@ export async function addApartadoToClient(input: {
       client_block_id: input.clientBlockId,
       apartado_id: input.apartadoId,
       added_by: user.id,
+      is_optional: input.isOptional ?? false,
     })
     .select("id")
     .single();
@@ -732,6 +739,23 @@ export async function addApartadoToClient(input: {
     );
     if (supErr) throw new Error(supErr.message);
   }
+  revalidatePath(`/admin/clientes/${input.companyId}`);
+}
+
+export async function setApartadoOptional(input: {
+  companyId: string;
+  clientApartadoId: string;
+  isOptional: boolean;
+}): Promise<void> {
+  await requireAdmin();
+  await requireRequestPermission();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .update({ is_optional: input.isOptional })
+    .eq("id", input.clientApartadoId);
+  if (error) throw new Error(error.message);
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
