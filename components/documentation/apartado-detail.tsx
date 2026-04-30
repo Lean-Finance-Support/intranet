@@ -471,17 +471,41 @@ function SupervisorAssign({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const uniqueMembers = useMemo(
-    () => Array.from(new Map(members.map((m) => [m.id, m])).values()),
-    [members]
-  );
+  // Un usuario puede pertenecer a varios deptos del apartado a la vez. Lo
+  // dedupamos por id, conservando todos los pares (deptId, deptName) en los
+  // que aparece para que el filtro por departamento lo encuentre en cualquiera.
+  type AggMember = {
+    id: string;
+    full_name: string | null;
+    email: string;
+    depts: { id: string; name: string }[];
+  };
+  const uniqueMembers = useMemo<AggMember[]>(() => {
+    const byId = new Map<string, AggMember>();
+    for (const m of members) {
+      let agg = byId.get(m.id);
+      if (!agg) {
+        agg = {
+          id: m.id,
+          full_name: m.full_name,
+          email: m.email,
+          depts: [],
+        };
+        byId.set(m.id, agg);
+      }
+      if (!agg.depts.some((d) => d.id === m.department_id)) {
+        agg.depts.push({ id: m.department_id, name: m.department_name });
+      }
+    }
+    return Array.from(byId.values());
+  }, [members]);
 
   const assignedIds = new Set(supervisors.map((s) => s.id));
   const candidates = uniqueMembers.filter((m) => !assignedIds.has(m.id));
 
   const depts = useMemo(() => {
     const map = new Map<string, string>();
-    for (const m of candidates) map.set(m.department_id, m.department_name);
+    for (const m of candidates) for (const d of m.depts) map.set(d.id, d.name);
     return Array.from(map.entries())
       .map(([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name, "es"));
@@ -490,7 +514,9 @@ function SupervisorAssign({
   const hasMultipleDepts = depts.length > 1;
   const filteredCandidates =
     hasMultipleDepts && selectedDeptId
-      ? candidates.filter((m) => m.department_id === selectedDeptId)
+      ? candidates.filter((m) =>
+          m.depts.some((d) => d.id === selectedDeptId)
+        )
       : candidates;
 
   async function handleSelect(id: string) {
