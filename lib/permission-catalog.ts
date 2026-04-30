@@ -14,7 +14,8 @@ export type PermissionScopeType =
   | "department"
   | "company"
   | "service"
-  | "company_service";
+  | "company_service"
+  | "client_apartado";
 
 export interface PermissionMeta {
   code: string;
@@ -71,6 +72,15 @@ export const PERMISSION_CATALOG: PermissionMeta[] = [
     scopeLabel: "en el departamento",
     isGrantable: false,
   },
+  {
+    code: "validate_client_documentation",
+    label: "Validar como supervisor del apartado",
+    description:
+      "Validar o rechazar el apartado concreto del que el empleado es supervisor.",
+    scopeType: "client_apartado",
+    scopeLabel: "en el apartado supervisado",
+    isGrantable: false,
+  },
 
   // --- Grantables (delegables N1/N2/N3) ---
   {
@@ -109,6 +119,33 @@ export const PERMISSION_CATALOG: PermissionMeta[] = [
     code: "manage_client_accounts",
     label: "Gestionar cuentas cliente",
     description: "Crear, editar y desvincular cuentas de clientes.",
+    scopeType: "none",
+    scopeLabel: "a nivel global",
+    isGrantable: true,
+  },
+  {
+    code: "manage_documentation_catalog",
+    label: "Gestionar el catálogo de documentación",
+    description:
+      "Crear, editar y eliminar bloques y apartados del catálogo de documentación, así como sus plantillas.",
+    scopeType: "none",
+    scopeLabel: "a nivel global",
+    isGrantable: true,
+  },
+  {
+    code: "request_client_documentation",
+    label: "Solicitar documentación a clientes",
+    description:
+      "Asignar bloques y apartados de documentación a una empresa cliente, designar supervisores.",
+    scopeType: "none",
+    scopeLabel: "a nivel global",
+    isGrantable: true,
+  },
+  {
+    code: "validate_documentation",
+    label: "Validar documentación de clientes",
+    description:
+      "Validar o rechazar cualquier apartado de documentación, sea de la empresa o departamento que sea.",
     scopeType: "none",
     scopeLabel: "a nivel global",
     isGrantable: true,

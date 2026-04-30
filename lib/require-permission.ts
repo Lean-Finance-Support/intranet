@@ -7,7 +7,8 @@ export type PermissionScope =
   | { type: "department"; id: string }
   | { type: "company"; id: string }
   | { type: "service"; id: string }
-  | { type: "company_service"; companyServiceId: string };
+  | { type: "company_service"; companyServiceId: string }
+  | { type: "client_apartado"; id: string };
 
 function scopeArgs(scope: PermissionScope) {
   switch (scope.type) {
@@ -21,6 +22,8 @@ function scopeArgs(scope: PermissionScope) {
       return { p_scope_type: "service", p_scope_id: scope.id };
     case "company_service":
       return { p_scope_type: "company_service", p_scope_id: scope.companyServiceId };
+    case "client_apartado":
+      return { p_scope_type: "client_apartado", p_scope_id: scope.id };
   }
 }
 
@@ -66,7 +69,7 @@ export async function requirePermission(
  */
 export async function userScopeIds(
   perm: string,
-  scopeType: "department" | "company" | "service" | "company_service"
+  scopeType: "department" | "company" | "service" | "company_service" | "client_apartado"
 ): Promise<string[]> {
   const { supabase, user } = await getAuthUser();
   if (!user) return [];

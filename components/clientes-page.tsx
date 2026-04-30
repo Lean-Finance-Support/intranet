@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import type { ClienteCompany, ClienteService, ClientesPageData } from "@/app/admin/clientes/actions";
+import type { ClienteCompany, ClientesPageData } from "@/app/admin/clientes/actions";
 import { createCompanyAdmin } from "@/app/admin/clientes/actions";
 import ClientDetailPanel from "@/components/client-detail-panel";
 import NewCompanyModal from "@/components/new-company-modal";
@@ -21,6 +20,11 @@ function CompanyCard({
 }) {
   // Unique departments across services
   const deptNames = [...new Set(company.services.map((s) => s.department_name))].filter(Boolean);
+  const docProgress = company.documentation_progress;
+  const docPct =
+    docProgress && docProgress.total > 0
+      ? Math.round((docProgress.validated / docProgress.total) * 100)
+      : 0;
 
   return (
     <button
@@ -61,6 +65,22 @@ function CompanyCard({
               {d}
             </span>
           ))}
+        </div>
+      )}
+
+      {docProgress && docProgress.total > 0 && (
+        <div className="mt-2 flex items-center gap-1.5">
+          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-brand-teal transition-all" style={{ width: `${docPct}%` }} />
+          </div>
+          <span className="text-[10px] text-text-muted font-medium tabular-nums">
+            {docPct}%
+          </span>
+          {docProgress.in_review > 0 && (
+            <span className="text-[10px] text-brand-blue font-medium tabular-nums">
+              {docProgress.in_review} a revisar
+            </span>
+          )}
         </div>
       )}
     </button>
@@ -135,7 +155,6 @@ export default function ClientesPage({
   data: ClientesPageData;
   linkPrefix: string;
 }) {
-  const router = useRouter();
   const [companies, setCompanies] = useState<ClienteCompany[]>(data.companies);
   const [selectedCompany, setSelectedCompany] = useState<ClienteCompany | null>(null);
   const [creatingCompany, setCreatingCompany] = useState(false);
@@ -196,73 +215,10 @@ export default function ClientesPage({
     setSelectedCompany((prev) => prev?.id === companyId ? { ...prev, company_name: name } : prev);
   }
 
-  function handleServiceAdded(companyId: string, service: ClienteService) {
-    setCompanies((prev) =>
-      prev.map((c) => c.id === companyId ? { ...c, services: [...c.services, service] } : c)
-    );
-    setSelectedCompany((prev) =>
-      prev?.id === companyId ? { ...prev, services: [...prev.services, service] } : prev
-    );
-  }
-
-  function handleServiceRemoved(companyId: string, serviceId: string) {
-    setCompanies((prev) =>
-      prev.map((c) =>
-        c.id === companyId ? { ...c, services: c.services.filter((s) => s.service_id !== serviceId) } : c
-      )
-    );
-    setSelectedCompany((prev) =>
-      prev?.id === companyId
-        ? { ...prev, services: prev.services.filter((s) => s.service_id !== serviceId) }
-        : prev
-    );
-  }
-
-  function handleTechAssigned(companyId: string, serviceId: string, tech: { id: string; name: string | null }) {
-    const update = (c: ClienteCompany) =>
-      c.id !== companyId ? c : {
-        ...c,
-        services: c.services.map((s) =>
-          s.service_id !== serviceId ? s : { ...s, technicians: [...s.technicians, tech] }
-        ),
-      };
-    setCompanies((prev) => prev.map(update));
-    setSelectedCompany((prev) => prev ? update(prev) : prev);
-  }
-
-  function handleTechRemoved(companyId: string, serviceId: string, techId: string) {
-    const update = (c: ClienteCompany) =>
-      c.id !== companyId ? c : {
-        ...c,
-        services: c.services.map((s) =>
-          s.service_id !== serviceId ? s : { ...s, technicians: s.technicians.filter((t) => t.id !== techId) }
-        ),
-      };
-    setCompanies((prev) => prev.map(update));
-    setSelectedCompany((prev) => prev ? update(prev) : prev);
-  }
-
   function handleCompanyCreated(company: ClienteCompany) {
     setCompanies((prev) => [company, ...prev]);
     setCreatingCompany(false);
     setSelectedCompany(company);
-  }
-
-  function handleCompanyDeleted(companyId: string, deletedAt: string) {
-    setCompanies((prev) =>
-      prev.map((c) => (c.id === companyId ? { ...c, deleted_at: deletedAt } : c))
-    );
-    setSelectedCompany(null);
-  }
-
-  function handleCompanyRestored(companyId: string) {
-    setCompanies((prev) =>
-      prev.map((c) => (c.id === companyId ? { ...c, deleted_at: null } : c))
-    );
-    setSelectedCompany(null);
-    // Refresca para recuperar metadata viva de la empresa restaurada
-    // (servicios, técnicos…). El soft delete no la borró, solo no estaba viva.
-    router.refresh();
   }
 
   const activeCount = companies.filter((c) => !c.deleted_at).length;
@@ -401,21 +357,10 @@ export default function ClientesPage({
       {selectedCompany && (
         <ClientDetailPanel
           company={selectedCompany}
-          userChiefDeptIds={data.userChiefDeptIds}
-          deptMembers={data.deptMembers}
-          chiefAvailableServices={data.chiefAvailableServices}
           canManageClientAccounts={data.canManageClientAccounts}
-          canDeleteCompany={data.canDeleteCompany}
-          canCreateCompany={data.canCreateCompany}
           linkPrefix={linkPrefix}
           onClose={() => setSelectedCompany(null)}
           onUpdateName={handleUpdateName}
-          onServiceAdded={handleServiceAdded}
-          onServiceRemoved={handleServiceRemoved}
-          onTechAssigned={handleTechAssigned}
-          onTechRemoved={handleTechRemoved}
-          onDeleted={handleCompanyDeleted}
-          onRestored={handleCompanyRestored}
         />
       )}
 

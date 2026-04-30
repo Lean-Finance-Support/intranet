@@ -137,6 +137,7 @@ Roles semilla:
 - **Miembro de departamento** — lectura básica (miembro, ver empresas/notificaciones del dept). Scope `department`.
 - **Chief** — incluye "Miembro" + operaciones (asignar técnico, añadir servicio, crear notificaciones). Scope `department`.
 - **Técnico** — `view_assigned_company` sobre una combinación empresa×servicio. Scope `company_service` (el `scope_id` referencia `company_services.id`).
+- **Supervisor de apartado** — `validate_client_documentation` sobre un `client_apartado` concreto. Scope `client_apartado` (el `scope_id` referencia `documentation.client_apartados.id`). No se asigna desde la UI de roles: se otorga/revoca al asignar/quitar a alguien como supervisor de un apartado de documentación.
 
 Para escalada de privilegios: solo quien tenga el permiso `manage_users` puede escribir en las tablas
 del propio sistema de permisos (RLS lo impone). Se bootstrapea manualmente por SQL o service role.
@@ -179,6 +180,26 @@ Proyectos: prod `wgxugccbatusioubnsfl` (eu-west-1), dev `rvnflidcbiinmlfpzsbf` (
 - Workflow de verificación: `.github/workflows/backup-restore-test.yml` (domingos 05:00 UTC).
 - Script de restore manual: `scripts/restore-backup.sh`.
 - Bucket: `leanfinance-db-backups` (retención: 30 días `daily/`, 180 días `monthly/`).
+
+---
+
+## Documentación por cliente (schema `documentation`)
+
+Catálogo de **bloques** y **apartados** validables que se asignan a cada cliente. Cada apartado tiene un estado (`pendiente | enviado | validado | rechazado`), N supervisores (cualquier miembro/chief de los departamentos del apartado, incluso de varios deptos a la vez), archivos del cliente, comentarios bidireccionales y un historial de transiciones. Los apartados del catálogo pueden tener **plantillas** descargables como ayuda al cliente.
+
+- Schema y RLS: `supabase/migrations/20260428100000_documentation_schema.sql` + `..._permissions.sql` + `..._storage.sql`. Migraciones posteriores: `20260428100300_rename_supervisor_id.sql`, `20260428110000_documentation_supervisors_nm.sql` (introdujo la tabla N:M `client_apartado_supervisors`, **droppeada en `20260430120100`**), `20260428110100_documentation_apartado_templates.sql`, `20260430120000_documentation_add_client_apartado_scope.sql` y `20260430120100_documentation_permissions_refactor.sql` (nuevo modelo de permisos).
+- Bucket `client-documentation` (privado): paths `{company_id}/{client_apartado_id}/{file_id}/{filename}` para archivos del cliente y `templates/{apartado_id}/{template_id}/{filename}` para plantillas del catálogo. Helpers en `lib/storage/documentation.ts`.
+- Permisos (tras refactor `20260430120100`):
+  - `manage_documentation_catalog` — global (`scope='none'`, grantable). **NO va en Chief**: es transversal y se delega.
+  - `request_client_documentation` — global (`scope='none'`, grantable). En el rol Chief.
+  - `validate_documentation` — global (`scope='none'`, no grantable). En el rol Chief; permite validar/rechazar cualquier apartado.
+  - `validate_client_documentation` — scope `client_apartado` (no grantable). Se obtiene **exclusivamente** vía el rol "Supervisor de apartado".
+- Modelo de "supervisor": ya no existe la tabla `client_apartado_supervisors`. Asignar/quitar supervisor = INSERT/DELETE en `profile_roles` con el rol "Supervisor de apartado" y `scope_type='client_apartado'`, `scope_id=client_apartado.id`. RLS en `profile_roles` autoriza esto a quien tenga `request_client_documentation`.
+- View `documentation.apartado_supervisors_v` — lista los supervisores de cada apartado a partir de `profile_roles`. Útil para los loaders (admin y cliente).
+- Server actions: catálogo en `app/admin/(sidebar)/documentacion/actions.ts`; instancias por cliente en `app/admin/clientes/[id]/documentation-actions.ts`; lado cliente en `app/app/empresa/documentation-actions.ts`. La validación (`authorizeValidation`) chequea `validate_documentation` global o `validate_client_documentation` con scope `client_apartado` = id del apartado.
+- UI compartida: `components/documentation/{documentation-master-detail,apartado-detail,apartado-files,apartado-comments,status-badge,apartado-templates-list}.tsx`. Modo dual (`'admin' | 'client'`).
+- Tipos: `lib/types/documentation.ts`. **Importante**: los supervisores están en `apartado.supervisors` (array), no como `supervisor_id` escalar.
+- IMPORTANTE para deploy: el schema `documentation` debe estar añadido a "Exposed schemas" en Supabase Dashboard → API Settings (una vez por proyecto). Sin esto el SDK devuelve 404 al hacer `.schema('documentation')`.
 
 ---
 

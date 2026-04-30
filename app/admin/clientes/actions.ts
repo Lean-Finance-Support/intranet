@@ -48,6 +48,7 @@ export interface ClienteCompany {
   services: ClienteService[];
   is_assigned: boolean;
   deleted_at: string | null;
+  documentation_progress: { validated: number; total: number; in_review: number } | null;
 }
 
 export interface DeptMemberSlim {
@@ -227,6 +228,41 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     });
   }
 
+  // Documentation progress por empresa
+  const docProgressMap = new Map<string, { validated: number; total: number; in_review: number }>();
+  if (companyIds.length > 0) {
+    const adminClient = createAdminClient();
+    const { data: clientBlocks } = await adminClient
+      .schema("documentation")
+      .from("client_blocks")
+      .select("id, company_id")
+      .in("company_id", companyIds);
+
+    const blockToCompany = new Map<string, string>();
+    for (const cb of clientBlocks ?? []) {
+      blockToCompany.set(cb.id as string, cb.company_id as string);
+    }
+
+    const blockIds = Array.from(blockToCompany.keys());
+    if (blockIds.length > 0) {
+      const { data: clientApartados } = await adminClient
+        .schema("documentation")
+        .from("client_apartados")
+        .select("status, client_block_id")
+        .in("client_block_id", blockIds);
+
+      for (const ca of clientApartados ?? []) {
+        const companyId = blockToCompany.get(ca.client_block_id as string);
+        if (!companyId) continue;
+        const entry = docProgressMap.get(companyId) ?? { validated: 0, total: 0, in_review: 0 };
+        entry.total += 1;
+        if (ca.status === "validado") entry.validated += 1;
+        if (ca.status === "enviado") entry.in_review += 1;
+        docProgressMap.set(companyId, entry);
+      }
+    }
+  }
+
   const clienteCompanies: ClienteCompany[] = companies.map((c) => ({
     id: c.id,
     legal_name: c.legal_name,
@@ -235,6 +271,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     services: compSvcMap.get(c.id) ?? [],
     is_assigned: myAssignedCompanyIds.has(c.id),
     deleted_at: c.deleted_at as string | null,
+    documentation_progress: docProgressMap.get(c.id) ?? null,
   }));
 
   return {
@@ -569,6 +606,7 @@ export async function createCompanyAdmin(input: CreateCompanyInput): Promise<Cli
     services: [],
     is_assigned: false,
     deleted_at: null,
+    documentation_progress: null,
   };
 }
 
