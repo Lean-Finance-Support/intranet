@@ -12,6 +12,8 @@ interface Props {
   history?: ApartadoStatusHistoryEntry[];
   currentUserId: string;
   onAdd: (body: string) => Promise<void>;
+  /** Si false, no se muestra el formulario para añadir comentarios. */
+  canComment?: boolean;
 }
 
 function formatDateTime(iso: string): string {
@@ -36,6 +38,7 @@ export default function ApartadoComments({
   history = [],
   currentUserId,
   onAdd,
+  canComment = true,
 }: Props) {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -118,26 +121,28 @@ export default function ApartadoComments({
         </ul>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-4">
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Escribe un comentario…"
-          rows={2}
-          className="w-full text-sm text-text-body placeholder:text-text-muted/70 bg-gray-50/60 border border-gray-200 rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:border-brand-teal/60 focus:bg-white"
-        />
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-        <div className="flex justify-end mt-2">
-          <button
-            type="submit"
-            disabled={!body.trim()}
-            className="text-xs font-medium text-white px-3.5 py-1.5 rounded-lg cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed bg-brand-teal"
-          >
-            Enviar
-          </button>
-        </div>
-      </form>
+      {canComment && (
+        <form onSubmit={handleSubmit} className="mt-4">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Escribe un comentario…"
+            rows={2}
+            className="w-full text-sm text-text-body placeholder:text-text-muted/70 bg-gray-50/60 border border-gray-200 rounded-xl px-3.5 py-2.5 resize-none focus:outline-none focus:border-brand-teal/60 focus:bg-white"
+          />
+          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+          <div className="flex justify-end mt-2">
+            <button
+              type="submit"
+              disabled={!body.trim()}
+              className="text-xs font-medium text-white px-3.5 py-1.5 rounded-lg cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed bg-brand-teal"
+            >
+              Enviar
+            </button>
+          </div>
+        </form>
+      )}
 
       {history.length > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-100">

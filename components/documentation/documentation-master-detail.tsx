@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ApartadoComment,
   ApartadoStatus,
@@ -41,7 +41,7 @@ interface Props {
   resolveCanValidate?: (apartado: ClientApartado) => boolean;
   onAddBlock?: () => void;
   onAddApartado?: (clientBlockId: string, catalogBlockId: string) => void;
-  onRemindClient?: () => void;
+  onRemindClient?: () => Promise<void>;
 }
 
 type GhostMap = Map<string, ApartadoComment[]>;
@@ -358,6 +358,35 @@ export default function DocumentationMasterDetail({
   const pct = total === 0 ? 0 : Math.round((validated / total) * 100);
   const pendingForReminder = counts.pendiente + counts.rechazado;
 
+  // ─── Feedback "Recordar al cliente" (inline, sin alert nativo) ─────
+  const [remindState, setRemindState] = useState<"idle" | "sending" | "sent">("idle");
+  const [remindError, setRemindError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (remindState !== "sent") return;
+    const t = setTimeout(() => setRemindState("idle"), 3000);
+    return () => clearTimeout(t);
+  }, [remindState]);
+
+  useEffect(() => {
+    if (!remindError) return;
+    const t = setTimeout(() => setRemindError(null), 5000);
+    return () => clearTimeout(t);
+  }, [remindError]);
+
+  async function handleRemindClient() {
+    if (!onRemindClient || remindState === "sending") return;
+    setRemindError(null);
+    setRemindState("sending");
+    try {
+      await onRemindClient();
+      setRemindState("sent");
+    } catch (e) {
+      setRemindState("idle");
+      setRemindError(e instanceof Error ? e.message : "No se pudo enviar el recordatorio");
+    }
+  }
+
   const variant = isAdmin ? "admin" : "client";
   // Plurales coherentes con la pill (admin: "A revisar", cliente: "En revisión").
   const STAT_LABELS: Record<ApartadoStatus, { admin: string; client: string }> = {
@@ -390,25 +419,54 @@ export default function DocumentationMasterDetail({
               </div>
             </div>
             {isAdmin && onRemindClient && (
-              <button
-                onClick={onRemindClient}
-                disabled={pendingForReminder === 0}
-                title={
-                  pendingForReminder
-                    ? `Enviar email al cliente con ${pendingForReminder} apartado${
-                        pendingForReminder === 1 ? "" : "s"
-                      } pendiente${pendingForReminder === 1 ? "" : "s"} o rechazado${
-                        pendingForReminder === 1 ? "" : "s"
-                      }`
-                    : "No hay apartados pendientes ni rechazados"
-                }
-                className="text-xs font-medium text-white px-3 py-1.5 rounded-lg cursor-pointer hover:opacity-90 inline-flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 bg-brand-teal"
-              >
-                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
-                Recordar al cliente
-              </button>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <button
+                  onClick={handleRemindClient}
+                  disabled={pendingForReminder === 0 || remindState !== "idle"}
+                  title={
+                    pendingForReminder
+                      ? `Enviar email al cliente con ${pendingForReminder} apartado${
+                          pendingForReminder === 1 ? "" : "s"
+                        } pendiente${pendingForReminder === 1 ? "" : "s"} o rechazado${
+                          pendingForReminder === 1 ? "" : "s"
+                        }`
+                      : "No hay apartados pendientes ni rechazados"
+                  }
+                  className={`text-xs font-medium px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap disabled:cursor-not-allowed transition-colors ${
+                    remindState === "sent"
+                      ? "bg-status-validated/15 text-status-validated cursor-default"
+                      : "bg-brand-teal text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                  }`}
+                >
+                  {remindState === "sending" ? (
+                    <>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="animate-spin">
+                        <path d="M21 12a9 9 0 11-6.219-8.56" />
+                      </svg>
+                      Enviando…
+                    </>
+                  ) : remindState === "sent" ? (
+                    <>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                      Enviado
+                    </>
+                  ) : (
+                    <>
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                      </svg>
+                      Recordar al cliente
+                    </>
+                  )}
+                </button>
+                {remindError && (
+                  <p className="text-[11px] text-status-rejected text-right max-w-[220px] leading-snug">
+                    {remindError}
+                  </p>
+                )}
+              </div>
             )}
           </div>
           <div className="mt-auto pt-3">
@@ -477,6 +535,16 @@ export default function DocumentationMasterDetail({
             onSelectApartado={(id) => setSelectedApartadoId(id)}
             onAddBlock={isAdmin && canManage ? onAddBlock : undefined}
             badgeVariant={variant}
+            canOperate={
+              isAdmin && resolveCanValidate
+                ? (apartadoId) => {
+                    const found = displayedDoc.blocks
+                      .flatMap((b) => b.apartados)
+                      .find((a) => a.id === apartadoId);
+                    return found ? resolveCanValidate(found) : true;
+                  }
+                : undefined
+            }
           />
 
           <main className="min-w-0">

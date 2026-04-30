@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.notify-enisa-submission]
 verify_jwt = false
+
+# Cron diario invocado por pg_net (sin JWT). Valida x-webhook-secret en código.
+[functions.notify-documentation-supervisors-daily]
+verify_jwt = false
+
+# Invocada desde server action con admin client. Mismo patrón que
+# notify-tax-submission: sin verify_jwt — la URL no se expone al frontend.
+[functions.notify-documentation-client-reminder]
+verify_jwt = false

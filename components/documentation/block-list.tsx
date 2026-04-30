@@ -12,6 +12,12 @@ interface Props {
   onSelectApartado: (id: string) => void;
   onAddBlock?: () => void;
   badgeVariant?: "admin" | "client";
+  /**
+   * Solo en admin. Devuelve `true` si el usuario puede operar (validar /
+   * rechazar / comentar) sobre el apartado dado. Si no se pasa, todos se
+   * tratan como operables (no se muestra el candado).
+   */
+  canOperate?: (apartadoId: string) => boolean;
 }
 
 function blockState(block: ClientBlock): ApartadoStatus | "validado" {
@@ -68,6 +74,7 @@ export default function BlockList({
   onSelectApartado,
   onAddBlock,
   badgeVariant = "admin",
+  canOperate,
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
@@ -177,6 +184,7 @@ export default function BlockList({
                   {block.apartados.map((a) => {
                     const isSelected =
                       block.id === selectedBlockId && a.id === selectedApartadoId;
+                    const readOnly = canOperate ? !canOperate(a.id) : false;
                     return (
                       <button
                         key={a.id}
@@ -184,6 +192,11 @@ export default function BlockList({
                           onSelectBlock(block.id);
                           onSelectApartado(a.id);
                         }}
+                        title={
+                          readOnly
+                            ? "Solo lectura — no eres supervisor ni chief de este apartado"
+                            : undefined
+                        }
                         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left cursor-pointer transition-colors ${
                           isSelected ? "" : "hover:bg-gray-50"
                         }`}
@@ -201,6 +214,8 @@ export default function BlockList({
                           className={`text-[12.5px] flex-1 truncate ${
                             isSelected
                               ? "text-brand-navy font-medium"
+                              : readOnly
+                              ? "text-text-muted"
                               : "text-text-body"
                           }`}
                         >
@@ -214,6 +229,23 @@ export default function BlockList({
                             </span>
                           )}
                         </span>
+                        {readOnly && (
+                          <svg
+                            width={11}
+                            height={11}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-text-muted/60 flex-shrink-0"
+                            aria-hidden
+                          >
+                            <rect x="4" y="11" width="16" height="10" rx="2" />
+                            <path d="M8 11V8a4 4 0 018 0v3" />
+                          </svg>
+                        )}
                         <StatusBadge status={a.status} size="xs" variant={badgeVariant} />
                       </button>
                     );

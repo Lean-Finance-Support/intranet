@@ -42,6 +42,7 @@ import {
   getApartadoFileSignedUrl,
   getApartadoTemplateSignedUrl,
   rejectApartado,
+  remindClientDocumentation,
   removeApartadoFromClient,
   removeBlockFromClient,
   removeSupervisor,
@@ -535,12 +536,7 @@ export default function ClientDetailWorkspace({
                   setAddingApartado({ clientBlockId, blockId: catalogBlockId })
               : undefined
           }
-          onRemindClient={() => {
-            // TODO: enviar email al cliente con apartados pendientes/rechazados
-            alert(
-              "Pronto: enviaremos un email al cliente con los apartados pendientes y rechazados."
-            );
-          }}
+          onRemindClient={() => remindClientDocumentation(detail.id)}
         />
       )}
 

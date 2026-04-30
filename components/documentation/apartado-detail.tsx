@@ -186,6 +186,18 @@ export default function ApartadoDetail({
                     Opcional
                   </span>
                 )}
+                {isAdmin && canValidate === false && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-text-muted border border-gray-200"
+                    title="No eres supervisor ni chief de este apartado — solo puedes verlo"
+                  >
+                    <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="4" y="11" width="16" height="10" rx="2" />
+                      <path d="M8 11V8a4 4 0 018 0v3" />
+                    </svg>
+                    Solo lectura
+                  </span>
+                )}
               </div>
               {apartado.description && (
                 <p className="text-sm text-text-muted mt-1.5" style={{ textWrap: "pretty" }}>
@@ -285,10 +297,15 @@ export default function ApartadoDetail({
             files={apartado.files}
             canUpload={
               apartado.status !== "validado" &&
-              (mode === "client" || (mode === "admin" && !!canManage))
+              (mode === "client" ||
+                (mode === "admin" && (canValidate === true || !!canManage)))
             }
             canDeleteOwn={mode === "client" && apartado.status !== "validado"}
-            canDeleteAll={!!canDeleteAll && apartado.status !== "validado"}
+            canDeleteAll={
+              !!canDeleteAll &&
+              apartado.status !== "validado" &&
+              (canValidate === true || !!canManage)
+            }
             ownerId={currentUserId}
             onUpload={onUploadFile}
             onDelete={onDeleteOwnFile}
@@ -416,6 +433,7 @@ export default function ApartadoDetail({
         history={isAdmin ? apartado.history : []}
         currentUserId={currentUserId}
         onAdd={onAddComment}
+        canComment={!isAdmin || canValidate === true}
       />
 
       {confirmRemoveApartado && onRemoveApartado && (

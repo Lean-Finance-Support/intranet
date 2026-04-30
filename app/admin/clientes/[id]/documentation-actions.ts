@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
-import { hasPermission } from "@/lib/require-permission";
+import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
@@ -10,6 +10,11 @@ import {
   buildDocumentationStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
+import {
+  buildSummary,
+  getActorAndApartadoLabel,
+  notifyDocumentationClients,
+} from "@/lib/notifications/documentation";
 import type {
   ApartadoStatus,
   ApartadoSupervisor,
@@ -952,6 +957,14 @@ export async function validateApartado(
     .eq("id", clientApartadoId);
   if (error) throw new Error(error.message);
   await logStatusChange(clientApartadoId, fromStatus, "validado", userId);
+
+  const labels = await getActorAndApartadoLabel(userId, clientApartadoId);
+  await notifyDocumentationClients({
+    clientApartadoId,
+    actorId: userId,
+    summary: buildSummary(labels.actorName, labels.actorEmail, "ha validado", labels.apartadoName),
+  });
+
   revalidatePath(`/admin/clientes/${companyId}`);
 }
 
@@ -986,6 +999,14 @@ export async function rejectApartado(input: {
     .eq("id", input.clientApartadoId);
   if (error) throw new Error(error.message);
   await logStatusChange(input.clientApartadoId, fromStatus, "rechazado", userId, input.reason.trim());
+
+  const labels = await getActorAndApartadoLabel(userId, input.clientApartadoId);
+  await notifyDocumentationClients({
+    clientApartadoId: input.clientApartadoId,
+    actorId: userId,
+    summary: buildSummary(labels.actorName, labels.actorEmail, "ha rechazado", labels.apartadoName),
+  });
+
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
@@ -1042,6 +1063,9 @@ export async function addAdminComment(
 ): Promise<void> {
   await requireAdmin();
   if (!body.trim()) throw new Error("Comentario vacío");
+  // Mismo gate que validar/rechazar: chief global o supervisor del apartado.
+  const { userId } = await authorizeValidation(clientApartadoId);
+  void userId;
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
 
@@ -1055,6 +1079,14 @@ export async function addAdminComment(
       body: body.trim(),
     });
   if (error) throw new Error(error.message);
+
+  const labels = await getActorAndApartadoLabel(user.id, clientApartadoId);
+  await notifyDocumentationClients({
+    clientApartadoId,
+    actorId: user.id,
+    summary: buildSummary(labels.actorName, labels.actorEmail, "ha comentado", labels.apartadoName),
+  });
+
   revalidatePath(`/admin/clientes/${companyId}`);
 }
 
@@ -1074,7 +1106,8 @@ export async function adminUploadApartadoFile(input: {
   if (!user) throw new Error("No autenticado");
   const admin = createAdminClient();
 
-  await requireRequestPermission();
+  // Chief global o supervisor del apartado pueden adjuntar archivos.
+  await authorizeValidation(input.clientApartadoId);
   const { data: ca } = await admin
     .schema("documentation")
     .from("client_apartados")
@@ -1130,6 +1163,18 @@ export async function adminUploadApartadoFile(input: {
     reason: "__event:file_uploaded__",
   });
 
+  const labels = await getActorAndApartadoLabel(user.id, input.clientApartadoId);
+  await notifyDocumentationClients({
+    clientApartadoId: input.clientApartadoId,
+    actorId: user.id,
+    summary: buildSummary(
+      labels.actorName,
+      labels.actorEmail,
+      "ha subido un archivo",
+      labels.apartadoName
+    ),
+  });
+
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
@@ -1148,8 +1193,9 @@ export async function adminSoftDeleteApartadoFile(fileId: string): Promise<void>
   if (!file) throw new Error("Archivo no encontrado");
   if (file.deleted_at) throw new Error("Archivo ya eliminado");
 
-  await requireRequestPermission();
   const clientApartadoId = file.client_apartado_id as string;
+  // Chief global o supervisor del apartado pueden eliminar archivos.
+  await authorizeValidation(clientApartadoId);
   const { data: ca } = await admin
     .schema("documentation")
     .from("client_apartados")
@@ -1250,4 +1296,86 @@ export async function getApartadoTemplateSignedUrl(templateId: string): Promise<
     t.storage_path as string,
     (t.file_name as string) ?? undefined
   );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Recordar al cliente — manda email con detalle de rechazados/pendientes
+// ────────────────────────────────────────────────────────────────────────────
+
+const REMINDER_THROTTLE_HOURS = 6;
+
+/**
+ * Manda un email al cliente recordándole los apartados rechazados y pendientes.
+ * Permitido a chiefs (validate_documentation global) o a supervisores que
+ * tengan al menos un apartado de esta empresa. Throttled a 1 cada 6h por empresa.
+ */
+export async function remindClientDocumentation(companyId: string): Promise<void> {
+  await requireAdmin();
+  const { user } = await getAuthUser();
+  if (!user) throw new Error("No autenticado");
+
+  // 1. Permiso
+  const isGlobal = await hasPermission("validate_documentation");
+  if (!isGlobal) {
+    const supervisedIds = await userScopeIds("validate_client_documentation", "client_apartado");
+    if (supervisedIds.length === 0) {
+      throw new Error("Sin permisos para recordar a este cliente");
+    }
+    const admin = createAdminClient();
+    const { data: matches } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, client_block:client_blocks!inner(company_id)")
+      .in("id", supervisedIds);
+    const belongs = (matches ?? []).some((m) => {
+      const cb = m.client_block as unknown as { company_id: string } | null;
+      return cb?.company_id === companyId;
+    });
+    if (!belongs) throw new Error("Sin permisos para recordar a este cliente");
+  }
+
+  const admin = createAdminClient();
+
+  // 2. Throttle
+  const since = new Date(
+    Date.now() - REMINDER_THROTTLE_HOURS * 60 * 60 * 1000
+  ).toISOString();
+  const { data: recent } = await admin
+    .schema("documentation")
+    .from("client_reminder_log")
+    .select("sent_at")
+    .eq("company_id", companyId)
+    .gt("sent_at", since)
+    .order("sent_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (recent) {
+    const next = new Date(
+      new Date(recent.sent_at as string).getTime() +
+        REMINDER_THROTTLE_HOURS * 60 * 60 * 1000
+    );
+    const hh = next.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    throw new Error(
+      `Ya se envió un recordatorio recientemente. Vuelve a intentarlo a partir de las ${hh}.`
+    );
+  }
+
+  // 3. Invocar edge function — solo si responde 2xx grabamos el throttle
+  const { data, error: invokeErr } = await admin.functions.invoke(
+    "notify-documentation-client-reminder",
+    { body: { company_id: companyId, sent_by_id: user.id } }
+  );
+  if (invokeErr) {
+    const detail = (data && typeof data === "object" && "error" in data)
+      ? String((data as { error: unknown }).error)
+      : invokeErr.message;
+    throw new Error(`No se pudo enviar el email: ${detail}`);
+  }
+
+  // 4. Log (throttle) — después del envío exitoso
+  const { error: logErr } = await admin
+    .schema("documentation")
+    .from("client_reminder_log")
+    .insert({ company_id: companyId, sent_by: user.id });
+  if (logErr) throw new Error(logErr.message);
 }

@@ -9,6 +9,11 @@ import {
   buildDocumentationStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
+import {
+  buildSummary,
+  getActorAndApartadoLabel,
+  notifyDocumentationSupervisors,
+} from "@/lib/notifications/documentation";
 import type {
   ApartadoStatus,
   ApartadoSupervisor,
@@ -442,6 +447,18 @@ export async function uploadApartadoFile(input: {
     await logStatusChange(input.clientApartadoId, status, "enviado", user.id);
   }
 
+  const labels = await getActorAndApartadoLabel(user.id, input.clientApartadoId);
+  await notifyDocumentationSupervisors({
+    clientApartadoId: input.clientApartadoId,
+    actorId: user.id,
+    summary: buildSummary(
+      labels.actorName,
+      labels.actorEmail,
+      "ha subido un archivo",
+      labels.apartadoName
+    ),
+  });
+
   revalidatePath("/app/empresa");
 }
 
@@ -524,6 +541,19 @@ export async function addClientComment(
       body: body.trim(),
     });
   if (error) throw new Error(error.message);
+
+  const labels = await getActorAndApartadoLabel(user.id, clientApartadoId);
+  await notifyDocumentationSupervisors({
+    clientApartadoId,
+    actorId: user.id,
+    summary: buildSummary(
+      labels.actorName,
+      labels.actorEmail,
+      "ha comentado",
+      labels.apartadoName
+    ),
+  });
+
   revalidatePath("/app/empresa");
 }
 
