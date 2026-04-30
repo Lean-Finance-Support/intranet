@@ -225,7 +225,10 @@ export async function getMemberRoleAssignments(
     .from("profile_roles")
     .select("scope_type, scope_id, grant_level, role:roles!inner(name)")
     .eq("profile_id", targetProfileId)
-    .neq("scope_type", "company_service"); // Técnico fuera: no se muestra en la ficha
+    // Roles operativos no se muestran en la ficha:
+    //   - Técnico         → scope_type='company_service'
+    //   - Supervisor de apartado → scope_type='client_apartado'
+    .not("scope_type", "in", "(company_service,client_apartado)");
 
   if (error) {
     console.error("[admin/equipo] getMemberRoleAssignments error:", error.code);

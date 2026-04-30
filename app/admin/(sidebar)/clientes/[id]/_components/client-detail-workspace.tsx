@@ -79,7 +79,7 @@ interface Props {
     canRequest: boolean;
   };
   canValidateGlobal: boolean;
-  validateScopeIds: string[];
+  supervisorClientApartadoIds: string[];
   currentUserId: string;
   initialTab: string;
 }
@@ -120,7 +120,7 @@ export default function ClientDetailWorkspace({
   documentation,
   assignableCatalog,
   canValidateGlobal,
-  validateScopeIds,
+  supervisorClientApartadoIds,
   currentUserId,
   initialTab,
 }: Props) {
@@ -170,11 +170,10 @@ export default function ClientDetailWorkspace({
     (s) => !existingServiceIds.has(s.service_id)
   );
 
+  const supervisorApartadoSet = new Set(supervisorClientApartadoIds);
   function resolveCanValidate(apartado: ClientApartado): boolean {
-    if (apartado.supervisors.some((s) => s.id === currentUserId)) return true;
     if (canValidateGlobal) return true;
-    if (apartado.is_global) return validateScopeIds.length > 0;
-    return apartado.department_ids.some((d) => validateScopeIds.includes(d));
+    return supervisorApartadoSet.has(apartado.id);
   }
 
   // ---- Datos handlers ----

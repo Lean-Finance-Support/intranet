@@ -14,6 +14,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "read_dept_service",
     "write_dept_service",
     "manage_dept_membership",
+    "request_client_documentation",
+    "validate_documentation",
   ],
   Operador: ["read_dept_service", "write_dept_service"],
   Observador: ["read_dept_service"],

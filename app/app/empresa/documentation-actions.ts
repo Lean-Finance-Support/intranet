@@ -105,7 +105,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
       ? Promise.resolve({ data: [] })
       : admin
           .schema("documentation")
-          .from("client_apartado_supervisors")
+          .from("apartado_supervisors_v")
           .select("client_apartado_id, profile_id")
           .in("client_apartado_id", apartadoIds),
     apartadoCatalogIds.length === 0

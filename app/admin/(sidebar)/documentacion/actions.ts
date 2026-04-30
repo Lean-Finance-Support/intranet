@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
-import { hasPermission, userScopeIds } from "@/lib/require-permission";
+import { hasPermission } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
@@ -16,40 +16,12 @@ import type {
   ApartadoTemplateFile,
 } from "@/lib/types/documentation";
 
-// La tabla de catálogo es pública para todos los admins (lectura). La escritura
-// se gatea con manage_documentation_catalog: el caller debe tener el permiso en
-// algún departamento del apartado o ser el creador de un apartado global (en
-// cuyo caso se exige que tenga el permiso en TODOS los deptos donde el apartado
-// será visible — para apartados globales se exige scope=none, ver verifyCatalogScope).
+// El catálogo es transversal: la lectura es libre para cualquier admin y la
+// escritura se gatea con `manage_documentation_catalog` (permiso global).
 
-interface CatalogScope {
-  // Departamentos a los que aplicará el apartado/bloque. Para is_global=true se
-  // pasa departmentIds = [] y se exige que el usuario tenga el permiso en todos
-  // los deptos existentes (proxy: "tener al menos un grant" no es suficiente).
-  departmentIds: string[];
-  isGlobal: boolean;
-}
-
-async function verifyCatalogScope(scope: CatalogScope): Promise<void> {
-  const allowedDepts = await userScopeIds("manage_documentation_catalog", "department");
-  if (scope.isGlobal) {
-    // Para apartados globales se exige tener el permiso en todos los deptos.
-    const admin = createAdminClient();
-    const { data: depts } = await admin.from("departments").select("id");
-    const allDeptIds = (depts ?? []).map((d) => d.id as string);
-    const missing = allDeptIds.filter((id) => !allowedDepts.includes(id));
-    if (missing.length > 0) {
-      throw new Error("Sin permisos para crear apartados globales");
-    }
-    return;
-  }
-  if (scope.departmentIds.length === 0) {
-    throw new Error("Selecciona al menos un departamento");
-  }
-  for (const deptId of scope.departmentIds) {
-    if (!allowedDepts.includes(deptId)) {
-      throw new Error("Sin permisos sobre alguno de los departamentos seleccionados");
-    }
+async function requireManageCatalog(): Promise<void> {
+  if (!(await hasPermission("manage_documentation_catalog"))) {
+    throw new Error("Sin permisos");
   }
 }
 
@@ -143,8 +115,7 @@ export async function listDocumentationCatalog(): Promise<{
     apartados: apartadosByBlock.get(b.id as string) ?? [],
   }));
 
-  const allowedDepts = await userScopeIds("manage_documentation_catalog", "department");
-  const canManage = allowedDepts.length > 0;
+  const canManage = await hasPermission("manage_documentation_catalog");
 
   return {
     blocks: result,
@@ -164,13 +135,7 @@ export async function createBlock(input: {
   display_order: number;
 }): Promise<BlockTemplate> {
   await requireAdmin();
-  // Crear bloque "vacío" no requiere scope concreto, pero hace falta tener el
-  // permiso en al menos un dept (el bloque no es útil sin apartados, y los
-  // apartados ya validan su scope).
-  if (!(await hasPermission("manage_documentation_catalog"))) {
-    const allowed = await userScopeIds("manage_documentation_catalog", "department");
-    if (allowed.length === 0) throw new Error("Sin permisos");
-  }
+  await requireManageCatalog();
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -206,8 +171,7 @@ export async function updateBlock(
   }
 ): Promise<void> {
   await requireAdmin();
-  const allowed = await userScopeIds("manage_documentation_catalog", "department");
-  if (allowed.length === 0) throw new Error("Sin permisos");
+  await requireManageCatalog();
 
   const admin = createAdminClient();
   const { error } = await admin
@@ -226,8 +190,7 @@ export async function updateBlock(
 
 export async function deleteBlock(blockId: string): Promise<void> {
   await requireAdmin();
-  const allowed = await userScopeIds("manage_documentation_catalog", "department");
-  if (allowed.length === 0) throw new Error("Sin permisos");
+  await requireManageCatalog();
 
   const admin = createAdminClient();
   // Comprobar que el bloque no tiene apartados (FK ON DELETE RESTRICT)
@@ -261,10 +224,10 @@ export async function createApartado(input: {
   department_ids: string[];
 }): Promise<ApartadoTemplate> {
   await requireAdmin();
-  await verifyCatalogScope({
-    departmentIds: input.department_ids,
-    isGlobal: input.is_global,
-  });
+  await requireManageCatalog();
+  if (!input.is_global && input.department_ids.length === 0) {
+    throw new Error("Selecciona al menos un departamento");
+  }
 
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -318,10 +281,10 @@ export async function updateApartado(
   }
 ): Promise<void> {
   await requireAdmin();
-  await verifyCatalogScope({
-    departmentIds: input.department_ids,
-    isGlobal: input.is_global,
-  });
+  await requireManageCatalog();
+  if (!input.is_global && input.department_ids.length === 0) {
+    throw new Error("Selecciona al menos un departamento");
+  }
 
   const admin = createAdminClient();
   const { error } = await admin
@@ -359,27 +322,8 @@ export async function updateApartado(
 
 export async function deleteApartado(apartadoId: string): Promise<void> {
   await requireAdmin();
-  // Necesitamos saber a qué deptos pertenece para verificar permiso.
+  await requireManageCatalog();
   const admin = createAdminClient();
-  const [{ data: apartado }, { data: links }] = await Promise.all([
-    admin
-      .schema("documentation")
-      .from("apartados")
-      .select("is_global")
-      .eq("id", apartadoId)
-      .single(),
-    admin
-      .schema("documentation")
-      .from("apartado_departments")
-      .select("department_id")
-      .eq("apartado_id", apartadoId),
-  ]);
-  if (!apartado) throw new Error("Apartado no encontrado");
-
-  await verifyCatalogScope({
-    departmentIds: (links ?? []).map((l) => l.department_id as string),
-    isGlobal: apartado.is_global as boolean,
-  });
 
   // Comprobar que no hay instancias asignadas
   const { count } = await admin
@@ -406,10 +350,7 @@ export async function deleteApartado(apartadoId: string): Promise<void> {
 
 export async function reorderBlocks(orderedBlockIds: string[]): Promise<void> {
   await requireAdmin();
-  const allowed = await userScopeIds("manage_documentation_catalog", "department");
-  if (allowed.length === 0 && !(await hasPermission("manage_documentation_catalog"))) {
-    throw new Error("Sin permisos");
-  }
+  await requireManageCatalog();
   const admin = createAdminClient();
   // Update batched: cada bloque recibe display_order = índice
   await Promise.all(
@@ -429,10 +370,7 @@ export async function reorderApartados(
   orderedApartadoIds: string[]
 ): Promise<void> {
   await requireAdmin();
-  const allowed = await userScopeIds("manage_documentation_catalog", "department");
-  if (allowed.length === 0 && !(await hasPermission("manage_documentation_catalog"))) {
-    throw new Error("Sin permisos");
-  }
+  await requireManageCatalog();
   const admin = createAdminClient();
   await Promise.all(
     orderedApartadoIds.map((id, idx) =>
@@ -453,19 +391,6 @@ export async function reorderApartados(
 
 const MAX_TEMPLATE_BYTES = 25 * 1024 * 1024;
 
-async function ensureManageCatalogForApartado(apartadoId: string): Promise<void> {
-  const admin = createAdminClient();
-  const [{ data: apartado }, { data: links }] = await Promise.all([
-    admin.schema("documentation").from("apartados").select("is_global").eq("id", apartadoId).single(),
-    admin.schema("documentation").from("apartado_departments").select("department_id").eq("apartado_id", apartadoId),
-  ]);
-  if (!apartado) throw new Error("Apartado no encontrado");
-  await verifyCatalogScope({
-    departmentIds: (links ?? []).map((l) => l.department_id as string),
-    isGlobal: apartado.is_global as boolean,
-  });
-}
-
 export async function uploadApartadoTemplate(input: {
   apartadoId: string;
   fileName: string;
@@ -473,7 +398,7 @@ export async function uploadApartadoTemplate(input: {
   mimeType: string;
 }): Promise<ApartadoTemplateFile> {
   await requireAdmin();
-  await ensureManageCatalogForApartado(input.apartadoId);
+  await requireManageCatalog();
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
 
@@ -526,6 +451,7 @@ export async function uploadApartadoTemplate(input: {
 
 export async function deleteApartadoTemplate(templateId: string): Promise<void> {
   await requireAdmin();
+  await requireManageCatalog();
   const admin = createAdminClient();
   const { data: t } = await admin
     .schema("documentation")
@@ -534,7 +460,6 @@ export async function deleteApartadoTemplate(templateId: string): Promise<void> 
     .eq("id", templateId)
     .single();
   if (!t) throw new Error("Plantilla no encontrada");
-  await ensureManageCatalogForApartado(t.apartado_id as string);
 
   await admin.storage.from(DOCUMENTATION_BUCKET).remove([t.storage_path as string]);
   const { error } = await admin

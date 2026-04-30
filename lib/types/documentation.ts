@@ -118,8 +118,8 @@ export interface DepartmentMember {
   department_name: string;
 }
 
-// Supervisor asignado a un client_apartado (proyección de
-// documentation.client_apartado_supervisors + profile + dept)
+// Supervisor asignado a un client_apartado (proyección de la view
+// documentation.apartado_supervisors_v + profile + dept)
 export interface ApartadoSupervisor {
   id: string; // profile_id
   full_name: string | null;

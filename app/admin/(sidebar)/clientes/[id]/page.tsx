@@ -29,15 +29,15 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     listing,
     linkPrefix,
     canValidateGlobal,
-    validateScopeIds,
+    supervisorClientApartadoIds,
   ] = await Promise.all([
     getCompanyDetail(id),
     getClientDocumentation(id),
     getAssignableCatalog(id),
     getAllCompaniesData(),
     getLinkPrefix("admin"),
-    hasPermission("validate_client_documentation"),
-    userScopeIds("validate_client_documentation", "department"),
+    hasPermission("validate_documentation"),
+    userScopeIds("validate_client_documentation", "client_apartado"),
   ]);
 
   if (!detail) notFound();
@@ -61,7 +61,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
           documentation={documentation}
           assignableCatalog={assignable}
           canValidateGlobal={canValidateGlobal}
-          validateScopeIds={validateScopeIds}
+          supervisorClientApartadoIds={supervisorClientApartadoIds}
           currentUserId={user.id}
           initialTab={tab ?? "documentacion"}
         />

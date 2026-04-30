@@ -8,7 +8,7 @@ import {
   getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
-import { hasPermission, userScopeIds } from "@/lib/require-permission";
+import { hasPermission } from "@/lib/require-permission";
 
 export default async function AdminSidebarLayout({
   children,
@@ -29,11 +29,7 @@ export default async function AdminSidebarLayout({
   const slugs = deptIds.length > 0 ? await getCachedDepartmentServiceSlugs(deptIds) : [];
   const hasTaxModels = slugs.includes("tax-models");
 
-  const [canManageDocCatalogGlobal, docCatalogScopes] = await Promise.all([
-    hasPermission("manage_documentation_catalog"),
-    userScopeIds("manage_documentation_catalog", "department"),
-  ]);
-  const canManageDocCatalog = canManageDocCatalogGlobal || docCatalogScopes.length > 0;
+  const canManageDocCatalog = await hasPermission("manage_documentation_catalog");
 
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
 

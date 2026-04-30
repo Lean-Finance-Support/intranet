@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
-import { hasPermission, userScopeIds } from "@/lib/require-permission";
+import { hasPermission } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
@@ -23,6 +23,12 @@ import type {
 // Helpers internos
 // ────────────────────────────────────────────────────────────────────────────
 
+async function requireRequestPermission(): Promise<void> {
+  if (!(await hasPermission("request_client_documentation"))) {
+    throw new Error("Sin permisos");
+  }
+}
+
 async function getApartadoMeta(apartadoId: string): Promise<{
   is_global: boolean;
   department_ids: string[];
@@ -37,20 +43,6 @@ async function getApartadoMeta(apartadoId: string): Promise<{
     is_global: apartado.is_global as boolean,
     department_ids: (links ?? []).map((l) => l.department_id as string),
   };
-}
-
-async function userHasDeptOverlap(
-  permission: string,
-  apartadoMeta: { is_global: boolean; department_ids: string[] }
-): Promise<boolean> {
-  if (apartadoMeta.is_global) {
-    if (await hasPermission(permission)) return true;
-    const allowed = await userScopeIds(permission, "department");
-    return allowed.length > 0;
-  }
-  if (apartadoMeta.department_ids.length === 0) return false;
-  const allowed = await userScopeIds(permission, "department");
-  return apartadoMeta.department_ids.some((id) => allowed.includes(id));
 }
 
 async function logStatusChange(
@@ -196,7 +188,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
       ? Promise.resolve({ data: [] })
       : admin
           .schema("documentation")
-          .from("client_apartado_supervisors")
+          .from("apartado_supervisors_v")
           .select("client_apartado_id, profile_id, assigned_at")
           .in("client_apartado_id", myClientApartadoIds),
     myApartadoCatalogIds.length === 0
@@ -458,9 +450,7 @@ export async function getAssignableCatalog(
   await requireAdmin();
   const admin = createAdminClient();
 
-  const allowedDepts = await userScopeIds("request_client_documentation", "department");
-  const canRequestGlobal = await hasPermission("request_client_documentation");
-  const canRequest = canRequestGlobal || allowedDepts.length > 0;
+  const canRequest = await hasPermission("request_client_documentation");
 
   const [
     { data: blocks },
@@ -526,17 +516,10 @@ export async function getAssignableCatalog(
     templatesByApartado.set(aid, list);
   }
 
-  function userCanAssignApartado(a: { is_global: boolean; id: string }) {
-    if (canRequestGlobal) return true;
-    if (a.is_global) return allowedDepts.length > 0;
-    const deptIds = apartadoDeptMap.get(a.id) ?? [];
-    return deptIds.some((id) => allowedDepts.includes(id));
-  }
-
   const apartadosByBlock = new Map<string, ReturnType<typeof toApartadoTemplate>[]>();
   for (const a of apartados ?? []) {
     const ap = toApartadoTemplate(a, apartadoDeptMap, templatesByApartado);
-    if (!userCanAssignApartado(ap)) continue;
+    if (!canRequest) continue;
     const list = apartadosByBlock.get(ap.block_id) ?? [];
     list.push(ap);
     apartadosByBlock.set(ap.block_id, list);
@@ -629,21 +612,15 @@ export async function addBlockToClient(input: {
   apartados: { apartadoId: string; supervisorIds: string[] }[];
 }): Promise<void> {
   await requireAdmin();
+  await requireRequestPermission();
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
 
-  // Verificar permisos sobre cada apartado
+  // Validar supervisores propuestos: deben pertenecer a algún depto del apartado
   const metaById = new Map<string, { is_global: boolean; department_ids: string[] }>();
   for (const a of input.apartados) {
     const meta = await getApartadoMeta(a.apartadoId);
     metaById.set(a.apartadoId, meta);
-    if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-      throw new Error("Sin permisos sobre alguno de los apartados");
-    }
-  }
-  // Validar supervisores propuestos
-  for (const a of input.apartados) {
-    const meta = metaById.get(a.apartadoId)!;
     for (const sid of a.supervisorIds) {
       await ensureProfileInApartadoDept(sid, meta);
     }
@@ -678,27 +655,40 @@ export async function addBlockToClient(input: {
       .select("id, apartado_id");
     if (caError) throw new Error(caError.message);
 
-    const supRows: { client_apartado_id: string; profile_id: string; assigned_by: string }[] = [];
+    const supRows: { profile_id: string; role_id: string; scope_type: string; scope_id: string }[] = [];
+    const supervisorRoleId = await getSupervisorRoleId();
     for (const ca of cas ?? []) {
       const match = input.apartados.find((a) => a.apartadoId === (ca.apartado_id as string));
       if (!match) continue;
       for (const sid of match.supervisorIds) {
         supRows.push({
-          client_apartado_id: ca.id as string,
           profile_id: sid,
-          assigned_by: user.id,
+          role_id: supervisorRoleId,
+          scope_type: "client_apartado",
+          scope_id: ca.id as string,
         });
       }
     }
     if (supRows.length > 0) {
-      const { error: supErr } = await admin
-        .schema("documentation")
-        .from("client_apartado_supervisors")
-        .insert(supRows);
+      const { error: supErr } = await admin.from("profile_roles").insert(supRows);
       if (supErr) throw new Error(supErr.message);
     }
   }
   revalidatePath(`/admin/clientes/${input.companyId}`);
+}
+
+let cachedSupervisorRoleId: string | null = null;
+async function getSupervisorRoleId(): Promise<string> {
+  if (cachedSupervisorRoleId) return cachedSupervisorRoleId;
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("roles")
+    .select("id")
+    .eq("name", "Supervisor de apartado")
+    .single();
+  if (error || !data) throw new Error("Rol 'Supervisor de apartado' no encontrado");
+  cachedSupervisorRoleId = data.id as string;
+  return cachedSupervisorRoleId;
 }
 
 export async function addApartadoToClient(input: {
@@ -708,13 +698,11 @@ export async function addApartadoToClient(input: {
   supervisorIds: string[];
 }): Promise<void> {
   await requireAdmin();
+  await requireRequestPermission();
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
 
   const meta = await getApartadoMeta(input.apartadoId);
-  if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-    throw new Error("Sin permisos sobre este apartado");
-  }
   for (const sid of input.supervisorIds) {
     await ensureProfileInApartadoDept(sid, meta);
   }
@@ -733,16 +721,15 @@ export async function addApartadoToClient(input: {
   if (error) throw new Error(error.message);
 
   if (input.supervisorIds.length > 0) {
-    const { error: supErr } = await admin
-      .schema("documentation")
-      .from("client_apartado_supervisors")
-      .insert(
-        input.supervisorIds.map((sid) => ({
-          client_apartado_id: ca!.id as string,
-          profile_id: sid,
-          assigned_by: user.id,
-        }))
-      );
+    const supervisorRoleId = await getSupervisorRoleId();
+    const { error: supErr } = await admin.from("profile_roles").insert(
+      input.supervisorIds.map((sid) => ({
+        profile_id: sid,
+        role_id: supervisorRoleId,
+        scope_type: "client_apartado" as const,
+        scope_id: ca!.id as string,
+      }))
+    );
     if (supErr) throw new Error(supErr.message);
   }
   revalidatePath(`/admin/clientes/${input.companyId}`);
@@ -753,20 +740,15 @@ export async function removeApartadoFromClient(
   clientApartadoId: string
 ): Promise<void> {
   await requireAdmin();
+  await requireRequestPermission();
   const admin = createAdminClient();
 
-  const { data: ca } = await admin
-    .schema("documentation")
-    .from("client_apartados")
-    .select("apartado_id")
-    .eq("id", clientApartadoId)
-    .single();
-  if (!ca) throw new Error("Apartado no encontrado");
-
-  const meta = await getApartadoMeta(ca.apartado_id as string);
-  if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-    throw new Error("Sin permisos");
-  }
+  // Limpia primero los grants de supervisor (profile_roles con scope=client_apartado)
+  await admin
+    .from("profile_roles")
+    .delete()
+    .eq("scope_type", "client_apartado")
+    .eq("scope_id", clientApartadoId);
 
   const { error } = await admin
     .schema("documentation")
@@ -782,19 +764,22 @@ export async function removeBlockFromClient(
   clientBlockId: string
 ): Promise<void> {
   await requireAdmin();
+  await requireRequestPermission();
   const admin = createAdminClient();
 
+  // Recoger ids de client_apartados del bloque para limpiar grants
   const { data: cas } = await admin
     .schema("documentation")
     .from("client_apartados")
-    .select("apartado_id")
+    .select("id")
     .eq("client_block_id", clientBlockId);
-
-  for (const c of cas ?? []) {
-    const meta = await getApartadoMeta(c.apartado_id as string);
-    if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-      throw new Error("Sin permisos sobre alguno de los apartados del bloque");
-    }
+  const ids = (cas ?? []).map((c) => c.id as string);
+  if (ids.length > 0) {
+    await admin
+      .from("profile_roles")
+      .delete()
+      .eq("scope_type", "client_apartado")
+      .in("scope_id", ids);
   }
 
   const { error } = await admin
@@ -813,10 +798,8 @@ export async function removeBlockFromClient(
 async function authorizeSupervisorChange(clientApartadoId: string): Promise<{
   apartadoId: string;
   meta: { is_global: boolean; department_ids: string[] };
-  userId: string;
 }> {
-  const { user } = await getAuthUser();
-  if (!user) throw new Error("No autenticado");
+  await requireRequestPermission();
   const admin = createAdminClient();
   const { data: ca } = await admin
     .schema("documentation")
@@ -827,10 +810,7 @@ async function authorizeSupervisorChange(clientApartadoId: string): Promise<{
   if (!ca) throw new Error("Apartado no encontrado");
   const apartadoId = ca.apartado_id as string;
   const meta = await getApartadoMeta(apartadoId);
-  if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-    throw new Error("Sin permisos");
-  }
-  return { apartadoId, meta, userId: user.id };
+  return { apartadoId, meta };
 }
 
 export async function addSupervisor(input: {
@@ -839,20 +819,24 @@ export async function addSupervisor(input: {
   profileId: string;
 }): Promise<void> {
   await requireAdmin();
-  const { meta, userId } = await authorizeSupervisorChange(input.clientApartadoId);
+  const { meta } = await authorizeSupervisorChange(input.clientApartadoId);
   await ensureProfileInApartadoDept(input.profileId, meta);
 
   const admin = createAdminClient();
+  const supervisorRoleId = await getSupervisorRoleId();
   const { error } = await admin
-    .schema("documentation")
-    .from("client_apartado_supervisors")
+    .from("profile_roles")
     .upsert(
       {
-        client_apartado_id: input.clientApartadoId,
         profile_id: input.profileId,
-        assigned_by: userId,
+        role_id: supervisorRoleId,
+        scope_type: "client_apartado",
+        scope_id: input.clientApartadoId,
       },
-      { onConflict: "client_apartado_id,profile_id", ignoreDuplicates: true }
+      {
+        onConflict: "profile_id,role_id,scope_type,scope_id",
+        ignoreDuplicates: true,
+      }
     );
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/clientes/${input.companyId}`);
@@ -867,12 +851,14 @@ export async function removeSupervisor(input: {
   await authorizeSupervisorChange(input.clientApartadoId);
 
   const admin = createAdminClient();
+  const supervisorRoleId = await getSupervisorRoleId();
   const { error } = await admin
-    .schema("documentation")
-    .from("client_apartado_supervisors")
+    .from("profile_roles")
     .delete()
-    .eq("client_apartado_id", input.clientApartadoId)
-    .eq("profile_id", input.profileId);
+    .eq("profile_id", input.profileId)
+    .eq("role_id", supervisorRoleId)
+    .eq("scope_type", "client_apartado")
+    .eq("scope_id", input.clientApartadoId);
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
@@ -897,19 +883,17 @@ async function authorizeValidation(clientApartadoId: string): Promise<{
     .single();
   if (!ca) throw new Error("Apartado no encontrado");
 
-  // ¿Es supervisor del apartado?
-  const { data: sup } = await admin
-    .schema("documentation")
-    .from("client_apartado_supervisors")
-    .select("profile_id")
-    .eq("client_apartado_id", clientApartadoId)
-    .eq("profile_id", user.id)
-    .maybeSingle();
-  if (sup) {
+  // Chief / global
+  if (await hasPermission("validate_documentation")) {
     return { userId: user.id, apartadoId: ca.apartado_id as string };
   }
-  const meta = await getApartadoMeta(ca.apartado_id as string);
-  if (await userHasDeptOverlap("validate_client_documentation", meta)) {
+  // Supervisor del apartado (vía rol "Supervisor de apartado" con scope client_apartado)
+  if (
+    await hasPermission("validate_client_documentation", {
+      type: "client_apartado",
+      id: clientApartadoId,
+    })
+  ) {
     return { userId: user.id, apartadoId: ca.apartado_id as string };
   }
   throw new Error("Sin permisos para validar/rechazar este apartado");
@@ -1066,6 +1050,7 @@ export async function adminUploadApartadoFile(input: {
   if (!user) throw new Error("No autenticado");
   const admin = createAdminClient();
 
+  await requireRequestPermission();
   const { data: ca } = await admin
     .schema("documentation")
     .from("client_apartados")
@@ -1075,10 +1060,6 @@ export async function adminUploadApartadoFile(input: {
   if (!ca) throw new Error("Apartado no encontrado");
   if ((ca.status as string) === "validado") {
     throw new Error("No se pueden adjuntar archivos a un apartado validado");
-  }
-  const meta = await getApartadoMeta(ca.apartado_id as string);
-  if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-    throw new Error("Sin permisos");
   }
 
   const { data: cb } = await admin
@@ -1143,6 +1124,7 @@ export async function adminSoftDeleteApartadoFile(fileId: string): Promise<void>
   if (!file) throw new Error("Archivo no encontrado");
   if (file.deleted_at) throw new Error("Archivo ya eliminado");
 
+  await requireRequestPermission();
   const clientApartadoId = file.client_apartado_id as string;
   const { data: ca } = await admin
     .schema("documentation")
@@ -1154,11 +1136,6 @@ export async function adminSoftDeleteApartadoFile(fileId: string): Promise<void>
   const currentStatus = ca.status as ApartadoStatus;
   if (currentStatus === "validado") {
     throw new Error("No se pueden eliminar archivos de un apartado validado");
-  }
-
-  const meta = await getApartadoMeta(ca.apartado_id as string);
-  if (!(await userHasDeptOverlap("request_client_documentation", meta))) {
-    throw new Error("Sin permisos");
   }
 
   const { data: cb } = await admin
