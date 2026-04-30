@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type {
@@ -174,6 +174,71 @@ export default function ClientDetailWorkspace({
   function resolveCanValidate(apartado: ClientApartado): boolean {
     if (canValidateGlobal) return true;
     return supervisorApartadoSet.has(apartado.id);
+  }
+
+  // Estado optimista de la documentación (para que añadir/quitar supervisor
+  // se vea de forma instantánea, igual que con técnicos en servicios).
+  const [docState, setDocState] = useState<ClientDocumentation>(documentation);
+  useEffect(() => setDocState(documentation), [documentation]);
+
+  function findCandidateMember(profileId: string): DepartmentMember | undefined {
+    for (const list of Object.values(assignableCatalog.membersByDept)) {
+      const m = list.find((x) => x.id === profileId);
+      if (m) return m;
+    }
+    return undefined;
+  }
+
+  function mutateApartado(
+    clientApartadoId: string,
+    fn: (a: ClientApartado) => ClientApartado
+  ) {
+    setDocState((prev) => ({
+      ...prev,
+      blocks: prev.blocks.map((b) => ({
+        ...b,
+        apartados: b.apartados.map((a) => (a.id === clientApartadoId ? fn(a) : a)),
+      })),
+    }));
+  }
+
+  function optimisticAddSupervisor(clientApartadoId: string, profileId: string) {
+    const member = findCandidateMember(profileId);
+    if (!member) return Promise.resolve();
+    const snapshot = docState;
+    mutateApartado(clientApartadoId, (a) =>
+      a.supervisors.some((s) => s.id === profileId)
+        ? a
+        : {
+            ...a,
+            supervisors: [
+              ...a.supervisors,
+              {
+                id: member.id,
+                full_name: member.full_name,
+                email: member.email,
+                department_id: member.department_id,
+                department_name: member.department_name,
+              },
+            ],
+          }
+    );
+    addSupervisor({ companyId: detail.id, clientApartadoId, profileId }).catch(() => {
+      setDocState(snapshot);
+    });
+    return Promise.resolve();
+  }
+
+  function optimisticRemoveSupervisor(clientApartadoId: string, profileId: string) {
+    const snapshot = docState;
+    mutateApartado(clientApartadoId, (a) => ({
+      ...a,
+      supervisors: a.supervisors.filter((s) => s.id !== profileId),
+    }));
+    removeSupervisor({ companyId: detail.id, clientApartadoId, profileId }).catch(() => {
+      setDocState(snapshot);
+    });
+    return Promise.resolve();
   }
 
   // ---- Datos handlers ----
@@ -400,7 +465,7 @@ export default function ClientDetailWorkspace({
       {/* ── Documentación ── */}
       {tab === "documentacion" && (
         <DocumentationMasterDetail
-          data={documentation}
+          data={docState}
           mode="admin"
           currentUserId={currentUserId}
           membersByDept={assignableCatalog.membersByDept}
@@ -439,9 +504,9 @@ export default function ClientDetailWorkspace({
               router.refresh();
             },
             addSupervisor: (clientApartadoId, profileId) =>
-              addSupervisor({ companyId: detail.id, clientApartadoId, profileId }),
+              optimisticAddSupervisor(clientApartadoId, profileId),
             removeSupervisor: (clientApartadoId, profileId) =>
-              removeSupervisor({ companyId: detail.id, clientApartadoId, profileId }),
+              optimisticRemoveSupervisor(clientApartadoId, profileId),
             removeApartado: (clientApartadoId) =>
               removeApartadoFromClient(detail.id, clientApartadoId),
             removeBlock: async (clientBlockId) => {
