@@ -320,7 +320,7 @@ export default function CatalogWorkspace({ initial }: Props) {
 
   return (
     <div className="min-h-full px-8 py-12">
-      <div className="max-w-4xl">
+      <div className="max-w-5xl">
         <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -337,10 +337,10 @@ export default function CatalogWorkspace({ initial }: Props) {
           {initial.canManage && (
             <button
               onClick={() => setCreatingBlock(true)}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
               </svg>
               Nuevo bloque
             </button>
@@ -367,7 +367,7 @@ export default function CatalogWorkspace({ initial }: Props) {
               Aún no hay bloques en el catálogo.
             </p>
           )}
-          {blocks.map((block) => {
+          {blocks.map((block, blockIdx) => {
             const showLineBefore =
               dropIndicatorBlock?.targetId === block.id &&
               dropIndicatorBlock.position === "before" &&
@@ -425,7 +425,7 @@ export default function CatalogWorkspace({ initial }: Props) {
                 clearBlockDrop();
               }}
               onDragEnd={clearBlockDrop}
-              className={`bg-white rounded-xl border border-gray-100 shadow-sm transition-opacity ${
+              className={`bg-white rounded-2xl border border-gray-100 shadow-sm transition-opacity ${
                 draggedBlockId === block.id ? "opacity-30" : ""
               }`}
             >
@@ -433,23 +433,40 @@ export default function CatalogWorkspace({ initial }: Props) {
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   {initial.canManage && (
                     <div
-                      className="flex-shrink-0 mt-1 text-text-muted/50 hover:text-text-muted cursor-grab active:cursor-grabbing"
+                      className="flex-shrink-0 mt-1.5 text-text-muted/40 hover:text-text-muted cursor-grab active:cursor-grabbing"
                       title="Arrastra para reordenar"
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <circle cx="9" cy="6" r="1.5" />
-                        <circle cx="15" cy="6" r="1.5" />
-                        <circle cx="9" cy="12" r="1.5" />
-                        <circle cx="15" cy="12" r="1.5" />
-                        <circle cx="9" cy="18" r="1.5" />
-                        <circle cx="15" cy="18" r="1.5" />
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="9" cy="6" r="1.4" />
+                        <circle cx="15" cy="6" r="1.4" />
+                        <circle cx="9" cy="12" r="1.4" />
+                        <circle cx="15" cy="12" r="1.4" />
+                        <circle cx="9" cy="18" r="1.4" />
+                        <circle cx="15" cy="18" r="1.4" />
                       </svg>
                     </div>
                   )}
+                  <div
+                    className="rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      backgroundColor: "white",
+                      border: "1.5px solid #00B0B7",
+                      color: "#00B0B7",
+                    }}
+                    aria-hidden
+                  >
+                    <span className="text-[11px] font-bold">{blockIdx + 1}</span>
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-semibold text-text-body">{block.name}</h3>
+                    <h3 className="text-base font-semibold text-brand-navy font-heading">
+                      {block.name}
+                    </h3>
                     {block.description && (
-                      <p className="text-xs text-text-muted mt-0.5">{block.description}</p>
+                      <p className="text-xs text-text-muted mt-0.5" style={{ textWrap: "pretty" }}>
+                        {block.description}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -457,13 +474,13 @@ export default function CatalogWorkspace({ initial }: Props) {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => setEditingBlock(block)}
-                      className="text-xs text-text-muted hover:text-brand-teal px-2 py-1 rounded cursor-pointer"
+                      className="text-xs text-text-muted hover:text-brand-teal hover:bg-brand-teal/8 px-2.5 py-1 rounded-md cursor-pointer transition-colors"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => setPendingDeleteBlock(block.id)}
-                      className="text-xs text-text-muted hover:text-red-500 px-2 py-1 rounded cursor-pointer"
+                      className="text-xs text-text-muted hover:text-red-600 hover:bg-red-50/60 px-2.5 py-1 rounded-md cursor-pointer transition-colors"
                     >
                       Eliminar
                     </button>
@@ -541,10 +558,10 @@ export default function CatalogWorkspace({ initial }: Props) {
                 {initial.canManage && (
                   <button
                     onClick={() => setCreatingApartadoBlockId(block.id)}
-                    className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium mt-2 flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-medium text-brand-teal hover:bg-brand-teal/10 bg-brand-teal/5 px-3 py-1.5 rounded-lg cursor-pointer inline-flex items-center gap-1.5 mt-2 transition-colors"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M5 12h14" />
                     </svg>
                     Añadir apartado
                   </button>
@@ -736,35 +753,32 @@ function ApartadoRow({
         e.stopPropagation();
         onDragEnd();
       }}
-      className={`flex items-center gap-2 bg-gray-50 rounded-lg px-2.5 py-3 group transition-opacity ${
+      className={`flex items-start gap-2 bg-white border border-gray-100 hover:border-gray-200 rounded-xl px-3 py-2.5 group transition-all ${
         isDragging ? "opacity-30" : ""
       }`}
     >
       {canManage && (
         <div
-          className="flex-shrink-0 text-text-muted/40 hover:text-brand-teal cursor-grab active:cursor-grabbing px-1 py-2 -my-1 rounded hover:bg-white/50 transition-colors"
+          className="flex-shrink-0 mt-0.5 text-text-muted/40 hover:text-text-muted cursor-grab active:cursor-grabbing"
           title="Arrastra para reordenar"
         >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <circle cx="9" cy="5" r="1.5" />
-            <circle cx="15" cy="5" r="1.5" />
-            <circle cx="9" cy="12" r="1.5" />
-            <circle cx="15" cy="12" r="1.5" />
-            <circle cx="9" cy="19" r="1.5" />
-            <circle cx="15" cy="19" r="1.5" />
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="5" r="1.4" />
+            <circle cx="15" cy="5" r="1.4" />
+            <circle cx="9" cy="12" r="1.4" />
+            <circle cx="15" cy="12" r="1.4" />
+            <circle cx="9" cy="19" r="1.4" />
+            <circle cx="15" cy="19" r="1.4" />
           </svg>
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-text-body">{apartado.name}</p>
-        {apartado.description && (
-          <p className="text-xs text-text-muted mt-0.5">{apartado.description}</p>
-        )}
-        <div className="flex flex-wrap gap-1 mt-1.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-medium text-text-body">{apartado.name}</p>
           {deptNames.map((d) => (
             <span
               key={d}
-              className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+              className={`inline-flex items-center text-[10px] font-medium px-2 py-[2px] rounded-full ${
                 apartado.is_global
                   ? "bg-brand-navy/10 text-brand-navy"
                   : "bg-brand-teal/10 text-brand-teal"
@@ -774,27 +788,35 @@ function ApartadoRow({
             </span>
           ))}
         </div>
+        {apartado.description && (
+          <p className="text-xs text-text-muted mt-0.5" style={{ textWrap: "pretty" }}>
+            {apartado.description}
+          </p>
+        )}
 
         {/* Plantillas (solo lectura: la subida/eliminación vive dentro del modal de edición) */}
         {apartado.templates.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-gray-200/60">
-            <div className="flex items-center gap-1.5 mb-1">
-              <svg className="w-3 h-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                Plantillas ({apartado.templates.length})
-              </p>
-            </div>
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+              Plantillas
+              <span className="font-normal normal-case tracking-normal text-text-muted/80">
+                {" "}· {apartado.templates.length}
+              </span>
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {apartado.templates.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => handleDownloadTemplate(t)}
-                  className="inline-flex items-center text-[11px] bg-white border border-gray-200 rounded-full px-2 py-0.5 text-brand-teal hover:underline cursor-pointer truncate max-w-[200px]"
+                  className="inline-flex items-center gap-1 text-[11px] bg-brand-teal/5 border border-brand-teal/20 hover:bg-brand-teal/10 rounded-full pl-2 pr-2.5 py-0.5 text-brand-teal cursor-pointer truncate max-w-[240px] transition-colors"
                   title={t.file_name}
                 >
-                  {t.file_name}
+                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1={12} y1={15} x2={12} y2={3} />
+                  </svg>
+                  <span className="truncate">{t.file_name}</span>
                 </button>
               ))}
             </div>
@@ -805,13 +827,13 @@ function ApartadoRow({
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           <button
             onClick={onEdit}
-            className="text-[11px] text-text-muted hover:text-brand-teal px-1.5 py-0.5 rounded cursor-pointer"
+            className="text-[11px] text-text-muted hover:text-brand-teal hover:bg-brand-teal/8 px-2 py-1 rounded-md cursor-pointer transition-colors"
           >
             Editar
           </button>
           <button
             onClick={onDelete}
-            className="text-[11px] text-text-muted hover:text-red-500 px-1.5 py-0.5 rounded cursor-pointer"
+            className="text-[11px] text-text-muted hover:text-red-600 hover:bg-red-50/60 px-2 py-1 rounded-md cursor-pointer transition-colors"
           >
             Eliminar
           </button>
