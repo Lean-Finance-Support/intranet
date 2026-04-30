@@ -484,6 +484,11 @@ export default function DocumentationMasterDetail({
               <ApartadoDetail
                 key={selectedApartado.id}
                 block={selectedBlock}
+                blockIndex={
+                  displayedDoc.blocks.findIndex(
+                    (b) => b.id === selectedBlock.id
+                  ) + 1
+                }
                 apartado={selectedApartado}
                 mode={mode}
                 currentUserId={currentUserId}

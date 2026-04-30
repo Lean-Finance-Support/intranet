@@ -135,7 +135,7 @@ export default function BlockList({
               >
                 <div className="flex items-start gap-3">
                   <BlockCircle
-                    index={block.display_order || idx + 1}
+                    index={idx + 1}
                     status={bState}
                     active={isActive}
                   />

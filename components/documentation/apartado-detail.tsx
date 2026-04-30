@@ -16,6 +16,7 @@ import ConfirmDialog from "@/components/confirm-dialog";
 
 interface Props {
   block: ClientBlock;
+  blockIndex: number;
   apartado: ClientApartado;
   mode: "client" | "admin";
   currentUserId: string;
@@ -41,6 +42,7 @@ interface Props {
 
 export default function ApartadoDetail({
   block,
+  blockIndex,
   apartado,
   mode,
   currentUserId,
@@ -136,7 +138,7 @@ export default function ApartadoDetail({
           {/* Eyebrow: Bloque XX · Block Name + acciones de bloque (admin) */}
           <div className="flex items-center justify-between gap-4 mb-3">
             <p className="text-[11px] font-medium text-brand-teal uppercase tracking-wider truncate">
-              Bloque {String(block.display_order || 1).padStart(2, "0")} · {block.name}
+              Bloque {String(blockIndex).padStart(2, "0")} · {block.name}
             </p>
             {showBlockActions && (
               <div className="flex items-center gap-2 flex-shrink-0">
