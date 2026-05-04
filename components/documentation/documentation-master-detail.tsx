@@ -507,19 +507,10 @@ export default function DocumentationMasterDetail({
                   // preview con el comentario actualizado vive dentro del modal.
                   if (getReminderPreview && pendingForReminder > 0 && remindState === "idle") {
                     return (
-                      <div className="flex flex-col items-end gap-0.5">
-                        <EmailPreviewPopover
-                          trigger={button}
-                          fetchPreview={() => getReminderPreview(undefined)}
-                        />
-                        <span className="inline-flex items-center gap-1 text-[10px] text-text-muted">
-                          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx={12} cy={12} r={3} />
-                          </svg>
-                          Pasa el ratón para ver vista previa
-                        </span>
-                      </div>
+                      <EmailPreviewPopover
+                        trigger={button}
+                        fetchPreview={() => getReminderPreview(undefined)}
+                      />
                     );
                   }
                   return button;

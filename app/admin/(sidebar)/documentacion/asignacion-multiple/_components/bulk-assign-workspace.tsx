@@ -764,8 +764,22 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                     ? getCatalogTemplatePreviewHtml(slug)
                     : Promise.reject(new Error("Sin plantilla"));
                 const cacheKey = `${slug}|${previewCompany?.id ?? "catalog"}`;
-                const labelEl = (
+                const previewButton = (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-teal hover:text-brand-teal/80 cursor-pointer select-none"
+                  >
+                    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx={12} cy={12} r={3} />
+                    </svg>
+                    Ver vista previa
+                  </span>
+                );
+                return (
                   <label
+                    key={a.id}
                     className="flex items-start gap-3 border border-gray-100 rounded-xl px-3 py-3 cursor-pointer hover:bg-gray-50 w-full"
                   >
                     <input
@@ -796,18 +810,17 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                           empresa(s) seleccionada(s).
                         </p>
                       )}
+                      <div className="mt-2">
+                        <EmailPreviewPopover
+                          trigger={previewButton}
+                          triggerMode="click"
+                          fetchPreview={fetchPreview}
+                          cacheKey={cacheKey}
+                          caption={previewCaption}
+                        />
+                      </div>
                     </div>
                   </label>
-                );
-                return (
-                  <EmailPreviewPopover
-                    key={a.id}
-                    className="block"
-                    trigger={labelEl}
-                    fetchPreview={fetchPreview}
-                    cacheKey={cacheKey}
-                    caption={previewCaption}
-                  />
                 );
               })}
             </div>

@@ -3,11 +3,15 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 export interface EmailPreviewPopoverProps {
-  // El elemento que dispara el preview en hover/focus. Se renderiza tal cual.
+  // El elemento que dispara el preview. Se renderiza tal cual.
   trigger: React.ReactNode;
-  // Carga perezosa: solo se llama al hacer hover/focus, y solo una vez por
-  // sesión a no ser que `cacheKey` cambie.
+  // Carga perezosa: solo se llama al abrir, y solo una vez por sesión a no ser
+  // que `cacheKey` cambie.
   fetchPreview: () => Promise<{ subject: string; html: string }>;
+  // "hover" (default) → abre/cierra con el cursor o focus.
+  // "click" → abre con click en el trigger; cierra con la "x" del header,
+  //   click fuera, o tecla Escape.
+  triggerMode?: "hover" | "click";
   // Si cambia entre renders, invalida la caché y vuelve a pedir el HTML al
   // próximo hover (útil cuando el contexto del preview depende de un input
   // como un comentario o una empresa seleccionada).
@@ -34,6 +38,7 @@ const CLOSE_DELAY_MS = 140;
 export default function EmailPreviewPopover({
   trigger,
   fetchPreview,
+  triggerMode = "hover",
   cacheKey,
   caption,
   width = 600,
@@ -42,6 +47,7 @@ export default function EmailPreviewPopover({
 }: EmailPreviewPopoverProps) {
   const id = useId();
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +123,30 @@ export default function EmailPreviewPopover({
     // computePosition usa width/height que son props; si cambian, mejor reabrir.
   }, [open, width, height]);
 
+  // En modo click: cerrar con click fuera del panel/trigger o con Escape.
+  useEffect(() => {
+    if (!open || triggerMode !== "click") return;
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (
+        wrapperRef.current?.contains(t) ||
+        panelRef.current?.contains(t)
+      ) {
+        return;
+      }
+      setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, triggerMode]);
+
   async function loadPreview() {
     if (preview || loading) return;
     setLoading(true);
@@ -132,6 +162,7 @@ export default function EmailPreviewPopover({
   }
 
   function handleEnter() {
+    if (triggerMode !== "hover") return;
     clearTimers();
     openTimerRef.current = window.setTimeout(() => {
       const next = computePosition();
@@ -142,10 +173,26 @@ export default function EmailPreviewPopover({
   }
 
   function handleLeave() {
+    if (triggerMode !== "hover") return;
     clearTimers();
     closeTimerRef.current = window.setTimeout(() => {
       setOpen(false);
     }, CLOSE_DELAY_MS);
+  }
+
+  function handleTriggerClick(e: React.MouseEvent) {
+    if (triggerMode !== "click") return;
+    e.preventDefault();
+    e.stopPropagation();
+    clearTimers();
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const next = computePosition();
+    if (next) setPos(next);
+    setOpen(true);
+    void loadPreview();
   }
 
   function handleClose() {
@@ -161,10 +208,12 @@ export default function EmailPreviewPopover({
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
       onBlur={handleLeave}
+      onClick={handleTriggerClick}
     >
       {trigger}
       {open && pos && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-labelledby={`${id}-subject`}
           className="fixed z-[80] pointer-events-auto"
@@ -172,47 +221,35 @@ export default function EmailPreviewPopover({
           onMouseEnter={() => clearTimers()}
           onMouseLeave={handleLeave}
         >
-          {/* Marco exterior con borde dashed teal para marcar visualmente que
-              esto es una previsualización, no el email real. */}
-          <div className="flex flex-col w-full h-full bg-white rounded-xl border-2 border-dashed border-brand-teal/60 shadow-2xl overflow-hidden ring-1 ring-black/5">
-            {/* Banner "VISTA PREVIA" con franja teal — más visible que el header
-                gris anterior, deja claro que es preview y no envío. */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-brand-teal/10 border-b border-brand-teal/30">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-brand-teal bg-white px-2 py-0.5 rounded-full border border-brand-teal/40">
-                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx={12} cy={12} r={3} />
-                </svg>
-                Vista previa
-              </span>
-              <span className="text-[10px] text-brand-teal/80 font-medium">
-                Este email no se ha enviado todavía
-              </span>
+          <div className="flex flex-col w-full h-full bg-white rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="flex items-start gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                  Vista previa del email
+                </p>
+                <p
+                  id={`${id}-subject`}
+                  className="text-sm font-medium text-brand-navy truncate"
+                  title={preview?.subject ?? ""}
+                >
+                  {loading
+                    ? "Cargando…"
+                    : preview?.subject ?? (error ? "Error" : "—")}
+                </p>
+                {caption && (
+                  <p className="text-[11px] text-text-muted truncate">{caption}</p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={handleClose}
                 aria-label="Cerrar vista previa"
-                className="ml-auto text-brand-teal/70 hover:text-brand-teal p-1 rounded-md cursor-pointer"
+                className="text-text-muted hover:text-text-body p-1 rounded-md cursor-pointer"
               >
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
-            </div>
-            {/* Subject + caption */}
-            <div className="px-4 py-2 border-b border-gray-100 bg-white">
-              <p
-                id={`${id}-subject`}
-                className="text-sm font-medium text-brand-navy truncate"
-                title={preview?.subject ?? ""}
-              >
-                {loading
-                  ? "Cargando…"
-                  : preview?.subject ?? (error ? "Error" : "—")}
-              </p>
-              {caption && (
-                <p className="text-[11px] text-text-muted truncate mt-0.5">{caption}</p>
-              )}
             </div>
             <div className="flex-1 min-h-0 bg-[#f4f5f7]">
               {error ? (
