@@ -24,6 +24,10 @@ export interface BulkAssignmentCompany {
   id: string;
   name: string; // company_name ?? legal_name
   legal_name: string;
+  // Cuántos perfiles cliente están vinculados a la empresa. La edge function
+  // de email reparte un envío por cada uno, así que la previsualización del
+  // submit usa este número para estimar el total de emails.
+  client_count: number;
 }
 
 export interface BulkAssignmentEligibleAdmin {
@@ -93,6 +97,16 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
       .eq("scope_type", "department"),
   ]);
 
+  // Conteo de perfiles cliente por empresa (para estimar emails en el preview).
+  const { data: profileCompanyLinks } = await admin
+    .from("profile_companies")
+    .select("company_id");
+  const clientCountByCompany = new Map<string, number>();
+  for (const link of profileCompanyLinks ?? []) {
+    const cid = link.company_id as string;
+    clientCountByCompany.set(cid, (clientCountByCompany.get(cid) ?? 0) + 1);
+  }
+
   // Apartados con sus departments y plantillas-archivo
   const apartadoDeptMap = new Map<string, string[]>();
   for (const link of deptLinks ?? []) {
@@ -148,6 +162,7 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
     id: c.id as string,
     legal_name: c.legal_name as string,
     name: ((c.company_name as string | null) ?? (c.legal_name as string)) || "(sin nombre)",
+    client_count: clientCountByCompany.get(c.id as string) ?? 0,
   }));
 
   // Admins elegibles: profiles únicos con sus department_ids agregados

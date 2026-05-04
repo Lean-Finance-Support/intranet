@@ -79,13 +79,18 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
     [selectedApartadoList]
   );
 
+  const totalClientContacts = useMemo(
+    () => selectedCompanyList.reduce((sum, c) => sum + c.client_count, 0),
+    [selectedCompanyList]
+  );
+
   const totalEmailsToSend = useMemo(() => {
     let n = 0;
     for (const a of apartadosWithEmail) {
-      if (sendEmailByApartado[a.id]) n += selectedCompanyList.length;
+      if (sendEmailByApartado[a.id]) n += totalClientContacts;
     }
     return n;
-  }, [apartadosWithEmail, sendEmailByApartado, selectedCompanyList]);
+  }, [apartadosWithEmail, sendEmailByApartado, totalClientContacts]);
 
   const totalInstances = selectedApartadoList.length * selectedCompanyList.length;
 
@@ -439,6 +444,34 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                       <p className="text-[11px] text-text-muted truncate">{c.legal_name}</p>
                     )}
                   </div>
+                  <span
+                    className={`inline-flex items-center gap-1 flex-shrink-0 text-[10px] font-medium px-2 py-[2px] rounded-full ${
+                      c.client_count === 0
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-gray-100 text-text-muted"
+                    }`}
+                    title={
+                      c.client_count === 0
+                        ? "Sin contactos cliente vinculados — no recibirá emails"
+                        : `${c.client_count} contacto(s) cliente`
+                    }
+                  >
+                    <svg
+                      width={10}
+                      height={10}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx={12} cy={7} r={4} />
+                    </svg>
+                    {c.client_count}
+                  </span>
                 </label>
               ))}
             </div>
@@ -564,8 +597,9 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                       )}
                       {checked && selectedCompanyList.length > 0 && (
                         <p className="text-[11px] text-brand-teal mt-1">
-                          Se enviarán {selectedCompanyList.length} email(s) (uno por
-                          empresa, a sus contactos cliente).
+                          Se enviarán {totalClientContacts} email(s) — uno por
+                          contacto cliente vinculado a las {selectedCompanyList.length}{" "}
+                          empresa(s) seleccionada(s).
                         </p>
                       )}
                     </div>
