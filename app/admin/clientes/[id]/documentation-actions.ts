@@ -1310,7 +1310,10 @@ const REMINDER_THROTTLE_HOURS = 6;
  * Permitido a chiefs (validate_documentation global) o a supervisores que
  * tengan al menos un apartado de esta empresa. Throttled a 1 cada 6h por empresa.
  */
-export async function remindClientDocumentation(companyId: string): Promise<void> {
+export async function remindClientDocumentation(
+  companyId: string,
+  comment?: string
+): Promise<void> {
   await requireAdmin();
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
@@ -1362,9 +1365,16 @@ export async function remindClientDocumentation(companyId: string): Promise<void
   }
 
   // 3. Invocar edge function — solo si responde 2xx grabamos el throttle
+  const trimmedComment = comment?.trim();
   const { data, error: invokeErr } = await admin.functions.invoke(
     "notify-documentation-client-reminder",
-    { body: { company_id: companyId, sent_by_id: user.id } }
+    {
+      body: {
+        company_id: companyId,
+        sent_by_id: user.id,
+        comment: trimmedComment ? trimmedComment : undefined,
+      },
+    }
   );
   if (invokeErr) {
     const detail = (data && typeof data === "object" && "error" in data)

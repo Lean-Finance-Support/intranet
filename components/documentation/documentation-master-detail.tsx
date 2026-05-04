@@ -41,7 +41,7 @@ interface Props {
   resolveCanValidate?: (apartado: ClientApartado) => boolean;
   onAddBlock?: () => void;
   onAddApartado?: (clientBlockId: string, catalogBlockId: string) => void;
-  onRemindClient?: () => Promise<void>;
+  onRemindClient?: (comment?: string) => Promise<void>;
 }
 
 type GhostMap = Map<string, ApartadoComment[]>;
@@ -358,9 +358,11 @@ export default function DocumentationMasterDetail({
   const pct = total === 0 ? 0 : Math.round((validated / total) * 100);
   const pendingForReminder = counts.pendiente + counts.rechazado;
 
-  // ─── Feedback "Recordar al cliente" (inline, sin alert nativo) ─────
+  // ─── Feedback "Avisar / Recordar al cliente" (inline, sin alert nativo) ─────
   const [remindState, setRemindState] = useState<"idle" | "sending" | "sent">("idle");
   const [remindError, setRemindError] = useState<string | null>(null);
+  const [showRemindModal, setShowRemindModal] = useState(false);
+  const [remindComment, setRemindComment] = useState("");
 
   useEffect(() => {
     if (remindState !== "sent") return;
@@ -374,16 +376,26 @@ export default function DocumentationMasterDetail({
     return () => clearTimeout(t);
   }, [remindError]);
 
-  async function handleRemindClient() {
+  function openRemindModal() {
     if (!onRemindClient || remindState === "sending") return;
+    setRemindError(null);
+    setRemindComment("");
+    setShowRemindModal(true);
+  }
+
+  async function handleConfirmRemind() {
+    if (!onRemindClient) return;
+    const trimmed = remindComment.trim();
     setRemindError(null);
     setRemindState("sending");
     try {
-      await onRemindClient();
+      await onRemindClient(trimmed || undefined);
       setRemindState("sent");
+      setShowRemindModal(false);
+      setRemindComment("");
     } catch (e) {
       setRemindState("idle");
-      setRemindError(e instanceof Error ? e.message : "No se pudo enviar el recordatorio");
+      setRemindError(e instanceof Error ? e.message : "No se pudo enviar el aviso");
     }
   }
 
@@ -421,7 +433,7 @@ export default function DocumentationMasterDetail({
             {isAdmin && onRemindClient && (
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <button
-                  onClick={handleRemindClient}
+                  onClick={openRemindModal}
                   disabled={pendingForReminder === 0 || remindState !== "idle"}
                   title={
                     pendingForReminder
@@ -652,6 +664,102 @@ export default function DocumentationMasterDetail({
           onCancel={() => setPendingRemoveBlockId(null)}
         />
       )}
+
+      {showRemindModal && onRemindClient && (
+        <RemindClientModal
+          sending={remindState === "sending"}
+          error={remindError}
+          comment={remindComment}
+          onCommentChange={setRemindComment}
+          onConfirm={handleConfirmRemind}
+          onCancel={() => {
+            if (remindState === "sending") return;
+            setShowRemindModal(false);
+            setRemindComment("");
+            setRemindError(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Modal para "Avisar / Recordar al cliente". Sigue el patrón del proyecto:
+// ventana centrada sin backdrop oscurecido (pointer-events-none en el contenedor
+// para no tapar la app, pointer-events-auto en la tarjeta).
+interface RemindClientModalProps {
+  sending: boolean;
+  error: string | null;
+  comment: string;
+  onCommentChange: (v: string) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function RemindClientModal({
+  sending,
+  error,
+  comment,
+  onCommentChange,
+  onConfirm,
+  onCancel,
+}: RemindClientModalProps) {
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && !sending) onCancel();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onCancel, sending]);
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4 pointer-events-auto">
+        <div>
+          <h2 className="text-lg font-bold font-heading text-brand-navy">
+            Avisar / Recordar al cliente
+          </h2>
+          <p className="text-sm text-text-muted mt-2">
+            Se enviará un email al cliente con los apartados pendientes y rechazados.
+          </p>
+        </div>
+        <div>
+          <label
+            htmlFor="remind-client-comment"
+            className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5"
+          >
+            Comentario para el cliente (opcional)
+          </label>
+          <textarea
+            id="remind-client-comment"
+            value={comment}
+            onChange={(e) => onCommentChange(e.target.value)}
+            disabled={sending}
+            rows={4}
+            placeholder="Añade un mensaje breve, por ejemplo: necesitamos estos documentos antes del cierre del mes."
+            className="w-full text-sm text-text-body border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:opacity-50 resize-y"
+          />
+        </div>
+        {error && <p className="text-xs text-status-rejected">{error}</p>}
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={sending}
+            className="text-sm text-text-muted hover:text-text-body px-4 py-2 rounded-lg cursor-pointer disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={sending}
+            className="text-sm text-white bg-brand-teal hover:bg-brand-teal/90 px-4 py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+          >
+            {sending ? "Enviando…" : "Enviar email"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
