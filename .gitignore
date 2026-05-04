@@ -53,3 +53,6 @@ memory/
 
 # Notas
 TODO.md
+
+# Config local MCP (sin secrets pero no se comparte)
+.mcp.json
