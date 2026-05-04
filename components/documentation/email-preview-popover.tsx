@@ -17,6 +17,9 @@ export interface EmailPreviewPopoverProps {
   // Ancho/alto del panel; valores por defecto pensados para escritorio.
   width?: number;
   height?: number;
+  // Permite que el wrapper sea block (útil cuando el trigger es un <label>
+  // de ancho completo, como en la lista de apartados con email).
+  className?: string;
 }
 
 interface CachedPreview {
@@ -35,6 +38,7 @@ export default function EmailPreviewPopover({
   caption,
   width = 600,
   height = 520,
+  className,
 }: EmailPreviewPopoverProps) {
   const id = useId();
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
@@ -124,7 +128,7 @@ export default function EmailPreviewPopover({
   return (
     <span
       ref={wrapperRef}
-      className="relative inline-flex"
+      className={`relative ${className ?? "inline-flex"}`}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
