@@ -217,6 +217,9 @@ export interface BulkAssignInput {
   supervisorsByApartado: Record<string, string[]>;
   // Por apartado con plantilla: si se debe enviar el email asociado.
   sendEmailByApartado: Record<string, boolean>;
+  // Apartados que se crearán con is_optional = true. Solo aplica a las
+  // instancias nuevas; las que ya existen no se tocan.
+  optionalApartadoIds?: string[];
 }
 
 export interface BulkAssignResult {
@@ -327,6 +330,8 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
     }
   }
 
+  const optionalSet = new Set(input.optionalApartadoIds ?? []);
+
   // 4. Resolver role_id "Supervisor de apartado"
   const { data: roleRow } = await adminCli
     .from("roles")
@@ -403,6 +408,7 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
             client_block_id: clientBlockId,
             apartado_id: aid,
             added_by: user.id,
+            is_optional: optionalSet.has(aid),
           })
           .select("id")
           .single();
