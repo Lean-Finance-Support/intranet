@@ -51,8 +51,7 @@ memory/
 /supabase/.env*
 /.supabase/
 
-# Notas
+# Notas y config local (no se comparten)
 TODO.md
-
-# Config local MCP (sin secrets pero no se comparte)
 .mcp.json
+CLAUDE.md
