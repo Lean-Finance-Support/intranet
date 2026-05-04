@@ -410,7 +410,7 @@ export default function ClientDetailWorkspace({
   async function handleConfirmDelete(typedNif: string) {
     await deleteCompanyAdmin(company.id, typedNif);
     setShowDeleteModal(false);
-    router.push("/admin/clientes");
+    router.push(`${linkPrefix}/clientes`);
   }
   async function handleConfirmRestore() {
     await restoreCompanyAdmin(company.id);
@@ -424,7 +424,7 @@ export default function ClientDetailWorkspace({
       <div className="sticky top-0 z-20 bg-surface-gray pt-4 pb-0 -mt-4">
         {/* Breadcrumb */}
         <nav className="text-xs text-text-muted mb-3 flex items-center gap-1.5">
-          <Link href="/admin/clientes" className="hover:text-text-body cursor-pointer">
+          <Link href={`${linkPrefix}/clientes`} className="hover:text-text-body cursor-pointer">
             Clientes
           </Link>
           <span>/</span>
