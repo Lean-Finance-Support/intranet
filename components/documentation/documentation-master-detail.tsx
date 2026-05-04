@@ -425,7 +425,7 @@ export default function DocumentationMasterDetail({
                   disabled={pendingForReminder === 0 || remindState !== "idle"}
                   title={
                     pendingForReminder
-                      ? `Enviar email al cliente con ${pendingForReminder} apartado${
+                      ? `Enviar aviso al cliente con ${pendingForReminder} apartado${
                           pendingForReminder === 1 ? "" : "s"
                         } pendiente${pendingForReminder === 1 ? "" : "s"} o rechazado${
                           pendingForReminder === 1 ? "" : "s"
@@ -457,7 +457,7 @@ export default function DocumentationMasterDetail({
                       <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                       </svg>
-                      Recordar al cliente
+                      Avisar / Recordar al cliente
                     </>
                   )}
                 </button>
