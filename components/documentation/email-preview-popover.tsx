@@ -264,7 +264,7 @@ export default function EmailPreviewPopover({
               sandbox=""
               title="Vista previa del email"
               srcDoc={preview.html}
-              style={{ width: "100%", height: "100%", border: 0, opacity: 0.9 }}
+              style={{ width: "100%", height: "100%", border: 0, opacity: 0.7 }}
             />
           )}
         </div>
