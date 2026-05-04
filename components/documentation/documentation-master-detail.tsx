@@ -13,6 +13,7 @@ import { statusDotColor } from "./status-badge";
 import BlockList from "./block-list";
 import ApartadoDetail from "./apartado-detail";
 import ConfirmDialog from "@/components/confirm-dialog";
+import EmailPreviewPopover from "./email-preview-popover";
 
 export interface DocumentationActionHandlers {
   uploadFile: (clientApartadoId: string, file: File) => Promise<void>;
@@ -42,6 +43,11 @@ interface Props {
   onAddBlock?: () => void;
   onAddApartado?: (clientBlockId: string, catalogBlockId: string) => void;
   onRemindClient?: (comment?: string) => Promise<void>;
+  // Devuelve el HTML del email del recordatorio para mostrarlo en hover/preview.
+  // Si se omite, no se muestra preview.
+  getReminderPreview?: (
+    comment?: string
+  ) => Promise<{ subject: string; html: string }>;
 }
 
 type GhostMap = Map<string, ApartadoComment[]>;
@@ -78,6 +84,7 @@ export default function DocumentationMasterDetail({
   onAddBlock,
   onAddApartado,
   onRemindClient,
+  getReminderPreview,
 }: Props) {
   const isAdmin = mode === "admin";
 
@@ -452,47 +459,62 @@ export default function DocumentationMasterDetail({
             </div>
             {isAdmin && onRemindClient && (
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <button
-                  onClick={openRemindModal}
-                  disabled={pendingForReminder === 0 || remindState !== "idle"}
-                  title={
-                    pendingForReminder
-                      ? `Enviar aviso al cliente con ${pendingForReminder} apartado${
-                          pendingForReminder === 1 ? "" : "s"
-                        } pendiente${pendingForReminder === 1 ? "" : "s"} o rechazado${
-                          pendingForReminder === 1 ? "" : "s"
-                        }`
-                      : "No hay apartados pendientes ni rechazados"
+                {(() => {
+                  const button = (
+                    <button
+                      onClick={openRemindModal}
+                      disabled={pendingForReminder === 0 || remindState !== "idle"}
+                      title={
+                        pendingForReminder
+                          ? `Enviar aviso al cliente con ${pendingForReminder} apartado${
+                              pendingForReminder === 1 ? "" : "s"
+                            } pendiente${pendingForReminder === 1 ? "" : "s"} o rechazado${
+                              pendingForReminder === 1 ? "" : "s"
+                            }`
+                          : "No hay apartados pendientes ni rechazados"
+                      }
+                      className={`text-xs font-medium px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap disabled:cursor-not-allowed transition-colors ${
+                        remindState === "sent"
+                          ? "bg-status-validated/15 text-status-validated cursor-default"
+                          : "bg-brand-teal text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                      }`}
+                    >
+                      {remindState === "sending" ? (
+                        <>
+                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="animate-spin">
+                            <path d="M21 12a9 9 0 11-6.219-8.56" />
+                          </svg>
+                          Enviando…
+                        </>
+                      ) : remindState === "sent" ? (
+                        <>
+                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                          Enviado
+                        </>
+                      ) : (
+                        <>
+                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                          </svg>
+                          Avisar / Recordar al cliente
+                        </>
+                      )}
+                    </button>
+                  );
+                  // Hover preview SIN comentario sobre el botón pelado. El
+                  // preview con el comentario actualizado vive dentro del modal.
+                  if (getReminderPreview && pendingForReminder > 0 && remindState === "idle") {
+                    return (
+                      <EmailPreviewPopover
+                        trigger={button}
+                        fetchPreview={() => getReminderPreview(undefined)}
+                      />
+                    );
                   }
-                  className={`text-xs font-medium px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 whitespace-nowrap disabled:cursor-not-allowed transition-colors ${
-                    remindState === "sent"
-                      ? "bg-status-validated/15 text-status-validated cursor-default"
-                      : "bg-brand-teal text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
-                  }`}
-                >
-                  {remindState === "sending" ? (
-                    <>
-                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="animate-spin">
-                        <path d="M21 12a9 9 0 11-6.219-8.56" />
-                      </svg>
-                      Enviando…
-                    </>
-                  ) : remindState === "sent" ? (
-                    <>
-                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                      Enviado
-                    </>
-                  ) : (
-                    <>
-                      <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                      </svg>
-                      Avisar / Recordar al cliente
-                    </>
-                  )}
-                </button>
+                  return button;
+                })()}
                 {remindError && (
                   <p className="text-[11px] text-status-rejected text-right max-w-[220px] leading-snug">
                     {remindError}
@@ -716,6 +738,7 @@ export default function DocumentationMasterDetail({
             setRemindComment("");
             setRemindError(null);
           }}
+          getReminderPreview={getReminderPreview}
         />
       )}
     </div>
@@ -732,6 +755,9 @@ interface RemindClientModalProps {
   onCommentChange: (v: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  getReminderPreview?: (
+    comment?: string
+  ) => Promise<{ subject: string; html: string }>;
 }
 
 function RemindClientModal({
@@ -741,7 +767,20 @@ function RemindClientModal({
   onCommentChange,
   onConfirm,
   onCancel,
+  getReminderPreview,
 }: RemindClientModalProps) {
+  // Vista previa inline: el usuario pulsa "Ver vista previa" y se carga el HTML
+  // con el comentario actual. Si el comentario cambia, ofrecemos refrescar.
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{
+    subject: string;
+    html: string;
+    comment: string;
+  } | null>(null);
+  const previewIsStale = preview !== null && preview.comment !== comment.trim();
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape" && !sending) onCancel();
@@ -750,9 +789,31 @@ function RemindClientModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [onCancel, sending]);
 
+  async function loadPreview() {
+    if (!getReminderPreview) return;
+    setPreviewLoading(true);
+    setPreviewError(null);
+    try {
+      const trimmed = comment.trim();
+      const result = await getReminderPreview(trimmed || undefined);
+      setPreview({ subject: result.subject, html: result.html, comment: trimmed });
+      setPreviewOpen(true);
+    } catch (e) {
+      setPreviewError(
+        e instanceof Error ? e.message : "No se pudo cargar la vista previa"
+      );
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4 pointer-events-auto">
+      <div
+        className={`relative w-full bg-white rounded-2xl shadow-2xl p-6 space-y-4 pointer-events-auto ${
+          previewOpen ? "max-w-2xl" : "max-w-md"
+        }`}
+      >
         <div>
           <h2 className="text-lg font-bold font-heading text-brand-navy">
             Avisar / Recordar al cliente
@@ -778,6 +839,87 @@ function RemindClientModal({
             className="w-full text-sm text-text-body border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:opacity-50 resize-y"
           />
         </div>
+        {getReminderPreview && (
+          <div className="border border-gray-100 rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => {
+                if (previewOpen) {
+                  setPreviewOpen(false);
+                } else if (preview && !previewIsStale) {
+                  setPreviewOpen(true);
+                } else {
+                  void loadPreview();
+                }
+              }}
+              disabled={previewLoading}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium text-brand-navy hover:bg-gray-50 cursor-pointer disabled:cursor-default"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                {previewLoading
+                  ? "Cargando vista previa…"
+                  : previewOpen
+                  ? "Ocultar vista previa"
+                  : "Ver vista previa del email"}
+              </span>
+              <svg
+                width={12}
+                height={12}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transform: previewOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.15s ease",
+                }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {previewOpen && preview && (
+              <div className="border-t border-gray-100 bg-gray-50">
+                <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                      Asunto
+                    </p>
+                    <p className="text-xs text-brand-navy truncate" title={preview.subject}>
+                      {preview.subject}
+                    </p>
+                  </div>
+                  {previewIsStale && (
+                    <button
+                      type="button"
+                      onClick={() => void loadPreview()}
+                      disabled={previewLoading}
+                      className="text-[11px] text-brand-teal hover:underline cursor-pointer whitespace-nowrap disabled:opacity-50"
+                    >
+                      Actualizar con el comentario
+                    </button>
+                  )}
+                </div>
+                <iframe
+                  sandbox=""
+                  title="Vista previa del email"
+                  srcDoc={preview.html}
+                  style={{ width: "100%", height: 420, border: 0, display: "block" }}
+                />
+              </div>
+            )}
+            {previewError && (
+              <p className="px-3 py-2 text-xs text-status-rejected border-t border-gray-100">
+                {previewError}
+              </p>
+            )}
+          </div>
+        )}
         {error && <p className="text-xs text-status-rejected">{error}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <button

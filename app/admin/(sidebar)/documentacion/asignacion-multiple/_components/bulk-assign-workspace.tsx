@@ -9,8 +9,11 @@ import type {
   BulkAssignResult,
 } from "../actions";
 import { bulkAssign } from "../actions";
+import { getCatalogTemplatePreviewHtml } from "../../actions";
+import { getApartadoTemplatePreviewHtml } from "@/app/admin/clientes/[id]/documentation-actions";
 import { DOCUMENTATION_EMAIL_TEMPLATES } from "@/lib/documentation/email-templates";
 import type { ApartadoTemplate, BlockTemplate } from "@/lib/types/documentation";
+import EmailPreviewPopover from "@/components/documentation/email-preview-popover";
 
 interface Props {
   data: BulkAssignmentData;
@@ -425,25 +428,42 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                                       {d}
                                     </span>
                                   ))}
-                                  {a.email_template_slug && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[1px] rounded-full bg-amber-100 text-amber-700">
-                                      <svg
-                                        width={10}
-                                        height={10}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden
+                                  {a.email_template_slug && (() => {
+                                    const slug = a.email_template_slug;
+                                    const badge = (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[1px] rounded-full bg-amber-100 text-amber-700 cursor-help"
+                                        // Evita que el hover sobre el badge propague al label y
+                                        // marque/desmarque el checkbox por accidente.
+                                        onClick={(e) => e.preventDefault()}
                                       >
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                        <polyline points="22,6 12,13 2,6" />
-                                      </svg>
-                                      Email asociado
-                                    </span>
-                                  )}
+                                        <svg
+                                          width={10}
+                                          height={10}
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth={2}
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          aria-hidden
+                                        >
+                                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                          <polyline points="22,6 12,13 2,6" />
+                                        </svg>
+                                        Email asociado
+                                      </span>
+                                    );
+                                    return (
+                                      <EmailPreviewPopover
+                                        trigger={badge}
+                                        fetchPreview={() =>
+                                          getCatalogTemplatePreviewHtml(slug)
+                                        }
+                                        caption="Vista previa con datos de ejemplo"
+                                      />
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             </label>
@@ -721,14 +741,32 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
           >
             <div className="space-y-2">
               {apartadosWithEmail.map((a) => {
+                const slug = a.email_template_slug;
                 const tpl = DOCUMENTATION_EMAIL_TEMPLATES.find(
-                  (t) => t.slug === a.email_template_slug
+                  (t) => t.slug === slug
                 );
                 const checked = !!sendEmailByApartado[a.id];
-                return (
+                // Si el usuario ya ha seleccionado empresas, usamos la primera
+                // como ejemplo del preview; si no, caemos en placeholders del
+                // catálogo.
+                const previewCompany = selectedCompanyList[0] ?? null;
+                const previewCaption = previewCompany
+                  ? `Vista previa con ${previewCompany.name}`
+                  : "Vista previa con datos de ejemplo";
+                const fetchPreview = () =>
+                  previewCompany && slug
+                    ? getApartadoTemplatePreviewHtml({
+                        templateSlug: slug,
+                        apartadoId: a.id,
+                        companyId: previewCompany.id,
+                      })
+                    : slug
+                    ? getCatalogTemplatePreviewHtml(slug)
+                    : Promise.reject(new Error("Sin plantilla"));
+                const cacheKey = `${slug}|${previewCompany?.id ?? "catalog"}`;
+                const labelEl = (
                   <label
-                    key={a.id}
-                    className="flex items-start gap-3 border border-gray-100 rounded-xl px-3 py-3 cursor-pointer hover:bg-gray-50"
+                    className="flex items-start gap-3 border border-gray-100 rounded-xl px-3 py-3 cursor-pointer hover:bg-gray-50 w-full"
                   >
                     <input
                       type="checkbox"
@@ -743,7 +781,7 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                       <p className="text-xs text-text-muted mt-0.5">
                         Plantilla:{" "}
                         <span className="font-medium text-text-body">
-                          {tpl?.name ?? a.email_template_slug}
+                          {tpl?.name ?? slug}
                         </span>
                       </p>
                       {tpl?.description && (
@@ -760,6 +798,16 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                       )}
                     </div>
                   </label>
+                );
+                return (
+                  <EmailPreviewPopover
+                    key={a.id}
+                    className="block"
+                    trigger={labelEl}
+                    fetchPreview={fetchPreview}
+                    cacheKey={cacheKey}
+                    caption={previewCaption}
+                  />
                 );
               })}
             </div>

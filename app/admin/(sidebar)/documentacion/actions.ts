@@ -16,6 +16,10 @@ import type {
   ApartadoTemplateFile,
 } from "@/lib/types/documentation";
 import { isValidDocumentationEmailTemplateSlug } from "@/lib/documentation/email-templates";
+import {
+  previewApartadoTemplateEmail,
+  type EmailPreviewResult,
+} from "@/lib/documentation/email-previews";
 
 // El catálogo es transversal: la lectura es libre para cualquier admin y la
 // escritura se gatea con `manage_documentation_catalog` (permiso global).
@@ -504,4 +508,30 @@ export async function getApartadoTemplateSignedUrlAdmin(templateId: string): Pro
     t.storage_path as string,
     (t.file_name as string) ?? undefined
   );
+}
+
+/**
+ * Devuelve el HTML del preview de la plantilla de email asociada a un apartado
+ * del catálogo. Como esta vista no tiene una empresa concreta, se renderiza
+ * con placeholders. Usado por el badge "Email asociado" del catálogo y por
+ * la lista de apartados en el step 1 de Asignación múltiple.
+ */
+export async function getCatalogTemplatePreviewHtml(
+  templateSlug: string
+): Promise<EmailPreviewResult> {
+  await requireAdmin();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const emailAssetsBase = `${supabaseUrl}/storage/v1/object/public/email-assets`;
+  const result = previewApartadoTemplateEmail({
+    slug: templateSlug,
+    ctx: {
+      companyName: "Empresa demo",
+      recipientName: null,
+      apartadoUrl:
+        "https://app.leanfinance.es/set-company?companyId=COMPANY_ID&next=%2Fempresa",
+      emailAssetsBase,
+    },
+  });
+  if (!result) throw new Error(`Plantilla desconocida: ${templateSlug}`);
+  return result;
 }
