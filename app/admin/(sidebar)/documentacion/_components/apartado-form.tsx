@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { ApartadoTemplate, ApartadoTemplateFile } from "@/lib/types/documentation";
+import { DOCUMENTATION_EMAIL_TEMPLATES } from "@/lib/documentation/email-templates";
 
 interface Props {
   blockId: string;
@@ -17,6 +18,7 @@ interface Props {
     display_order: number;
     is_global: boolean;
     department_ids: string[];
+    email_template_slug: string | null;
   }) => Promise<void> | void;
   onClose: () => void;
 }
@@ -35,6 +37,9 @@ export default function ApartadoForm({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [isGlobal, setIsGlobal] = useState(initial?.is_global ?? false);
   const [deptIds, setDeptIds] = useState<string[]>(initial?.department_ids ?? []);
+  const [emailTemplateSlug, setEmailTemplateSlug] = useState<string>(
+    initial?.email_template_slug ?? ""
+  );
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -83,6 +88,7 @@ export default function ApartadoForm({
         display_order: initial?.display_order ?? 0,
         is_global: isGlobal,
         department_ids: isGlobal ? [] : deptIds,
+        email_template_slug: emailTemplateSlug || null,
       });
     } finally {
       setSubmitting(false);
@@ -159,6 +165,33 @@ export default function ApartadoForm({
             </div>
           </div>
         )}
+        <div>
+          <label className="block text-xs font-medium text-text-muted mb-1">
+            Plantilla de email asociada{" "}
+            <span className="font-normal text-text-muted/70">(opcional)</span>
+          </label>
+          <select
+            value={emailTemplateSlug}
+            onChange={(e) => setEmailTemplateSlug(e.target.value)}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+          >
+            <option value="">— Sin plantilla —</option>
+            {DOCUMENTATION_EMAIL_TEMPLATES.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          {emailTemplateSlug && (
+            <p className="mt-1 text-[11px] text-text-muted leading-snug">
+              {DOCUMENTATION_EMAIL_TEMPLATES.find((t) => t.slug === emailTemplateSlug)?.description}
+            </p>
+          )}
+          <p className="mt-1.5 text-[11px] text-text-muted/80 leading-snug">
+            Si seleccionas una plantilla, en la pantalla de Asignación múltiple
+            se ofrecerá enviar este email al asignar el apartado.
+          </p>
+        </div>
         {onUploadTemplate && (
           <div className="pt-2 border-t border-gray-100">
             <p className="text-xs font-medium text-text-muted mb-2">Plantillas</p>

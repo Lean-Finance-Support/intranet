@@ -24,6 +24,10 @@ export interface ApartadoTemplate {
   is_global: boolean;
   department_ids: string[];
   templates: ApartadoTemplateFile[];
+  // Slug de la plantilla de email asociada (catálogo en
+  // lib/documentation/email-templates.ts). Si está presente, el flujo de
+  // Asignación múltiple ofrecerá disparar ese email al asignar el apartado.
+  email_template_slug: string | null;
 }
 
 export interface ApartadoTemplateFile {

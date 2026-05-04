@@ -477,7 +477,7 @@ export async function getAssignableCatalog(
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global")
+      .select("id, block_id, name, description, display_order, is_global, email_template_slug")
       .order("display_order"),
     admin
       .schema("documentation")
@@ -608,6 +608,7 @@ function toApartadoTemplate(
     is_global: raw.is_global as boolean,
     department_ids: deptMap.get(id) ?? [],
     templates: templatesMap.get(id) ?? [],
+    email_template_slug: (raw.email_template_slug as string | null) ?? null,
   };
 }
 

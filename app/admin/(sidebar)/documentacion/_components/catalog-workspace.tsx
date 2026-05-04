@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import type {
   BlockTemplate,
   ApartadoTemplate,
   ApartadoTemplateFile,
 } from "@/lib/types/documentation";
+import { findDocumentationEmailTemplate } from "@/lib/documentation/email-templates";
 import {
   createBlock,
   updateBlock,
@@ -43,6 +45,7 @@ interface Props {
     blocks: BlockTemplate[];
     departments: Departments;
     canManage: boolean;
+    canRequestDocumentation: boolean;
   };
 }
 
@@ -198,6 +201,7 @@ export default function CatalogWorkspace({ initial }: Props) {
     display_order: number;
     is_global: boolean;
     department_ids: string[];
+    email_template_slug: string | null;
   }) {
     try {
       const created = await createApartado(input);
@@ -223,6 +227,7 @@ export default function CatalogWorkspace({ initial }: Props) {
       display_order: number;
       is_global: boolean;
       department_ids: string[];
+      email_template_slug: string | null;
     }
   ) {
     try {
@@ -334,17 +339,31 @@ export default function CatalogWorkspace({ initial }: Props) {
               supervisor.
             </p>
           </div>
-          {initial.canManage && (
-            <button
-              onClick={() => setCreatingBlock(true)}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Nuevo bloque
-            </button>
-          )}
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {initial.canRequestDocumentation && (
+              <Link
+                href="/admin/documentacion/asignacion-multiple"
+                className="inline-flex items-center gap-1.5 bg-brand-navy text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:bg-brand-navy/90 transition-colors cursor-pointer"
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+                Asignación múltiple
+              </Link>
+            )}
+            {initial.canManage && (
+              <button
+                onClick={() => setCreatingBlock(true)}
+                className="inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Nuevo bloque
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -354,10 +373,26 @@ export default function CatalogWorkspace({ initial }: Props) {
         )}
 
         {!initial.canManage && (
-          <p className="mt-6 text-sm text-text-muted bg-white rounded-xl px-4 py-3 border border-gray-100">
-            Estás viendo el catálogo en modo lectura. Para editarlo necesitas el permiso
-            <code className="font-mono text-xs mx-1">manage_documentation_catalog</code>
-            en algún departamento.
+          <p className="mt-6 text-sm text-text-muted bg-white rounded-xl px-4 py-3 border border-gray-100 flex items-start gap-2">
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="flex-shrink-0 mt-0.5"
+              aria-hidden
+            >
+              <rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span>
+              Estás viendo el catálogo en modo lectura. Para editarlo necesitas el
+              permiso correspondiente.
+            </span>
           </p>
         )}
 
@@ -787,6 +822,31 @@ function ApartadoRow({
               {d}
             </span>
           ))}
+          {apartado.email_template_slug && (() => {
+            const tpl = findDocumentationEmailTemplate(apartado.email_template_slug);
+            return (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[2px] rounded-full bg-amber-100 text-amber-700"
+                title={tpl?.name ?? apartado.email_template_slug}
+              >
+                <svg
+                  width={10}
+                  height={10}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Email asociado
+              </span>
+            );
+          })()}
         </div>
         {apartado.description && (
           <p className="text-xs text-text-muted mt-0.5" style={{ textWrap: "pretty" }}>
