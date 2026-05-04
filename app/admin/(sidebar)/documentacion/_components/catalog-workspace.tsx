@@ -7,6 +7,7 @@ import type {
   ApartadoTemplate,
   ApartadoTemplateFile,
 } from "@/lib/types/documentation";
+import { findDocumentationEmailTemplate } from "@/lib/documentation/email-templates";
 import {
   createBlock,
   updateBlock,
@@ -821,6 +822,31 @@ function ApartadoRow({
               {d}
             </span>
           ))}
+          {apartado.email_template_slug && (() => {
+            const tpl = findDocumentationEmailTemplate(apartado.email_template_slug);
+            return (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[2px] rounded-full bg-amber-100 text-amber-700"
+                title={tpl?.name ?? apartado.email_template_slug}
+              >
+                <svg
+                  width={10}
+                  height={10}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Email asociado
+              </span>
+            );
+          })()}
         </div>
         {apartado.description && (
           <p className="text-xs text-text-muted mt-0.5" style={{ textWrap: "pretty" }}>
