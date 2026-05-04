@@ -536,7 +536,7 @@ export default function ClientDetailWorkspace({
                   setAddingApartado({ clientBlockId, blockId: catalogBlockId })
               : undefined
           }
-          onRemindClient={() => remindClientDocumentation(detail.id)}
+          onRemindClient={(comment) => remindClientDocumentation(detail.id, comment)}
         />
       )}
 
