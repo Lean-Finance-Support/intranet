@@ -7,6 +7,7 @@ import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   DOCUMENTATION_BUCKET,
+  buildClientTemplateDownloadName,
   buildDocumentationStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
@@ -116,6 +117,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     { data: apartados },
     { data: deptLinks },
     { data: deptRows },
+    { data: company },
   ] = await Promise.all([
     admin
       .schema("documentation")
@@ -141,7 +143,10 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
       .from("apartado_departments")
       .select("apartado_id, department_id"),
     admin.from("departments").select("id, name"),
+    admin.from("companies").select("legal_name").eq("id", companyId).single(),
   ]);
+
+  const legalName = (company?.legal_name as string) ?? null;
 
   const clientBlockIds = (clientBlocks ?? []).map((cb) => cb.id as string);
   const myClientApartadoIds = (clientApartados ?? [])
@@ -283,7 +288,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     list.push({
       id: t.id as string,
       apartado_id: aid,
-      file_name: t.file_name as string,
+      file_name: buildClientTemplateDownloadName(t.file_name as string, legalName),
       file_size: t.file_size as number,
       mime_type: t.mime_type as string,
       uploaded_at: t.uploaded_at as string,
@@ -468,6 +473,7 @@ export async function getAssignableCatalog(
     { data: assignedClientBlocks },
     { data: deptRows },
     { data: templates },
+    { data: company },
   ] = await Promise.all([
     admin
       .schema("documentation")
@@ -494,7 +500,10 @@ export async function getAssignableCatalog(
       .from("apartado_templates")
       .select("id, apartado_id, file_name, file_size, mime_type, uploaded_at, storage_path")
       .order("uploaded_at"),
+    admin.from("companies").select("legal_name").eq("id", companyId).single(),
   ]);
+
+  const legalName = (company?.legal_name as string) ?? null;
 
   const deptNameMap = new Map<string, string>(
     (deptRows ?? []).map((d) => [d.id as string, d.name as string])
@@ -516,7 +525,7 @@ export async function getAssignableCatalog(
     list.push({
       id: t.id as string,
       apartado_id: aid,
-      file_name: t.file_name as string,
+      file_name: buildClientTemplateDownloadName(t.file_name as string, legalName),
       file_size: t.file_size as number,
       mime_type: t.mime_type as string,
       uploaded_at: t.uploaded_at as string,
