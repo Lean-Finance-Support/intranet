@@ -215,66 +215,73 @@ export default function EmailPreviewPopover({
       onMouseEnter={() => clearTimers()}
       onMouseLeave={handleLeave}
     >
-      {/* Acento teal a la izquierda como callout — marca visualmente que es
-          una vista previa sin recurrir a un banner agresivo. */}
-      <div className="flex w-full h-full bg-white rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
-        <div className="w-1 bg-brand-teal flex-shrink-0" />
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-teal/10 text-brand-teal flex-shrink-0">
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx={12} cy={12} r={3} />
-              </svg>
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-brand-teal uppercase tracking-wider leading-none">
-                Vista previa del email
-              </p>
-              <p
-                id={`${id}-subject`}
-                className="text-sm font-medium text-brand-navy truncate mt-1"
-                title={preview?.subject ?? ""}
-              >
-                {loading
-                  ? "Cargando…"
-                  : preview?.subject ?? (error ? "Error" : "—")}
-              </p>
-              {caption && (
-                <p className="text-[11px] text-text-muted truncate">{caption}</p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={handleClose}
-              aria-label="Cerrar vista previa"
-              className="text-text-muted hover:text-text-body p-1 rounded-md cursor-pointer flex-shrink-0"
+      {/* Panel semitransparente con frosted glass y marca de agua diagonal
+          sobre el email — comunica "vista previa" sin recurrir a banners ni
+          bordes agresivos. */}
+      <div className="flex flex-col w-full h-full bg-white/85 backdrop-blur-md rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
+        <div className="flex items-start gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+              Vista previa del email
+            </p>
+            <p
+              id={`${id}-subject`}
+              className="text-sm font-medium text-brand-navy truncate"
+              title={preview?.subject ?? ""}
             >
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+              {loading
+                ? "Cargando…"
+                : preview?.subject ?? (error ? "Error" : "—")}
+            </p>
+            {caption && (
+              <p className="text-[11px] text-text-muted truncate">{caption}</p>
+            )}
           </div>
-          <div className="flex-1 min-h-0 bg-[#f4f5f7]">
-            {error ? (
-              <div className="h-full flex items-center justify-center px-6 text-center">
-                <p className="text-sm text-text-muted">{error}</p>
-              </div>
-            ) : loading || !preview ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-text-muted text-xs">Cargando vista previa…</div>
-              </div>
-            ) : (
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Cerrar vista previa"
+            className="text-text-muted hover:text-text-body p-1 rounded-md cursor-pointer flex-shrink-0"
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="relative flex-1 min-h-0 bg-[#f4f5f7]/85">
+          {error ? (
+            <div className="h-full flex items-center justify-center px-6 text-center">
+              <p className="text-sm text-text-muted">{error}</p>
+            </div>
+          ) : loading || !preview ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-text-muted text-xs">Cargando vista previa…</div>
+            </div>
+          ) : (
+            <>
               <iframe
                 // sandbox="" desactiva scripts/forms/etc — el HTML del email
                 // viene de nuestro propio builder, pero cinturón y tirantes.
                 sandbox=""
                 title="Vista previa del email"
                 srcDoc={preview.html}
-                style={{ width: "100%", height: "100%", border: 0 }}
+                style={{ width: "100%", height: "100%", border: 0, opacity: 0.92 }}
               />
-            )}
-          </div>
+              {/* Marca de agua diagonal sutil que deja claro que es preview.
+                  pointer-events-none para no bloquear scroll del iframe. */}
+              <div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden"
+              >
+                <span
+                  className="text-[64px] font-bold uppercase tracking-[0.2em] text-brand-navy/[0.06] select-none whitespace-nowrap"
+                  style={{ transform: "rotate(-24deg)" }}
+                >
+                  Vista previa
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
