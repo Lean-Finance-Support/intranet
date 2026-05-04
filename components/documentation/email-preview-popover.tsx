@@ -218,8 +218,8 @@ export default function EmailPreviewPopover({
       {/* Panel semitransparente con frosted glass y marca de agua diagonal
           sobre el email — comunica "vista previa" sin recurrir a banners ni
           bordes agresivos. */}
-      <div className="flex flex-col w-full h-full bg-white/85 backdrop-blur-md rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
-        <div className="flex items-start gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
+      <div className="flex flex-col w-full h-full bg-white/70 backdrop-blur-md rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
+        <div className="flex items-start gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50/60">
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
               Vista previa del email
@@ -264,7 +264,7 @@ export default function EmailPreviewPopover({
               sandbox=""
               title="Vista previa del email"
               srcDoc={preview.html}
-              style={{ width: "100%", height: "100%", border: 0, opacity: 0.7 }}
+              style={{ width: "100%", height: "100%", border: 0 }}
             />
           )}
         </div>
