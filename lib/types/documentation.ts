@@ -113,6 +113,12 @@ export interface ClientDocumentation {
   // para el progreso.
   total_apartados: number;
   validated_apartados: number;
+  // Última entrada de documentation.client_reminder_log para esta empresa.
+  // Solo se rellena en el loader admin; en cliente se omite.
+  last_reminder?: {
+    sent_at: string;
+    sent_by_name: string | null;
+  } | null;
 }
 
 // ───────── Para selectors (supervisor) ─────────

@@ -20,10 +20,12 @@ import {
   uploadApartadoTemplate,
   deleteApartadoTemplate,
   getApartadoTemplateSignedUrlAdmin,
+  getCatalogTemplatePreviewHtml,
 } from "../actions";
 import BlockForm from "./block-form";
 import ApartadoForm from "./apartado-form";
 import ConfirmDialog from "@/components/confirm-dialog";
+import EmailPreviewPopover from "@/components/documentation/email-preview-popover";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -824,11 +826,12 @@ function ApartadoRow({
             </span>
           ))}
           {apartado.email_template_slug && (() => {
-            const tpl = findDocumentationEmailTemplate(apartado.email_template_slug);
-            return (
+            const slug = apartado.email_template_slug;
+            const tpl = findDocumentationEmailTemplate(slug);
+            const badge = (
               <span
-                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[2px] rounded-full bg-amber-100 text-amber-700"
-                title={tpl?.name ?? apartado.email_template_slug}
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[2px] rounded-full bg-amber-100 text-amber-700 cursor-help"
+                title={tpl?.name ?? slug}
               >
                 <svg
                   width={10}
@@ -846,6 +849,13 @@ function ApartadoRow({
                 </svg>
                 Email asociado
               </span>
+            );
+            return (
+              <EmailPreviewPopover
+                trigger={badge}
+                fetchPreview={() => getCatalogTemplatePreviewHtml(slug)}
+                caption="Vista previa con datos de ejemplo"
+              />
             );
           })()}
         </div>

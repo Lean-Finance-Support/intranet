@@ -26,7 +26,7 @@ interface ApartadoRow {
 // Invocada desde un server action con admin client; verify_jwt=false en
 // config.toml. La URL no se expone al frontend.
 Deno.serve(async (req: Request) => {
-  let payload: { company_id: string; sent_by_id: string };
+  let payload: { company_id: string; sent_by_id: string; comment?: string };
   try {
     payload = await req.json();
   } catch {
@@ -35,6 +35,10 @@ Deno.serve(async (req: Request) => {
   if (!payload.company_id || !payload.sent_by_id) {
     return new Response("Missing fields", { status: 400 });
   }
+  const comment =
+    typeof payload.comment === "string" && payload.comment.trim()
+      ? payload.comment.trim()
+      : null;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -176,6 +180,7 @@ Deno.serve(async (req: Request) => {
           pending,
           inReview,
           validated,
+          comment,
         }),
         text: buildText({
           companyName,
@@ -185,6 +190,7 @@ Deno.serve(async (req: Request) => {
           pending,
           inReview,
           validated,
+          comment,
         }),
       }),
     });
@@ -216,6 +222,7 @@ interface HtmlParams {
   pending: ApartadoRow[];
   inReview: ApartadoRow[];
   validated: ApartadoRow[];
+  comment: string | null;
 }
 
 function buildHtml(p: HtmlParams): string {
@@ -272,6 +279,16 @@ function buildHtml(p: HtmlParams): string {
 
   const totalPending = p.rejected.length + p.pending.length;
 
+  // Bloque de comentario opcional. Va después de la frase introductoria y antes
+  // de las secciones detalladas. Respetamos saltos de línea del comentario.
+  const commentBlock = p.comment
+    ? `
+          <p style="margin:0 0 12px;font-size:15px;color:#4b5563;line-height:1.6;">y además te deja el siguiente comentario:</p>
+          <div style="margin:0 0 28px;padding:14px 16px;background:#f0fdfd;border:1px solid #00B0B7;border-radius:8px;">
+            <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;white-space:pre-wrap;">${escapeHtml(p.comment).replaceAll("\n", "<br/>")}</p>
+          </div>`
+    : "";
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -290,8 +307,8 @@ function buildHtml(p: HtmlParams): string {
           <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00B0B7;">Documentación</p>
           <h1 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#0f2444;line-height:1.3;">Tienes ${totalPending} apartado${totalPending === 1 ? "" : "s"} por completar</h1>
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">${greeting},</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#4b5563;line-height:1.6;"><strong>${escapeHtml(p.senderName)}</strong> te recuerda que aún quedan apartados por completar en la documentación de <strong>${escapeHtml(p.companyName)}</strong>.</p>
-
+          <p style="margin:0 0 ${p.comment ? "12" : "24"}px;font-size:15px;color:#4b5563;line-height:1.6;"><strong>${escapeHtml(p.senderName)}</strong> te recuerda que aún quedan apartados por completar en la documentación de <strong>${escapeHtml(p.companyName)}</strong>.</p>
+          ${commentBlock}
           ${detailedSection("Rechazados — corrige y vuelve a enviar", "#dc2626", p.rejected, true)}
           ${detailedSection("Pendientes de subir", "#d97706", p.pending, false)}
           ${briefSection("En revisión por tu asesor", p.inReview)}
@@ -329,7 +346,10 @@ function buildText(p: Omit<HtmlParams, "companyId">): string {
       .join("\n");
     return `\n${title} (${rows.length}):\n${items}\n`;
   };
-  return `${greeting},\n\n${p.senderName} te recuerda que aún quedan apartados por completar en la documentación de ${p.companyName}.\n${list(
+  const commentBlock = p.comment
+    ? `\n\ny además te deja el siguiente comentario:\n${p.comment}\n`
+    : "";
+  return `${greeting},\n\n${p.senderName} te recuerda que aún quedan apartados por completar en la documentación de ${p.companyName}.${commentBlock}\n${list(
     "Rechazados",
     p.rejected,
     true

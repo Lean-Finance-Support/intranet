@@ -7,6 +7,7 @@ import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   DOCUMENTATION_BUCKET,
+  buildClientTemplateDownloadName,
   buildDocumentationStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
@@ -23,6 +24,13 @@ import type {
   ClientDocumentation,
   DepartmentMember,
 } from "@/lib/types/documentation";
+import {
+  buildClientReminderPreviewHtml,
+  buildClientReminderPreviewSubject,
+  previewApartadoTemplateEmail,
+  type ClientReminderApartadoRow,
+  type EmailPreviewResult,
+} from "@/lib/documentation/email-previews";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers internos
@@ -116,6 +124,8 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     { data: apartados },
     { data: deptLinks },
     { data: deptRows },
+    { data: company },
+    { data: lastReminderRow },
   ] = await Promise.all([
     admin
       .schema("documentation")
@@ -141,7 +151,18 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
       .from("apartado_departments")
       .select("apartado_id, department_id"),
     admin.from("departments").select("id, name"),
+    admin.from("companies").select("legal_name").eq("id", companyId).single(),
+    admin
+      .schema("documentation")
+      .from("client_reminder_log")
+      .select("sent_at, sent_by")
+      .eq("company_id", companyId)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  const legalName = (company?.legal_name as string) ?? null;
 
   const clientBlockIds = (clientBlocks ?? []).map((cb) => cb.id as string);
   const myClientApartadoIds = (clientApartados ?? [])
@@ -210,7 +231,8 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     (deptRows ?? []).map((d) => [d.id as string, d.name as string])
   );
 
-  // Profiles a resolver: uploaders, autores, changed_by, supervisores
+  // Profiles a resolver: uploaders, autores, changed_by, supervisores y el
+  // sender del último recordatorio (para mostrarlo bajo el botón).
   const profileIds = new Set<string>();
   for (const s of supervisors ?? []) profileIds.add(s.profile_id as string);
   for (const f of files ?? []) {
@@ -221,6 +243,9 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
   }
   for (const h of history ?? []) {
     if (h.changed_by) profileIds.add(h.changed_by as string);
+  }
+  if (lastReminderRow?.sent_by) {
+    profileIds.add(lastReminderRow.sent_by as string);
   }
 
   const profileNameMap = new Map<string, { full_name: string | null; email: string }>();
@@ -283,7 +308,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     list.push({
       id: t.id as string,
       apartado_id: aid,
-      file_name: t.file_name as string,
+      file_name: buildClientTemplateDownloadName(t.file_name as string, legalName),
       file_size: t.file_size as number,
       mime_type: t.mime_type as string,
       uploaded_at: t.uploaded_at as string,
@@ -441,7 +466,25 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     }
   }
 
-  return { blocks: resultBlocks, total_apartados: total, validated_apartados: validated };
+  // Solo el primer nombre del sender (o el email si no hay nombre) para que
+  // quepa en una sola línea bajo el botón.
+  let lastReminder: ClientDocumentation["last_reminder"] = null;
+  if (lastReminderRow) {
+    const sender = profileNameMap.get(lastReminderRow.sent_by as string);
+    const fullName = sender?.full_name ?? null;
+    const firstName = fullName ? fullName.trim().split(/\s+/)[0] : null;
+    lastReminder = {
+      sent_at: lastReminderRow.sent_at as string,
+      sent_by_name: firstName ?? sender?.email ?? null,
+    };
+  }
+
+  return {
+    blocks: resultBlocks,
+    total_apartados: total,
+    validated_apartados: validated,
+    last_reminder: lastReminder,
+  };
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -468,6 +511,7 @@ export async function getAssignableCatalog(
     { data: assignedClientBlocks },
     { data: deptRows },
     { data: templates },
+    { data: company },
   ] = await Promise.all([
     admin
       .schema("documentation")
@@ -494,7 +538,10 @@ export async function getAssignableCatalog(
       .from("apartado_templates")
       .select("id, apartado_id, file_name, file_size, mime_type, uploaded_at, storage_path")
       .order("uploaded_at"),
+    admin.from("companies").select("legal_name").eq("id", companyId).single(),
   ]);
+
+  const legalName = (company?.legal_name as string) ?? null;
 
   const deptNameMap = new Map<string, string>(
     (deptRows ?? []).map((d) => [d.id as string, d.name as string])
@@ -516,7 +563,7 @@ export async function getAssignableCatalog(
     list.push({
       id: t.id as string,
       apartado_id: aid,
-      file_name: t.file_name as string,
+      file_name: buildClientTemplateDownloadName(t.file_name as string, legalName),
       file_size: t.file_size as number,
       mime_type: t.mime_type as string,
       uploaded_at: t.uploaded_at as string,
@@ -1310,7 +1357,10 @@ const REMINDER_THROTTLE_HOURS = 6;
  * Permitido a chiefs (validate_documentation global) o a supervisores que
  * tengan al menos un apartado de esta empresa. Throttled a 1 cada 6h por empresa.
  */
-export async function remindClientDocumentation(companyId: string): Promise<void> {
+export async function remindClientDocumentation(
+  companyId: string,
+  comment?: string
+): Promise<void> {
   await requireAdmin();
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
@@ -1362,9 +1412,16 @@ export async function remindClientDocumentation(companyId: string): Promise<void
   }
 
   // 3. Invocar edge function — solo si responde 2xx grabamos el throttle
+  const trimmedComment = comment?.trim();
   const { data, error: invokeErr } = await admin.functions.invoke(
     "notify-documentation-client-reminder",
-    { body: { company_id: companyId, sent_by_id: user.id } }
+    {
+      body: {
+        company_id: companyId,
+        sent_by_id: user.id,
+        comment: trimmedComment ? trimmedComment : undefined,
+      },
+    }
   );
   if (invokeErr) {
     const detail = (data && typeof data === "object" && "error" in data)
@@ -1379,4 +1436,253 @@ export async function remindClientDocumentation(companyId: string): Promise<void
     .from("client_reminder_log")
     .insert({ company_id: companyId, sent_by: user.id });
   if (logErr) throw new Error(logErr.message);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Previews de email (hover) — devuelven { subject, html } sin enviar nada.
+// La autorización es la misma que la del envío real para evitar filtrar
+// detalles de empresas a las que el usuario no tiene acceso.
+// ────────────────────────────────────────────────────────────────────────────
+
+async function authorizeReminderForCompany(companyId: string): Promise<void> {
+  if (await hasPermission("validate_documentation")) return;
+  const supervisedIds = await userScopeIds(
+    "validate_client_documentation",
+    "client_apartado"
+  );
+  if (supervisedIds.length === 0) {
+    throw new Error("Sin permisos para esta empresa");
+  }
+  const admin = createAdminClient();
+  const { data: matches } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("id, client_block:client_blocks!inner(company_id)")
+    .in("id", supervisedIds);
+  const belongs = (matches ?? []).some((m) => {
+    const cb = m.client_block as unknown as { company_id: string } | null;
+    return cb?.company_id === companyId;
+  });
+  if (!belongs) throw new Error("Sin permisos para esta empresa");
+}
+
+/**
+ * Devuelve el HTML de la vista previa del email "Avisar / Recordar al cliente"
+ * para una empresa. Reproduce los datos que la edge function calcularía,
+ * pero sin enviar nada.
+ */
+export async function getClientReminderPreviewHtml(
+  companyId: string,
+  comment?: string
+): Promise<EmailPreviewResult> {
+  await requireAdmin();
+  const { user } = await getAuthUser();
+  if (!user) throw new Error("No autenticado");
+
+  await authorizeReminderForCompany(companyId);
+
+  const admin = createAdminClient();
+
+  // 1. Empresa
+  const { data: company } = await admin
+    .from("companies")
+    .select("legal_name, company_name")
+    .eq("id", companyId)
+    .single();
+  const companyName =
+    (company?.company_name as string | null) ??
+    (company?.legal_name as string | null) ??
+    "Empresa";
+
+  // 2. Primer destinatario disponible (los emails reales se envían a todos los
+  // contactos cliente, pero el preview muestra uno representativo). Si no hay
+  // contactos, el saludo cae en "Hola" (recipientName=null).
+  const { data: links } = await admin
+    .from("profile_companies")
+    .select("profile:profiles(id, email, full_name)")
+    .eq("company_id", companyId)
+    .limit(1);
+  const firstProfile = (links ?? [])[0]?.profile as unknown as
+    | { id: string; email: string; full_name: string | null }
+    | null
+    | undefined;
+  const recipientName = firstProfile?.full_name ?? null;
+
+  // 3. Sender (el usuario actual)
+  const { data: sender } = await admin
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .single();
+  const senderName =
+    (sender?.full_name as string | null) ??
+    (sender?.email as string | null) ??
+    "tu asesor";
+
+  // 4. Estado de la documentación (mismo cálculo que la edge function)
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id, block_id")
+    .eq("company_id", companyId);
+
+  const clientBlockIds = (clientBlocks ?? []).map((cb) => cb.id as string);
+  let rejected: ClientReminderApartadoRow[] = [];
+  let pending: ClientReminderApartadoRow[] = [];
+  let inReview: ClientReminderApartadoRow[] = [];
+  let validated: ClientReminderApartadoRow[] = [];
+
+  if (clientBlockIds.length > 0) {
+    const { data: clientApartados } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select(
+        "id, client_block_id, apartado_id, status, is_optional, last_rejection_reason"
+      )
+      .in("client_block_id", clientBlockIds);
+
+    const apartadoCatalogIds = [
+      ...new Set((clientApartados ?? []).map((ca) => ca.apartado_id as string)),
+    ];
+    const blockCatalogIds = [
+      ...new Set((clientBlocks ?? []).map((cb) => cb.block_id as string)),
+    ];
+
+    const [{ data: catalogApartados }, { data: catalogBlocks }] = await Promise.all([
+      apartadoCatalogIds.length === 0
+        ? Promise.resolve({ data: [] })
+        : admin
+            .schema("documentation")
+            .from("apartados")
+            .select("id, name, description, block_id")
+            .in("id", apartadoCatalogIds),
+      blockCatalogIds.length === 0
+        ? Promise.resolve({ data: [] })
+        : admin
+            .schema("documentation")
+            .from("blocks")
+            .select("id, name")
+            .in("id", blockCatalogIds),
+    ]);
+
+    const aptCatById = new Map(
+      (catalogApartados ?? []).map((a) => [a.id as string, a])
+    );
+    const blkCatById = new Map(
+      (catalogBlocks ?? []).map((b) => [b.id as string, b])
+    );
+    const cbById = new Map(
+      (clientBlocks ?? []).map((cb) => [cb.id as string, cb])
+    );
+
+    const allRows: ClientReminderApartadoRow[] = [];
+    for (const ca of clientApartados ?? []) {
+      if (ca.is_optional) continue;
+      const cat = aptCatById.get(ca.apartado_id as string);
+      if (!cat) continue;
+      const cb = cbById.get(ca.client_block_id as string);
+      const blk = cb ? blkCatById.get(cb.block_id as string) : null;
+      allRows.push({
+        id: ca.id as string,
+        name: (cat.name as string) ?? "Apartado",
+        description: (cat.description as string | null) ?? null,
+        status: ca.status as ClientReminderApartadoRow["status"],
+        rejectionReason: (ca.last_rejection_reason as string | null) ?? null,
+        blockName: (blk?.name as string | null) ?? "",
+      });
+    }
+
+    rejected = allRows.filter((r) => r.status === "rechazado");
+    pending = allRows.filter((r) => r.status === "pendiente");
+    inReview = allRows.filter((r) => r.status === "enviado");
+    validated = allRows.filter((r) => r.status === "validado");
+  }
+
+  const trimmedComment = comment?.trim();
+  const html = buildClientReminderPreviewHtml({
+    companyId,
+    companyName,
+    recipientName,
+    senderName,
+    comment: trimmedComment ? trimmedComment : null,
+    rejected,
+    pending,
+    inReview,
+    validated,
+  });
+  const subject = buildClientReminderPreviewSubject({
+    companyName,
+    rejected,
+    pending,
+  });
+  return { subject, html };
+}
+
+/**
+ * Devuelve el HTML de la vista previa de la plantilla de email asociada a un
+ * apartado del catálogo. Si `companyId` es nulo, se renderiza un preview
+ * genérico (vista catálogo) con placeholders. Si `companyId` está presente,
+ * resuelve nombre real de la empresa, primer contacto y URL hacia el
+ * apartado.
+ */
+export async function getApartadoTemplatePreviewHtml(input: {
+  templateSlug: string;
+  apartadoId: string;
+  companyId?: string;
+}): Promise<EmailPreviewResult> {
+  await requireAdmin();
+  const { user } = await getAuthUser();
+  if (!user) throw new Error("No autenticado");
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const emailAssetsBase = `${supabaseUrl}/storage/v1/object/public/email-assets`;
+
+  let companyName = "Empresa demo";
+  let recipientName: string | null = null;
+  let apartadoUrl =
+    "https://app.leanfinance.es/set-company?companyId=COMPANY_ID&next=%2Fempresa";
+
+  if (input.companyId) {
+    await authorizeReminderForCompany(input.companyId);
+
+    const admin = createAdminClient();
+    const [{ data: company }, { data: links }] = await Promise.all([
+      admin
+        .from("companies")
+        .select("legal_name, company_name")
+        .eq("id", input.companyId)
+        .single(),
+      admin
+        .from("profile_companies")
+        .select("profile:profiles(id, email, full_name)")
+        .eq("company_id", input.companyId)
+        .limit(1),
+    ]);
+    companyName =
+      (company?.company_name as string | null) ??
+      (company?.legal_name as string | null) ??
+      companyName;
+    const firstProfile = (links ?? [])[0]?.profile as unknown as
+      | { id: string; full_name: string | null }
+      | null
+      | undefined;
+    recipientName = firstProfile?.full_name ?? null;
+    apartadoUrl = `https://app.leanfinance.es/set-company?companyId=${
+      input.companyId
+    }&next=${encodeURIComponent("/empresa")}`;
+  }
+
+  const result = previewApartadoTemplateEmail({
+    slug: input.templateSlug,
+    ctx: {
+      companyName,
+      recipientName,
+      apartadoUrl,
+      emailAssetsBase,
+    },
+  });
+  if (!result) {
+    throw new Error(`Plantilla desconocida: ${input.templateSlug}`);
+  }
+  return result;
 }
