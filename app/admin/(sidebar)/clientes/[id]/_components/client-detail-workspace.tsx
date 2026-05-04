@@ -41,6 +41,7 @@ import {
   adminUploadApartadoFile,
   getApartadoFileSignedUrl,
   getApartadoTemplateSignedUrl,
+  getClientReminderPreviewHtml,
   rejectApartado,
   remindClientDocumentation,
   removeApartadoFromClient,
@@ -537,6 +538,9 @@ export default function ClientDetailWorkspace({
               : undefined
           }
           onRemindClient={(comment) => remindClientDocumentation(detail.id, comment)}
+          getReminderPreview={(comment) =>
+            getClientReminderPreviewHtml(detail.id, comment)
+          }
         />
       )}
 
