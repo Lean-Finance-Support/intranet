@@ -202,8 +202,6 @@ function buildDashboardHoldedContratoHtml(ctx: BuildContext): string {
   const greeting = ctx.recipientName ? `Hola, ${ctx.recipientName}` : "Hola";
   const dashboardImg1 = `${EMAIL_ASSETS_BASE}/dashboard-holded-1.png`;
   const dashboardImg2 = `${EMAIL_ASSETS_BASE}/dashboard-holded-2.png`;
-  const dashboardLink = (label: string, color = "#0f2444") =>
-    `<a href="${DASHBOARD_VIDEO_URL}" style="color:${color};text-decoration:underline;">${label}</a>`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -222,10 +220,10 @@ function buildDashboardHoldedContratoHtml(ctx: BuildContext): string {
         <tr><td style="background-color:#ffffff;border-radius:12px;padding:40px 40px 32px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
 
           <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#00B0B7;">Novedades</p>
-          <h1 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#0f2444;line-height:1.3;">Estrenamos ${dashboardLink("Dashboard")} de Asesoría</h1>
+          <h1 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#0f2444;line-height:1.3;">Estrenamos Dashboard de Asesoría</h1>
 
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">${greeting},</p>
-          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Os escribimos con muy buenas noticias: hemos desarrollado una mejora del servicio para vuestra comodidad. Ahora podemos ofreceros la información de <strong>facturación, compras y movimientos bancarios</strong> actualizada en un ${dashboardLink("Dashboard", "#00B0B7")} centralizado.</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Os escribimos con muy buenas noticias: hemos desarrollado una mejora del servicio para vuestra comodidad. Ahora podemos ofreceros la información de <strong>facturación, compras y movimientos bancarios</strong> actualizada en un Dashboard centralizado.</p>
 
           <div style="margin:24px 0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
             <img src="${dashboardImg1}" alt="Dashboard Asesoría — Ventas y Compras" width="520" style="display:block;width:100%;height:auto;" />
@@ -236,6 +234,19 @@ function buildDashboardHoldedContratoHtml(ctx: BuildContext): string {
 
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Volcamos vuestra información de <strong>Holded</strong> vía API, para que podáis visualizar con comodidad todos los movimientos pendientes de conciliar: facturas de venta, facturas de compra y bancos. Creemos que os será de gran utilidad en la gestión diaria.</p>
 
+          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Hemos preparado un vídeo corto en el que os enseñamos la nueva herramienta:</p>
+
+          <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr>
+              <td style="border:1.5px solid #00B0B7;border-radius:8px;">
+                <a href="${DASHBOARD_VIDEO_URL}" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;font-size:14px;font-weight:600;color:#00B0B7;text-decoration:none;border-radius:8px;">
+                  <span style="display:inline-block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:9px solid #00B0B7;"></span>
+                  Ver vídeo explicativo
+                </a>
+              </td>
+            </tr>
+          </table>
+
           <!-- Bloque destacado: Contrato de Tratamiento de Datos -->
           <div style="margin:32px 0 24px;padding:24px 24px 20px;background:linear-gradient(135deg,#0f2444 0%,#16335a 100%);border-radius:12px;color:#ffffff;">
             <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#7DDCDF;">Acción requerida</p>
@@ -244,7 +255,7 @@ function buildDashboardHoldedContratoHtml(ctx: BuildContext): string {
             <table cellpadding="0" cellspacing="0">
               <tr>
                 <td style="background-color:#00B0B7;border-radius:8px;">
-                  <a href="${ctx.apartadoUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Firmar el Contrato de Tratamiento de Datos</a>
+                  <a href="${ctx.apartadoUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Firma el contrato</a>
                 </td>
               </tr>
             </table>
@@ -268,14 +279,14 @@ function buildDashboardHoldedContratoText(ctx: BuildContext): string {
 
 Os escribimos con muy buenas noticias: hemos desarrollado una mejora del servicio. Ahora podemos ofreceros la información de facturación, compras y movimientos bancarios actualizada en un Dashboard centralizado.
 
-Vídeo explicativo del nuevo Dashboard: ${DASHBOARD_VIDEO_URL}
-
 Volcamos vuestra información de Holded vía API, para que podáis visualizar con comodidad todos los movimientos pendientes de conciliar: facturas de venta, facturas de compra y bancos.
+
+Hemos preparado un vídeo corto en el que os enseñamos la nueva herramienta. Ver vídeo: ${DASHBOARD_VIDEO_URL}
 
 ACCIÓN REQUERIDA — Firma el Contrato de Tratamiento de Datos
 Para activar el volcado y empezar a recibir el Dashboard, necesitamos que firméis el nuevo Contrato de Tratamiento de Datos en vuestro portal, dentro de la sección Mi empresa, en el apartado de Documentación.
 
-Acceder al portal: ${ctx.apartadoUrl}
+Firma el contrato: ${ctx.apartadoUrl}
 
 — Lean Finance · Asesoría fiscal y contable
 `;

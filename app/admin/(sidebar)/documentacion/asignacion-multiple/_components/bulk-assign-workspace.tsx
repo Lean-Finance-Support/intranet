@@ -355,8 +355,22 @@ export default function BulkAssignWorkspace({ data }: Props) {
                                   </span>
                                 ))}
                                 {a.email_template_slug && (
-                                  <span className="inline-flex items-center text-[10px] font-medium px-2 py-[1px] rounded-full bg-amber-100 text-amber-700">
-                                    📧 plantilla
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[1px] rounded-full bg-amber-100 text-amber-700">
+                                    <svg
+                                      width={10}
+                                      height={10}
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      aria-hidden
+                                    >
+                                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                      <polyline points="22,6 12,13 2,6" />
+                                    </svg>
+                                    Email asociado
                                   </span>
                                 )}
                               </div>
