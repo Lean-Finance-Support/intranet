@@ -258,29 +258,14 @@ export default function EmailPreviewPopover({
               <div className="text-text-muted text-xs">Cargando vista previa…</div>
             </div>
           ) : (
-            <>
-              <iframe
-                // sandbox="" desactiva scripts/forms/etc — el HTML del email
-                // viene de nuestro propio builder, pero cinturón y tirantes.
-                sandbox=""
-                title="Vista previa del email"
-                srcDoc={preview.html}
-                style={{ width: "100%", height: "100%", border: 0, opacity: 0.92 }}
-              />
-              {/* Marca de agua diagonal sutil que deja claro que es preview.
-                  pointer-events-none para no bloquear scroll del iframe. */}
-              <div
-                aria-hidden
-                className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden"
-              >
-                <span
-                  className="text-[64px] font-bold uppercase tracking-[0.2em] text-brand-navy/[0.06] select-none whitespace-nowrap"
-                  style={{ transform: "rotate(-24deg)" }}
-                >
-                  Vista previa
-                </span>
-              </div>
-            </>
+            <iframe
+              // sandbox="" desactiva scripts/forms/etc — el HTML del email
+              // viene de nuestro propio builder, pero cinturón y tirantes.
+              sandbox=""
+              title="Vista previa del email"
+              srcDoc={preview.html}
+              style={{ width: "100%", height: "100%", border: 0, opacity: 0.9 }}
+            />
           )}
         </div>
       </div>
