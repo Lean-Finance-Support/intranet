@@ -14,6 +14,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_FROM = "Lean Finance <noreply@leanfinance.es>";
 const APP_URL = "https://app.leanfinance.es";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+// Base de assets públicos para imágenes embebidas en emails (bucket
+// `email-assets`, ver migración 20260504090053_email_assets_bucket.sql).
+const EMAIL_ASSETS_BASE = `${SUPABASE_URL}/storage/v1/object/public/email-assets`;
 
 interface BuildContext {
   companyId: string;
@@ -191,8 +195,8 @@ function escapeHtml(s: string): string {
 
 function buildDashboardHoldedContratoHtml(ctx: BuildContext): string {
   const greeting = ctx.recipientName ? `Hola, ${ctx.recipientName}` : "Hola";
-  const dashboardImg1 = `${APP_URL}/email-assets/dashboard-holded-1.png`;
-  const dashboardImg2 = `${APP_URL}/email-assets/dashboard-holded-2.png`;
+  const dashboardImg1 = `${EMAIL_ASSETS_BASE}/dashboard-holded-1.png`;
+  const dashboardImg2 = `${EMAIL_ASSETS_BASE}/dashboard-holded-2.png`;
 
   return `<!DOCTYPE html>
 <html lang="es">
