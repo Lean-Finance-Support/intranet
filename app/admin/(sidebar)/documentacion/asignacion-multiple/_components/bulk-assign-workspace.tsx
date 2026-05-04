@@ -212,6 +212,36 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
     setSendEmailByApartado((prev) => ({ ...prev, [apartadoId]: value }));
   }
 
+  function toggleExpandedBlock(blockId: string) {
+    setExpandedBlocks((prev) => {
+      const next = { ...prev };
+      if (next[blockId]) delete next[blockId];
+      else next[blockId] = true;
+      return next;
+    });
+  }
+
+  // ─── Step 3: agrupación por bloque ────────────────────────────────────────
+  // Mantenemos el orden del catálogo (data.blocks) y solo incluimos bloques
+  // que tienen al menos un apartado seleccionado.
+  const selectedApartadosByBlock = useMemo(() => {
+    const groups: { block: BlockTemplate; apartados: ApartadoTemplate[] }[] = [];
+    for (const block of data.blocks) {
+      const apartados = block.apartados.filter((a) => selectedApartados[a.id]);
+      if (apartados.length > 0) groups.push({ block, apartados });
+    }
+    return groups;
+  }, [data.blocks, selectedApartados]);
+
+  function expandAllBlocks() {
+    const next: Record<string, boolean> = {};
+    for (const g of selectedApartadosByBlock) next[g.block.id] = true;
+    setExpandedBlocks(next);
+  }
+  function collapseAllBlocks() {
+    setExpandedBlocks({});
+  }
+
   // ─── Submit ──────────────────────────────────────────────────────────────
   const canSubmit =
     selectedApartadoList.length > 0 && selectedCompanyList.length > 0 && !submitting;
@@ -532,73 +562,145 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
           </Section>
         </div>
 
-        {/* Step 3: supervisores por apartado */}
+        {/* Step 3: supervisores por apartado, agrupados por bloque */}
         {selectedApartadoList.length > 0 && (
           <Section
             title="3. Supervisores por apartado"
             subtitle="Solo verás admins elegibles según el departamento del apartado. Es opcional."
             className="mt-6"
           >
-            <div className="space-y-3">
-              {selectedApartadoList.map((a) => {
-                const eligibles = eligibleAdminsForApartado(a);
-                const selected = supervisorsByApartado[a.id] ?? [];
-                const blockName = blockById.get(a.block_id)?.name ?? "";
+            {selectedApartadosByBlock.length > 1 && (
+              <div className="flex items-center justify-end gap-1 -mt-2 mb-3">
+                <button
+                  type="button"
+                  onClick={expandAllBlocks}
+                  className="text-[11px] text-text-muted hover:text-brand-teal hover:bg-brand-teal/5 px-2 py-1 rounded-md cursor-pointer"
+                >
+                  Expandir todo
+                </button>
+                <span className="text-[11px] text-text-muted/40">·</span>
+                <button
+                  type="button"
+                  onClick={collapseAllBlocks}
+                  className="text-[11px] text-text-muted hover:text-brand-teal hover:bg-brand-teal/5 px-2 py-1 rounded-md cursor-pointer"
+                >
+                  Colapsar todo
+                </button>
+              </div>
+            )}
+            <div className="space-y-2">
+              {selectedApartadosByBlock.map(({ block, apartados }) => {
+                const isOpen = !!expandedBlocks[block.id];
+                const withSupervisor = apartados.filter(
+                  (a) => (supervisorsByApartado[a.id]?.length ?? 0) > 0
+                ).length;
+                const missingSupervisor = apartados.length - withSupervisor;
                 return (
-                  <div key={a.id} className="border border-gray-100 rounded-xl p-3">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-brand-navy truncate">
-                          {a.name}
-                        </p>
-                        <p className="text-xs text-text-muted">
-                          {blockName}
-                          {" · "}
-                          {a.is_global
-                            ? "Global"
-                            : a.department_ids
-                                .map((d) => departmentNameById.get(d) ?? d)
-                                .join(", ")}
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-text-muted whitespace-nowrap">
-                        {selected.length} / {eligibles.length} elegibles
+                  <div
+                    key={block.id}
+                    className="border border-gray-100 rounded-xl overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandedBlock(block.id)}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer text-left"
+                      aria-expanded={isOpen}
+                    >
+                      <svg
+                        width={12}
+                        height={12}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.4}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`text-text-muted flex-shrink-0 transition-transform ${
+                          isOpen ? "rotate-90" : ""
+                        }`}
+                        aria-hidden
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                      <span className="font-semibold text-sm text-brand-navy truncate">
+                        {block.name}
                       </span>
-                    </div>
-                    {eligibles.length === 0 ? (
-                      <p className="text-xs text-text-muted/80 italic">
-                        Ningún admin es elegible para este apartado. Asigna supervisores
-                        después de crear las instancias.
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                        {eligibles.map((adm) => {
-                          const checked = selected.includes(adm.id);
+                      {missingSupervisor > 0 && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full bg-brand-teal/70 flex-shrink-0"
+                          title={`${missingSupervisor} apartado(s) sin supervisor`}
+                          aria-hidden
+                        />
+                      )}
+                      <span className="text-[11px] text-text-muted ml-auto whitespace-nowrap">
+                        {apartados.length} apartado(s) · {withSupervisor} con supervisor
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="divide-y divide-gray-100">
+                        {apartados.map((a) => {
+                          const eligibles = eligibleAdminsForApartado(a);
+                          const selected = supervisorsByApartado[a.id] ?? [];
                           return (
-                            <label
-                              key={adm.id}
-                              className={`flex items-center gap-2 text-sm rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
-                                checked
-                                  ? "bg-brand-teal/10 text-brand-teal"
-                                  : "hover:bg-gray-50 text-text-body"
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleSupervisor(a.id, adm.id)}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate">
-                                  {adm.full_name ?? adm.email}
-                                </p>
-                                {adm.full_name && (
-                                  <p className="text-[10px] text-text-muted truncate">
-                                    {adm.email}
+                            <div key={a.id} className="p-3">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-brand-navy truncate">
+                                    {a.name}
                                   </p>
-                                )}
+                                  <p className="text-xs text-text-muted">
+                                    {a.is_global
+                                      ? "Global"
+                                      : a.department_ids
+                                          .map((d) => departmentNameById.get(d) ?? d)
+                                          .join(", ")}
+                                  </p>
+                                </div>
+                                <span className="text-[11px] text-text-muted whitespace-nowrap">
+                                  {selected.length} / {eligibles.length} elegibles
+                                </span>
                               </div>
-                            </label>
+                              {eligibles.length === 0 ? (
+                                <p className="text-xs text-text-muted/80 italic">
+                                  Ningún admin es elegible para este apartado. Asigna
+                                  supervisores después de crear las instancias.
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                                  {eligibles.map((adm) => {
+                                    const checked = selected.includes(adm.id);
+                                    return (
+                                      <label
+                                        key={adm.id}
+                                        className={`flex items-center gap-2 text-sm rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                                          checked
+                                            ? "bg-brand-teal/10 text-brand-teal"
+                                            : "hover:bg-gray-50 text-text-body"
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() =>
+                                            toggleSupervisor(a.id, adm.id)
+                                          }
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                          <p className="truncate">
+                                            {adm.full_name ?? adm.email}
+                                          </p>
+                                          {adm.full_name && (
+                                            <p className="text-[10px] text-text-muted truncate">
+                                              {adm.email}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
