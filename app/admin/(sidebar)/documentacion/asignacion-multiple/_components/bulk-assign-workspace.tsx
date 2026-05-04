@@ -14,10 +14,12 @@ import type { ApartadoTemplate, BlockTemplate } from "@/lib/types/documentation"
 
 interface Props {
   data: BulkAssignmentData;
+  linkPrefix: string;
 }
 
-export default function BulkAssignWorkspace({ data }: Props) {
+export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
   const router = useRouter();
+  const docCatalogHref = `${linkPrefix}/documentacion`;
 
   // Selección de apartados (id -> true). Bloques se reflejan automáticamente.
   const [selectedApartados, setSelectedApartados] = useState<Record<string, boolean>>({});
@@ -248,7 +250,7 @@ export default function BulkAssignWorkspace({ data }: Props) {
               Nueva asignación
             </button>
             <Link
-              href="/admin/documentacion"
+              href={docCatalogHref}
               className="text-sm bg-brand-teal text-white px-4 py-2 rounded-lg hover:opacity-90 cursor-pointer"
             >
               Volver al catálogo
@@ -264,7 +266,7 @@ export default function BulkAssignWorkspace({ data }: Props) {
       <div className="max-w-5xl">
         {/* Header */}
         <Link
-          href="/admin/documentacion"
+          href={docCatalogHref}
           className="text-xs text-text-muted hover:text-brand-teal inline-flex items-center gap-1 mb-3"
         >
           <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -601,7 +603,7 @@ export default function BulkAssignWorkspace({ data }: Props) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => router.push("/admin/documentacion")}
+              onClick={() => router.push(docCatalogHref)}
               className="text-sm text-text-muted hover:text-text-body px-3 py-2 rounded-lg cursor-pointer"
             >
               Cancelar

@@ -47,9 +47,10 @@ interface Props {
     canManage: boolean;
     canRequestDocumentation: boolean;
   };
+  linkPrefix: string;
 }
 
-export default function CatalogWorkspace({ initial }: Props) {
+export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
   const [blocks, setBlocks] = useState(initial.blocks);
   const [, startTransition] = useTransition();
   const [creatingBlock, setCreatingBlock] = useState(false);
@@ -342,7 +343,7 @@ export default function CatalogWorkspace({ initial }: Props) {
           <div className="flex-shrink-0 flex items-center gap-2">
             {initial.canRequestDocumentation && (
               <Link
-                href="/admin/documentacion/asignacion-multiple"
+                href={`${linkPrefix}/documentacion/asignacion-multiple`}
                 className="inline-flex items-center gap-1.5 bg-brand-navy text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:bg-brand-navy/90 transition-colors cursor-pointer"
               >
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
