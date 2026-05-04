@@ -50,3 +50,6 @@ memory/
 /supabase/dumps/
 /supabase/.env*
 /.supabase/
+
+# Notas
+TODO.md
