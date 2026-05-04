@@ -372,10 +372,26 @@ export default function CatalogWorkspace({ initial }: Props) {
         )}
 
         {!initial.canManage && (
-          <p className="mt-6 text-sm text-text-muted bg-white rounded-xl px-4 py-3 border border-gray-100">
-            Estás viendo el catálogo en modo lectura. Para editarlo necesitas el permiso
-            <code className="font-mono text-xs mx-1">manage_documentation_catalog</code>
-            en algún departamento.
+          <p className="mt-6 text-sm text-text-muted bg-white rounded-xl px-4 py-3 border border-gray-100 flex items-start gap-2">
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="flex-shrink-0 mt-0.5"
+              aria-hidden
+            >
+              <rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span>
+              Estás viendo el catálogo en modo lectura. Para editarlo necesitas el
+              permiso correspondiente.
+            </span>
           </p>
         )}
 
