@@ -255,7 +255,7 @@ function buildDashboardHoldedContratoHtml(ctx: BuildContext): string {
             <table cellpadding="0" cellspacing="0">
               <tr>
                 <td style="background-color:#00B0B7;border-radius:8px;">
-                  <a href="${ctx.apartadoUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Firma el contrato</a>
+                  <a href="${ctx.apartadoUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Firmar el contrato</a>
                 </td>
               </tr>
             </table>
@@ -286,7 +286,7 @@ Hemos preparado un vídeo corto en el que os enseñamos la nueva herramienta. Ve
 ACCIÓN REQUERIDA — Firma el Contrato de Tratamiento de Datos
 Para activar el volcado y empezar a recibir el Dashboard, necesitamos que firméis el nuevo Contrato de Tratamiento de Datos en vuestro portal, dentro de la sección Mi empresa, en el apartado de Documentación.
 
-Firma el contrato: ${ctx.apartadoUrl}
+Firmar el contrato: ${ctx.apartadoUrl}
 
 — Lean Finance · Asesoría fiscal y contable
 `;
