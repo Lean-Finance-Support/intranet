@@ -15,6 +15,7 @@ import type {
   ApartadoTemplate,
   ApartadoTemplateFile,
 } from "@/lib/types/documentation";
+import { isValidDocumentationEmailTemplateSlug } from "@/lib/documentation/email-templates";
 
 // El catálogo es transversal: la lectura es libre para cualquier admin y la
 // escritura se gatea con `manage_documentation_catalog` (permiso global).
@@ -33,6 +34,7 @@ export async function listDocumentationCatalog(): Promise<{
   blocks: BlockTemplate[];
   departments: { id: string; name: string }[];
   canManage: boolean;
+  canRequestDocumentation: boolean;
 }> {
   const { supabase } = await requireAdmin();
 
@@ -52,7 +54,7 @@ export async function listDocumentationCatalog(): Promise<{
     supabase
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global")
+      .select("id, block_id, name, description, display_order, is_global, email_template_slug")
       .order("display_order")
       .order("name"),
     supabase
@@ -102,6 +104,7 @@ export async function listDocumentationCatalog(): Promise<{
       is_global: a.is_global as boolean,
       department_ids: apartadoDeptMap.get(a.id as string) ?? [],
       templates: templatesByApartado.get(a.id as string) ?? [],
+      email_template_slug: (a.email_template_slug as string | null) ?? null,
     });
     apartadosByBlock.set(a.block_id as string, arr);
   }
@@ -115,12 +118,16 @@ export async function listDocumentationCatalog(): Promise<{
     apartados: apartadosByBlock.get(b.id as string) ?? [],
   }));
 
-  const canManage = await hasPermission("manage_documentation_catalog");
+  const [canManage, canRequestDocumentation] = await Promise.all([
+    hasPermission("manage_documentation_catalog"),
+    hasPermission("request_client_documentation"),
+  ]);
 
   return {
     blocks: result,
     departments: (depts ?? []) as { id: string; name: string }[],
     canManage,
+    canRequestDocumentation,
   };
 }
 
@@ -222,11 +229,15 @@ export async function createApartado(input: {
   display_order: number;
   is_global: boolean;
   department_ids: string[];
+  email_template_slug: string | null;
 }): Promise<ApartadoTemplate> {
   await requireAdmin();
   await requireManageCatalog();
   if (!input.is_global && input.department_ids.length === 0) {
     throw new Error("Selecciona al menos un departamento");
+  }
+  if (input.email_template_slug && !isValidDocumentationEmailTemplateSlug(input.email_template_slug)) {
+    throw new Error("Plantilla de email desconocida");
   }
 
   const admin = createAdminClient();
@@ -239,8 +250,9 @@ export async function createApartado(input: {
       description: input.description?.trim() || null,
       display_order: input.display_order,
       is_global: input.is_global,
+      email_template_slug: input.email_template_slug,
     })
-    .select("id, block_id, name, description, display_order, is_global")
+    .select("id, block_id, name, description, display_order, is_global, email_template_slug")
     .single();
   if (error) throw new Error(error.message);
 
@@ -267,6 +279,7 @@ export async function createApartado(input: {
     is_global: data!.is_global as boolean,
     department_ids: input.is_global ? [] : input.department_ids,
     templates: [],
+    email_template_slug: (data!.email_template_slug as string | null) ?? null,
   };
 }
 
@@ -278,12 +291,16 @@ export async function updateApartado(
     display_order: number;
     is_global: boolean;
     department_ids: string[];
+    email_template_slug: string | null;
   }
 ): Promise<void> {
   await requireAdmin();
   await requireManageCatalog();
   if (!input.is_global && input.department_ids.length === 0) {
     throw new Error("Selecciona al menos un departamento");
+  }
+  if (input.email_template_slug && !isValidDocumentationEmailTemplateSlug(input.email_template_slug)) {
+    throw new Error("Plantilla de email desconocida");
   }
 
   const admin = createAdminClient();
@@ -295,6 +312,7 @@ export async function updateApartado(
       description: input.description?.trim() || null,
       display_order: input.display_order,
       is_global: input.is_global,
+      email_template_slug: input.email_template_slug,
     })
     .eq("id", apartadoId);
   if (error) throw new Error(error.message);

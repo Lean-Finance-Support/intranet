@@ -8,8 +8,6 @@ import {
   getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
-import { hasPermission } from "@/lib/require-permission";
-
 export default async function AdminSidebarLayout({
   children,
 }: {
@@ -29,8 +27,6 @@ export default async function AdminSidebarLayout({
   const slugs = deptIds.length > 0 ? await getCachedDepartmentServiceSlugs(deptIds) : [];
   const hasTaxModels = slugs.includes("tax-models");
 
-  const canManageDocCatalog = await hasPermission("manage_documentation_catalog");
-
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
 
   return (
@@ -41,7 +37,6 @@ export default async function AdminSidebarLayout({
           email: profile?.email ?? user.email ?? null,
         }}
         hasTaxModels={hasTaxModels}
-        canManageDocCatalog={canManageDocCatalog}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
         userId={user.id}

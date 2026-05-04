@@ -23,3 +23,8 @@ verify_jwt = false
 # notify-tax-submission: sin verify_jwt — la URL no se expone al frontend.
 [functions.notify-documentation-client-reminder]
 verify_jwt = false
+
+# Invocada desde el server action bulkAssign del flujo "Asignación múltiple".
+# Recibe template_slug y resuelve la plantilla por slug.
+[functions.notify-documentation-template-email]
+verify_jwt = false

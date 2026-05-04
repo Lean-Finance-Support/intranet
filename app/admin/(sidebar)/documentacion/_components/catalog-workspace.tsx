@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import type {
   BlockTemplate,
@@ -43,6 +44,7 @@ interface Props {
     blocks: BlockTemplate[];
     departments: Departments;
     canManage: boolean;
+    canRequestDocumentation: boolean;
   };
 }
 
@@ -198,6 +200,7 @@ export default function CatalogWorkspace({ initial }: Props) {
     display_order: number;
     is_global: boolean;
     department_ids: string[];
+    email_template_slug: string | null;
   }) {
     try {
       const created = await createApartado(input);
@@ -223,6 +226,7 @@ export default function CatalogWorkspace({ initial }: Props) {
       display_order: number;
       is_global: boolean;
       department_ids: string[];
+      email_template_slug: string | null;
     }
   ) {
     try {
@@ -334,17 +338,31 @@ export default function CatalogWorkspace({ initial }: Props) {
               supervisor.
             </p>
           </div>
-          {initial.canManage && (
-            <button
-              onClick={() => setCreatingBlock(true)}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Nuevo bloque
-            </button>
-          )}
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {initial.canRequestDocumentation && (
+              <Link
+                href="/admin/documentacion/asignacion-multiple"
+                className="inline-flex items-center gap-1.5 bg-brand-navy text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:bg-brand-navy/90 transition-colors cursor-pointer"
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+                Asignación múltiple
+              </Link>
+            )}
+            {initial.canManage && (
+              <button
+                onClick={() => setCreatingBlock(true)}
+                className="inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Nuevo bloque
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (
