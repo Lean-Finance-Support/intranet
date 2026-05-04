@@ -46,6 +46,26 @@ interface Props {
 
 type GhostMap = Map<string, ApartadoComment[]>;
 
+// Devuelve un texto corto y compacto en español ("hace 2 min", "hace 3 h",
+// "hace 5 d"). No usa Intl.RelativeTimeFormat porque queremos abreviaturas y
+// no negociar plurales/preposiciones de la API nativa.
+function formatRelativeShortEs(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diffSec = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (diffSec < 60) return "hace unos segundos";
+  const diffMin = Math.round(diffSec / 60);
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return `hace ${diffH} h`;
+  const diffD = Math.round(diffH / 24);
+  if (diffD < 30) return `hace ${diffD} d`;
+  const diffMo = Math.round(diffD / 30);
+  if (diffMo < 12) return `hace ${diffMo} mes${diffMo === 1 ? "" : "es"}`;
+  const diffY = Math.round(diffMo / 12);
+  return `hace ${diffY} año${diffY === 1 ? "" : "s"}`;
+}
+
 export default function DocumentationMasterDetail({
   data,
   mode,
@@ -476,6 +496,24 @@ export default function DocumentationMasterDetail({
                 {remindError && (
                   <p className="text-[11px] text-status-rejected text-right max-w-[220px] leading-snug">
                     {remindError}
+                  </p>
+                )}
+                {!remindError && data.last_reminder && (
+                  <p
+                    className="text-[11px] text-text-muted text-right max-w-[220px] truncate"
+                    title={`Último aviso enviado el ${new Date(
+                      data.last_reminder.sent_at
+                    ).toLocaleString("es-ES")}${
+                      data.last_reminder.sent_by_name
+                        ? ` por ${data.last_reminder.sent_by_name}`
+                        : ""
+                    }`}
+                  >
+                    Último aviso:
+                    {data.last_reminder.sent_by_name
+                      ? ` ${data.last_reminder.sent_by_name} · `
+                      : " "}
+                    {formatRelativeShortEs(data.last_reminder.sent_at)}
                   </p>
                 )}
               </div>

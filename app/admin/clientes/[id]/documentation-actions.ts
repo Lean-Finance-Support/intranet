@@ -116,6 +116,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     { data: apartados },
     { data: deptLinks },
     { data: deptRows },
+    { data: lastReminderRow },
   ] = await Promise.all([
     admin
       .schema("documentation")
@@ -141,6 +142,14 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
       .from("apartado_departments")
       .select("apartado_id, department_id"),
     admin.from("departments").select("id, name"),
+    admin
+      .schema("documentation")
+      .from("client_reminder_log")
+      .select("sent_at, sent_by")
+      .eq("company_id", companyId)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const clientBlockIds = (clientBlocks ?? []).map((cb) => cb.id as string);
@@ -210,7 +219,8 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     (deptRows ?? []).map((d) => [d.id as string, d.name as string])
   );
 
-  // Profiles a resolver: uploaders, autores, changed_by, supervisores
+  // Profiles a resolver: uploaders, autores, changed_by, supervisores y el
+  // sender del último recordatorio (para mostrarlo bajo el botón).
   const profileIds = new Set<string>();
   for (const s of supervisors ?? []) profileIds.add(s.profile_id as string);
   for (const f of files ?? []) {
@@ -221,6 +231,9 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
   }
   for (const h of history ?? []) {
     if (h.changed_by) profileIds.add(h.changed_by as string);
+  }
+  if (lastReminderRow?.sent_by) {
+    profileIds.add(lastReminderRow.sent_by as string);
   }
 
   const profileNameMap = new Map<string, { full_name: string | null; email: string }>();
@@ -441,7 +454,25 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     }
   }
 
-  return { blocks: resultBlocks, total_apartados: total, validated_apartados: validated };
+  // Solo el primer nombre del sender (o el email si no hay nombre) para que
+  // quepa en una sola línea bajo el botón.
+  let lastReminder: ClientDocumentation["last_reminder"] = null;
+  if (lastReminderRow) {
+    const sender = profileNameMap.get(lastReminderRow.sent_by as string);
+    const fullName = sender?.full_name ?? null;
+    const firstName = fullName ? fullName.trim().split(/\s+/)[0] : null;
+    lastReminder = {
+      sent_at: lastReminderRow.sent_at as string,
+      sent_by_name: firstName ?? sender?.email ?? null,
+    };
+  }
+
+  return {
+    blocks: resultBlocks,
+    total_apartados: total,
+    validated_apartados: validated,
+    last_reminder: lastReminder,
+  };
 }
 
 // ────────────────────────────────────────────────────────────────────────────
