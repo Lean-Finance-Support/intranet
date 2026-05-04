@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export interface EmailPreviewPopoverProps {
   // El elemento que dispara el preview. Se renderiza tal cual.
@@ -200,10 +201,89 @@ export default function EmailPreviewPopover({
     setOpen(false);
   }
 
+  // El panel se renderiza vía portal en document.body para que ningún
+  // ancestor con overflow:hidden, transform o stacking context lo recorte ni
+  // lo desplace. La posición se calcula desde el rect del trigger en el
+  // viewport y usa position:fixed.
+  const panel = open && pos && typeof document !== "undefined" ? (
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-labelledby={`${id}-subject`}
+      className="fixed z-[80] pointer-events-auto"
+      style={{ top: pos.top, left: pos.left, width, height }}
+      onMouseEnter={() => clearTimers()}
+      onMouseLeave={handleLeave}
+    >
+      {/* Acento teal a la izquierda como callout — marca visualmente que es
+          una vista previa sin recurrir a un banner agresivo. */}
+      <div className="flex w-full h-full bg-white rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
+        <div className="w-1 bg-brand-teal flex-shrink-0" />
+        <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-teal/10 text-brand-teal flex-shrink-0">
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx={12} cy={12} r={3} />
+              </svg>
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-brand-teal uppercase tracking-wider leading-none">
+                Vista previa del email
+              </p>
+              <p
+                id={`${id}-subject`}
+                className="text-sm font-medium text-brand-navy truncate mt-1"
+                title={preview?.subject ?? ""}
+              >
+                {loading
+                  ? "Cargando…"
+                  : preview?.subject ?? (error ? "Error" : "—")}
+              </p>
+              {caption && (
+                <p className="text-[11px] text-text-muted truncate">{caption}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Cerrar vista previa"
+              className="text-text-muted hover:text-text-body p-1 rounded-md cursor-pointer flex-shrink-0"
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 bg-[#f4f5f7]">
+            {error ? (
+              <div className="h-full flex items-center justify-center px-6 text-center">
+                <p className="text-sm text-text-muted">{error}</p>
+              </div>
+            ) : loading || !preview ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-text-muted text-xs">Cargando vista previa…</div>
+              </div>
+            ) : (
+              <iframe
+                // sandbox="" desactiva scripts/forms/etc — el HTML del email
+                // viene de nuestro propio builder, pero cinturón y tirantes.
+                sandbox=""
+                title="Vista previa del email"
+                srcDoc={preview.html}
+                style={{ width: "100%", height: "100%", border: 0 }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <span
       ref={wrapperRef}
-      className={`relative ${className ?? "inline-flex"}`}
+      className={className ?? "inline-flex"}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
@@ -211,69 +291,7 @@ export default function EmailPreviewPopover({
       onClick={handleTriggerClick}
     >
       {trigger}
-      {open && pos && (
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-labelledby={`${id}-subject`}
-          className="fixed z-[80] pointer-events-auto"
-          style={{ top: pos.top, left: pos.left, width, height }}
-          onMouseEnter={() => clearTimers()}
-          onMouseLeave={handleLeave}
-        >
-          <div className="flex flex-col w-full h-full bg-white rounded-xl border border-gray-200 shadow-2xl overflow-hidden">
-            <div className="flex items-start gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-                  Vista previa del email
-                </p>
-                <p
-                  id={`${id}-subject`}
-                  className="text-sm font-medium text-brand-navy truncate"
-                  title={preview?.subject ?? ""}
-                >
-                  {loading
-                    ? "Cargando…"
-                    : preview?.subject ?? (error ? "Error" : "—")}
-                </p>
-                {caption && (
-                  <p className="text-[11px] text-text-muted truncate">{caption}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                aria-label="Cerrar vista previa"
-                className="text-text-muted hover:text-text-body p-1 rounded-md cursor-pointer"
-              >
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 bg-[#f4f5f7]">
-              {error ? (
-                <div className="h-full flex items-center justify-center px-6 text-center">
-                  <p className="text-sm text-text-muted">{error}</p>
-                </div>
-              ) : loading || !preview ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-text-muted text-xs">Cargando vista previa…</div>
-                </div>
-              ) : (
-                <iframe
-                  // sandbox="" desactiva scripts/forms/etc — el HTML del email
-                  // viene de nuestro propio builder, pero cinturón y tirantes.
-                  sandbox=""
-                  title="Vista previa del email"
-                  srcDoc={preview.html}
-                  style={{ width: "100%", height: "100%", border: 0 }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {panel && createPortal(panel, document.body)}
     </span>
   );
 }
