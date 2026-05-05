@@ -20,13 +20,11 @@ import type { ClientDocumentation } from "@/lib/types/documentation";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import DocumentationMasterDetail from "@/components/documentation/documentation-master-detail";
 
-type TabKey = "documentacion" | "datos" | "cuentas" | "bancos";
+type TabKey = "documentacion" | "datos";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "documentacion", label: "Documentación" },
   { key: "datos", label: "Datos" },
-  { key: "cuentas", label: "Cuentas asociadas" },
-  { key: "bancos", label: "Cuentas bancarias" },
 ];
 
 function formatIBAN(iban: string): string {
@@ -267,124 +265,125 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
             )}
 
             {tab === "datos" && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                  Datos informativos
-                </p>
-                <Field label="Nombre legal" value={info.legal_name} />
-                <Field label="Nombre comercial" value={info.company_name ?? "—"} />
-                <Field label="NIF / CIF" value={info.nif ?? "—"} mono />
-                <p className="text-xs text-text-muted pt-3 border-t border-gray-100">
-                  Si necesitas modificar alguno de estos datos, contacta con el soporte.
-                </p>
-              </div>
-            )}
-
-            {tab === "cuentas" && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3">
+                {/* Datos informativos */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                    Cuentas asociadas
+                    Datos informativos
                   </p>
-                  <span className="text-xs text-text-muted">
-                    {info.accounts.length} {info.accounts.length === 1 ? "cuenta" : "cuentas"}
-                  </span>
+                  <Field label="Nombre legal" value={info.legal_name} />
+                  <Field label="Nombre comercial" value={info.company_name ?? "—"} />
+                  <Field label="NIF / CIF" value={info.nif ?? "—"} mono />
+                  <p className="text-xs text-text-muted pt-3 border-t border-gray-100">
+                    Si necesitas modificar alguno de estos datos, contacta con el soporte.
+                  </p>
                 </div>
-                {info.accounts.length === 0 ? (
-                  <p className="text-sm text-text-muted">Sin cuentas asociadas</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {info.accounts.map((acc) => (
-                      <li key={acc.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
-                        <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                          <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                          </svg>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-text-body truncate">
-                            {acc.full_name ?? "Sin nombre"}
-                          </p>
-                          <p className="text-xs text-text-muted truncate">{acc.email}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
 
-            {tab === "bancos" && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                    Cuentas bancarias
-                  </p>
-                  {!addingBank && (
-                    <button
-                      onClick={() => setAddingBank(true)}
-                      className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      Añadir
-                    </button>
+                {/* Cuentas asociadas */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      Cuentas asociadas
+                    </p>
+                    <span className="text-xs text-text-muted">
+                      {info.accounts.length} {info.accounts.length === 1 ? "cuenta" : "cuentas"}
+                    </span>
+                  </div>
+                  {info.accounts.length === 0 ? (
+                    <p className="text-sm text-text-muted">Sin cuentas asociadas</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {info.accounts.map((acc) => (
+                        <li key={acc.id} className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2">
+                          <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                            </svg>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-text-body truncate">
+                              {acc.full_name ?? "Sin nombre"}
+                            </p>
+                            <p className="text-xs text-text-muted truncate">{acc.email}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-                <div className="space-y-2">
-                  {info.bank_accounts.length === 0 && !addingBank && (
-                    <p className="text-sm text-text-muted">Sin cuentas bancarias</p>
-                  )}
-                  {info.bank_accounts.map((ba) =>
-                    editingBankId === ba.id ? (
-                      <BankAccountForm
-                        key={ba.id}
-                        initial={ba}
-                        onSave={(iban, label, bankName) => handleUpdateBank(ba.id, iban, label, bankName)}
-                        onCancel={() => setEditingBankId(null)}
-                      />
-                    ) : (
-                      <div key={ba.id} className="bg-gray-50 rounded-lg px-3 py-2.5 group">
-                        <div className="flex items-start justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              {ba.label && <span className="text-xs font-medium text-brand-teal">{ba.label}</span>}
-                              {ba.is_default && (
-                                <span className="text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full font-medium">
-                                  Principal
-                                </span>
-                              )}
+
+                {/* Cuentas bancarias */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      Cuentas bancarias
+                    </p>
+                    {!addingBank && (
+                      <button
+                        onClick={() => setAddingBank(true)}
+                        className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Añadir
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {info.bank_accounts.length === 0 && !addingBank && (
+                      <p className="text-sm text-text-muted">Sin cuentas bancarias</p>
+                    )}
+                    {info.bank_accounts.map((ba) =>
+                      editingBankId === ba.id ? (
+                        <BankAccountForm
+                          key={ba.id}
+                          initial={ba}
+                          onSave={(iban, label, bankName) => handleUpdateBank(ba.id, iban, label, bankName)}
+                          onCancel={() => setEditingBankId(null)}
+                        />
+                      ) : (
+                        <div key={ba.id} className="bg-gray-50 rounded-lg px-3 py-2.5 group">
+                          <div className="flex items-start justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                {ba.label && <span className="text-xs font-medium text-brand-teal">{ba.label}</span>}
+                                {ba.is_default && (
+                                  <span className="text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full font-medium">
+                                    Principal
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm font-mono text-text-body">{formatIBAN(ba.iban)}</p>
+                              {ba.bank_name && <p className="text-xs text-text-muted mt-0.5">{ba.bank_name}</p>}
                             </div>
-                            <p className="text-sm font-mono text-text-body">{formatIBAN(ba.iban)}</p>
-                            {ba.bank_name && <p className="text-xs text-text-muted mt-0.5">{ba.bank_name}</p>}
-                          </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                            <button
-                              onClick={() => setEditingBankId(ba.id)}
-                              className="p-1 rounded hover:bg-white transition-colors cursor-pointer"
-                              title="Editar"
-                            >
-                              <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBank(ba.id)}
-                              disabled={deletingBankId === ba.id}
-                              className="p-1 rounded hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
-                              title="Eliminar"
-                            >
-                              <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                              </svg>
-                            </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => setEditingBankId(ba.id)}
+                                className="p-1 rounded hover:bg-white transition-colors cursor-pointer"
+                                title="Editar"
+                              >
+                                <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBank(ba.id)}
+                                disabled={deletingBankId === ba.id}
+                                className="p-1 rounded hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
+                                title="Eliminar"
+                              >
+                                <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  )}
-                  {addingBank && <BankAccountForm onSave={handleAddBank} onCancel={() => setAddingBank(false)} />}
+                      )
+                    )}
+                    {addingBank && <BankAccountForm onSave={handleAddBank} onCancel={() => setAddingBank(false)} />}
+                  </div>
                 </div>
               </div>
             )}

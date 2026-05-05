@@ -5,9 +5,6 @@ import type { ClienteCompany, ClientAccount, CompanyDetailInfo } from "@/app/adm
 import {
   getCompanyDetail,
   updateCompanyNameAdmin,
-  addCompanyBankAccountAdmin,
-  updateCompanyBankAccountAdmin,
-  deleteCompanyBankAccountAdmin,
   createClientAccount,
   updateClientAccount,
   unlinkClientFromCompany,
@@ -309,11 +306,6 @@ export default function ClientDetailPanel({
   const [nameValue, setNameValue] = useState(company.company_name ?? "");
   const [savingName, setSavingName] = useState(false);
 
-  // Bank accounts
-  const [addingBank, setAddingBank] = useState(false);
-  const [editingBankId, setEditingBankId] = useState<string | null>(null);
-  const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
-
   // Client accounts
   const [addingAccount, setAddingAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
@@ -350,31 +342,6 @@ export default function ClientDetailPanel({
       onUpdateName(company.id, nameValue || null);
       setEditingName(false);
     } finally { setSavingName(false); }
-  }
-
-  async function handleAddBank(iban: string, label: string | null, bankName: string | null) {
-    const newAccount = await addCompanyBankAccountAdmin(company.id, iban, label, bankName);
-    setDetail((prev) => prev ? { ...prev, bank_accounts: [...prev.bank_accounts, newAccount] } : prev);
-    setAddingBank(false);
-  }
-
-  async function handleUpdateBank(accountId: string, iban: string, label: string | null, bankName: string | null) {
-    await updateCompanyBankAccountAdmin(company.id, accountId, iban, label, bankName);
-    setDetail((prev) => prev ? {
-      ...prev,
-      bank_accounts: prev.bank_accounts.map((ba) =>
-        ba.id === accountId ? { ...ba, iban: iban.replace(/\s/g, "").toUpperCase(), label, bank_name: bankName } : ba
-      ),
-    } : prev);
-    setEditingBankId(null);
-  }
-
-  async function handleDeleteBank(accountId: string) {
-    setDeletingBankId(accountId);
-    try {
-      await deleteCompanyBankAccountAdmin(company.id, accountId);
-      setDetail((prev) => prev ? { ...prev, bank_accounts: prev.bank_accounts.filter((ba) => ba.id !== accountId) } : prev);
-    } finally { setDeletingBankId(null); }
   }
 
   async function handleAddAccount(input: { email: string; full_name: string | null }) {
@@ -462,6 +429,9 @@ export default function ClientDetailPanel({
               </button>
             )}
             {company.nif && <p className="text-xs text-text-muted font-mono mt-1">{company.nif}</p>}
+            <p className="text-xs text-text-muted mt-1">
+              Alta en la plataforma: <span className="text-text-body">{formatDate(company.created_at)}</span>
+            </p>
             {isDeleted && detail?.deleted_at && (
               <span className="inline-flex items-center gap-1 mt-2 text-[10px] bg-gray-200 text-text-muted px-2 py-0.5 rounded-full font-medium">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -513,58 +483,6 @@ export default function ClientDetailPanel({
                     </span>
                   );
                 })}
-              </div>
-            )}
-          </section>
-
-          {/* ---- Bank accounts ---- */}
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Cuentas bancarias</h3>
-              {canEditCompany && !addingBank && !loadingDetail && (
-                <button onClick={() => setAddingBank(true)} className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  Añadir
-                </button>
-              )}
-            </div>
-
-            {loadingDetail ? (
-              <div className="h-14 bg-gray-100 rounded-lg animate-pulse" />
-            ) : (
-              <div className="space-y-2">
-                {(detail?.bank_accounts ?? []).length === 0 && !addingBank && (
-                  <p className="text-sm text-text-muted bg-gray-50 rounded-lg px-4 py-3">Sin cuentas bancarias</p>
-                )}
-                {(detail?.bank_accounts ?? []).map((ba) =>
-                  editingBankId === ba.id ? (
-                    <BankAccountForm key={ba.id} initial={ba} onSave={(iban, label, bankName) => handleUpdateBank(ba.id, iban, label, bankName)} onCancel={() => setEditingBankId(null)} />
-                  ) : (
-                    <div key={ba.id} className="bg-gray-50 rounded-lg px-4 py-3 group">
-                      <div className="flex items-start justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            {ba.label && <span className="text-xs font-medium text-brand-teal">{ba.label}</span>}
-                            {ba.is_default && <span className="text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full font-medium">Principal</span>}
-                          </div>
-                          <p className="text-sm font-mono text-text-body">{formatIBAN(ba.iban)}</p>
-                          {ba.bank_name && <p className="text-xs text-text-muted mt-0.5">{ba.bank_name}</p>}
-                        </div>
-                        {canEditCompany && (
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setEditingBankId(ba.id)} className="p-1 rounded hover:bg-gray-200 cursor-pointer" title="Editar">
-                              <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /></svg>
-                            </button>
-                            <button onClick={() => handleDeleteBank(ba.id)} disabled={deletingBankId === ba.id} className="p-1 rounded hover:bg-red-100 cursor-pointer disabled:opacity-50" title="Eliminar">
-                              <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                )}
-                {addingBank && <BankAccountForm onSave={handleAddBank} onCancel={() => setAddingBank(false)} />}
               </div>
             )}
           </section>
