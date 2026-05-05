@@ -32,7 +32,7 @@ export default function DeleteCompanyModal({ legalName, nif, onConfirm, onCancel
     try {
       await onConfirm(typed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al eliminar");
+      setError(err instanceof Error ? err.message : "Error al dar de baja");
       setConfirming(false);
     }
   }
@@ -42,11 +42,11 @@ export default function DeleteCompanyModal({ legalName, nif, onConfirm, onCancel
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !confirming && onCancel()} />
       <form onSubmit={handleSubmit} className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4">
         <div>
-          <h2 className="text-lg font-bold font-heading text-brand-navy">Eliminar empresa</h2>
+          <h2 className="text-lg font-bold font-heading text-brand-navy">Dar de baja a cliente</h2>
           <p className="text-sm text-text-muted mt-2">
-            Vas a eliminar <span className="font-semibold text-text-body">{legalName}</span>. La empresa
+            Vas a dar de baja a <span className="font-semibold text-text-body">{legalName}</span>. El cliente
             desaparecerá de los listados pero el histórico fiscal se conservará.
-            Podrás restaurarla desde la papelera.
+            Podrás restaurarlo desde la papelera.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default function DeleteCompanyModal({ legalName, nif, onConfirm, onCancel
             disabled={!matches || confirming}
             className="text-sm bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
-            {confirming ? "Eliminando..." : "Eliminar empresa"}
+            {confirming ? "Dando de baja..." : "Dar de baja"}
           </button>
         </div>
       </form>

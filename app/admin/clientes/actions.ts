@@ -48,6 +48,7 @@ export interface ClienteCompany {
   services: ClienteService[];
   is_assigned: boolean;
   deleted_at: string | null;
+  created_at: string;
   documentation_progress: { validated: number; total: number; in_review: number } | null;
 }
 
@@ -65,6 +66,7 @@ export interface ClientesPageData {
   canCreateCompany: boolean;
   canDeleteCompany: boolean;
   canManageClientAccounts: boolean;
+  canManageBankAccounts: boolean;
 }
 
 export interface ClientAccount {
@@ -79,6 +81,7 @@ export interface CompanyDetailInfo {
   company_name: string | null;
   nif: string | null;
   deleted_at: string | null;
+  created_at: string;
   profiles: { id: string; full_name: string | null; email: string }[];
   bank_accounts: CompanyBankAccount[];
 }
@@ -101,7 +104,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     (() => {
       return supabase
         .from("companies")
-        .select("id, legal_name, company_name, nif, deleted_at")
+        .select("id, legal_name, company_name, nif, deleted_at, created_at")
         .order("legal_name");
     })(),
   ]);
@@ -122,11 +125,18 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   const companyIds = companies.map((c) => c.id);
 
   // 2. User's chief depts + permisos globales para gestionar empresas/cuentas
-  const [userChiefDeptIds, canCreateCompany, canDeleteCompany, canManageClientAccounts] = await Promise.all([
+  const [
+    userChiefDeptIds,
+    canCreateCompany,
+    canDeleteCompany,
+    canManageClientAccounts,
+    canManageBankAccounts,
+  ] = await Promise.all([
     userScopeIds("write_dept_service", "department"),
     hasPermission("create_company"),
     hasPermission("delete_company"),
     hasPermission("manage_client_accounts"),
+    hasPermission("manage_bank_accounts"),
   ]);
 
   // 3. Company services + technicians
@@ -271,6 +281,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     services: compSvcMap.get(c.id) ?? [],
     is_assigned: myAssignedCompanyIds.has(c.id),
     deleted_at: c.deleted_at as string | null,
+    created_at: c.created_at as string,
     documentation_progress: docProgressMap.get(c.id) ?? null,
   }));
 
@@ -283,6 +294,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     canCreateCompany,
     canDeleteCompany,
     canManageClientAccounts,
+    canManageBankAccounts,
   };
 }
 
@@ -294,7 +306,7 @@ export async function getCompanyDetail(companyId: string): Promise<CompanyDetail
   const [{ data: company }, { data: profileLinks }, { data: bankAccounts }] = await Promise.all([
     supabase
       .from("companies")
-      .select("id, legal_name, company_name, nif, deleted_at")
+      .select("id, legal_name, company_name, nif, deleted_at, created_at")
       .eq("id", companyId)
       .single(),
     supabase
@@ -593,7 +605,7 @@ export async function createCompanyAdmin(input: CreateCompanyInput): Promise<Cli
   const { data, error } = await supabase
     .from("companies")
     .insert({ legal_name: legalName, company_name: companyName, nif })
-    .select("id, legal_name, company_name, nif")
+    .select("id, legal_name, company_name, nif, created_at")
     .single();
 
   if (error || !data) throw new Error("Error al crear la empresa.");
@@ -606,6 +618,7 @@ export async function createCompanyAdmin(input: CreateCompanyInput): Promise<Cli
     services: [],
     is_assigned: false,
     deleted_at: null,
+    created_at: data.created_at as string,
     documentation_progress: null,
   };
 }

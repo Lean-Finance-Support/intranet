@@ -57,6 +57,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
           canCreateCompany={listing.canCreateCompany}
           canDeleteCompany={listing.canDeleteCompany}
           canManageClientAccounts={listing.canManageClientAccounts}
+          canManageBankAccounts={listing.canManageBankAccounts}
           linkPrefix={linkPrefix}
           documentation={documentation}
           assignableCatalog={assignable}
