@@ -14,6 +14,7 @@ import type {
   ApartadoTemplate,
   ApartadoTemplateFile,
   BlockTemplate,
+  DocumentationTag,
 } from "@/lib/types/documentation";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ export interface BulkAssignmentEligibleAdmin {
 export interface BulkAssignmentData {
   blocks: BlockTemplate[];
   departments: { id: string; name: string }[];
+  tags: DocumentationTag[];
   companies: BulkAssignmentCompany[];
   admins: BulkAssignmentEligibleAdmin[];
 }
@@ -74,13 +76,13 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
       .order("display_order")
       .order("name"),
     admin
       .schema("documentation")
       .from("apartado_departments")
-      .select("apartado_id, department_id"),
+      .select("apartado_id, department_id, is_optional"),
     admin.from("departments").select("id, name").order("name"),
     admin
       .schema("documentation")
@@ -107,12 +109,36 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
     clientCountByCompany.set(cid, (clientCountByCompany.get(cid) ?? 0) + 1);
   }
 
-  // Apartados con sus departments y plantillas-archivo
-  const apartadoDeptMap = new Map<string, string[]>();
+  // Apartados con sus departments (con is_optional) y plantillas-archivo
+  const apartadoDeptMap = new Map<
+    string,
+    { department_id: string; is_optional: boolean }[]
+  >();
   for (const link of deptLinks ?? []) {
     const list = apartadoDeptMap.get(link.apartado_id as string) ?? [];
-    list.push(link.department_id as string);
+    list.push({
+      department_id: link.department_id as string,
+      is_optional: (link.is_optional as boolean | null) ?? false,
+    });
     apartadoDeptMap.set(link.apartado_id as string, list);
+  }
+
+  // Tags + apartado_tags
+  const [{ data: tagRows }, { data: apartadoTagLinks }] = await Promise.all([
+    admin
+      .schema("documentation")
+      .from("tags")
+      .select("id, slug, name, description"),
+    admin
+      .schema("documentation")
+      .from("apartado_tags")
+      .select("apartado_id, tag_id"),
+  ]);
+  const apartadoTagMap = new Map<string, string[]>();
+  for (const link of apartadoTagLinks ?? []) {
+    const list = apartadoTagMap.get(link.apartado_id as string) ?? [];
+    list.push(link.tag_id as string);
+    apartadoTagMap.set(link.apartado_id as string, list);
   }
 
   const templatesByApartado = new Map<string, ApartadoTemplateFile[]>();
@@ -134,6 +160,7 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
   const apartadosByBlock = new Map<string, ApartadoTemplate[]>();
   for (const a of apartados ?? []) {
     const arr = apartadosByBlock.get(a.block_id as string) ?? [];
+    const deptLinks = apartadoDeptMap.get(a.id as string) ?? [];
     arr.push({
       id: a.id as string,
       block_id: a.block_id as string,
@@ -141,7 +168,10 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
       description: (a.description as string | null) ?? null,
       display_order: a.display_order as number,
       is_global: a.is_global as boolean,
-      department_ids: apartadoDeptMap.get(a.id as string) ?? [],
+      is_optional_global: (a.is_optional as boolean | null) ?? false,
+      department_ids: deptLinks.map((d) => d.department_id),
+      departments: deptLinks,
+      tag_ids: apartadoTagMap.get(a.id as string) ?? [],
       templates: templatesByApartado.get(a.id as string) ?? [],
       email_template_slug: (a.email_template_slug as string | null) ?? null,
     });
@@ -197,9 +227,17 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
     (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email)
   );
 
+  const tagsList: DocumentationTag[] = (tagRows ?? []).map((t) => ({
+    id: t.id as string,
+    slug: t.slug as string,
+    name: t.name as string,
+    description: (t.description as string | null) ?? null,
+  }));
+
   return {
     blocks: blocksTpl,
     departments: ((depts ?? []) as { id: string; name: string }[]),
+    tags: tagsList,
     companies: companyList,
     admins: adminsList,
   };

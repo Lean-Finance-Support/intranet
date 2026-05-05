@@ -115,31 +115,41 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   function toggleApartado(id: string) {
+    const wasSelected = !!selectedApartados[id];
     setSelectedApartados((prev) => {
       const next = { ...prev };
       if (next[id]) delete next[id];
       else next[id] = true;
       return next;
     });
-    // Si se deselecciona, limpiar supervisor + email + opcional
-    setSupervisorsByApartado((prev) => {
-      if (!prev[id]) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setSendEmailByApartado((prev) => {
-      if (!(id in prev)) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setOptionalApartados((prev) => {
-      if (!(id in prev)) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+    if (wasSelected) {
+      // Si se deselecciona, limpiar supervisor + email + opcional
+      setSupervisorsByApartado((prev) => {
+        if (!prev[id]) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setSendEmailByApartado((prev) => {
+        if (!(id in prev)) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setOptionalApartados((prev) => {
+        if (!(id in prev)) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    } else {
+      // Si se selecciona, aplicamos el default de opcionalidad del catálogo:
+      // global con flag, o no-global con todos los deptos opcionales.
+      const ap = allApartados.find((a) => a.id === id);
+      if (ap && isOptionalByDefault(ap)) {
+        setOptionalApartados((prev) => ({ ...prev, [id]: true }));
+      }
+    }
   }
 
   function toggleOptional(id: string) {
@@ -178,6 +188,18 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
       setOptionalApartados((prev) => {
         const next = { ...prev };
         for (const a of block.apartados) delete next[a.id];
+        return next;
+      });
+    } else {
+      // Pre-marcar como opcional los apartados del bloque que lo sean por
+      // defecto, respetando los que el usuario ya hubiera marcado a mano.
+      setOptionalApartados((prev) => {
+        const next = { ...prev };
+        for (const a of block.apartados) {
+          if (!(a.id in next) && isOptionalByDefault(a)) {
+            next[a.id] = true;
+          }
+        }
         return next;
       });
     }
@@ -396,9 +418,23 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                     </label>
                     <div className="divide-y divide-gray-100">
                       {block.apartados.map((a) => {
-                        const deptNames = a.is_global
-                          ? ["Global"]
-                          : a.department_ids.map((d) => departmentNameById.get(d) ?? d);
+                        const deptChips: { id: string; name: string; is_optional: boolean }[] =
+                          a.is_global
+                            ? [
+                                {
+                                  id: "__global",
+                                  name: "Global",
+                                  is_optional: a.is_optional_global ?? false,
+                                },
+                              ]
+                            : (a.departments ?? []).map((link) => ({
+                                id: link.department_id,
+                                name: departmentNameById.get(link.department_id) ?? link.department_id,
+                                is_optional: link.is_optional,
+                              }));
+                        const apartadoTags = (a.tag_ids ?? [])
+                          .map((tid) => data.tags.find((t) => t.id === tid))
+                          .filter((t): t is NonNullable<typeof t> => !!t);
                         const isSelected = !!selectedApartados[a.id];
                         const isOptional = !!optionalApartados[a.id];
                         return (
@@ -416,16 +452,36 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-sm text-text-body">{a.name}</span>
-                                  {deptNames.map((d) => (
+                                  {deptChips.map((d) => {
+                                    const cls = a.is_global
+                                      ? d.is_optional
+                                        ? "bg-brand-navy/5 text-brand-navy/70 ring-1 ring-brand-navy/20"
+                                        : "bg-brand-navy/10 text-brand-navy"
+                                      : d.is_optional
+                                        ? "bg-brand-teal/5 text-brand-teal/70 ring-1 ring-brand-teal/20"
+                                        : "bg-brand-teal/10 text-brand-teal";
+                                    return (
+                                      <span
+                                        key={d.id}
+                                        className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[1px] rounded-full ${cls}`}
+                                        title={d.is_optional ? `${d.name} · opcional` : d.name}
+                                      >
+                                        {d.name}
+                                        {d.is_optional && (
+                                          <span className="text-[9px] uppercase tracking-wider opacity-80">
+                                            opc.
+                                          </span>
+                                        )}
+                                      </span>
+                                    );
+                                  })}
+                                  {apartadoTags.map((t) => (
                                     <span
-                                      key={d}
-                                      className={`inline-flex items-center text-[10px] font-medium px-2 py-[1px] rounded-full ${
-                                        a.is_global
-                                          ? "bg-brand-navy/10 text-brand-navy"
-                                          : "bg-brand-teal/10 text-brand-teal"
-                                      }`}
+                                      key={t.id}
+                                      className="inline-flex items-center text-[10px] font-medium px-2 py-[1px] rounded-full bg-brand-navy/8 text-brand-navy ring-1 ring-brand-navy/15"
+                                      title={t.description ?? t.name}
                                     >
-                                      {d}
+                                      # {t.name}
                                     </span>
                                   ))}
                                   {a.email_template_slug && (() => {
@@ -923,4 +979,14 @@ function SummaryRow({
       <span className="text-base font-semibold tabular-nums">{value}</span>
     </div>
   );
+}
+
+// Default de opcionalidad heredado del catálogo:
+//   - global con is_optional_global = true → opcional
+//   - no-global con todos sus deptos marcados is_optional = true → opcional
+function isOptionalByDefault(a: ApartadoTemplate): boolean {
+  if (a.is_global) return a.is_optional_global ?? false;
+  const links = a.departments ?? [];
+  if (links.length === 0) return false;
+  return links.every((d) => d.is_optional);
 }
