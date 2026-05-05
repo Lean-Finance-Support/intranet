@@ -14,6 +14,8 @@ import type {
   BlockTemplate,
   ApartadoTemplate,
   ApartadoTemplateFile,
+  ApartadoDepartmentLink,
+  DocumentationTag,
 } from "@/lib/types/documentation";
 import { isValidDocumentationEmailTemplateSlug } from "@/lib/documentation/email-templates";
 import {
@@ -37,6 +39,7 @@ async function requireManageCatalog(): Promise<void> {
 export async function listDocumentationCatalog(): Promise<{
   blocks: BlockTemplate[];
   departments: { id: string; name: string }[];
+  tags: DocumentationTag[];
   canManage: boolean;
   canRequestDocumentation: boolean;
 }> {
@@ -48,6 +51,8 @@ export async function listDocumentationCatalog(): Promise<{
     { data: deptLinks },
     { data: depts },
     { data: templates },
+    { data: tagRows },
+    { data: apartadoTagLinks },
   ] = await Promise.all([
     supabase
       .schema("documentation")
@@ -58,26 +63,44 @@ export async function listDocumentationCatalog(): Promise<{
     supabase
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
       .order("display_order")
       .order("name"),
     supabase
       .schema("documentation")
       .from("apartado_departments")
-      .select("apartado_id, department_id"),
+      .select("apartado_id, department_id, is_optional"),
     supabase.from("departments").select("id, name").order("name"),
     supabase
       .schema("documentation")
       .from("apartado_templates")
       .select("id, apartado_id, file_name, file_size, mime_type, uploaded_at, storage_path")
       .order("uploaded_at"),
+    supabase
+      .schema("documentation")
+      .from("tags")
+      .select("id, slug, name, description")
+      .order("name"),
+    supabase
+      .schema("documentation")
+      .from("apartado_tags")
+      .select("apartado_id, tag_id"),
   ]);
 
-  const apartadoDeptMap = new Map<string, string[]>();
+  const apartadoDeptMap = new Map<string, ApartadoDepartmentLink[]>();
   for (const link of deptLinks ?? []) {
     const list = apartadoDeptMap.get(link.apartado_id as string) ?? [];
-    list.push(link.department_id as string);
+    list.push({
+      department_id: link.department_id as string,
+      is_optional: (link.is_optional as boolean | null) ?? false,
+    });
     apartadoDeptMap.set(link.apartado_id as string, list);
+  }
+  const apartadoTagMap = new Map<string, string[]>();
+  for (const link of apartadoTagLinks ?? []) {
+    const list = apartadoTagMap.get(link.apartado_id as string) ?? [];
+    list.push(link.tag_id as string);
+    apartadoTagMap.set(link.apartado_id as string, list);
   }
 
   const templatesByApartado = new Map<string, ApartadoTemplateFile[]>();
@@ -99,6 +122,7 @@ export async function listDocumentationCatalog(): Promise<{
   const apartadosByBlock = new Map<string, ApartadoTemplate[]>();
   for (const a of apartados ?? []) {
     const arr = apartadosByBlock.get(a.block_id as string) ?? [];
+    const deptLinks = apartadoDeptMap.get(a.id as string) ?? [];
     arr.push({
       id: a.id as string,
       block_id: a.block_id as string,
@@ -106,7 +130,10 @@ export async function listDocumentationCatalog(): Promise<{
       description: (a.description as string | null) ?? null,
       display_order: a.display_order as number,
       is_global: a.is_global as boolean,
-      department_ids: apartadoDeptMap.get(a.id as string) ?? [],
+      is_optional_global: (a.is_optional as boolean | null) ?? false,
+      department_ids: deptLinks.map((d) => d.department_id),
+      departments: deptLinks,
+      tag_ids: apartadoTagMap.get(a.id as string) ?? [],
       templates: templatesByApartado.get(a.id as string) ?? [],
       email_template_slug: (a.email_template_slug as string | null) ?? null,
     });
@@ -127,9 +154,17 @@ export async function listDocumentationCatalog(): Promise<{
     hasPermission("request_client_documentation"),
   ]);
 
+  const tags: DocumentationTag[] = (tagRows ?? []).map((t) => ({
+    id: t.id as string,
+    slug: t.slug as string,
+    name: t.name as string,
+    description: (t.description as string | null) ?? null,
+  }));
+
   return {
     blocks: result,
     departments: (depts ?? []) as { id: string; name: string }[],
+    tags,
     canManage,
     canRequestDocumentation,
   };
@@ -226,18 +261,23 @@ export async function deleteBlock(blockId: string): Promise<void> {
 // Apartados
 // ============================================================================
 
-export async function createApartado(input: {
-  block_id: string;
+export interface ApartadoCatalogInput {
   name: string;
   description: string | null;
   display_order: number;
   is_global: boolean;
-  department_ids: string[];
+  is_optional_global: boolean;
+  departments: ApartadoDepartmentLink[];
+  tag_ids: string[];
   email_template_slug: string | null;
-}): Promise<ApartadoTemplate> {
+}
+
+export async function createApartado(
+  input: ApartadoCatalogInput & { block_id: string }
+): Promise<ApartadoTemplate> {
   await requireAdmin();
   await requireManageCatalog();
-  if (!input.is_global && input.department_ids.length === 0) {
+  if (!input.is_global && input.departments.length === 0) {
     throw new Error("Selecciona al menos un departamento");
   }
   if (input.email_template_slug && !isValidDocumentationEmailTemplateSlug(input.email_template_slug)) {
@@ -254,23 +294,34 @@ export async function createApartado(input: {
       description: input.description?.trim() || null,
       display_order: input.display_order,
       is_global: input.is_global,
+      is_optional: input.is_global ? input.is_optional_global : false,
       email_template_slug: input.email_template_slug,
     })
-    .select("id, block_id, name, description, display_order, is_global, email_template_slug")
+    .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
     .single();
   if (error) throw new Error(error.message);
 
-  if (!input.is_global && input.department_ids.length > 0) {
+  const departments = input.is_global ? [] : input.departments;
+  if (departments.length > 0) {
     const { error: linkError } = await admin
       .schema("documentation")
       .from("apartado_departments")
       .insert(
-        input.department_ids.map((deptId) => ({
+        departments.map((d) => ({
           apartado_id: data!.id,
-          department_id: deptId,
+          department_id: d.department_id,
+          is_optional: d.is_optional,
         }))
       );
     if (linkError) throw new Error(linkError.message);
+  }
+
+  if (input.tag_ids.length > 0) {
+    const { error: tagError } = await admin
+      .schema("documentation")
+      .from("apartado_tags")
+      .insert(input.tag_ids.map((tag_id) => ({ apartado_id: data!.id, tag_id })));
+    if (tagError) throw new Error(tagError.message);
   }
 
   revalidatePath("/admin/documentacion");
@@ -281,7 +332,10 @@ export async function createApartado(input: {
     description: (data!.description as string | null) ?? null,
     display_order: data!.display_order as number,
     is_global: data!.is_global as boolean,
-    department_ids: input.is_global ? [] : input.department_ids,
+    is_optional_global: (data!.is_optional as boolean | null) ?? false,
+    department_ids: departments.map((d) => d.department_id),
+    departments,
+    tag_ids: input.tag_ids,
     templates: [],
     email_template_slug: (data!.email_template_slug as string | null) ?? null,
   };
@@ -289,18 +343,11 @@ export async function createApartado(input: {
 
 export async function updateApartado(
   apartadoId: string,
-  input: {
-    name: string;
-    description: string | null;
-    display_order: number;
-    is_global: boolean;
-    department_ids: string[];
-    email_template_slug: string | null;
-  }
+  input: ApartadoCatalogInput
 ): Promise<void> {
   await requireAdmin();
   await requireManageCatalog();
-  if (!input.is_global && input.department_ids.length === 0) {
+  if (!input.is_global && input.departments.length === 0) {
     throw new Error("Selecciona al menos un departamento");
   }
   if (input.email_template_slug && !isValidDocumentationEmailTemplateSlug(input.email_template_slug)) {
@@ -316,28 +363,45 @@ export async function updateApartado(
       description: input.description?.trim() || null,
       display_order: input.display_order,
       is_global: input.is_global,
+      is_optional: input.is_global ? input.is_optional_global : false,
       email_template_slug: input.email_template_slug,
     })
     .eq("id", apartadoId);
   if (error) throw new Error(error.message);
 
-  // Reescribir department_ids
+  // Reescribir department_ids (con su is_optional)
   await admin
     .schema("documentation")
     .from("apartado_departments")
     .delete()
     .eq("apartado_id", apartadoId);
-  if (!input.is_global && input.department_ids.length > 0) {
+  const departments = input.is_global ? [] : input.departments;
+  if (departments.length > 0) {
     const { error: linkError } = await admin
       .schema("documentation")
       .from("apartado_departments")
       .insert(
-        input.department_ids.map((deptId) => ({
+        departments.map((d) => ({
           apartado_id: apartadoId,
-          department_id: deptId,
+          department_id: d.department_id,
+          is_optional: d.is_optional,
         }))
       );
     if (linkError) throw new Error(linkError.message);
+  }
+
+  // Reescribir tags
+  await admin
+    .schema("documentation")
+    .from("apartado_tags")
+    .delete()
+    .eq("apartado_id", apartadoId);
+  if (input.tag_ids.length > 0) {
+    const { error: tagError } = await admin
+      .schema("documentation")
+      .from("apartado_tags")
+      .insert(input.tag_ids.map((tag_id) => ({ apartado_id: apartadoId, tag_id })));
+    if (tagError) throw new Error(tagError.message);
   }
   revalidatePath("/admin/documentacion");
 }

@@ -22,12 +22,36 @@ export interface ApartadoTemplate {
   description: string | null;
   display_order: number;
   is_global: boolean;
+  // Solo aplica si is_global=true. Cuando true, el apartado se sugiere como
+  // opcional por defecto en el wizard de onboarding y al asignar bloques.
+  // Para apartados con dpto la opcionalidad va en `departments[].is_optional`.
+  is_optional_global?: boolean;
   department_ids: string[];
+  // Per-dept optionality. department_ids es la proyección "plana" para
+  // consumidores que sólo necesitan saber a qué deptos pertenece el apartado;
+  // departments tiene además el flag is_optional por dpto. Se mantienen ambos
+  // para compatibilidad — los loaders del catálogo y del onboarding pueblan
+  // ambos; otros loaders (asignación múltiple, doc por cliente) sólo pueblan
+  // department_ids y dejan departments/tag_ids vacíos.
+  departments?: ApartadoDepartmentLink[];
+  tag_ids?: string[];
   templates: ApartadoTemplateFile[];
   // Slug de la plantilla de email asociada (catálogo en
   // lib/documentation/email-templates.ts). Si está presente, el flujo de
   // Asignación múltiple ofrecerá disparar ese email al asignar el apartado.
   email_template_slug: string | null;
+}
+
+export interface ApartadoDepartmentLink {
+  department_id: string;
+  is_optional: boolean;
+}
+
+export interface DocumentationTag {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
 }
 
 export interface ApartadoTemplateFile {

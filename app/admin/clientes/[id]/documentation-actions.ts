@@ -521,12 +521,12 @@ export async function getAssignableCatalog(
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
       .order("display_order"),
     admin
       .schema("documentation")
       .from("apartado_departments")
-      .select("apartado_id, department_id"),
+      .select("apartado_id, department_id, is_optional"),
     admin
       .schema("documentation")
       .from("client_blocks")
@@ -549,10 +549,16 @@ export async function getAssignableCatalog(
 
   const assignedBlockIds = new Set((assignedClientBlocks ?? []).map((cb) => cb.block_id as string));
 
-  const apartadoDeptMap = new Map<string, string[]>();
+  const apartadoDeptMap = new Map<
+    string,
+    { department_id: string; is_optional: boolean }[]
+  >();
   for (const link of deptLinks ?? []) {
     const list = apartadoDeptMap.get(link.apartado_id as string) ?? [];
-    list.push(link.department_id as string);
+    list.push({
+      department_id: link.department_id as string,
+      is_optional: (link.is_optional as boolean | null) ?? false,
+    });
     apartadoDeptMap.set(link.apartado_id as string, list);
   }
 
@@ -598,7 +604,7 @@ export async function getAssignableCatalog(
   for (const b of allBlocks) {
     for (const a of b.apartados) {
       if (!a.is_global) {
-        for (const d of a.department_ids) interestingDepts.add(d);
+        for (const d of a.department_ids ?? []) interestingDepts.add(d);
       }
     }
   }
@@ -642,10 +648,11 @@ export async function getAssignableCatalog(
 
 function toApartadoTemplate(
   raw: Record<string, unknown>,
-  deptMap: Map<string, string[]>,
+  deptMap: Map<string, { department_id: string; is_optional: boolean }[]>,
   templatesMap: Map<string, ApartadoTemplateFile[]>
 ) {
   const id = raw.id as string;
+  const links = deptMap.get(id) ?? [];
   return {
     id,
     block_id: raw.block_id as string,
@@ -653,7 +660,9 @@ function toApartadoTemplate(
     description: (raw.description as string | null) ?? null,
     display_order: raw.display_order as number,
     is_global: raw.is_global as boolean,
-    department_ids: deptMap.get(id) ?? [],
+    is_optional_global: (raw.is_optional as boolean | null) ?? false,
+    department_ids: links.map((l) => l.department_id),
+    departments: links,
     templates: templatesMap.get(id) ?? [],
     email_template_slug: (raw.email_template_slug as string | null) ?? null,
   };

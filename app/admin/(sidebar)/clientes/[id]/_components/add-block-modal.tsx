@@ -1,7 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { BlockTemplate, DepartmentMember } from "@/lib/types/documentation";
+import type {
+  ApartadoTemplate,
+  BlockTemplate,
+  DepartmentMember,
+} from "@/lib/types/documentation";
+
+function isOptionalByDefault(a: ApartadoTemplate): boolean {
+  if (a.is_global) return a.is_optional_global ?? false;
+  const links = a.departments ?? [];
+  if (links.length === 0) return false;
+  return links.every((d) => d.is_optional);
+}
+
+function defaultOptionalSet(block: BlockTemplate | null): Set<string> {
+  if (!block) return new Set();
+  const ids = block.apartados.filter(isOptionalByDefault).map((a) => a.id);
+  return new Set(ids);
+}
 
 interface Props {
   companyId: string;
@@ -18,15 +35,19 @@ interface Props {
 }
 
 export default function AddBlockModal({ companyId, assignable, onClose, onSubmit }: Props) {
+  const initialBlock = assignable.blocks[0] ?? null;
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(
-    assignable.blocks[0]?.id ?? null
+    initialBlock?.id ?? null
   );
   // apartadoId -> supervisor profile ids
   const [supervisorsByApartado, setSupervisorsByApartado] = useState<Record<string, string[]>>({});
   // Apartados excluidos del bloque actual (por defecto todos van incluidos).
   const [excludedApartadoIds, setExcludedApartadoIds] = useState<Set<string>>(new Set());
-  // Apartados marcados como opcionales.
-  const [optionalApartadoIds, setOptionalApartadoIds] = useState<Set<string>>(new Set());
+  // Apartados marcados como opcionales — se inicializan con los que el catálogo
+  // marca como opcional por defecto.
+  const [optionalApartadoIds, setOptionalApartadoIds] = useState<Set<string>>(
+    () => defaultOptionalSet(initialBlock)
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,10 +171,14 @@ export default function AddBlockModal({ companyId, assignable, onClose, onSubmit
                 <select
                   value={selectedBlockId ?? ""}
                   onChange={(e) => {
-                    setSelectedBlockId(e.target.value || null);
+                    const newId = e.target.value || null;
+                    setSelectedBlockId(newId);
                     setSupervisorsByApartado({});
                     setExcludedApartadoIds(new Set());
-                    setOptionalApartadoIds(new Set());
+                    const newBlock = newId
+                      ? assignable.blocks.find((b) => b.id === newId) ?? null
+                      : null;
+                    setOptionalApartadoIds(defaultOptionalSet(newBlock));
                   }}
                   className="w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal focus:bg-white transition-colors"
                 >

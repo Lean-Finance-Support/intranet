@@ -1,12 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
-import type { ApartadoTemplate, ApartadoTemplateFile } from "@/lib/types/documentation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type {
+  ApartadoTemplate,
+  ApartadoTemplateFile,
+  ApartadoDepartmentLink,
+  DocumentationTag,
+} from "@/lib/types/documentation";
 import { DOCUMENTATION_EMAIL_TEMPLATES } from "@/lib/documentation/email-templates";
 
 interface Props {
   blockId: string;
   departments: { id: string; name: string }[];
+  tags: DocumentationTag[];
   initial?: ApartadoTemplate;
   templates?: ApartadoTemplateFile[];
   onUploadTemplate?: (file: File) => Promise<void> | void;
@@ -17,7 +23,9 @@ interface Props {
     description: string | null;
     display_order: number;
     is_global: boolean;
-    department_ids: string[];
+    is_optional_global: boolean;
+    departments: ApartadoDepartmentLink[];
+    tag_ids: string[];
     email_template_slug: string | null;
   }) => Promise<void> | void;
   onClose: () => void;
@@ -25,6 +33,7 @@ interface Props {
 
 export default function ApartadoForm({
   departments,
+  tags,
   initial,
   templates,
   onUploadTemplate,
@@ -36,7 +45,40 @@ export default function ApartadoForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [isGlobal, setIsGlobal] = useState(initial?.is_global ?? false);
-  const [deptIds, setDeptIds] = useState<string[]>(initial?.department_ids ?? []);
+  const [deptLinks, setDeptLinks] = useState<ApartadoDepartmentLink[]>(() => {
+    if (initial?.departments && initial.departments.length > 0) return initial.departments;
+    if (initial?.department_ids) {
+      return initial.department_ids.map((id) => ({ department_id: id, is_optional: false }));
+    }
+    return [];
+  });
+  const [isOptionalGlobal, setIsOptionalGlobal] = useState(
+    initial?.is_optional_global ?? false
+  );
+  const [tagIds, setTagIds] = useState<string[]>(initial?.tag_ids ?? []);
+
+  // Tag "Solicita Alta de Empresa" requiere que el apartado tenga el dpto
+  // Asesoría Laboral entre los seleccionados (o sea global). Si no, lo
+  // bloqueamos visualmente y no permitimos seleccionarlo.
+  const laboralDeptId = useMemo(
+    () => departments.find((d) => d.name === "Asesoría Laboral")?.id ?? null,
+    [departments]
+  );
+  const altaTagId = useMemo(
+    () => tags.find((t) => t.slug === "solicita_alta_empresa")?.id ?? null,
+    [tags]
+  );
+  const apartadoCoversLaboral =
+    isGlobal ||
+    (laboralDeptId !== null &&
+      deptLinks.some((d) => d.department_id === laboralDeptId));
+
+  // Si los deptos cambian y el apartado pierde Laboral, des-seleccionamos el tag.
+  useEffect(() => {
+    if (!apartadoCoversLaboral && altaTagId && tagIds.includes(altaTagId)) {
+      setTagIds((prev) => prev.filter((t) => t !== altaTagId));
+    }
+  }, [apartadoCoversLaboral, altaTagId, tagIds]);
   const [emailTemplateSlug, setEmailTemplateSlug] = useState<string>(
     initial?.email_template_slug ?? ""
   );
@@ -45,13 +87,34 @@ export default function ApartadoForm({
   const [uploading, setUploading] = useState(false);
 
   function toggleDept(id: string) {
-    const next = deptIds.includes(id) ? deptIds.filter((d) => d !== id) : [...deptIds, id];
-    if (departments.length > 0 && next.length === departments.length) {
-      setIsGlobal(true);
-      setDeptIds([]);
+    const isSelected = deptLinks.some((d) => d.department_id === id);
+    let next: ApartadoDepartmentLink[];
+    if (isSelected) {
+      next = deptLinks.filter((d) => d.department_id !== id);
     } else {
-      setDeptIds(next);
+      next = [...deptLinks, { department_id: id, is_optional: false }];
     }
+    if (departments.length > 0 && next.length === departments.length) {
+      // Si el usuario selecciona todos los deptos, lo tratamos como global.
+      setIsGlobal(true);
+      setDeptLinks([]);
+    } else {
+      setDeptLinks(next);
+    }
+  }
+
+  function toggleDeptOptional(id: string) {
+    setDeptLinks((prev) =>
+      prev.map((d) =>
+        d.department_id === id ? { ...d, is_optional: !d.is_optional } : d
+      )
+    );
+  }
+
+  function toggleTag(id: string) {
+    setTagIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
   }
 
   async function handleFiles(files: FileList | null) {
@@ -76,7 +139,7 @@ export default function ApartadoForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    if (!isGlobal && deptIds.length === 0) {
+    if (!isGlobal && deptLinks.length === 0) {
       alert("Selecciona al menos un departamento o marca el apartado como global.");
       return;
     }
@@ -87,7 +150,9 @@ export default function ApartadoForm({
         description: description.trim() || null,
         display_order: initial?.display_order ?? 0,
         is_global: isGlobal,
-        department_ids: isGlobal ? [] : deptIds,
+        is_optional_global: isGlobal ? isOptionalGlobal : false,
+        departments: isGlobal ? [] : deptLinks,
+        tag_ids: tagIds,
         email_template_slug: emailTemplateSlug || null,
       });
     } finally {
@@ -99,7 +164,7 @@ export default function ApartadoForm({
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-md p-6 space-y-4 pointer-events-auto"
+        className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/5 w-full max-w-md p-6 space-y-4 pointer-events-auto max-h-[90vh] overflow-y-auto"
       >
         <div>
           <h2 className="text-lg font-semibold text-brand-navy">
@@ -140,31 +205,113 @@ export default function ApartadoForm({
             />
             Apartado global (cualquier departamento)
           </label>
+          {isGlobal && (
+            <label className="flex items-center gap-2 text-sm text-text-body cursor-pointer mt-2 ml-6">
+              <input
+                type="checkbox"
+                checked={isOptionalGlobal}
+                onChange={(e) => setIsOptionalGlobal(e.target.checked)}
+              />
+              <span>
+                Opcional por defecto
+                <span className="block text-[11px] text-text-muted/80 leading-snug">
+                  No bloquea el progreso si no se adjunta.
+                </span>
+              </span>
+            </label>
+          )}
         </div>
         {!isGlobal && (
           <div>
             <p className="text-xs font-medium text-text-muted mb-2">Departamentos *</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {departments.map((d) => (
-                <label
-                  key={d.id}
-                  className={`flex items-center gap-2 text-sm rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
-                    deptIds.includes(d.id)
-                      ? "bg-brand-teal/10 text-brand-teal"
-                      : "bg-gray-50 text-text-body hover:bg-gray-100"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={deptIds.includes(d.id)}
-                    onChange={() => toggleDept(d.id)}
-                  />
-                  {d.name}
-                </label>
-              ))}
+            <div className="space-y-1.5">
+              {departments.map((d) => {
+                const link = deptLinks.find((dl) => dl.department_id === d.id);
+                const checked = !!link;
+                return (
+                  <div
+                    key={d.id}
+                    className={`flex items-center justify-between gap-2 text-sm rounded-lg px-2.5 py-1.5 transition-colors ${
+                      checked ? "bg-brand-teal/10" : "bg-gray-50 hover:bg-gray-100"
+                    }`}
+                  >
+                    <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleDept(d.id)}
+                      />
+                      <span
+                        className={`truncate ${checked ? "text-brand-teal" : "text-text-body"}`}
+                      >
+                        {d.name}
+                      </span>
+                    </label>
+                    {checked && (
+                      <label className="flex items-center gap-1.5 text-[11px] text-text-muted cursor-pointer flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={link!.is_optional}
+                          onChange={() => toggleDeptOptional(d.id)}
+                        />
+                        Opcional
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+            <p className="mt-1.5 text-[11px] text-text-muted/80 leading-snug">
+              Marcar &laquo;Opcional&raquo; significa que para ese departamento el apartado
+              puede no adjuntarse — no cuenta en el progreso.
+            </p>
           </div>
         )}
+        <div>
+          <p className="text-xs font-medium text-text-muted mb-2">
+            Tags <span className="font-normal text-text-muted/70">(opcional)</span>
+          </p>
+          {tags.length === 0 ? (
+            <p className="text-xs text-text-muted/80 italic">No hay tags todavía.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((t) => {
+                const active = tagIds.includes(t.id);
+                const isAltaTag = t.id === altaTagId;
+                const disabled = isAltaTag && !apartadoCoversLaboral;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => !disabled && toggleTag(t.id)}
+                    disabled={disabled}
+                    title={
+                      disabled
+                        ? "Este tag solo se puede aplicar si el apartado está vinculado al departamento Asesoría Laboral."
+                        : (t.description ?? undefined)
+                    }
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      disabled
+                        ? "bg-gray-50 text-text-muted/40 border-gray-100 cursor-not-allowed"
+                        : active
+                          ? "bg-brand-navy text-white border-brand-navy cursor-pointer"
+                          : "bg-white text-text-muted border-gray-200 hover:border-gray-300 cursor-pointer"
+                    }`}
+                  >
+                    {t.name}
+                    {isAltaTag && (
+                      <span className="ml-1 text-[10px] opacity-70">(Laboral)</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-1.5 text-[11px] text-text-muted/80 leading-snug">
+            Los tags actúan como condiciones extra en el onboarding: el apartado solo se
+            incluirá si todos sus tags se activan en el wizard.
+          </p>
+        </div>
         <div>
           <label className="block text-xs font-medium text-text-muted mb-1">
             Plantilla de email asociada{" "}

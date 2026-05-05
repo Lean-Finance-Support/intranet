@@ -6,6 +6,8 @@ import type {
   BlockTemplate,
   ApartadoTemplate,
   ApartadoTemplateFile,
+  ApartadoDepartmentLink,
+  DocumentationTag,
 } from "@/lib/types/documentation";
 import { findDocumentationEmailTemplate } from "@/lib/documentation/email-templates";
 import {
@@ -46,6 +48,7 @@ interface Props {
   initial: {
     blocks: BlockTemplate[];
     departments: Departments;
+    tags: DocumentationTag[];
     canManage: boolean;
     canRequestDocumentation: boolean;
   };
@@ -203,7 +206,9 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
     description: string | null;
     display_order: number;
     is_global: boolean;
-    department_ids: string[];
+    is_optional_global: boolean;
+    departments: ApartadoDepartmentLink[];
+    tag_ids: string[];
     email_template_slug: string | null;
   }) {
     try {
@@ -229,12 +234,15 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
       description: string | null;
       display_order: number;
       is_global: boolean;
-      department_ids: string[];
+      is_optional_global: boolean;
+      departments: ApartadoDepartmentLink[];
+      tag_ids: string[];
       email_template_slug: string | null;
     }
   ) {
     try {
       await updateApartado(apartadoId, input);
+      const departments = input.is_global ? [] : input.departments;
       setBlocks((prev) =>
         prev.map((b) =>
           b.id !== blockId
@@ -248,7 +256,9 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
                       : {
                           ...a,
                           ...input,
-                          department_ids: input.is_global ? [] : input.department_ids,
+                          departments,
+                          department_ids: departments.map((d) => d.department_id),
+                          tag_ids: input.tag_ids,
                         }
                   )
                   .sort(sortApartados),
@@ -534,6 +544,7 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
                     key={apartado.id}
                     apartado={apartado}
                     departments={initial.departments}
+                    tags={initial.tags}
                     canManage={initial.canManage}
                     isDragging={
                       draggedApartado?.blockId === block.id &&
@@ -631,6 +642,7 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
         <ApartadoForm
           blockId={creatingApartadoBlockId}
           departments={initial.departments}
+          tags={initial.tags}
           onSubmit={(input) => handleCreateApartado({ ...input, block_id: creatingApartadoBlockId })}
           onClose={() => setCreatingApartadoBlockId(null)}
         />
@@ -643,6 +655,7 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
           <ApartadoForm
             blockId={block.id}
             departments={initial.departments}
+            tags={initial.tags}
             initial={apartado}
             templates={apartado.templates}
             onUploadTemplate={
@@ -714,6 +727,7 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
 function ApartadoRow({
   apartado,
   departments,
+  tags,
   canManage,
   isDragging,
   showLineBefore,
@@ -728,6 +742,7 @@ function ApartadoRow({
 }: {
   apartado: ApartadoTemplate;
   departments: Departments;
+  tags: DocumentationTag[];
   canManage: boolean;
   isDragging: boolean;
   showLineBefore: boolean;
@@ -740,11 +755,29 @@ function ApartadoRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const deptNames = apartado.is_global
-    ? ["Global"]
-    : departments
-        .filter((d) => apartado.department_ids.includes(d.id))
-        .map((d) => d.name);
+  // Construimos chips de departamento con su flag is_optional para mostrar
+  // visualmente cuándo el apartado es opcional para un depto concreto.
+  const deptChips: { id: string; name: string; is_optional: boolean }[] =
+    apartado.is_global
+      ? [
+          {
+            id: "__global",
+            name: "Global",
+            is_optional: apartado.is_optional_global ?? false,
+          },
+        ]
+      : (apartado.departments ?? []).map((link) => {
+          const d = departments.find((dd) => dd.id === link.department_id);
+          return {
+            id: link.department_id,
+            name: d?.name ?? "?",
+            is_optional: link.is_optional,
+          };
+        });
+
+  const apartadoTags = (apartado.tag_ids ?? [])
+    .map((tid) => tags.find((t) => t.id === tid))
+    .filter((t): t is DocumentationTag => !!t);
 
   async function handleDownloadTemplate(t: ApartadoTemplateFile) {
     const url = await getApartadoTemplateSignedUrlAdmin(t.id);
@@ -813,16 +846,36 @@ function ApartadoRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-medium text-text-body">{apartado.name}</p>
-          {deptNames.map((d) => (
+          {deptChips.map((d) => {
+            const cls = apartado.is_global
+              ? d.is_optional
+                ? "bg-brand-navy/5 text-brand-navy/70 ring-1 ring-brand-navy/20"
+                : "bg-brand-navy/10 text-brand-navy"
+              : d.is_optional
+                ? "bg-brand-teal/5 text-brand-teal/70 ring-1 ring-brand-teal/20"
+                : "bg-brand-teal/10 text-brand-teal";
+            return (
+              <span
+                key={d.id}
+                className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-[2px] rounded-full ${cls}`}
+                title={d.is_optional ? `${d.name} · opcional` : d.name}
+              >
+                {d.name}
+                {d.is_optional && (
+                  <span className="text-[9px] uppercase tracking-wider opacity-80">
+                    opc.
+                  </span>
+                )}
+              </span>
+            );
+          })}
+          {apartadoTags.map((t) => (
             <span
-              key={d}
-              className={`inline-flex items-center text-[10px] font-medium px-2 py-[2px] rounded-full ${
-                apartado.is_global
-                  ? "bg-brand-navy/10 text-brand-navy"
-                  : "bg-brand-teal/10 text-brand-teal"
-              }`}
+              key={t.id}
+              className="inline-flex items-center text-[10px] font-medium px-2 py-[2px] rounded-full bg-brand-navy/8 text-brand-navy ring-1 ring-brand-navy/15"
+              title={t.description ?? t.name}
             >
-              {d}
+              # {t.name}
             </span>
           ))}
           {apartado.email_template_slug && (() => {

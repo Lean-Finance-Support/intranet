@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { BlockTemplate, DepartmentMember } from "@/lib/types/documentation";
+import type {
+  ApartadoTemplate,
+  BlockTemplate,
+  DepartmentMember,
+} from "@/lib/types/documentation";
+
+// Default de opcionalidad heredado del catálogo (replicado en otros sitios).
+function isOptionalByDefault(a: ApartadoTemplate): boolean {
+  if (a.is_global) return a.is_optional_global ?? false;
+  const links = a.departments ?? [];
+  if (links.length === 0) return false;
+  return links.every((d) => d.is_optional);
+}
 
 interface Props {
   companyId: string;
@@ -37,7 +49,10 @@ export default function AddApartadoModal({
 
   const [apartadoId, setApartadoId] = useState<string>(availableApartados[0]?.id ?? "");
   const [supervisorIds, setSupervisorIds] = useState<string[]>([]);
-  const [isOptional, setIsOptional] = useState(false);
+  const [isOptional, setIsOptional] = useState(() => {
+    const a = availableApartados[0];
+    return a ? isOptionalByDefault(a) : false;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,7 +98,8 @@ export default function AddApartadoModal({
   function handleApartadoChange(id: string) {
     setApartadoId(id);
     setSupervisorIds([]);
-    setIsOptional(false);
+    const a = block?.apartados.find((x) => x.id === id);
+    setIsOptional(a ? isOptionalByDefault(a) : false);
   }
 
   function handleAddSupervisor(id: string) {
