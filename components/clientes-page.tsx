@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { ClienteCompany, ClientesPageData } from "@/app/admin/clientes/actions";
 import { createCompanyAdmin } from "@/app/admin/clientes/actions";
 import ClientDetailPanel from "@/components/client-detail-panel";
@@ -234,16 +235,36 @@ export default function ClientesPage({
               <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
               <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">Clientes</h1>
             </div>
-            {data.canCreateCompany && (
-              <button
-                onClick={() => setCreatingCompany(true)}
-                className="mt-2 inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Nuevo cliente
-              </button>
+            {(data.canCreateCompany ||
+              (data.canCreateCompany &&
+                data.canManageClientAccounts &&
+                data.canRequestDocumentation)) && (
+              <div className="mt-2 flex flex-col items-stretch gap-1.5 w-44">
+                {data.canCreateCompany && (
+                  <button
+                    onClick={() => setCreatingCompany(true)}
+                    className="inline-flex items-center justify-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Nuevo cliente
+                  </button>
+                )}
+                {data.canCreateCompany &&
+                  data.canManageClientAccounts &&
+                  data.canRequestDocumentation && (
+                    <Link
+                      href={`${linkPrefix}/clientes/onboarding`}
+                      className="inline-flex items-center justify-center gap-1.5 bg-amber-300 text-brand-navy text-sm font-medium px-4 py-2 rounded-lg ring-1 ring-amber-400/40 shadow-sm hover:bg-amber-200 hover:shadow transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      Nuevo onboarding
+                    </Link>
+                  )}
+              </div>
             )}
           </div>
 

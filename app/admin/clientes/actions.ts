@@ -67,6 +67,7 @@ export interface ClientesPageData {
   canDeleteCompany: boolean;
   canManageClientAccounts: boolean;
   canManageBankAccounts: boolean;
+  canRequestDocumentation: boolean;
 }
 
 export interface ClientAccount {
@@ -131,12 +132,14 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     canDeleteCompany,
     canManageClientAccounts,
     canManageBankAccounts,
+    canRequestDocumentation,
   ] = await Promise.all([
     userScopeIds("write_dept_service", "department"),
     hasPermission("create_company"),
     hasPermission("delete_company"),
     hasPermission("manage_client_accounts"),
     hasPermission("manage_bank_accounts"),
+    hasPermission("request_client_documentation"),
   ]);
 
   // 3. Company services + technicians
@@ -295,6 +298,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     canDeleteCompany,
     canManageClientAccounts,
     canManageBankAccounts,
+    canRequestDocumentation,
   };
 }
 

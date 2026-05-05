@@ -28,3 +28,9 @@ verify_jwt = false
 # Recibe template_slug y resuelve la plantilla por slug.
 [functions.notify-documentation-template-email]
 verify_jwt = false
+
+# Invocada desde el server action finalizeOnboarding al finalizar el alta de
+# un nuevo cliente (envía un único email a las cuentas asociadas con CC a
+# supervisores y chiefs).
+[functions.notify-client-onboarding-welcome]
+verify_jwt = false
