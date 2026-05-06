@@ -63,7 +63,7 @@ export async function listDocumentationCatalog(): Promise<{
     supabase
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug")
       .order("display_order")
       .order("name"),
     supabase
@@ -130,7 +130,7 @@ export async function listDocumentationCatalog(): Promise<{
       description: (a.description as string | null) ?? null,
       display_order: a.display_order as number,
       is_global: a.is_global as boolean,
-      is_optional_global: (a.is_optional as boolean | null) ?? false,
+      is_optional_global: (a.is_optional_global as boolean | null) ?? false,
       department_ids: deptLinks.map((d) => d.department_id),
       departments: deptLinks,
       tag_ids: apartadoTagMap.get(a.id as string) ?? [],
@@ -294,10 +294,10 @@ export async function createApartado(
       description: input.description?.trim() || null,
       display_order: input.display_order,
       is_global: input.is_global,
-      is_optional: input.is_global ? input.is_optional_global : false,
+      is_optional_global: input.is_global ? input.is_optional_global : false,
       email_template_slug: input.email_template_slug,
     })
-    .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
+    .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug")
     .single();
   if (error) throw new Error(error.message);
 
@@ -332,7 +332,7 @@ export async function createApartado(
     description: (data!.description as string | null) ?? null,
     display_order: data!.display_order as number,
     is_global: data!.is_global as boolean,
-    is_optional_global: (data!.is_optional as boolean | null) ?? false,
+    is_optional_global: (data!.is_optional_global as boolean | null) ?? false,
     department_ids: departments.map((d) => d.department_id),
     departments,
     tag_ids: input.tag_ids,
@@ -363,7 +363,7 @@ export async function updateApartado(
       description: input.description?.trim() || null,
       display_order: input.display_order,
       is_global: input.is_global,
-      is_optional: input.is_global ? input.is_optional_global : false,
+      is_optional_global: input.is_global ? input.is_optional_global : false,
       email_template_slug: input.email_template_slug,
     })
     .eq("id", apartadoId);

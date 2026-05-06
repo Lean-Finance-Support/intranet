@@ -207,7 +207,7 @@ Catálogo de **bloques** y **apartados** validables que se asignan a cada client
 El catálogo soporta dos ejes adicionales que se usan tanto al asignar manualmente como en el wizard de onboarding:
 
 - **Opcionalidad per-departamento** (`documentation.apartado_departments.is_optional`): un mismo apartado puede ser obligatorio para un dpto y opcional para otro. Resolución multi-dpto: un apartado es opcional en un onboarding si **todos** los deptos seleccionados que lo cubren lo marcan como opcional (basta uno mandatory para que sea obligatorio).
-- **Opcionalidad para apartados globales** (`documentation.apartados.is_optional`): solo aplica si `is_global = true`. Marca el apartado como "opcional por defecto" en sugerencias y pre-marca el toggle al asignarlo. "Propuesta comercial" y "Tratamiento de datos" están seed-marcados como opcionales.
+- **Opcionalidad para apartados globales** (`documentation.apartados.is_optional_global`): solo aplica si `is_global = true` (un CHECK lo impone a nivel BD). Marca el apartado como "opcional por defecto" en sugerencias y pre-marca el toggle al asignarlo. "Propuesta comercial" y "Tratamiento de datos" están seed-marcados como opcionales.
 - **Tags** (`documentation.tags` + `documentation.apartado_tags`): condiciones extra que activan documentación. Un apartado con tags solo se incluye en el onboarding si **todos** sus tags tienen su checkbox marcado en el wizard. Tags semilla:
   - `cliente_no_viene_de_holded` — apartados que solo se piden cuando el cliente no está integrado con Holded (rosa en la matriz Excel original).
   - `solicita_alta_empresa` — apartados específicos del alta empresa (p.ej. "Cuestionario si es alta de empresa"). El catálogo bloquea este tag si el apartado no incluye Asesoría Laboral.

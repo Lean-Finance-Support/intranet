@@ -120,7 +120,7 @@ export async function getOnboardingData(): Promise<OnboardingPageData> {
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, is_optional, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug")
       .order("display_order"),
     admin
       .schema("documentation")
@@ -214,7 +214,7 @@ export async function getOnboardingData(): Promise<OnboardingPageData> {
       description: (a.description as string | null) ?? null,
       display_order: a.display_order as number,
       is_global: a.is_global as boolean,
-      is_optional_global: (a.is_optional as boolean | null) ?? false,
+      is_optional_global: (a.is_optional_global as boolean | null) ?? false,
       department_ids: deptLinks.map((d) => d.department_id),
       departments: deptLinks,
       tag_ids: apartadoTagMap.get(a.id as string) ?? [],
