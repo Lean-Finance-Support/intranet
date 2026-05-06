@@ -354,7 +354,7 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
 
   return (
     <div className="min-h-full px-8 py-12">
-      <div className="max-w-5xl">
+      <div className="max-w-7xl">
         {/* Header */}
         <Link
           href={docCatalogHref}

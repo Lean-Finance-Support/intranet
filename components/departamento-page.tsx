@@ -52,7 +52,7 @@ export default function DepartamentoPage({
   if (departments.length === 0) {
     return (
       <div className="min-h-full px-8 py-12">
-        <div className="max-w-6xl">
+        <div className="max-w-screen-2xl">
           <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
           <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight mb-6">
             Mi equipo
@@ -70,7 +70,7 @@ export default function DepartamentoPage({
 
   return (
     <div className="min-h-full px-8 py-12">
-      <div className="max-w-6xl space-y-8">
+      <div className="max-w-screen-2xl space-y-8">
         <div>
           <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
           <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">

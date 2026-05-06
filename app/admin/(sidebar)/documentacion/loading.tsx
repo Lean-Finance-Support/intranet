@@ -1,7 +1,7 @@
 export default function AdminDocumentacionLoading() {
   return (
     <div className="min-h-full px-8 py-12 animate-pulse">
-      <div className="max-w-5xl">
+      <div className="max-w-7xl">
         {/* Header */}
         <div className="h-3 bg-gray-300 rounded w-32 mb-3" />
         <div className="flex items-start justify-between gap-4">
