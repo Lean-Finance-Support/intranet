@@ -39,7 +39,6 @@ interface SupervisorInfo {
   full_name: string | null;
   department_id: string | null;
   department_name: string | null;
-  chiefs: ChiefInfo[];
 }
 
 Deno.serve(async (req: Request) => {
@@ -127,9 +126,17 @@ Deno.serve(async (req: Request) => {
   }
 
   // Información de supervisores con su departamento (para presentar el equipo
-  // en el cuerpo del email). Cada técnico se muestra con los chiefs de su
-  // departamento debajo.
+  // en el cuerpo del email). Los chiefs van agrupados por departamento y se
+  // renderizan al final de cada grupo de técnicos del mismo departamento.
   const supervisorInfo: SupervisorInfo[] = [];
+  const chiefsByDept = new Map<string, ChiefInfo[]>();
+  for (const c of ccChiefs) {
+    const arr = chiefsByDept.get(c.dept_id) ?? [];
+    if (!arr.some((x) => x.profile_id === c.id)) {
+      arr.push({ profile_id: c.id, email: c.email, full_name: c.full_name });
+    }
+    chiefsByDept.set(c.dept_id, arr);
+  }
   if (ccSupervisors.length > 0) {
     const supIds = ccSupervisors.map((s) => s.id);
     const { data: supRoles } = await supabase
@@ -155,27 +162,14 @@ Deno.serve(async (req: Request) => {
         (depts ?? []).map((d: { id: string; name: string }) => [d.id, d.name])
       );
     }
-    // Agrupar chiefs por departamento (deduplicados por profile_id).
-    const chiefsByDept = new Map<string, ChiefInfo[]>();
-    for (const c of ccChiefs) {
-      const arr = chiefsByDept.get(c.dept_id) ?? [];
-      if (!arr.some((x) => x.profile_id === c.id)) {
-        arr.push({ profile_id: c.id, email: c.email, full_name: c.full_name });
-      }
-      chiefsByDept.set(c.dept_id, arr);
-    }
     for (const s of ccSupervisors) {
       const dId = deptByProfile.get(s.id) ?? null;
-      const chiefs = (dId ? chiefsByDept.get(dId) ?? [] : []).filter(
-        (c) => c.profile_id !== s.id // no listar al técnico como su propio responsable
-      );
       supervisorInfo.push({
         profile_id: s.id,
         email: s.email,
         full_name: s.full_name,
         department_id: dId,
         department_name: dId ? deptNameMap.get(dId) ?? null : null,
-        chiefs,
       });
     }
   }
@@ -237,6 +231,7 @@ Deno.serve(async (req: Request) => {
     contactoUrl,
     replyAllMailto,
     supervisors: supervisorInfo,
+    chiefsByDept,
     recipientNames,
   });
   const text = buildText({
@@ -244,6 +239,7 @@ Deno.serve(async (req: Request) => {
     portalUrl,
     contactoUrl,
     supervisors: supervisorInfo,
+    chiefsByDept,
     recipientNames,
   });
 
@@ -318,62 +314,76 @@ function buildHtml(ctx: {
   contactoUrl: string;
   replyAllMailto: string | null;
   supervisors: SupervisorInfo[];
+  chiefsByDept: Map<string, ChiefInfo[]>;
   recipientNames: string[];
 }): string {
-  // Cada técnico se renderiza como una "tarjeta" clickable que abre el cliente
-  // de correo del usuario con el destinatario prerellenado. El icono ✉ y el
-  // borde teal hacen evidente que es interactivo. Debajo de cada técnico se
-  // listan los responsables de su departamento.
+  // Los técnicos se agrupan por departamento (preservando el orden de
+  // aparición). Tras cada grupo de técnicos del mismo dpto se inserta una
+  // línea con el responsable de ese departamento.
+  const subjectParam = encodeURIComponent(`Consulta — ${ctx.companyName}`);
+  const groups: { deptId: string | null; supervisors: SupervisorInfo[] }[] = [];
+  const groupIndex = new Map<string, number>();
+  for (const s of ctx.supervisors) {
+    const key = s.department_id ?? "__none__";
+    let idx = groupIndex.get(key);
+    if (idx === undefined) {
+      idx = groups.length;
+      groupIndex.set(key, idx);
+      groups.push({ deptId: s.department_id, supervisors: [] });
+    }
+    groups[idx].supervisors.push(s);
+  }
+  const renderTechRow = (s: SupervisorInfo): string => {
+    const name = s.full_name?.trim() || s.email;
+    const mailto = `mailto:${s.email}?subject=${subjectParam}`;
+    return `<tr><td>
+      <a href="${mailto}" style="display:block;text-decoration:none;border:1px solid #d1d5db;border-left:3px solid #00B0B7;border-radius:8px;padding:10px 14px;background-color:#ffffff;">
+        <table cellpadding="0" cellspacing="0" style="width:100%;">
+          <tr>
+            <td style="vertical-align:middle;">
+              <p style="margin:0;font-size:14px;font-weight:600;color:#0f2444;">${escapeHtml(name)}</p>
+              ${
+                s.department_name
+                  ? `<p style="margin:2px 0 0;font-size:12px;color:#6b7280;">${escapeHtml(s.department_name)}</p>`
+                  : ""
+              }
+            </td>
+            <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
+              <span style="display:inline-block;font-size:12px;color:#00B0B7;font-weight:600;">
+                Escribirle <span style="display:inline-block;margin-left:2px;">&rarr;</span>
+              </span>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </td></tr>`;
+  };
+  const renderChiefsRow = (deptId: string | null): string => {
+    if (!deptId) return "";
+    const chiefs = ctx.chiefsByDept.get(deptId) ?? [];
+    if (chiefs.length === 0) return "";
+    const lines = chiefs
+      .map((c) => {
+        const cName = c.full_name?.trim() || c.email;
+        const cMailto = `mailto:${c.email}?subject=${subjectParam}`;
+        return `<p style="margin:2px 0;font-size:12px;color:#6b7280;line-height:1.5;">
+          <span style="color:#9ca3af;">&rarr; Responsable del departamento:</span>
+          <a href="${cMailto}" style="color:#0f2444;text-decoration:none;font-weight:600;">${escapeHtml(cName)}</a>
+          <a href="${cMailto}" style="color:#00B0B7;text-decoration:none;font-weight:600;margin-left:4px;">Escribirle</a>
+        </p>`;
+      })
+      .join("");
+    return `<tr><td style="padding:4px 0 0 14px;">${lines}</td></tr>`;
+  };
   const supList =
     ctx.supervisors.length > 0
       ? `
       <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:0 6px;">
-        ${ctx.supervisors
-          .map((s) => {
-            const name = s.full_name?.trim() || s.email;
-            const subject = encodeURIComponent(
-              `Consulta — ${ctx.companyName}`
-            );
-            const mailto = `mailto:${s.email}?subject=${subject}`;
-            const chiefRows =
-              s.chiefs.length > 0
-                ? `<tr><td style="padding:4px 0 0 14px;">
-                    ${s.chiefs
-                      .map((c) => {
-                        const cName = c.full_name?.trim() || c.email;
-                        const cMailto = `mailto:${c.email}?subject=${subject}`;
-                        return `<p style="margin:2px 0;font-size:12px;color:#6b7280;line-height:1.5;">
-                          <span style="color:#9ca3af;">↳ Responsable de departamento:</span>
-                          <a href="${cMailto}" style="color:#0f2444;text-decoration:none;font-weight:600;">${escapeHtml(cName)}</a>
-                          <a href="${cMailto}" style="color:#00B0B7;text-decoration:none;font-weight:600;margin-left:4px;">escribirle &rarr;</a>
-                        </p>`;
-                      })
-                      .join("")}
-                  </td></tr>`
-                : "";
-            return `<tr><td>
-              <a href="${mailto}" style="display:block;text-decoration:none;border:1px solid #d1d5db;border-left:3px solid #00B0B7;border-radius:8px;padding:10px 14px;background-color:#ffffff;">
-                <table cellpadding="0" cellspacing="0" style="width:100%;">
-                  <tr>
-                    <td style="vertical-align:middle;">
-                      <p style="margin:0;font-size:14px;font-weight:600;color:#0f2444;">${escapeHtml(name)}</p>
-                      ${
-                        s.department_name
-                          ? `<p style="margin:2px 0 0;font-size:12px;color:#6b7280;">${escapeHtml(s.department_name)}</p>`
-                          : ""
-                      }
-                    </td>
-                    <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
-                      <span style="display:inline-block;font-size:12px;color:#00B0B7;font-weight:600;">
-                        Escribirle <span style="display:inline-block;margin-left:2px;">&rarr;</span>
-                      </span>
-                    </td>
-                  </tr>
-                </table>
-              </a>
-            </td></tr>
-            ${chiefRows}`;
-          })
+        ${groups
+          .map(
+            (g) =>
+              `${g.supervisors.map(renderTechRow).join("")}${renderChiefsRow(g.deptId)}`
+          )
           .join("")}
       </table>`
       : "";
@@ -384,8 +394,8 @@ function buildHtml(ctx: {
     : "Hola,";
 
   const replyAllSnippet = ctx.replyAllMailto
-    ? `<a href="${ctx.replyAllMailto}" style="color:#00B0B7;text-decoration:underline;font-weight:600;">"Responder a todos"</a>`
-    : `<strong>"Responder a todos"</strong>`;
+    ? `<a href="${ctx.replyAllMailto}" style="color:#00B0B7;text-decoration:underline;font-weight:600;">Responder a todos</a>`
+    : `<strong>Responder a todos</strong>`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -413,9 +423,9 @@ function buildHtml(ctx: {
             supList
               ? `<p style="margin:24px 0 12px;font-size:15px;color:#4b5563;line-height:1.6;">Lo primero es presentar al equipo encargado de trabajar con vosotros en los servicios contratados:</p>
                  <h2 style="margin:8px 0 8px;font-size:16px;font-weight:700;color:#0f2444;">Equipo asignado</h2>
-                 <p style="margin:0 0 12px;font-size:14px;color:#6b7280;line-height:1.6;">Estas serán vuestras personas de referencia, que os acompañarán desde el inicio. Pulsa sobre cualquiera de ellos o utiliza ${replyAllSnippet} para contactar:</p>
+                 <p style="margin:0 0 12px;font-size:14px;color:#6b7280;line-height:1.6;">Estas serán vuestras personas de referencia, que os acompañarán desde el inicio. Pulsa sobre cualquiera de ellos o utiliza ${replyAllSnippet} para contactar.</p>
                  ${supList}
-                 <p style="margin:14px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">Además, en el apartado <a href="${ctx.contactoUrl}" style="color:#00B0B7;text-decoration:underline;font-weight:600;">Contacto</a> de la Plataforma puedes consultar el equipo completo.</p>`
+                 <p style="margin:14px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">Además, en el apartado <a href="${ctx.contactoUrl}" style="color:#00B0B7;text-decoration:underline;font-weight:600;">Contacto</a> de la plataforma puedes consultar el equipo completo.</p>`
               : ""
           }
 
@@ -424,8 +434,8 @@ function buildHtml(ctx: {
             <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#7DDCDF;">Primer paso</p>
             <h2 style="margin:0 0 12px;font-size:20px;font-weight:700;color:#ffffff;line-height:1.3;">Documentación inicial</h2>
             <p style="margin:0 0 12px;font-size:14px;color:#cfd8e3;line-height:1.6;">Para comenzar, hemos preparado una lista con la documentación inicial que necesitamos de vosotros. ¡Podéis verla a través del portal!</p>
-            <p style="margin:0 0 16px;font-size:14px;color:#cfd8e3;line-height:1.6;">La recopilación de esta documentación es <strong style="color:#ffffff;">imprescindible</strong> para empezar a trabajar con vosotros.</p>
-            <p style="margin:0 0 20px;font-size:13px;color:#7DDCDF;line-height:1.6;">Recordad iniciar sesión con el correo electrónico en el que habéis recibido este mensaje.</p>
+            <p style="margin:0 0 16px;font-size:14px;color:#cfd8e3;line-height:1.6;">La recepción de esta documentación es <strong style="color:#ffffff;">imprescindible</strong> para iniciar el trabajo con vosotros.</p>
+            <p style="margin:0 0 20px;font-size:13px;color:#7DDCDF;line-height:1.6;">Recordad iniciar sesión con el correo electrónico con el que habéis recibido este mensaje.</p>
             <table cellpadding="0" cellspacing="0">
               <tr>
                 <td style="background-color:#00B0B7;border-radius:8px;">
@@ -454,18 +464,38 @@ function buildText(ctx: {
   portalUrl: string;
   contactoUrl: string;
   supervisors: SupervisorInfo[];
+  chiefsByDept: Map<string, ChiefInfo[]>;
   recipientNames: string[];
 }): string {
-  const supList = ctx.supervisors
-    .map((s) => {
-      const tech = `- ${s.full_name?.trim() || s.email}${s.department_name ? ` — ${s.department_name}` : ""} <${s.email}>`;
-      const chiefs = s.chiefs
+  // Mismo agrupamiento que en HTML: técnicos por dpto y chief al final del
+  // grupo.
+  const groups: { deptId: string | null; supervisors: SupervisorInfo[] }[] = [];
+  const groupIndex = new Map<string, number>();
+  for (const s of ctx.supervisors) {
+    const key = s.department_id ?? "__none__";
+    let idx = groupIndex.get(key);
+    if (idx === undefined) {
+      idx = groups.length;
+      groupIndex.set(key, idx);
+      groups.push({ deptId: s.department_id, supervisors: [] });
+    }
+    groups[idx].supervisors.push(s);
+  }
+  const supList = groups
+    .map((g) => {
+      const techs = g.supervisors
         .map(
-          (c) =>
-            `    ↳ Responsable de departamento: ${c.full_name?.trim() || c.email} <${c.email}>`
+          (s) =>
+            `- ${s.full_name?.trim() || s.email}${s.department_name ? ` — ${s.department_name}` : ""} <${s.email}>`
         )
         .join("\n");
-      return chiefs ? `${tech}\n${chiefs}` : tech;
+      const chiefs = (g.deptId ? ctx.chiefsByDept.get(g.deptId) ?? [] : [])
+        .map(
+          (c) =>
+            `    -> Responsable del departamento: ${c.full_name?.trim() || c.email} <${c.email}> — Escribirle`
+        )
+        .join("\n");
+      return chiefs ? `${techs}\n${chiefs}` : techs;
     })
     .join("\n");
   const greetingNames = joinNames(ctx.recipientNames);
@@ -479,17 +509,17 @@ ${
     ? `Lo primero es presentar al equipo encargado de trabajar con vosotros en los servicios contratados:
 
 EQUIPO ASIGNADO
-Estas serán vuestras personas de referencia, que os acompañarán desde el inicio. Pulsa sobre cualquiera de ellos o utiliza "Responder a todos" para contactar:
+Estas serán vuestras personas de referencia, que os acompañarán desde el inicio. Pulsa sobre cualquiera de ellos o utiliza Responder a todos para contactar.
 ${supList}
 
-Además, en el apartado Contacto de la Plataforma puedes consultar el equipo completo: ${ctx.contactoUrl}
+Además, en el apartado Contacto de la plataforma puedes consultar el equipo completo: ${ctx.contactoUrl}
 
 `
     : ""
 }DOCUMENTACIÓN INICIAL
-Para comenzar, hemos preparado una lista con la documentación inicial que necesitamos de vosotros. ¡Podéis verla a través del portal! La recopilación de esta documentación es imprescindible para empezar a trabajar con vosotros.
+Para comenzar, hemos preparado una lista con la documentación inicial que necesitamos de vosotros. ¡Podéis verla a través del portal! La recepción de esta documentación es imprescindible para iniciar el trabajo con vosotros.
 
-Recordad iniciar sesión con el correo electrónico en el que habéis recibido este mensaje.
+Recordad iniciar sesión con el correo electrónico con el que habéis recibido este mensaje.
 
 Acceder al portal: ${ctx.portalUrl}
 
