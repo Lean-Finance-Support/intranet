@@ -177,7 +177,7 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
 
   return (
     <div className="min-h-full px-8 py-8">
-      <div className="max-w-6xl">
+      <div className="max-w-screen-2xl">
         {loading && (
           <div className="space-y-4 animate-pulse">
             <div className="h-9 bg-gray-300 rounded w-72" />

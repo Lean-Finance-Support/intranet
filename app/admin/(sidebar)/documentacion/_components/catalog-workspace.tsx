@@ -338,7 +338,7 @@ export default function CatalogWorkspace({ initial, linkPrefix }: Props) {
 
   return (
     <div className="min-h-full px-8 py-12">
-      <div className="max-w-5xl">
+      <div className="max-w-7xl">
         <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
         <div className="flex items-start justify-between gap-4">
           <div>

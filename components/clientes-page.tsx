@@ -225,7 +225,7 @@ export default function ClientesPage({
 
   return (
     <div className="min-h-full px-8">
-      <div className="max-w-6xl">
+      <div className="max-w-screen-2xl">
         <div className="sticky top-0 bg-surface-gray z-20 pt-12 pb-4 border-b border-gray-200 space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
@@ -359,14 +359,16 @@ export default function ClientesPage({
               <p className="text-sm text-text-muted">Sin resultados para los filtros aplicados</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {filtered.map((c) =>
-                c.deleted_at ? (
-                  <DeletedCompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
-                ) : (
-                  <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
-                )
-              )}
+            <div className="@container">
+              <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4 gap-3">
+                {filtered.map((c) =>
+                  c.deleted_at ? (
+                    <DeletedCompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+                  ) : (
+                    <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+                  )
+                )}
+              </div>
             </div>
           )}
         </div>

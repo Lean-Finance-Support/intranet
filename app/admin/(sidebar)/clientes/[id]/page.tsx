@@ -53,7 +53,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
 
   return (
     <div className="min-h-full px-8 pt-4 pb-8">
-      <div className="max-w-6xl">
+      <div className="max-w-screen-2xl">
         <ClientDetailWorkspace
           detail={detail}
           company={company}
