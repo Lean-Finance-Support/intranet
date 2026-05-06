@@ -2,7 +2,12 @@
 
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
-import { fetchTechniciansByServiceIds } from "@/lib/team-queries";
+import {
+  fetchSupervisorCompanyIds,
+  fetchTechniciansByServiceIds,
+  getCompanyResponsibleTeam,
+  type ResponsibleTeam,
+} from "@/lib/team-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 
@@ -214,10 +219,17 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     }
   }
 
-  // Build company → services map
+  // Companies donde el usuario actual está asignado:
+  //  - como técnico de algún servicio, o
+  //  - como supervisor de algún apartado de documentación.
   const myAssignedCompanyIds = new Set(
     techData.filter((t) => t.technician_id === user.id).map((t) => t.company_id)
   );
+  const myDocSupervisorCompanyIds = await fetchSupervisorCompanyIds(
+    createAdminClient(),
+    user.id
+  );
+  for (const id of myDocSupervisorCompanyIds) myAssignedCompanyIds.add(id);
 
   const compSvcMap = new Map<string, ClienteService[]>();
   for (const cs of companyServicesData) {
@@ -342,6 +354,15 @@ export async function getCompanyDetail(companyId: string): Promise<CompanyDetail
     profiles,
     bank_accounts: (bankAccounts ?? []) as CompanyBankAccount[],
   };
+}
+
+// ---------- Equipo responsable ----------
+
+export async function getCompanyResponsibleTeamAction(
+  companyId: string
+): Promise<ResponsibleTeam> {
+  await requireAdmin();
+  return getCompanyResponsibleTeam(createAdminClient(), companyId);
 }
 
 // ---------- Update company name ----------

@@ -52,12 +52,14 @@ import {
   validateApartado,
 } from "@/app/admin/clientes/[id]/documentation-actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import type { ResponsibleTeam } from "@/lib/team-queries";
 import {
   BankAccountForm,
   EditClientAccountForm,
   AddClientAccountForm,
 } from "@/components/client-detail-panel";
 import DocumentationMasterDetail from "@/components/documentation/documentation-master-detail";
+import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
 import ServiceDetailSection from "@/components/clients/service-detail-section";
 import ConfirmDialog from "@/components/confirm-dialog";
 import DeleteCompanyModal from "@/components/delete-company-modal";
@@ -84,16 +86,18 @@ interface Props {
   };
   canValidateGlobal: boolean;
   supervisorClientApartadoIds: string[];
+  responsibleTeam: ResponsibleTeam;
   currentUserId: string;
   initialTab: string;
 }
 
-type TabKey = "documentacion" | "datos" | "servicios";
+type TabKey = "documentacion" | "equipo" | "servicios" | "datos";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "documentacion", label: "Documentación" },
-  { key: "datos", label: "Datos" },
+  { key: "equipo", label: "Equipo responsable" },
   { key: "servicios", label: "Servicios contratados" },
+  { key: "datos", label: "Datos" },
 ];
 
 // Backward-compat: las pestañas "cuentas" y "bancos" se fusionaron en "datos".
@@ -134,6 +138,7 @@ export default function ClientDetailWorkspace({
   assignableCatalog,
   canValidateGlobal,
   supervisorClientApartadoIds,
+  responsibleTeam,
   currentUserId,
   initialTab,
 }: Props) {
@@ -550,6 +555,11 @@ export default function ClientDetailWorkspace({
             getClientReminderPreviewHtml(detail.id, comment)
           }
         />
+      )}
+
+      {/* ── Equipo responsable ── */}
+      {tab === "equipo" && (
+        <ResponsibleTeamSection team={responsibleTeam} variant="expanded" />
       )}
 
       {/* ── Datos (incluye cuentas asociadas y cuentas bancarias) ── */}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ClienteCompany, ClientAccount, CompanyDetailInfo } from "@/app/admin/clientes/actions";
 import {
   getCompanyDetail,
+  getCompanyResponsibleTeamAction,
   updateCompanyNameAdmin,
   createClientAccount,
   updateClientAccount,
@@ -11,6 +12,8 @@ import {
   findClientProfileByEmail,
 } from "@/app/admin/clientes/actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import type { ResponsibleTeam } from "@/lib/team-queries";
+import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
 import ConfirmDialog from "@/components/confirm-dialog";
 
 function formatDate(iso: string): string {
@@ -300,6 +303,8 @@ export default function ClientDetailPanel({
   // Detail data (lazy-loaded)
   const [detail, setDetail] = useState<CompanyDetailInfo | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [team, setTeam] = useState<ResponsibleTeam | null>(null);
+  const [loadingTeam, setLoadingTeam] = useState(false);
 
   // Editable name
   const [editingName, setEditingName] = useState(false);
@@ -324,7 +329,20 @@ export default function ClientDetailPanel({
     }
   }, [company.id]);
 
-  useEffect(() => { loadDetail(); }, [loadDetail]);
+  const loadTeam = useCallback(async () => {
+    setLoadingTeam(true);
+    try {
+      const t = await getCompanyResponsibleTeamAction(company.id);
+      setTeam(t);
+    } finally {
+      setLoadingTeam(false);
+    }
+  }, [company.id]);
+
+  useEffect(() => {
+    loadDetail();
+    loadTeam();
+  }, [loadDetail, loadTeam]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
@@ -449,6 +467,9 @@ export default function ClientDetailPanel({
         </div>
 
         <div className="px-6 py-5 space-y-6">
+          {/* ---- Equipo responsable ---- */}
+          <ResponsibleTeamSection team={team} loading={loadingTeam} variant="panel" />
+
           {/* ---- Services (read-only en el drawer; gestión en /clientes/[id]) ---- */}
           <section>
             <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
