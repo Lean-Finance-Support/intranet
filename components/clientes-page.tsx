@@ -30,22 +30,20 @@ function CompanyCard({
   return (
     <button
       onClick={onClick}
-      className="text-left bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 hover:shadow-md hover:border-brand-teal/30 transition-all cursor-pointer w-full"
+      className="relative text-left bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 hover:shadow-md hover:border-brand-teal/30 transition-all cursor-pointer w-full"
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-text-body truncate">{company.legal_name}</p>
-          {company.company_name && (
-            <p className="text-xs text-text-muted truncate mt-0.5">{company.company_name}</p>
-          )}
-          {company.nif && (
-            <p className="text-xs text-text-muted font-mono mt-0.5">{company.nif}</p>
-          )}
-        </div>
-        {company.is_assigned && (
-          <span className="flex-shrink-0 text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full font-medium">
-            Asignado
-          </span>
+      {company.is_assigned && (
+        <span className="absolute top-3 right-3 text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full font-medium">
+          Asignado
+        </span>
+      )}
+      <div className="mb-2 pr-16">
+        <p className="text-sm font-semibold text-text-body truncate">{company.legal_name}</p>
+        {company.company_name && (
+          <p className="text-xs text-text-muted truncate mt-0.5">{company.company_name}</p>
+        )}
+        {company.nif && (
+          <p className="text-xs text-text-muted font-mono mt-0.5">{company.nif}</p>
         )}
       </div>
 

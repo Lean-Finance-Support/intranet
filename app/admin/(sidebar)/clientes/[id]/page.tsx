@@ -2,7 +2,11 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
-import { getAllCompaniesData, getCompanyDetail } from "@/app/admin/clientes/actions";
+import {
+  getAllCompaniesData,
+  getCompanyDetail,
+  getCompanyResponsibleTeamAction,
+} from "@/app/admin/clientes/actions";
 import { getLinkPrefix } from "@/lib/link-prefix";
 import {
   getClientDocumentation,
@@ -30,6 +34,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     linkPrefix,
     canValidateGlobal,
     supervisorClientApartadoIds,
+    responsibleTeam,
   ] = await Promise.all([
     getCompanyDetail(id),
     getClientDocumentation(id),
@@ -38,6 +43,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     getLinkPrefix("admin"),
     hasPermission("validate_documentation"),
     userScopeIds("validate_client_documentation", "client_apartado"),
+    getCompanyResponsibleTeamAction(id),
   ]);
 
   if (!detail) notFound();
@@ -63,6 +69,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
           assignableCatalog={assignable}
           canValidateGlobal={canValidateGlobal}
           supervisorClientApartadoIds={supervisorClientApartadoIds}
+          responsibleTeam={responsibleTeam}
           currentUserId={user.id}
           initialTab={tab ?? "documentacion"}
         />

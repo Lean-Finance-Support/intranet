@@ -199,3 +199,319 @@ export async function isTechnicianOf(
 
   return (data ?? []).length > 0;
 }
+
+async function fetchSupervisorRoleId(supabase: DB): Promise<string | null> {
+  const { data } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "Supervisor de apartado")
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+/**
+ * Set de company_ids donde el usuario es supervisor de algún apartado de
+ * documentación. Necesita un cliente con permiso al schema `documentation`
+ * (admin client o usuario con RLS suficiente).
+ */
+export async function fetchSupervisorCompanyIds(
+  supabase: DB,
+  profileId: string
+): Promise<Set<string>> {
+  const supervisorRoleId = await fetchSupervisorRoleId(supabase);
+  if (!supervisorRoleId) return new Set();
+
+  const { data: roleRows } = await supabase
+    .from("profile_roles")
+    .select("scope_id")
+    .eq("role_id", supervisorRoleId)
+    .eq("scope_type", "client_apartado")
+    .eq("profile_id", profileId);
+
+  const clientApartadoIds = [...new Set((roleRows ?? []).map((r) => r.scope_id as string))];
+  if (clientApartadoIds.length === 0) return new Set();
+
+  const { data: apartados } = await supabase
+    .schema("documentation")
+    .from("client_apartados")
+    .select("client_block_id")
+    .in("id", clientApartadoIds);
+
+  const blockIds = [...new Set((apartados ?? []).map((a) => a.client_block_id as string))];
+  if (blockIds.length === 0) return new Set();
+
+  const { data: blocks } = await supabase
+    .schema("documentation")
+    .from("client_blocks")
+    .select("company_id")
+    .in("id", blockIds);
+
+  return new Set((blocks ?? []).map((b) => b.company_id as string));
+}
+
+// ─── Equipo responsable de una empresa ───────────────────────────────────
+
+export interface ResponsibleTeamMember {
+  profile_id: string;
+  full_name: string | null;
+  email: string;
+  is_chief: boolean;
+  is_technician: boolean;
+  is_supervisor: boolean;
+  technician_services: { service_id: string; service_name: string }[];
+}
+
+export interface ResponsibleTeamDepartment {
+  department_id: string;
+  department_name: string;
+  members: ResponsibleTeamMember[];
+}
+
+export interface ResponsibleTeam {
+  byDepartment: ResponsibleTeamDepartment[];
+}
+
+/**
+ * Devuelve el equipo responsable de una empresa cliente, agrupado por el
+ * departamento que motiva la asignación (dept del servicio para técnicos;
+ * dept(s) del apartado para supervisores). Un mismo admin puede aparecer
+ * en varios depts si tiene asignaciones en varios.
+ *
+ * `is_chief` se calcula contra el dept del agrupador (no contra el dept
+ * "natural" del admin).
+ */
+export async function getCompanyResponsibleTeam(
+  supabase: DB,
+  companyId: string
+): Promise<ResponsibleTeam> {
+  // 1. Servicios contratados activos de la company
+  const { data: companyServices } = await supabase
+    .from("company_services")
+    .select("id, service_id")
+    .eq("company_id", companyId)
+    .eq("is_active", true);
+
+  const csList = companyServices ?? [];
+  const csIds = csList.map((cs) => cs.id as string);
+  const csById = new Map<string, { service_id: string }>();
+  for (const cs of csList) {
+    csById.set(cs.id as string, { service_id: cs.service_id as string });
+  }
+
+  // 2. Servicios meta y mapeo service → department
+  const serviceIds = [...new Set(csList.map((cs) => cs.service_id as string))];
+  const [{ data: services }, { data: deptSvc }] =
+    serviceIds.length > 0
+      ? await Promise.all([
+          supabase.from("services").select("id, name").in("id", serviceIds),
+          supabase
+            .from("department_services")
+            .select("service_id, department_id")
+            .in("service_id", serviceIds)
+            .eq("is_active", true),
+        ])
+      : [{ data: [] as { id: string; name: string }[] }, { data: [] as { service_id: string; department_id: string }[] }];
+
+  const serviceById = new Map<string, { id: string; name: string }>();
+  for (const s of services ?? []) {
+    serviceById.set(s.id as string, { id: s.id as string, name: s.name as string });
+  }
+  const serviceToDept = new Map<string, string>();
+  for (const ds of deptSvc ?? []) {
+    if (!serviceToDept.has(ds.service_id as string)) {
+      serviceToDept.set(ds.service_id as string, ds.department_id as string);
+    }
+  }
+
+  // 3. Técnicos
+  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  const techRoles =
+    csIds.length > 0 && tecnicoRoleId
+      ? (
+          await supabase
+            .from("profile_roles")
+            .select("profile_id, scope_id")
+            .eq("role_id", tecnicoRoleId)
+            .eq("scope_type", "company_service")
+            .in("scope_id", csIds)
+        ).data ?? []
+      : [];
+
+  // 4. Apartados de documentación de la company
+  const { data: clientBlocks } = await supabase
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  const clientApartados =
+    blockIds.length === 0
+      ? []
+      : (
+          await supabase
+            .schema("documentation")
+            .from("client_apartados")
+            .select("id, apartado_id")
+            .in("client_block_id", blockIds)
+        ).data ?? [];
+
+  const clientApartadoIds = clientApartados.map((ca) => ca.id as string);
+  const apartadoCatalogIds = [...new Set(clientApartados.map((ca) => ca.apartado_id as string))];
+
+  // 5. apartado_departments → mapa client_apartado.id → department_ids[]
+  const apartadoDeptLinks =
+    apartadoCatalogIds.length === 0
+      ? []
+      : (
+          await supabase
+            .schema("documentation")
+            .from("apartado_departments")
+            .select("apartado_id, department_id")
+            .in("apartado_id", apartadoCatalogIds)
+        ).data ?? [];
+
+  const apartadoToDepts = new Map<string, string[]>();
+  for (const link of apartadoDeptLinks) {
+    const aid = link.apartado_id as string;
+    const did = link.department_id as string;
+    const list = apartadoToDepts.get(aid) ?? [];
+    if (!list.includes(did)) list.push(did);
+    apartadoToDepts.set(aid, list);
+  }
+
+  const clientApartadoToDepts = new Map<string, string[]>();
+  for (const ca of clientApartados) {
+    clientApartadoToDepts.set(
+      ca.id as string,
+      apartadoToDepts.get(ca.apartado_id as string) ?? []
+    );
+  }
+
+  // 6. Supervisores (vía view ya filtrada al rol)
+  const supRows =
+    clientApartadoIds.length === 0
+      ? []
+      : (
+          await supabase
+            .schema("documentation")
+            .from("apartado_supervisors_v")
+            .select("client_apartado_id, profile_id")
+            .in("client_apartado_id", clientApartadoIds)
+        ).data ?? [];
+
+  // 7. Profiles meta de todos los implicados
+  const allProfileIds = [
+    ...new Set([
+      ...techRoles.map((r) => r.profile_id as string),
+      ...supRows.map((r) => r.profile_id as string),
+    ]),
+  ];
+  const profileMap = new Map<string, { full_name: string | null; email: string }>();
+  if (allProfileIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", allProfileIds);
+    for (const p of profiles ?? []) {
+      profileMap.set(p.id as string, {
+        full_name: (p.full_name as string | null) ?? null,
+        email: p.email as string,
+      });
+    }
+  }
+
+  // 8. Departments meta y chiefs por dept
+  const allDeptIds = [
+    ...new Set([
+      ...Array.from(serviceToDept.values()),
+      ...Array.from(apartadoToDepts.values()).flat(),
+    ]),
+  ];
+  const [{ data: depts }, chiefRows] = await Promise.all([
+    allDeptIds.length === 0
+      ? Promise.resolve({ data: [] as { id: string; name: string }[] })
+      : supabase.from("departments").select("id, name").in("id", allDeptIds),
+    (async () => {
+      const chiefRoleId = await fetchChiefRoleId(supabase);
+      if (!chiefRoleId || allDeptIds.length === 0) return [] as { profile_id: string; scope_id: string }[];
+      const { data } = await supabase
+        .from("profile_roles")
+        .select("profile_id, scope_id")
+        .eq("role_id", chiefRoleId)
+        .eq("scope_type", "department")
+        .in("scope_id", allDeptIds);
+      return (data ?? []) as { profile_id: string; scope_id: string }[];
+    })(),
+  ]);
+
+  const deptMap = new Map<string, string>();
+  for (const d of depts ?? []) deptMap.set(d.id as string, d.name as string);
+
+  const chiefSet = new Set<string>();
+  for (const c of chiefRows) chiefSet.add(`${c.scope_id}|${c.profile_id}`);
+
+  // 9. Construir agrupación dept → profile → miembro
+  const memberByDept = new Map<string, Map<string, ResponsibleTeamMember>>();
+
+  function ensureMember(deptId: string, profileId: string): ResponsibleTeamMember {
+    let perDept = memberByDept.get(deptId);
+    if (!perDept) {
+      perDept = new Map();
+      memberByDept.set(deptId, perDept);
+    }
+    let m = perDept.get(profileId);
+    if (!m) {
+      const p = profileMap.get(profileId);
+      m = {
+        profile_id: profileId,
+        full_name: p?.full_name ?? null,
+        email: p?.email ?? "",
+        is_chief: chiefSet.has(`${deptId}|${profileId}`),
+        is_technician: false,
+        is_supervisor: false,
+        technician_services: [],
+      };
+      perDept.set(profileId, m);
+    }
+    return m;
+  }
+
+  for (const tr of techRoles) {
+    const csInfo = csById.get(tr.scope_id as string);
+    if (!csInfo) continue;
+    const deptId = serviceToDept.get(csInfo.service_id);
+    if (!deptId) continue;
+    const m = ensureMember(deptId, tr.profile_id as string);
+    m.is_technician = true;
+    const svc = serviceById.get(csInfo.service_id);
+    if (svc && !m.technician_services.some((ts) => ts.service_id === svc.id)) {
+      m.technician_services.push({ service_id: svc.id, service_name: svc.name });
+    }
+  }
+
+  for (const sr of supRows) {
+    const apartadoDeptIds = clientApartadoToDepts.get(sr.client_apartado_id as string) ?? [];
+    for (const deptId of apartadoDeptIds) {
+      const m = ensureMember(deptId, sr.profile_id as string);
+      m.is_supervisor = true;
+    }
+  }
+
+  const byDepartment: ResponsibleTeamDepartment[] = [];
+  for (const [deptId, perDept] of memberByDept) {
+    const members = [...perDept.values()].sort((a, b) => {
+      // chiefs first, then by name
+      if (a.is_chief !== b.is_chief) return a.is_chief ? -1 : 1;
+      return (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, "es");
+    });
+    byDepartment.push({
+      department_id: deptId,
+      department_name: deptMap.get(deptId) ?? "",
+      members,
+    });
+  }
+  byDepartment.sort((a, b) => a.department_name.localeCompare(b.department_name, "es"));
+
+  return { byDepartment };
+}
