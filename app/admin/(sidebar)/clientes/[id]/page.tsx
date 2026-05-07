@@ -4,6 +4,7 @@ import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import {
   getAllCompaniesData,
+  getCompanyDashboardConfig,
   getCompanyDetail,
   getCompanyResponsibleTeamAction,
 } from "@/app/admin/clientes/actions";
@@ -35,6 +36,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     canValidateGlobal,
     supervisorClientApartadoIds,
     responsibleTeam,
+    dashboardConfig,
   ] = await Promise.all([
     getCompanyDetail(id),
     getClientDocumentation(id),
@@ -44,7 +46,10 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     hasPermission("validate_documentation"),
     userScopeIds("validate_client_documentation", "client_apartado"),
     getCompanyResponsibleTeamAction(id),
+    getCompanyDashboardConfig(id),
   ]);
+
+  const dashboardAuthorizedEmail = process.env.DASHBOARD_AUTHORIZED_EMAIL ?? null;
 
   if (!detail) notFound();
 
@@ -72,6 +77,8 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
           responsibleTeam={responsibleTeam}
           currentUserId={user.id}
           initialTab={tab ?? "documentacion"}
+          dashboardConfig={dashboardConfig}
+          dashboardAuthorizedEmail={dashboardAuthorizedEmail}
         />
       </div>
     </div>

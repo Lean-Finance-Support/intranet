@@ -1,6 +1,11 @@
 "use client";
 
-import type { ClienteService, DeptMemberSlim } from "@/app/admin/clientes/actions";
+import type {
+  ClienteService,
+  CompanyDashboardConfig,
+  DeptMemberSlim,
+} from "@/app/admin/clientes/actions";
+import DashboardSheetPanel from "./dashboard-sheet-panel";
 
 const SERVICE_ROUTES: Record<string, string> = {
   "tax-models": "/modelos",
@@ -16,6 +21,8 @@ interface Props {
   onRemove: (serviceId: string, techId: string) => void;
   onRemoveService: (serviceId: string) => void;
   onAssignAll: (serviceId: string) => void;
+  dashboardConfig?: CompanyDashboardConfig | null;
+  dashboardAuthorizedEmail?: string | null;
 }
 
 export default function ServiceDetailSection({
@@ -28,10 +35,13 @@ export default function ServiceDetailSection({
   onRemove,
   onRemoveService,
   onAssignAll,
+  dashboardConfig,
+  dashboardAuthorizedEmail,
 }: Props) {
   const existingIds = new Set(service.technicians.map((t) => t.id));
   const available = members.filter((m) => !existingIds.has(m.id));
   const serviceRoute = SERVICE_ROUTES[service.service_slug];
+  const isDashboardService = service.service_slug === "dashboard";
 
   return (
     <div className="border border-gray-100 rounded-lg p-3 space-y-2 bg-white">
@@ -88,7 +98,18 @@ export default function ServiceDetailSection({
         </div>
       </div>
 
-      {/* Technicians */}
+      {/* Dashboard fiscal: panel de configuración del Sheet (sustituye al bloque de técnicos) */}
+      {isDashboardService && (
+        <DashboardSheetPanel
+          companyId={companyId}
+          initialConfig={dashboardConfig ?? null}
+          authorizedEmail={dashboardAuthorizedEmail ?? null}
+          canEdit={isChiefOfDept}
+        />
+      )}
+
+      {/* Technicians (oculto para servicios sin técnicos como Dashboard) */}
+      {!isDashboardService && (
       <div>
         <p className="text-[10px] font-medium text-text-muted uppercase tracking-wider mb-1.5">
           Técnicos
@@ -158,6 +179,7 @@ export default function ServiceDetailSection({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

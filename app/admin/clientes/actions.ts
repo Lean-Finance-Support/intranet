@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/lib/team-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import { getDashboardData, parseSheetUrl, DashboardSheetError } from "@/lib/google-sheets/client";
 
 /**
  * Resuelve el departamento activo para un servicio (vía department_services).
@@ -74,7 +76,12 @@ export interface ClientesPageData {
   departments: { id: string; name: string }[];
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
-  chiefAvailableServices: { service_id: string; service_name: string; department_id: string }[];
+  chiefAvailableServices: {
+    service_id: string;
+    service_name: string;
+    service_slug: string;
+    department_id: string;
+  }[];
   canCreateCompany: boolean;
   canDeleteCompany: boolean;
   canManageClientAccounts: boolean;
@@ -211,6 +218,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   const chiefAvailableServices: {
     service_id: string;
     service_name: string;
+    service_slug: string;
     department_id: string;
   }[] = [];
   if (userChiefDeptIds.length > 0) {
@@ -221,6 +229,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
         chiefAvailableServices.push({
           service_id: svc.id,
           service_name: svc.name,
+          service_slug: svc.slug,
           department_id: ds.department_id,
         });
     }
@@ -549,6 +558,21 @@ export async function removeServiceFromCompany(
     .eq("service_id", serviceId);
 
   if (error) throw new Error("Error al eliminar el servicio.");
+
+  // Si quitamos el servicio Dashboard, limpiamos también la configuración del Sheet.
+  const { data: svc } = await supabase
+    .from("services")
+    .select("slug")
+    .eq("id", serviceId)
+    .maybeSingle();
+  if (svc?.slug === "dashboard") {
+    await supabase
+      .schema("dashboard")
+      .from("client_dashboards")
+      .delete()
+      .eq("company_id", companyId);
+    updateTag(`dashboard:${companyId}`);
+  }
 }
 
 // ---------- Assign / remove technician ----------
@@ -892,4 +916,105 @@ export async function restoreCompanyAdmin(companyId: string): Promise<void> {
     .update({ deleted_at: null, updated_at: new Date().toISOString() })
     .eq("id", companyId);
   if (error) throw new Error("Error al restaurar la empresa.");
+}
+
+// ---------- Dashboard fiscal (Google Sheet config) ----------
+
+export interface CompanyDashboardConfig {
+  sheet_id: string;
+  sheet_name: string | null;
+  sheet_gid: number | null;
+  updated_at: string;
+}
+
+async function resolveDashboardServiceDeptId(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"]
+): Promise<string> {
+  const { data } = await supabase
+    .from("services")
+    .select("id, department_services!inner(department_id)")
+    .eq("slug", "dashboard")
+    .eq("department_services.is_active", true)
+    .maybeSingle<{ id: string; department_services: { department_id: string }[] }>();
+  const deptId = data?.department_services?.[0]?.department_id;
+  if (!deptId) throw new Error("Servicio dashboard no vinculado a ningún departamento.");
+  return deptId;
+}
+
+export async function getCompanyDashboardConfig(
+  companyId: string
+): Promise<CompanyDashboardConfig | null> {
+  const { supabase } = await requireAdmin();
+  const { data } = await supabase
+    .schema("dashboard")
+    .from("client_dashboards")
+    .select("sheet_id, sheet_name, sheet_gid, updated_at")
+    .eq("company_id", companyId)
+    .maybeSingle<CompanyDashboardConfig>();
+  return data ?? null;
+}
+
+export interface SetDashboardSheetResult {
+  ok: true;
+  sheet_id: string;
+}
+
+export async function setDashboardSheet(
+  companyId: string,
+  sheetUrl: string
+): Promise<SetDashboardSheetResult> {
+  const { supabase, user } = await requireAdmin();
+  const deptId = await resolveDashboardServiceDeptId(supabase);
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
+
+  const parsed = parseSheetUrl(sheetUrl.trim());
+  if (!parsed) {
+    throw new Error("La URL no parece ser de un Google Sheet válido.");
+  }
+
+  // Validar acceso real (catch errores específicos del Sheet API).
+  try {
+    await getDashboardData(parsed.sheetId);
+  } catch (err) {
+    if (err instanceof DashboardSheetError) {
+      throw new Error(err.message);
+    }
+    throw new Error(
+      "No se pudo leer el Sheet. Revisa la URL y que tenga las pestañas crudas esperadas."
+    );
+  }
+
+  const { error } = await supabase
+    .schema("dashboard")
+    .from("client_dashboards")
+    .upsert(
+      {
+        company_id: companyId,
+        sheet_id: parsed.sheetId,
+        sheet_name: null,
+        sheet_gid: parsed.gid,
+        updated_by: user.id,
+        created_by: user.id,
+      },
+      { onConflict: "company_id" }
+    );
+  if (error) throw new Error("No se pudo guardar la configuración del dashboard.");
+
+  updateTag(`dashboard:${companyId}`);
+  return { ok: true, sheet_id: parsed.sheetId };
+}
+
+export async function clearDashboardSheet(companyId: string): Promise<void> {
+  const { supabase } = await requireAdmin();
+  const deptId = await resolveDashboardServiceDeptId(supabase);
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
+
+  const { error } = await supabase
+    .schema("dashboard")
+    .from("client_dashboards")
+    .delete()
+    .eq("company_id", companyId);
+  if (error) throw new Error("No se pudo eliminar la configuración del dashboard.");
+
+  updateTag(`dashboard:${companyId}`);
 }
