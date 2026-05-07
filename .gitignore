@@ -54,3 +54,4 @@ memory/
 # Notas y config local (no se comparten)
 TODO.md
 .mcp.json
+read-only-mcp.txt

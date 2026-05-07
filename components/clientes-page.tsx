@@ -14,13 +14,17 @@ function formatDate(iso: string): string {
 // ---- Company Card ----
 function CompanyCard({
   company,
+  deptNameById,
   onClick,
 }: {
   company: ClienteCompany;
+  deptNameById: Map<string, string>;
   onClick: () => void;
 }) {
-  // Unique departments across services
-  const deptNames = [...new Set(company.services.map((s) => s.department_name))].filter(Boolean);
+  // Departamentos del equipo responsable (técnicos asignados + supervisores de doc)
+  const teamDeptNames = company.responsible_team_dept_ids
+    .map((id) => deptNameById.get(id))
+    .filter((n): n is string => !!n);
   const docProgress = company.documentation_progress;
   const docPct =
     docProgress && docProgress.total > 0
@@ -33,7 +37,7 @@ function CompanyCard({
       className="relative text-left bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 hover:shadow-md hover:border-brand-teal/30 transition-all cursor-pointer w-full"
     >
       {company.is_assigned && (
-        <span className="absolute top-3 right-3 text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full font-medium">
+        <span className="absolute top-3 right-3 text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-medium">
           Asignado
         </span>
       )}
@@ -47,20 +51,11 @@ function CompanyCard({
         )}
       </div>
 
-      {/* Service + dept badges */}
-      {company.services.length > 0 && (
+      {/* Departamentos implicados (equipo responsable) */}
+      {teamDeptNames.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
-          {company.services.map((svc) => (
-            <span key={svc.service_id} className="text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full">
-              {svc.service_name}
-            </span>
-          ))}
-        </div>
-      )}
-      {deptNames.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {deptNames.map((d) => (
-            <span key={d} className="text-[10px] border border-gray-200 text-text-muted px-1.5 py-0.5 rounded-full">
+          {teamDeptNames.map((d) => (
+            <span key={d} className="text-[10px] bg-brand-teal/10 text-brand-teal px-1.5 py-0.5 rounded-full">
               {d}
             </span>
           ))}
@@ -174,6 +169,12 @@ export default function ClientesPage({
     return [...map.entries()].map(([id, name]) => ({ id, name }));
   }, [data.companies]);
 
+  // Lookup name → id de los departamentos disponibles
+  const deptNameById = useMemo(
+    () => new Map(data.departments.map((d) => [d.id, d.name])),
+    [data.departments]
+  );
+
   const filtered = useMemo(() => {
     return companies.filter((c) => {
       if (search.trim()) {
@@ -185,8 +186,7 @@ export default function ClientesPage({
         ) return false;
       }
       if (selectedDepts.length > 0) {
-        const compDeptIds = c.services.map((s) => s.department_id);
-        if (!selectedDepts.some((d) => compDeptIds.includes(d))) return false;
+        if (!selectedDepts.some((d) => c.responsible_team_dept_ids.includes(d))) return false;
       }
       if (selectedServices.length > 0) {
         const compSvcIds = c.services.map((s) => s.service_id);
@@ -365,7 +365,12 @@ export default function ClientesPage({
                   c.deleted_at ? (
                     <DeletedCompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
                   ) : (
-                    <CompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+                    <CompanyCard
+                      key={c.id}
+                      company={c}
+                      deptNameById={deptNameById}
+                      onClick={() => setSelectedCompany(c)}
+                    />
                   )
                 )}
               </div>

@@ -51,6 +51,13 @@ export interface ClienteCompany {
   company_name: string | null;
   nif: string | null;
   services: ClienteService[];
+  /**
+   * Departamentos derivados del equipo responsable de la empresa: depts donde
+   * existe al menos un técnico asignado (vía servicio contratado) o al menos
+   * un supervisor de algún apartado de documentación. No es la mera lista de
+   * depts de los servicios contratados — refleja quién está "implicado" hoy.
+   */
+  responsible_team_dept_ids: string[];
   is_assigned: boolean;
   deleted_at: string | null;
   created_at: string;
@@ -253,8 +260,19 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     });
   }
 
-  // Documentation progress por empresa
+  // Documentation progress + depts del equipo responsable (vía supervisores)
   const docProgressMap = new Map<string, { validated: number; total: number; in_review: number }>();
+  const teamDeptsMap = new Map<string, Set<string>>();
+
+  // Depts via técnicos: cualquier company_service con técnico asignado mete
+  // su dept en el equipo responsable de la company.
+  for (const t of techData) {
+    const deptId = serviceToDeptId.get(t.service_id);
+    if (!deptId) continue;
+    if (!teamDeptsMap.has(t.company_id)) teamDeptsMap.set(t.company_id, new Set());
+    teamDeptsMap.get(t.company_id)!.add(deptId);
+  }
+
   if (companyIds.length > 0) {
     const adminClient = createAdminClient();
     const { data: clientBlocks } = await adminClient
@@ -273,9 +291,11 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
       const { data: clientApartados } = await adminClient
         .schema("documentation")
         .from("client_apartados")
-        .select("status, client_block_id")
+        .select("id, status, client_block_id, apartado_id")
         .in("client_block_id", blockIds);
 
+      const clientApartadoToCompany = new Map<string, string>();
+      const clientApartadoToCatalog = new Map<string, string>();
       for (const ca of clientApartados ?? []) {
         const companyId = blockToCompany.get(ca.client_block_id as string);
         if (!companyId) continue;
@@ -284,6 +304,57 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
         if (ca.status === "validado") entry.validated += 1;
         if (ca.status === "enviado") entry.in_review += 1;
         docProgressMap.set(companyId, entry);
+        clientApartadoToCompany.set(ca.id as string, companyId);
+        clientApartadoToCatalog.set(ca.id as string, ca.apartado_id as string);
+      }
+
+      // Depts via supervisores: para cada client_apartado supervisado, traemos
+      // los depts del apartado del catálogo y los añadimos al equipo del cliente.
+      const clientApartadoIds = Array.from(clientApartadoToCompany.keys());
+      if (clientApartadoIds.length > 0) {
+        const { data: supRows } = await adminClient
+          .schema("documentation")
+          .from("apartado_supervisors_v")
+          .select("client_apartado_id")
+          .in("client_apartado_id", clientApartadoIds);
+
+        const supervisedClientApartadoIds = new Set(
+          (supRows ?? []).map((r) => r.client_apartado_id as string)
+        );
+
+        const catalogIdsToLookUp = new Set<string>();
+        for (const caId of supervisedClientApartadoIds) {
+          const cat = clientApartadoToCatalog.get(caId);
+          if (cat) catalogIdsToLookUp.add(cat);
+        }
+
+        if (catalogIdsToLookUp.size > 0) {
+          const { data: apartadoDepts } = await adminClient
+            .schema("documentation")
+            .from("apartado_departments")
+            .select("apartado_id, department_id")
+            .in("apartado_id", Array.from(catalogIdsToLookUp));
+
+          const catalogToDepts = new Map<string, string[]>();
+          for (const link of apartadoDepts ?? []) {
+            const aid = link.apartado_id as string;
+            const did = link.department_id as string;
+            const list = catalogToDepts.get(aid) ?? [];
+            if (!list.includes(did)) list.push(did);
+            catalogToDepts.set(aid, list);
+          }
+
+          for (const caId of supervisedClientApartadoIds) {
+            const companyId = clientApartadoToCompany.get(caId);
+            const catalogId = clientApartadoToCatalog.get(caId);
+            if (!companyId || !catalogId) continue;
+            const depts = catalogToDepts.get(catalogId) ?? [];
+            if (depts.length === 0) continue;
+            if (!teamDeptsMap.has(companyId)) teamDeptsMap.set(companyId, new Set());
+            const set = teamDeptsMap.get(companyId)!;
+            for (const did of depts) set.add(did);
+          }
+        }
       }
     }
   }
@@ -294,6 +365,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     company_name: c.company_name,
     nif: c.nif,
     services: compSvcMap.get(c.id) ?? [],
+    responsible_team_dept_ids: Array.from(teamDeptsMap.get(c.id) ?? []),
     is_assigned: myAssignedCompanyIds.has(c.id),
     deleted_at: c.deleted_at as string | null,
     created_at: c.created_at as string,
@@ -641,6 +713,7 @@ export async function createCompanyAdmin(input: CreateCompanyInput): Promise<Cli
     company_name: data.company_name,
     nif: data.nif,
     services: [],
+    responsible_team_dept_ids: [],
     is_assigned: false,
     deleted_at: null,
     created_at: data.created_at as string,

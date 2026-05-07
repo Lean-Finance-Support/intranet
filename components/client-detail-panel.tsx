@@ -6,7 +6,6 @@ import {
   getCompanyDetail,
   getCompanyResponsibleTeamAction,
   updateCompanyNameAdmin,
-  createClientAccount,
   updateClientAccount,
   unlinkClientFromCompany,
   findClientProfileByEmail,
@@ -312,7 +311,6 @@ export default function ClientDetailPanel({
   const [savingName, setSavingName] = useState(false);
 
   // Client accounts
-  const [addingAccount, setAddingAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [unlinkConfirmAccount, setUnlinkConfirmAccount] = useState<ClientAccount | null>(null);
 
@@ -360,16 +358,6 @@ export default function ClientDetailPanel({
       onUpdateName(company.id, nameValue || null);
       setEditingName(false);
     } finally { setSavingName(false); }
-  }
-
-  async function handleAddAccount(input: { email: string; full_name: string | null }) {
-    const created = await createClientAccount(company.id, input);
-    setDetail((prev) => {
-      if (!prev) return prev;
-      const exists = prev.profiles.some((p) => p.id === created.id);
-      return exists ? prev : { ...prev, profiles: [...prev.profiles, created] };
-    });
-    setAddingAccount(false);
   }
 
   async function handleUpdateAccount(profileId: string, input: { email: string; full_name: string | null }) {
@@ -510,18 +498,7 @@ export default function ClientDetailPanel({
 
           {/* ---- Profiles (lazy) ---- */}
           <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Cuentas asociadas</h3>
-              {canEditCompany && canManageClientAccounts && !addingAccount && !loadingDetail && (
-                <button
-                  onClick={() => { setAddingAccount(true); setEditingAccountId(null); }}
-                  className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                  Añadir
-                </button>
-              )}
-            </div>
+            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Cuentas asociadas</h3>
 
             {loadingDetail ? (
               <div className="space-y-2 animate-pulse">
@@ -529,7 +506,7 @@ export default function ClientDetailPanel({
               </div>
             ) : (
               <div className="space-y-2">
-                {(detail?.profiles ?? []).length === 0 && !addingAccount && (
+                {(detail?.profiles ?? []).length === 0 && (
                   <p className="text-sm text-text-muted">Sin cuentas asociadas</p>
                 )}
                 {(detail?.profiles ?? []).map((acc) =>
@@ -554,7 +531,7 @@ export default function ClientDetailPanel({
                       {canEditCompany && canManageClientAccounts && (
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => { setEditingAccountId(acc.id); setAddingAccount(false); }}
+                            onClick={() => setEditingAccountId(acc.id)}
                             className="p-1 rounded hover:bg-gray-200 cursor-pointer"
                             title="Editar"
                           >
@@ -575,13 +552,6 @@ export default function ClientDetailPanel({
                       )}
                     </div>
                   )
-                )}
-                {addingAccount && (
-                  <AddClientAccountForm
-                    existingProfileIds={(detail?.profiles ?? []).map((p) => p.id)}
-                    onSubmit={handleAddAccount}
-                    onCancel={() => setAddingAccount(false)}
-                  />
                 )}
               </div>
             )}
