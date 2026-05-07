@@ -228,6 +228,25 @@ El catálogo soporta dos ejes adicionales que se usan tanto al asignar manualmen
 
 ---
 
+## Dashboard fiscal (servicio `dashboard`, schema `dashboard`)
+
+Servicio del dpto Asesoría Fiscal y Contable (slug `dashboard`). Si una empresa lo tiene contratado, en `/app/dashboard` ve un dashboard agregado a partir de su Google Sheet (que mantiene el equipo). NO se asignan técnicos a este servicio. NO hay vista admin del dashboard del cliente — solo lo ve el cliente.
+
+- Schema `dashboard.client_dashboards` (`company_id` PK, `sheet_id`, `sheet_name` nullable, `sheet_gid`, audit fields). RLS: cliente lee solo si pertenece a la empresa Y tiene servicio `dashboard` activo. Admin lee/escribe (gate fino en server actions con `requirePermission('write_dept_service', dept fiscal)`).
+- Lectura del Sheet: NO leemos la pestaña visual de KPIs (depende del filtro temporal del equipo). Leemos las **3 hojas crudas** (`facturasVentaHolded_lineas`, `Facturas_compra_holded`, `extractosBancarios`, matcheadas con regex case-insensitive sobre los títulos) y agregamos en server según el filtro del cliente. Cero impacto en el Sheet del equipo, sin race conditions.
+- Auth: OAuth 2.0 Web Application + refresh token de larga duración asociado a una cuenta de Google del equipo (p.ej. `tech@leanfinance.es`) que ya tiene acceso a los Sheets de los clientes. **NO** es service account — así no hay que compartir cada Sheet con un email extra. Setup one-time en `/admin/dashboard-oauth-setup`.
+- Env vars: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN`. Opcional: `DASHBOARD_AUTHORIZED_EMAIL` (solo se usa como hint en panel admin).
+- Filtros UI cliente vía search params: `?period=q1|q2|q3|q4` (default año actual completo) y `?bank=<cuenta>` (default todas las cuentas). El filtro temporal cubre KPIs, gráficos mensuales y tabla de pendientes; el filtro de banco solo aplica a la columna Bancos.
+- Render: 3 columnas (Ventas / Compras / Bancos) con switcher Totales↔Gráfico (Recharts area chart) en Ventas y Compras. Tabla de pendientes/vencidos por cliente/proveedor con despliegue por click a las facturas individuales.
+- Cifras: ventas suma `Subtotal Línea` (sin IVA, igual que el GS), bancos `pendiente de conciliar` en valor absoluto, filas sin cliente/proveedor agrupadas como `(Sin cliente)` / `(Sin proveedor)` (no se descartan, suman al total).
+- Cache: `unstable_cache` 24h con tag `dashboard:<companyId>` (el GS se actualiza 1x/día). Bumpea el cache key del fetch (`dashboard-raw-vN`) si cambias el shape de `RawDashboardData`.
+- Panel admin: en `/admin/clientes/[id]` tab "Servicios contratados", al añadir el servicio Dashboard aparece un panel para pegar la URL del Sheet (sin requerir nombre de pestaña — las hojas se localizan por regex). Al quitar el servicio se borra la fila de `dashboard.client_dashboards`.
+- Server actions admin: `getCompanyDashboardConfig`, `setDashboardSheet`, `clearDashboardSheet` en `app/admin/clientes/actions.ts`. Permiso requerido: `write_dept_service` con scope = dept Asesoría Fiscal y Contable.
+- IMPORTANTE para deploy: el schema `dashboard` debe estar añadido a "Exposed schemas" en Supabase Dashboard → API Settings (una vez por proyecto). Sin esto el SDK devuelve 404 al hacer `.schema('dashboard')`. Los redirect URIs del OAuth Client deben incluir `http://localhost:3000/api/dashboard-oauth-callback` (dev) y `https://admin.leanfinance.es/api/dashboard-oauth-callback` (prod).
+- Detalle operativo y troubleshooting: `docs/dashboard-setup.md`.
+
+---
+
 ## Estructura de rutas
 
 ```
