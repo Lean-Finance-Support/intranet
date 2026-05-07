@@ -16,6 +16,7 @@ export async function middleware(request: NextRequest) {
   // Rutas que bypasean el middleware completamente
   if (
     pathname.startsWith("/auth") ||
+    pathname.startsWith("/api/") ||
     pathname === "/unauthorized" ||
     pathname === "/select-company" ||
     pathname === "/app/select-company" ||

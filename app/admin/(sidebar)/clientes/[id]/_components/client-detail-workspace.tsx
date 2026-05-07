@@ -7,6 +7,7 @@ import type {
   ClienteCompany,
   ClienteService,
   ClientAccount,
+  CompanyDashboardConfig,
   CompanyDetailInfo,
   DeptMemberSlim,
 } from "@/app/admin/clientes/actions";
@@ -71,7 +72,12 @@ interface Props {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
-  chiefAvailableServices: { service_id: string; service_name: string; department_id: string }[];
+  chiefAvailableServices: {
+    service_id: string;
+    service_name: string;
+    service_slug: string;
+    department_id: string;
+  }[];
   canCreateCompany: boolean;
   canDeleteCompany: boolean;
   canManageClientAccounts: boolean;
@@ -89,6 +95,8 @@ interface Props {
   responsibleTeam: ResponsibleTeam;
   currentUserId: string;
   initialTab: string;
+  dashboardConfig: CompanyDashboardConfig | null;
+  dashboardAuthorizedEmail: string | null;
 }
 
 type TabKey = "documentacion" | "equipo" | "servicios" | "datos";
@@ -141,6 +149,8 @@ export default function ClientDetailWorkspace({
   responsibleTeam,
   currentUserId,
   initialTab,
+  dashboardConfig,
+  dashboardAuthorizedEmail,
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(resolveInitialTab(initialTab));
@@ -340,7 +350,7 @@ export default function ClientDetailWorkspace({
       const newService: ClienteService = {
         service_id: serviceId,
         service_name: svcMeta.service_name,
-        service_slug: "",
+        service_slug: svcMeta.service_slug,
         department_id: svcMeta.department_id,
         department_name: deptMembers[svcMeta.department_id]?.[0] ? "" : "",
         technicians: [],
@@ -887,6 +897,8 @@ export default function ClientDetailWorkspace({
                     onRemove={handleRemoveTech}
                     onRemoveService={handleRemoveService}
                     onAssignAll={handleAssignAll}
+                    dashboardConfig={svc.service_slug === "dashboard" ? dashboardConfig : null}
+                    dashboardAuthorizedEmail={dashboardAuthorizedEmail}
                   />
                 );
               })}

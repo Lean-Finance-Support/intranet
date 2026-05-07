@@ -1,5 +1,12 @@
 import { redirect } from "next/navigation";
-import { getAuthUser, getCachedProfile } from "@/lib/cached-queries";
+import { getActiveCompanyId } from "@/lib/active-company";
+import {
+  getAuthUser,
+  getCachedCompanyServiceSlugs,
+  getCachedProfile,
+  getCachedUserCompanies,
+} from "@/lib/cached-queries";
+import DashboardFiscalSection from "@/components/dashboard/dashboard-fiscal-section";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -13,17 +20,32 @@ function getFirstName(fullName: string | null | undefined): string | null {
   return fullName.split(" ")[0];
 }
 
-export default async function ClientDashboardPage() {
+interface PageProps {
+  searchParams: Promise<{ period?: string; bank?: string }>;
+}
+
+export default async function ClientDashboardPage({ searchParams }: PageProps) {
   const { user } = await getAuthUser();
   if (!user) redirect("/login");
 
-  const [profile] = await Promise.all([
+  const [profile, activeCompanyId, companies, params] = await Promise.all([
     getCachedProfile(user.id),
+    getActiveCompanyId(),
+    getCachedUserCompanies(user.id),
+    searchParams,
   ]);
 
   const greeting = getGreeting();
   const firstName = getFirstName(profile?.full_name);
   const displayName = firstName ?? profile?.email ?? user.email;
+
+  const resolvedCompanyId = activeCompanyId ?? companies[0]?.id ?? null;
+  const activeCompany =
+    companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
+  const serviceSlugs = resolvedCompanyId
+    ? await getCachedCompanyServiceSlugs(resolvedCompanyId)
+    : [];
+  const hasDashboard = serviceSlugs.includes("dashboard");
 
   return (
     <div className="px-8 py-12">
@@ -32,6 +54,17 @@ export default async function ClientDashboardPage() {
         {greeting}{displayName ? `, ${displayName}` : ""}
       </h1>
       <div className="w-10 h-0.5 bg-brand-teal rounded-full mt-6" />
+
+      {hasDashboard && resolvedCompanyId && activeCompany && (
+        <div className="mt-10">
+          <DashboardFiscalSection
+            companyId={resolvedCompanyId}
+            companyName={activeCompany.company_name || activeCompany.legal_name}
+            periodId={params.period}
+            bankAccount={params.bank}
+          />
+        </div>
+      )}
     </div>
   );
 }
