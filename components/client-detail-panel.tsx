@@ -347,9 +347,10 @@ export default function ClientDetailPanel({
             className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-md bg-brand-teal hover:bg-brand-teal/90 active:bg-brand-teal/80 text-white flex items-center justify-center shadow-sm hover:shadow transition-all cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 3h6v6" />
-              <path d="M10 14L21 3" />
-              <path d="M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5" />
+              <path d="M9 3H4v5" />
+              <path d="M4 3l6 6" />
+              <path d="M15 21h5v-5" />
+              <path d="M20 21l-6-6" />
             </svg>
           </a>
           <div className="flex-1 min-w-0">
