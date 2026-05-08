@@ -9,23 +9,12 @@ import {
   YAxis,
 } from "recharts";
 import type { MonthlyPoint } from "@/lib/google-sheets/client";
+import { formatEur, formatEurCompact } from "@/lib/format";
 
 interface Props {
   data: MonthlyPoint[];
   accent: "navy" | "teal";
 }
-
-const fmt = new Intl.NumberFormat("es-ES", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
-
-const fmtCompact = (n: number): string => {
-  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".", ",")}M`;
-  if (Math.abs(n) >= 1_000) return `${Math.round(n / 1000)}k`;
-  return String(Math.round(n));
-};
 
 export default function DashboardMonthlyChart({ data, accent }: Props) {
   const stroke = accent === "teal" ? "#00B0B7" : "#0F1A45";
@@ -62,7 +51,7 @@ export default function DashboardMonthlyChart({ data, accent }: Props) {
             axisLine={false}
             tickLine={false}
             width={40}
-            tickFormatter={fmtCompact}
+            tickFormatter={formatEurCompact}
           />
           <Tooltip
             cursor={{ stroke: "#cbd5e1", strokeWidth: 1, strokeDasharray: "3 3" }}
@@ -73,7 +62,7 @@ export default function DashboardMonthlyChart({ data, accent }: Props) {
               padding: "6px 10px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             }}
-            formatter={(value) => [fmt.format(typeof value === "number" ? value : Number(value) || 0), ""]}
+            formatter={(value) => [formatEur(typeof value === "number" ? value : Number(value) || 0), ""]}
             labelStyle={{ color: "#0F1A45", fontWeight: 600 }}
           />
           <Area

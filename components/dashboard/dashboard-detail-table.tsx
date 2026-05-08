@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export interface DashboardDetailRow {
   cells: string[];
-  details: { date: string; cells: string[] }[];
+  details: { date: string; documentNumber?: string; cells: string[] }[];
 }
 
 interface Props {
@@ -21,11 +21,10 @@ export default function DashboardDetailTable({ title, headers, rows }: Props) {
   const visible = rows.slice(0, PREVIEW_ROWS);
   const hidden = rows.length - visible.length;
 
-  // Sub-tabla: misma estructura de headers pero con "Fecha" prepended.
-  // Recibimos los headers principales en `headers` (Cliente / Subtotal / Total / Cobrado / Estado)
-  // y para los details mostramos: Fecha | Subtotal | Total | Cobrado/Pagado | Estado
-  // (la primera columna de la fila padre — cliente/proveedor — la sustituimos por la fecha).
-  const subHeaders = ["Fecha", ...headers.slice(1)];
+  // Sub-tabla: misma estructura de headers, sustituyendo la primera columna
+  // (cliente/proveedor) por "Fecha" + "Nº doc.". Resultado:
+  // Fecha | Nº doc. | Subtotal | Total | Cobrado/Pagado | Estado
+  const subHeaders = ["Fecha", "Nº doc.", ...headers.slice(1)];
 
   function toggle(idx: number) {
     setExpanded((prev) => {
@@ -166,11 +165,14 @@ function RowWithDetails({
                 </thead>
                 <tbody>
                   {row.details.map((d, di) => {
-                    const cells = [d.date, ...d.cells];
+                    // Estructura: Fecha | Nº doc. | <cells originales>.
+                    // Las columnas de texto son las dos primeras (fecha + nº)
+                    // y la última (estado); el resto son numéricas.
+                    const cells = [d.date, d.documentNumber ?? "", ...d.cells];
                     return (
                       <tr key={di} className="border-t border-gray-200/60">
                         {cells.map((cell, i) => {
-                          const isNumeric = i > 0 && i < cells.length - 1;
+                          const isNumeric = i > 1 && i < cells.length - 1;
                           return (
                             <td
                               key={i}

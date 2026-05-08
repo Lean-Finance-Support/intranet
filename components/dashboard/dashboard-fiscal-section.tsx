@@ -15,12 +15,25 @@ import DashboardPeriodTabs from "./dashboard-period-tabs";
 import DashboardDetailTable from "./dashboard-detail-table";
 import DashboardColumnCard from "./dashboard-column-card";
 import DashboardBankSelector from "./dashboard-bank-selector";
+import DashboardViewTabs, { type DashboardView } from "./dashboard-view-tabs";
 
 interface Props {
   companyId: string;
   companyName: string;
   periodId: string | undefined;
   bankAccount: string | undefined;
+  view: string | undefined;
+}
+
+function resolveView(raw: string | undefined): DashboardView {
+  if (raw === "compras" || raw === "bancos") return raw;
+  return "ventas";
+}
+
+// Helpers de visibilidad por vista en móvil. En `md+` siempre `block` para
+// recuperar el layout de 3 columnas.
+function viewClass(active: DashboardView, target: DashboardView): string {
+  return active === target ? "block" : "hidden md:block";
 }
 
 async function loadDashboardConfig(
@@ -39,7 +52,9 @@ async function loadDashboardConfig(
 function getCachedRawData(sheetId: string, companyId: string) {
   return unstable_cache(
     async () => getRawDashboardData(sheetId),
-    ["dashboard-raw-v4", companyId, sheetId],
+    // v5: añade `documentNumber` en SaleDetail/PurchaseDetail y `description`
+    // en RawBankRow. Bumpear si cambia el shape de RawDashboardData.
+    ["dashboard-raw-v5", companyId, sheetId],
     // El Sheet del equipo se actualiza 1x/día, cacheamos 24h. El admin puede
     // forzar refresh quitando+poniendo la config del Sheet si es urgente.
     { tags: [`dashboard:${companyId}`], revalidate: 86400 }
@@ -51,7 +66,9 @@ export default async function DashboardFiscalSection({
   companyName,
   periodId,
   bankAccount,
+  view,
 }: Props) {
+  const activeView = resolveView(view);
   const config = await loadDashboardConfig(companyId);
 
   if (!config) {
@@ -121,64 +138,82 @@ export default async function DashboardFiscalSection({
         <DashboardPeriodTabs options={periodOptions} activeId={activePeriodId} />
       </header>
 
+      <DashboardViewTabs activeView={activeView} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <DashboardColumnCard
-          title="Ventas"
-          accent="navy"
-          kpiYear={data.sales.kpiYear}
-          kpiMonth={data.sales.kpiMonth}
-          monthly={data.sales.monthly}
-        />
-        <DashboardColumnCard
-          title="Compras"
-          accent="navy"
-          kpiYear={data.purchases.kpiYear}
-          kpiMonth={data.purchases.kpiMonth}
-          monthly={data.purchases.monthly}
-        />
-        <DashboardColumnCard
-          title="Bancos"
-          accent="teal"
-          kpiYear={data.banks.kpiYear}
-          kpiMonth={data.banks.kpiMonth}
-          headerExtra={
-            <DashboardBankSelector
-              accounts={data.banks.accounts}
-              selectedAccount={data.banks.selectedAccount}
-            />
-          }
-        />
+        <div className={viewClass(activeView, "ventas")}>
+          <DashboardColumnCard
+            title="Ventas"
+            accent="navy"
+            kpiYear={data.sales.kpiYear}
+            kpiMonth={data.sales.kpiMonth}
+            monthly={data.sales.monthly}
+          />
+        </div>
+        <div className={viewClass(activeView, "compras")}>
+          <DashboardColumnCard
+            title="Compras"
+            accent="navy"
+            kpiYear={data.purchases.kpiYear}
+            kpiMonth={data.purchases.kpiMonth}
+            monthly={data.purchases.monthly}
+          />
+        </div>
+        <div className={viewClass(activeView, "bancos")}>
+          <DashboardColumnCard
+            title="Bancos"
+            accent="teal"
+            kpiYear={data.banks.kpiYear}
+            kpiMonth={data.banks.kpiMonth}
+            headerExtra={
+              <DashboardBankSelector
+                accounts={data.banks.accounts}
+                selectedAccount={data.banks.selectedAccount}
+              />
+            }
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <PendingBox
-          title={data.sales.pending.label}
-          rows={[
-            { label: "Subtotal", value: data.sales.pending.subtotal },
-            { label: "Total", value: data.sales.pending.total },
-            { label: "Cobrado", value: data.sales.pending.collected },
-          ]}
-        />
-        <PendingBox
-          title={data.purchases.pending.label}
-          rows={[
-            { label: "Subtotal", value: data.purchases.pending.subtotal },
-            { label: "Total", value: data.purchases.pending.total },
-            { label: "Pagado", value: data.purchases.pending.paid },
-          ]}
-        />
-        <PendingBox
-          title={data.banks.pending.label}
-          rows={[
-            { label: "Importe", value: data.banks.pending.pending },
-            { label: "Conciliado", value: data.banks.pending.reconciled },
-          ]}
-        />
+        <div className={viewClass(activeView, "ventas")}>
+          <PendingBox
+            title={data.sales.pending.label}
+            rows={[
+              { label: "Subtotal", value: data.sales.pending.subtotal },
+              { label: "Total", value: data.sales.pending.total },
+              { label: "Cobrado", value: data.sales.pending.collected },
+            ]}
+          />
+        </div>
+        <div className={viewClass(activeView, "compras")}>
+          <PendingBox
+            title={data.purchases.pending.label}
+            rows={[
+              { label: "Subtotal", value: data.purchases.pending.subtotal },
+              { label: "Total", value: data.purchases.pending.total },
+              { label: "Pagado", value: data.purchases.pending.paid },
+            ]}
+          />
+        </div>
+        <div className={viewClass(activeView, "bancos")}>
+          <PendingBox
+            title={data.banks.pending.label}
+            rows={[
+              { label: "Importe", value: data.banks.pending.pending },
+              { label: "Conciliado", value: data.banks.pending.reconciled },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <SalesTable rows={data.sales.rows} />
-        <PurchasesTable rows={data.purchases.rows} />
+        <div className={viewClass(activeView, "ventas")}>
+          <SalesTable rows={data.sales.rows} />
+        </div>
+        <div className={viewClass(activeView, "compras")}>
+          <PurchasesTable rows={data.purchases.rows} />
+        </div>
       </div>
 
       <p className="text-[11px] text-text-muted">
@@ -221,6 +256,7 @@ function SalesTable({ rows }: { rows: SaleRow[] }) {
         cells: [r.client, r.subtotal, r.total, r.collected, r.status],
         details: r.details.map((d) => ({
           date: d.date,
+          documentNumber: d.documentNumber,
           cells: [d.subtotal, d.total, d.collected, d.status],
         })),
       }))}
@@ -237,6 +273,7 @@ function PurchasesTable({ rows }: { rows: PurchaseRow[] }) {
         cells: [r.provider, r.subtotal, r.total, r.paid, r.status],
         details: r.details.map((d) => ({
           date: d.date,
+          documentNumber: d.documentNumber,
           cells: [d.subtotal, d.total, d.paid, d.status],
         })),
       }))}
