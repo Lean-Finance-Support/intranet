@@ -74,7 +74,7 @@ export default async function DashboardFiscalSection({
   if (!config) {
     return (
       <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <h2 className="text-lg font-semibold text-brand-navy">Dashboard fiscal</h2>
+        <h2 className="text-lg font-semibold text-brand-navy">Dashboard</h2>
         <p className="mt-2 text-sm text-text-muted">
           Tu dashboard se está configurando. En breve aparecerá aquí. Si llevas más de 24 h sin
           verlo, contacta con tu asesor.
@@ -93,7 +93,7 @@ export default async function DashboardFiscalSection({
         : "No se pudo cargar el dashboard. Avisa a tu asesor.";
     return (
       <section className="rounded-2xl border border-red-100 bg-red-50/50 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-brand-navy">Dashboard fiscal</h2>
+        <h2 className="text-lg font-semibold text-brand-navy">Dashboard</h2>
         <p className="mt-2 text-sm text-red-600">{message}</p>
       </section>
     );
