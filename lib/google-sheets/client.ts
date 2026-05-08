@@ -1,5 +1,38 @@
+// Fetch del Google Sheet (server-only — usa `googleapis`). La agregación pura
+// vive en `lib/dashboard/aggregate.ts` para poder consumirse desde el cliente
+// sin arrastrar `googleapis` al bundle.
+
 import { google, sheets_v4 } from "googleapis";
-import { formatEur } from "@/lib/format";
+import {
+  aggregateDashboard,
+  type DashboardData,
+  type RawDashboardData,
+  type RawSaleRow,
+  type RawPurchaseRow,
+  type RawBankRow,
+} from "@/lib/dashboard/aggregate";
+
+// Re-export para compatibilidad con consumidores existentes.
+export {
+  aggregateDashboard,
+  buildPeriodOptions,
+  resolvePeriodFromId,
+} from "@/lib/dashboard/aggregate";
+export type {
+  PeriodFilter,
+  PeriodOption,
+  KpiCard,
+  SalesTotals,
+  PurchaseTotals,
+  BankPendingTotals,
+  SaleDetail,
+  PurchaseDetail,
+  SaleRow,
+  PurchaseRow,
+  MonthlyPoint,
+  DashboardData,
+  RawDashboardData,
+} from "@/lib/dashboard/aggregate";
 
 export const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
 
@@ -48,162 +81,6 @@ export class DashboardSheetError extends Error {
 }
 
 // ---------------------------------------------------------------------------
-// Tipos públicos
-// ---------------------------------------------------------------------------
-
-export type PeriodFilter =
-  | { kind: "year"; year: number }
-  | { kind: "quarter"; year: number; quarter: 1 | 2 | 3 | 4 }
-  | { kind: "last_month"; year: number };
-
-export interface PeriodOption {
-  id: string;
-  label: string;
-  filter: PeriodFilter;
-}
-
-export type KpiCard = {
-  label: string;
-  period: string;
-  value: string;
-  isNegative: boolean;
-};
-
-export type SalesTotals = {
-  label: string;
-  subtotal: string;
-  total: string;
-  collected: string;
-};
-
-export type PurchaseTotals = {
-  label: string;
-  subtotal: string;
-  total: string;
-  paid: string;
-};
-
-export type BankPendingTotals = {
-  label: string;
-  pending: string;
-  reconciled: string;
-};
-
-export type SaleDetail = {
-  date: string; // DD/MM/YYYY
-  documentNumber: string; // Nº documento de la factura (puede venir vacío)
-  subtotal: string;
-  total: string;
-  collected: string;
-  status: string;
-};
-
-export type PurchaseDetail = {
-  date: string; // DD/MM/YYYY
-  documentNumber: string; // Nº documento de la factura (puede venir vacío)
-  subtotal: string;
-  total: string;
-  paid: string;
-  status: string;
-};
-
-export type SaleRow = {
-  client: string;
-  subtotal: string;
-  total: string;
-  collected: string;
-  status: string;
-  details: SaleDetail[];
-};
-
-export type PurchaseRow = {
-  provider: string;
-  subtotal: string;
-  total: string;
-  paid: string;
-  status: string;
-  details: PurchaseDetail[];
-};
-
-export type MonthlyPoint = {
-  monthKey: string; // YYYY-MM
-  label: string; // "ene 26"
-  value: number;
-};
-
-export type DashboardData = {
-  sales: {
-    kpiYear: KpiCard;
-    kpiMonth: KpiCard;
-    pending: SalesTotals;
-    rows: SaleRow[];
-    monthly: MonthlyPoint[];
-  };
-  purchases: {
-    kpiYear: KpiCard;
-    kpiMonth: KpiCard;
-    pending: PurchaseTotals;
-    rows: PurchaseRow[];
-    monthly: MonthlyPoint[];
-  };
-  banks: {
-    kpiYear: KpiCard;
-    kpiMonth: KpiCard;
-    pending: BankPendingTotals;
-    accounts: string[]; // cuentas únicas para selector
-    selectedAccount: string | null; // null = todas
-  };
-};
-
-// ---------------------------------------------------------------------------
-// Tipos internos (raw data + agregación)
-// ---------------------------------------------------------------------------
-
-// Patrones para localizar las pestañas crudas en el Sheet del cliente.
-// Tolera variaciones de naming (espacios, mayúsculas, sufijos, idiomas).
-const RAW_SHEET_PATTERNS: Record<"sales" | "purchases" | "banks", { regex: RegExp; hint: string }> = {
-  sales: { regex: /factura.*venta/i, hint: "facturas de venta (p.ej. 'facturasVentaHolded_lineas')" },
-  purchases: { regex: /factura.*compra/i, hint: "facturas de compra (p.ej. 'Facturas_compra_holded')" },
-  banks: { regex: /(extracto|movimiento|banc)/i, hint: "extractos bancarios (p.ej. 'extractosBancarios')" },
-};
-
-interface RawSaleRow {
-  date: string; // YYYY-MM-DD
-  client: string;
-  documentNumber: string;
-  subtotal: number;
-  total: number;
-  collected: number;
-  status: string;
-}
-interface RawPurchaseRow {
-  date: string;
-  provider: string;
-  documentNumber: string;
-  subtotal: number;
-  total: number;
-  paid: number;
-  status: string;
-}
-interface RawBankRow {
-  date: string;
-  description: string;
-  amount: number;
-  reconciled: number;
-  status: string;
-  account: string;
-}
-
-export interface RawDashboardData {
-  sales: RawSaleRow[];
-  purchases: RawPurchaseRow[];
-  banks: RawBankRow[];
-  fetchedAt: string;
-  yearsAvailable: number[]; // años con al menos 1 fila en cualquier dataset
-  bankAccounts: string[]; // cuentas bancarias únicas presentes en extractos
-}
-
-// ---------------------------------------------------------------------------
 // Helpers parsing
 // ---------------------------------------------------------------------------
 
@@ -240,9 +117,6 @@ function toNumber(v: string | undefined): number {
   if (!v) return 0;
   const s = v.toString().trim();
   if (!s) return 0;
-  // Si formato europeo "1.234,56" → quitar puntos de millar y cambiar coma por punto.
-  // Si formato anglo "1,234.56" → quitar comas.
-  // Heurística simple: si última coma viene después del último punto, es decimal europeo.
   const lastDot = s.lastIndexOf(".");
   const lastComma = s.lastIndexOf(",");
   let normalized: string;
@@ -251,7 +125,6 @@ function toNumber(v: string | undefined): number {
   } else {
     normalized = s.replace(/,/g, "");
   }
-  // Quitar símbolos (€, espacios, etc) excepto signo y dígitos/punto.
   const m = normalized.match(NUM_RE);
   if (!m) return 0;
   const n = Number(m[0]);
@@ -273,10 +146,8 @@ function parseDate(v: unknown): string | null {
   const s = v.toString().trim();
   if (!s) return null;
 
-  // Si es string puramente numérico (Sheets devuelve a veces el serial como string), parsear como serial.
   if (/^\d+(?:\.\d+)?$/.test(s)) {
     const n = Number(s);
-    // Rango razonable: 1 (1900-01-01) hasta ~80000 (~2118). Evita parsear años sueltos como fecha.
     if (Number.isFinite(n) && n > 1000 && n < 80000) return serialToIso(n);
   }
 
@@ -295,39 +166,16 @@ function parseDate(v: unknown): string | null {
   return null;
 }
 
-// Formatea importes con separador de miles "." y decimales con coma (formato
-// español). Reusa el helper compartido en `lib/format` para que toda la app
-// muestre los importes igual.
-function fmtMoney(n: number): string {
-  return formatEur(n);
-}
-
-// Recibe una fecha en formato YYYY-MM-DD y devuelve DD/MM/YYYY.
-function fmtDateDmy(iso: string): string {
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return iso;
-  const [, y, mo, d] = m;
-  return `${d}/${mo}/${y}`;
-}
-
-const MONTH_NAMES_ES = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
-];
-
-function formatPeriodLabel(filter: PeriodFilter): string {
-  if (filter.kind === "year") return String(filter.year);
-  if (filter.kind === "quarter") return `Q${filter.quarter} ${filter.year}`;
-  return `Último mes ${filter.year}`;
-}
-
-function formatMonthLabel(year: number, monthIdx0: number): string {
-  return `${MONTH_NAMES_ES[monthIdx0]} ${String(year).slice(-2)}`;
-}
-
 // ---------------------------------------------------------------------------
 // Lectura cruda desde Sheets
 // ---------------------------------------------------------------------------
+
+// Patrones para localizar las pestañas crudas en el Sheet del cliente.
+const RAW_SHEET_PATTERNS: Record<"sales" | "purchases" | "banks", { regex: RegExp; hint: string }> = {
+  sales: { regex: /factura.*venta/i, hint: "facturas de venta (p.ej. 'facturasVentaHolded_lineas')" },
+  purchases: { regex: /factura.*compra/i, hint: "facturas de compra (p.ej. 'Facturas_compra_holded')" },
+  banks: { regex: /(extracto|movimiento|banc)/i, hint: "extractos bancarios (p.ej. 'extractosBancarios')" },
+};
 
 async function resolveSheetTabs(
   sheets: sheets_v4.Sheets,
@@ -361,9 +209,6 @@ async function resolveSheetTabs(
   return { sales: pick("sales"), purchases: pick("purchases"), banks: pick("banks") };
 }
 
-// Patrones de cabeceras que pueden cambiar entre clientes.
-// Usamos regex case-insensitive (mismo patrón que ya aplicamos a los títulos
-// de pestañas) para tolerar variaciones de naming sin romper la integración.
 const SALES_DOC_NUMBER_HEADER_RE = /(n(º|°|um(ero)?)?\.?\s*documento|n(º|°|um(ero)?)?\.?\s*factura|n(º|°|um(ero)?)?\.?\s*doc\.?)/i;
 const PURCHASES_DOC_NUMBER_HEADER_RE = /^(num(ero)?|n(º|°)\.?\s*(factura|documento)?|num\s*interno)$/i;
 const PURCHASES_DOC_INTERNAL_HEADER_RE = /num\s*interno/i;
@@ -380,8 +225,6 @@ function findHeaderIndex(headers: string[], re: RegExp): number {
 export async function getRawDashboardData(sheetId: string): Promise<RawDashboardData> {
   const sheets = getSheetsClient();
   const tabs = await resolveSheetTabs(sheets, sheetId);
-  // Leemos desde A1 para capturar la fila de cabeceras y poder localizar
-  // columnas por nombre (p.ej. "Número Documento" en ventas, "Num" en compras).
   const ranges = [
     `${quoteSheetName(tabs.sales)}!A1:AD`,
     `${quoteSheetName(tabs.purchases)}!A1:T`,
@@ -413,13 +256,8 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   const purchasesRows = purchasesAll.slice(1);
   const banksRows = banksAll.slice(1);
 
-  // Localizamos la columna de Nº documento por nombre de cabecera. Fallback al
-  // índice esperado del template Holded (col 2 = "Número Documento" en ventas;
-  // col 1 = "Num" en compras) si no encontramos la cabecera.
   const salesDocIdx = findHeaderIndex(salesHeaders, SALES_DOC_NUMBER_HEADER_RE);
   const salesDocColumn = salesDocIdx >= 0 ? salesDocIdx : 2;
-  // En compras preferimos "Num" sobre "Num interno" si ambos están presentes:
-  // "Num" es el número de factura visible para el proveedor.
   let purchasesDocIdx = -1;
   for (let i = 0; i < purchasesHeaders.length; i++) {
     const h = (purchasesHeaders[i] ?? "").toString().trim();
@@ -435,9 +273,6 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   const banksDescColumn = banksDescIdx >= 0 ? banksDescIdx : 1;
 
   const sales: RawSaleRow[] = [];
-  // Columnas (0-indexed) en el template Holded: A=Fecha, C=Número Documento(2),
-  // E=Cliente(4), Q=Subtotal Línea(16), S=Total Línea(18), AC=Cantidad Cobrada(28),
-  // AD=Estado Cliente(29).
   for (const r of salesRows) {
     const date = parseDate(r[0]);
     if (!date) continue;
@@ -455,10 +290,7 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   }
 
   const purchases: RawPurchaseRow[] = [];
-  // Columnas: Fecha emisión=A(0), Num=B(1), Num interno=C(2), Fecha contable=D(3),
-  // Proveedor=F(5), Subtotal=K(10), Total=P(15), Pagado=Q(16), Estado=S(18)
   for (const r of purchasesRows) {
-    // Fallback: si Fecha emisión está vacía o no parsea, usamos Fecha contable.
     const date = parseDate(r[0]) ?? parseDate(r[3]);
     if (!date) continue;
     const provider = (r[5] ?? "").toString().trim() || "(Sin proveedor)";
@@ -475,8 +307,6 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   }
 
   const banks: RawBankRow[] = [];
-  // Columnas: Fecha=A(0), Descripción=B(1), Importe=C(2), Conciliado=E(4),
-  // Estado=G(6), Cuenta=H(7)
   for (const r of banksRows) {
     const date = parseDate(r[0]);
     if (!date) continue;
@@ -509,340 +339,6 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
     yearsAvailable,
     bankAccounts,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Filtros + agregación
-// ---------------------------------------------------------------------------
-
-function periodRange(filter: PeriodFilter): { from: string; to: string } {
-  if (filter.kind === "year") {
-    return { from: `${filter.year}-01-01`, to: `${filter.year}-12-31` };
-  }
-  if (filter.kind === "quarter") {
-    const startMonth = (filter.quarter - 1) * 3 + 1;
-    const endMonth = startMonth + 2;
-    const lastDay = new Date(filter.year, endMonth, 0).getDate();
-    return {
-      from: `${filter.year}-${String(startMonth).padStart(2, "0")}-01`,
-      to: `${filter.year}-${String(endMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
-    };
-  }
-  // last_month: del año dado, el mes más reciente con datos lo decide el caller con `fillRangeWithLastMonth`.
-  return { from: `${filter.year}-01-01`, to: `${filter.year}-12-31` };
-}
-
-function withinRange(date: string, from: string, to: string): boolean {
-  return date >= from && date <= to;
-}
-
-function lastMonthWithData(dates: string[], year: number): { month: number; from: string; to: string } | null {
-  let latest: string | null = null;
-  for (const d of dates) {
-    if (d.slice(0, 4) !== String(year)) continue;
-    if (!latest || d > latest) latest = d;
-  }
-  if (!latest) return null;
-  const month = Number(latest.slice(5, 7));
-  const lastDay = new Date(year, month, 0).getDate();
-  return {
-    month,
-    from: `${year}-${String(month).padStart(2, "0")}-01`,
-    to: `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
-  };
-}
-
-const PENDING_STATUSES_SALES = new Set(["pendiente", "vencido"]);
-const PENDING_STATUSES_PURCHASES = new Set(["pendiente", "vencido"]);
-
-function isPendingSale(s: RawSaleRow): boolean {
-  return PENDING_STATUSES_SALES.has(s.status.toLowerCase());
-}
-function isPendingPurchase(p: RawPurchaseRow): boolean {
-  return PENDING_STATUSES_PURCHASES.has(p.status.toLowerCase());
-}
-function isReconciled(b: RawBankRow): boolean {
-  return b.status.toLowerCase() === "conciliado";
-}
-
-function monthsInRange(filter: PeriodFilter): { key: string; label: string; from: string; to: string }[] {
-  const out: { key: string; label: string; from: string; to: string }[] = [];
-  let startMonth = 1;
-  let endMonth = 12;
-  if (filter.kind === "quarter") {
-    startMonth = (filter.quarter - 1) * 3 + 1;
-    endMonth = startMonth + 2;
-  }
-  for (let m = startMonth; m <= endMonth; m++) {
-    const lastDay = new Date(filter.year, m, 0).getDate();
-    const mm = String(m).padStart(2, "0");
-    out.push({
-      key: `${filter.year}-${mm}`,
-      label: formatMonthLabel(filter.year, m - 1),
-      from: `${filter.year}-${mm}-01`,
-      to: `${filter.year}-${mm}-${String(lastDay).padStart(2, "0")}`,
-    });
-  }
-  return out;
-}
-
-export function aggregateDashboard(
-  raw: RawDashboardData,
-  filter: PeriodFilter,
-  bankAccount?: string | null
-): DashboardData {
-  const { from, to } = periodRange(filter);
-  const monthlyBuckets = monthsInRange(filter);
-  const accounts = raw.bankAccounts ?? [];
-  const selectedAccount = bankAccount && accounts.includes(bankAccount) ? bankAccount : null;
-
-  // VENTAS — el "Total facturado" del template del equipo suma el SUBTOTAL Línea
-  // (sin IVA), no el Total Línea. Replicamos eso para coincidir con el GS.
-  const salesPeriod = raw.sales.filter((s) => withinRange(s.date, from, to));
-  const salesTotalYear = salesPeriod.reduce((acc, s) => acc + s.subtotal, 0);
-
-  const salesAllDates = salesPeriod.map((s) => s.date);
-  const salesLastMonth = lastMonthWithData(salesAllDates, filter.year);
-  const salesMonthRows = salesLastMonth
-    ? salesPeriod.filter((s) => withinRange(s.date, salesLastMonth.from, salesLastMonth.to))
-    : [];
-  const salesTotalMonth = salesMonthRows.reduce((acc, s) => acc + s.subtotal, 0);
-
-  const salesMonthly: MonthlyPoint[] = monthlyBuckets.map((b) => ({
-    monthKey: b.key,
-    label: b.label,
-    value: salesPeriod
-      .filter((s) => withinRange(s.date, b.from, b.to))
-      .reduce((acc, s) => acc + s.subtotal, 0),
-  }));
-
-  const salesPending = salesPeriod.filter(isPendingSale);
-  const salesPendingSubtotal = salesPending.reduce((acc, s) => acc + s.subtotal, 0);
-  const salesPendingTotal = salesPending.reduce((acc, s) => acc + s.total, 0);
-  const salesPendingCollected = salesPending.reduce((acc, s) => acc + s.collected, 0);
-
-  const salesByClient = new Map<
-    string,
-    { subtotal: number; total: number; collected: number; status: string; raws: RawSaleRow[] }
-  >();
-  for (const s of salesPending) {
-    const existing = salesByClient.get(s.client);
-    if (existing) {
-      existing.subtotal += s.subtotal;
-      existing.total += s.total;
-      existing.collected += s.collected;
-      // Estado consolidado: si hay vencido, mostramos vencido; si no, pendiente.
-      if (s.status.toLowerCase() === "vencido") existing.status = "Vencido";
-      existing.raws.push(s);
-    } else {
-      salesByClient.set(s.client, {
-        subtotal: s.subtotal,
-        total: s.total,
-        collected: s.collected,
-        status: s.status || "Pendiente",
-        raws: [s],
-      });
-    }
-  }
-  const salesRows: SaleRow[] = Array.from(salesByClient.entries())
-    .sort((a, b) => b[1].total - a[1].total)
-    .map(([client, v]) => ({
-      client,
-      subtotal: fmtMoney(v.subtotal),
-      total: fmtMoney(v.total),
-      collected: fmtMoney(v.collected),
-      status: v.status,
-      details: v.raws
-        .slice()
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-        .map((r) => ({
-          date: fmtDateDmy(r.date),
-          documentNumber: r.documentNumber,
-          subtotal: fmtMoney(r.subtotal),
-          total: fmtMoney(r.total),
-          collected: fmtMoney(r.collected),
-          status: r.status || "Pendiente",
-        })),
-    }));
-
-  // COMPRAS
-  const purchasesPeriod = raw.purchases.filter((p) => withinRange(p.date, from, to));
-  const purchasesTotalYear = purchasesPeriod.reduce((acc, p) => acc + p.total, 0);
-
-  const purchasesAllDates = purchasesPeriod.map((p) => p.date);
-  const purchasesLastMonth = lastMonthWithData(purchasesAllDates, filter.year);
-  const purchasesMonthRows = purchasesLastMonth
-    ? purchasesPeriod.filter((p) => withinRange(p.date, purchasesLastMonth.from, purchasesLastMonth.to))
-    : [];
-  const purchasesTotalMonth = purchasesMonthRows.reduce((acc, p) => acc + p.total, 0);
-
-  // Para coincidir con el GS, los gráficos de compras suman SUBTOTAL (sin IVA).
-  const purchasesMonthly: MonthlyPoint[] = monthlyBuckets.map((b) => ({
-    monthKey: b.key,
-    label: b.label,
-    value: purchasesPeriod
-      .filter((p) => withinRange(p.date, b.from, b.to))
-      .reduce((acc, p) => acc + p.subtotal, 0),
-  }));
-
-  const purchasesPending = purchasesPeriod.filter(isPendingPurchase);
-  const purchasesPendingSubtotal = purchasesPending.reduce((acc, p) => acc + p.subtotal, 0);
-  const purchasesPendingTotal = purchasesPending.reduce((acc, p) => acc + p.total, 0);
-  const purchasesPendingPaid = purchasesPending.reduce((acc, p) => acc + p.paid, 0);
-
-  const purchasesByProvider = new Map<
-    string,
-    { subtotal: number; total: number; paid: number; status: string; raws: RawPurchaseRow[] }
-  >();
-  for (const p of purchasesPending) {
-    const existing = purchasesByProvider.get(p.provider);
-    if (existing) {
-      existing.subtotal += p.subtotal;
-      existing.total += p.total;
-      existing.paid += p.paid;
-      if (p.status.toLowerCase() === "vencido") existing.status = "Vencido";
-      existing.raws.push(p);
-    } else {
-      purchasesByProvider.set(p.provider, {
-        subtotal: p.subtotal,
-        total: p.total,
-        paid: p.paid,
-        status: p.status || "Pendiente",
-        raws: [p],
-      });
-    }
-  }
-  const purchasesRows: PurchaseRow[] = Array.from(purchasesByProvider.entries())
-    .sort((a, b) => b[1].total - a[1].total)
-    .map(([provider, v]) => ({
-      provider,
-      subtotal: fmtMoney(v.subtotal),
-      total: fmtMoney(v.total),
-      paid: fmtMoney(v.paid),
-      status: v.status,
-      details: v.raws
-        .slice()
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-        .map((r) => ({
-          date: fmtDateDmy(r.date),
-          documentNumber: r.documentNumber,
-          subtotal: fmtMoney(r.subtotal),
-          total: fmtMoney(r.total),
-          paid: fmtMoney(r.paid),
-          status: r.status || "Pendiente",
-        })),
-    }));
-
-  // BANCOS
-  const banksPeriod = raw.banks
-    .filter((b) => withinRange(b.date, from, to))
-    .filter((b) => !selectedAccount || b.account === selectedAccount);
-  const banksCashflowYear = banksPeriod.reduce((acc, b) => acc + b.amount, 0);
-
-  const banksAllDates = banksPeriod.map((b) => b.date);
-  const banksLastMonth = lastMonthWithData(banksAllDates, filter.year);
-  const banksMonthRows = banksLastMonth
-    ? banksPeriod.filter((b) => withinRange(b.date, banksLastMonth.from, banksLastMonth.to))
-    : [];
-  const banksCashflowMonth = banksMonthRows.reduce((acc, b) => acc + b.amount, 0);
-
-  const banksPending = banksPeriod.filter((b) => !isReconciled(b));
-  // GS muestra el "pendiente de conciliar" como magnitud (valor absoluto),
-  // no como cashflow firmado. Coincidimos con esa convención.
-  const banksPendingAmount = banksPending.reduce((acc, b) => acc + Math.abs(b.amount), 0);
-  const banksReconciledAmount = banksPending.reduce((acc, b) => acc + Math.abs(b.reconciled), 0);
-
-  const periodLabel = formatPeriodLabel(filter);
-  const monthLabel = (lm: { month: number } | null): string =>
-    lm ? formatMonthLabel(filter.year, lm.month - 1) : "—";
-
-  return {
-    sales: {
-      kpiYear: {
-        label: "Total facturado",
-        period: periodLabel,
-        value: fmtMoney(salesTotalYear),
-        isNegative: salesTotalYear < 0,
-      },
-      kpiMonth: {
-        label: "Total último mes del periodo",
-        period: monthLabel(salesLastMonth),
-        value: fmtMoney(salesTotalMonth),
-        isNegative: salesTotalMonth < 0,
-      },
-      monthly: salesMonthly,
-      pending: {
-        label: "Total vencido + pendiente",
-        subtotal: fmtMoney(salesPendingSubtotal),
-        total: fmtMoney(salesPendingTotal),
-        collected: fmtMoney(salesPendingCollected),
-      },
-      rows: salesRows,
-    },
-    purchases: {
-      kpiYear: {
-        label: "Total facturas recibidas",
-        period: periodLabel,
-        value: fmtMoney(purchasesTotalYear),
-        isNegative: purchasesTotalYear < 0,
-      },
-      kpiMonth: {
-        label: "Total último mes del periodo",
-        period: monthLabel(purchasesLastMonth),
-        value: fmtMoney(purchasesTotalMonth),
-        isNegative: purchasesTotalMonth < 0,
-      },
-      monthly: purchasesMonthly,
-      pending: {
-        label: "Total vencido + pendiente",
-        subtotal: fmtMoney(purchasesPendingSubtotal),
-        total: fmtMoney(purchasesPendingTotal),
-        paid: fmtMoney(purchasesPendingPaid),
-      },
-      rows: purchasesRows,
-    },
-    banks: {
-      kpiYear: {
-        label: "Cashflow total periodo",
-        period: periodLabel,
-        value: fmtMoney(banksCashflowYear),
-        isNegative: banksCashflowYear < 0,
-      },
-      kpiMonth: {
-        label: "Cashflow último mes del periodo",
-        period: monthLabel(banksLastMonth),
-        value: fmtMoney(banksCashflowMonth),
-        isNegative: banksCashflowMonth < 0,
-      },
-      pending: {
-        label: "Total pendiente de conciliar",
-        pending: fmtMoney(banksPendingAmount),
-        reconciled: fmtMoney(banksReconciledAmount),
-      },
-      accounts,
-      selectedAccount,
-    },
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Filtros UI
-// ---------------------------------------------------------------------------
-
-export function buildPeriodOptions(currentYear: number): PeriodOption[] {
-  return [
-    { id: "year", label: `${currentYear} completo`, filter: { kind: "year", year: currentYear } },
-    { id: "q1", label: `Q1`, filter: { kind: "quarter", year: currentYear, quarter: 1 } },
-    { id: "q2", label: `Q2`, filter: { kind: "quarter", year: currentYear, quarter: 2 } },
-    { id: "q3", label: `Q3`, filter: { kind: "quarter", year: currentYear, quarter: 3 } },
-    { id: "q4", label: `Q4`, filter: { kind: "quarter", year: currentYear, quarter: 4 } },
-  ];
-}
-
-export function resolvePeriodFromId(id: string | undefined, currentYear: number): PeriodFilter {
-  const opts = buildPeriodOptions(currentYear);
-  const found = opts.find((o) => o.id === id);
-  return found ? found.filter : opts[0].filter;
 }
 
 // ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { MonthlyPoint } from "@/lib/google-sheets/client";
+import type { MonthlyPoint } from "@/lib/dashboard/aggregate";
 import { formatEur, formatEurCompact } from "@/lib/format";
 
 interface Props {
