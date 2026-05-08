@@ -344,9 +344,9 @@ export default function ClientDetailPanel({
             href={`${linkPrefix}/clientes/${company.id}`}
             title="Abrir ficha completa"
             aria-label="Abrir ficha completa"
-            className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-md bg-brand-teal hover:bg-brand-teal/90 active:bg-brand-teal/80 text-white flex items-center justify-center shadow-sm hover:shadow transition-all cursor-pointer"
+            className="flex-shrink-0 mt-1 w-7 h-7 rounded-md bg-brand-teal hover:bg-brand-teal/90 active:bg-brand-teal/80 text-white flex items-center justify-center shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 3H4v5" />
               <path d="M4 3l6 6" />
               <path d="M15 21h5v-5" />
