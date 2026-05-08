@@ -1,31 +1,18 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-
 interface Props {
   accounts: string[];
   selectedAccount: string | null;
+  onChange: (account: string | null) => void;
 }
 
-export default function DashboardBankSelector({ accounts, selectedAccount }: Props) {
-  const router = useRouter();
-  const pathname = usePathname() ?? "/dashboard";
-  const searchParams = useSearchParams();
-
+export default function DashboardBankSelector({ accounts, selectedAccount, onChange }: Props) {
   if (!accounts || accounts.length <= 1) return null;
-
-  function handleChange(value: string) {
-    const params = new URLSearchParams(searchParams?.toString() ?? "");
-    if (!value) params.delete("bank");
-    else params.set("bank", value);
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
-  }
 
   return (
     <select
       value={selectedAccount ?? ""}
-      onChange={(e) => handleChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value || null)}
       className="text-[10px] font-semibold uppercase tracking-wider rounded-md bg-white/10 text-white px-2 py-1 border-none focus:outline-none focus:ring-2 focus:ring-white/30 cursor-pointer"
     >
       <option value="" className="text-brand-navy">Todas las cuentas</option>

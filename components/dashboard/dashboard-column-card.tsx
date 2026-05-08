@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import type { KpiCard, MonthlyPoint } from "@/lib/google-sheets/client";
+import type { KpiCard, MonthlyPoint } from "@/lib/dashboard/aggregate";
 import DashboardMonthlyChart from "./dashboard-monthly-chart";
 
 interface Props {

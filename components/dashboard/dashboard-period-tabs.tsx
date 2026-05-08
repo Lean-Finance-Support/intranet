@@ -1,26 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import type { PeriodOption } from "@/lib/google-sheets/client";
+import type { PeriodOption } from "@/lib/dashboard/aggregate";
 
 interface Props {
   options: PeriodOption[];
   activeId: string;
+  onChange: (id: string) => void;
 }
 
-export default function DashboardPeriodTabs({ options, activeId }: Props) {
-  const pathname = usePathname() ?? "/dashboard";
-  const searchParams = useSearchParams();
-
-  function buildHref(id: string): string {
-    const params = new URLSearchParams(searchParams?.toString() ?? "");
-    if (id === "year") params.delete("period");
-    else params.set("period", id);
-    const qs = params.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-
+export default function DashboardPeriodTabs({ options, activeId, onChange }: Props) {
   return (
     <nav
       role="tablist"
@@ -30,19 +18,20 @@ export default function DashboardPeriodTabs({ options, activeId }: Props) {
       {options.map((opt) => {
         const isActive = opt.id === activeId;
         return (
-          <Link
+          <button
             key={opt.id}
-            href={buildHref(opt.id)}
+            type="button"
             role="tab"
             aria-selected={isActive}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            onClick={() => onChange(opt.id)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
               isActive
                 ? "bg-brand-navy text-white"
                 : "text-text-muted hover:bg-gray-100 hover:text-brand-navy"
             }`}
           >
             {opt.label}
-          </Link>
+          </button>
         );
       })}
     </nav>
