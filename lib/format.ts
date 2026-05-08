@@ -23,11 +23,14 @@ const numberFormatter = new Intl.NumberFormat("es-ES", {
 });
 
 /**
- * Formatea un importe en euros con separador de miles "." y decimales con coma
- * (p.ej. 1234567.89 → "1.234.567,89 €").
+ * Formatea un importe en euros con separador de miles "." y decimales con coma.
+ * Si el valor es entero (sin céntimos) omite los decimales para reducir ruido
+ * visual: 10000 → "10.000 €", 1234.56 → "1.234,56 €".
  */
 export function formatEur(n: number): string {
-  if (!Number.isFinite(n)) return eurFormatter.format(0);
+  if (!Number.isFinite(n)) return eurFormatterNoDecimals.format(0);
+  const cents = Math.round(n * 100);
+  if (cents % 100 === 0) return eurFormatterNoDecimals.format(cents / 100);
   return eurFormatter.format(n);
 }
 
