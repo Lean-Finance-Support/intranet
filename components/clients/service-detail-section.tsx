@@ -23,6 +23,7 @@ interface Props {
   onAssignAll: (serviceId: string) => void;
   dashboardConfig?: CompanyDashboardConfig | null;
   dashboardAuthorizedEmail?: string | null;
+  canViewClientDashboard?: boolean;
 }
 
 export default function ServiceDetailSection({
@@ -37,11 +38,16 @@ export default function ServiceDetailSection({
   onAssignAll,
   dashboardConfig,
   dashboardAuthorizedEmail,
+  canViewClientDashboard,
 }: Props) {
   const existingIds = new Set(service.technicians.map((t) => t.id));
   const available = members.filter((m) => !existingIds.has(m.id));
   const serviceRoute = SERVICE_ROUTES[service.service_slug];
   const isDashboardService = service.service_slug === "dashboard";
+  const showDashboardLink =
+    isDashboardService &&
+    !!canViewClientDashboard &&
+    !!dashboardConfig;
 
   return (
     <div className="border border-gray-100 rounded-lg p-3 space-y-2 bg-white">
@@ -53,6 +59,28 @@ export default function ServiceDetailSection({
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {showDashboardLink && (
+            <a
+              href={`${linkPrefix}/clientes/${companyId}/dashboard`}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-teal hover:text-brand-teal/80 px-2 py-1 rounded hover:bg-brand-teal/10 transition-colors"
+              title="Ver dashboard del cliente"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              Ver dashboard
+            </a>
+          )}
           {serviceRoute && (
             <a
               href={`${linkPrefix}${serviceRoute}?company=${companyId}`}
