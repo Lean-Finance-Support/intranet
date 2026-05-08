@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, userScopeIds } from "@/lib/require-permission";
+import { canViewClientDashboard } from "@/lib/dashboard-admin-access";
 import { getAuthUser } from "@/lib/cached-queries";
 import {
   getAllCompaniesData,
@@ -37,6 +38,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     supervisorClientApartadoIds,
     responsibleTeam,
     dashboardConfig,
+    canViewDashboard,
   ] = await Promise.all([
     getCompanyDetail(id),
     getClientDocumentation(id),
@@ -47,6 +49,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     userScopeIds("validate_client_documentation", "client_apartado"),
     getCompanyResponsibleTeamAction(id),
     getCompanyDashboardConfig(id),
+    canViewClientDashboard(),
   ]);
 
   const dashboardAuthorizedEmail = process.env.DASHBOARD_AUTHORIZED_EMAIL ?? null;
@@ -79,6 +82,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
           initialTab={tab ?? "documentacion"}
           dashboardConfig={dashboardConfig}
           dashboardAuthorizedEmail={dashboardAuthorizedEmail}
+          canViewClientDashboard={canViewDashboard}
         />
       </div>
     </div>
