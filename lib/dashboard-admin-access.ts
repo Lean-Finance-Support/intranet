@@ -1,31 +1,25 @@
 "use server";
 
-import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { hasPermission } from "@/lib/require-permission";
 
 const FISCAL_DEPARTMENT_SLUG = "asesoria-fiscal-y-contable";
 
-/**
- * Devuelve el id del departamento "Asesoría Fiscal y Contable".
- * Cacheado indefinidamente (es semilla, no cambia en runtime).
- */
-const getFiscalDepartmentIdCached = unstable_cache(
-  async (): Promise<string | null> => {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("departments")
-      .select("id")
-      .eq("slug", FISCAL_DEPARTMENT_SLUG)
-      .maybeSingle<{ id: string }>();
-    return data?.id ?? null;
-  },
-  ["fiscal-department-id-v1"],
-  { revalidate: 3600 }
-);
+// Cache a nivel de proceso. El id del dept fiscal es semilla y no cambia en
+// runtime. No usamos unstable_cache porque el cliente Supabase server lee
+// cookies y Next 15 prohíbe cookies() dentro de unstable_cache.
+let cachedFiscalDeptId: string | null | undefined;
 
 export async function getFiscalDepartmentId(): Promise<string | null> {
-  return getFiscalDepartmentIdCached();
+  if (cachedFiscalDeptId !== undefined) return cachedFiscalDeptId;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("departments")
+    .select("id")
+    .eq("slug", FISCAL_DEPARTMENT_SLUG)
+    .maybeSingle<{ id: string }>();
+  cachedFiscalDeptId = data?.id ?? null;
+  return cachedFiscalDeptId;
 }
 
 /**
