@@ -2,10 +2,12 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ClienteCompany, ClientesPageData } from "@/app/admin/clientes/actions";
 import { createCompanyAdmin } from "@/app/admin/clientes/actions";
 import ClientDetailPanel from "@/components/client-detail-panel";
 import NewCompanyModal from "@/components/new-company-modal";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
@@ -149,9 +151,22 @@ export default function ClientesPage({
   data: ClientesPageData;
   linkPrefix: string;
 }) {
+  const router = useRouter();
+  // Tailwind `md` = 768px. En desktop (≥md) se abre el sidebar de detalle;
+  // en móvil se navega directo a la vista expandida.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
   const [companies, setCompanies] = useState<ClienteCompany[]>(data.companies);
   const [selectedCompany, setSelectedCompany] = useState<ClienteCompany | null>(null);
   const [creatingCompany, setCreatingCompany] = useState(false);
+
+  function handleSelectCompany(company: ClienteCompany) {
+    if (isDesktop) {
+      setSelectedCompany(company);
+    } else {
+      router.push(`${linkPrefix}/clientes/${company.id}`);
+    }
+  }
 
   // Filters
   const [search, setSearch] = useState("");
@@ -206,18 +221,15 @@ export default function ClientesPage({
 
   const hasFilters = selectedDepts.length > 0 || selectedServices.length > 0 || assignedOnly;
 
-  // ---- Optimistic updates ----
-  function handleUpdateName(companyId: string, name: string | null) {
-    setCompanies((prev) =>
-      prev.map((c) => c.id === companyId ? { ...c, company_name: name } : c)
-    );
-    setSelectedCompany((prev) => prev?.id === companyId ? { ...prev, company_name: name } : prev);
-  }
-
   function handleCompanyCreated(company: ClienteCompany) {
     setCompanies((prev) => [company, ...prev]);
     setCreatingCompany(false);
-    setSelectedCompany(company);
+    // En móvil saltamos directos a la ficha completa; en desktop abrimos el panel.
+    if (isDesktop) {
+      setSelectedCompany(company);
+    } else {
+      router.push(`${linkPrefix}/clientes/${company.id}`);
+    }
   }
 
   const activeCount = companies.filter((c) => !c.deleted_at).length;
@@ -363,13 +375,13 @@ export default function ClientesPage({
               <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4 gap-3">
                 {filtered.map((c) =>
                   c.deleted_at ? (
-                    <DeletedCompanyCard key={c.id} company={c} onClick={() => setSelectedCompany(c)} />
+                    <DeletedCompanyCard key={c.id} company={c} onClick={() => handleSelectCompany(c)} />
                   ) : (
                     <CompanyCard
                       key={c.id}
                       company={c}
                       deptNameById={deptNameById}
-                      onClick={() => setSelectedCompany(c)}
+                      onClick={() => handleSelectCompany(c)}
                     />
                   )
                 )}
@@ -379,14 +391,12 @@ export default function ClientesPage({
         </div>
       </div>
 
-      {/* Detail panel */}
-      {selectedCompany && (
+      {/* Detail panel — solo desktop, siempre solo lectura. La edición está en /clientes/[id]. */}
+      {selectedCompany && isDesktop && (
         <ClientDetailPanel
           company={selectedCompany}
-          canManageClientAccounts={data.canManageClientAccounts}
           linkPrefix={linkPrefix}
           onClose={() => setSelectedCompany(null)}
-          onUpdateName={handleUpdateName}
         />
       )}
 

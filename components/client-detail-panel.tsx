@@ -5,15 +5,11 @@ import type { ClienteCompany, ClientAccount, CompanyDetailInfo } from "@/app/adm
 import {
   getCompanyDetail,
   getCompanyResponsibleTeamAction,
-  updateCompanyNameAdmin,
-  updateClientAccount,
-  unlinkClientFromCompany,
   findClientProfileByEmail,
 } from "@/app/admin/clientes/actions";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import type { ResponsibleTeam } from "@/lib/team-queries";
 import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
-import ConfirmDialog from "@/components/confirm-dialog";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
@@ -284,18 +280,14 @@ const SERVICE_ROUTES: Record<string, string> = {
 // ---- Main Panel ----
 interface ClientDetailPanelProps {
   company: ClienteCompany;
-  canManageClientAccounts: boolean;
   linkPrefix: string;
   onClose: () => void;
-  onUpdateName: (companyId: string, name: string | null) => void;
 }
 
 export default function ClientDetailPanel({
   company,
-  canManageClientAccounts,
   linkPrefix,
   onClose,
-  onUpdateName,
 }: ClientDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -305,17 +297,7 @@ export default function ClientDetailPanel({
   const [team, setTeam] = useState<ResponsibleTeam | null>(null);
   const [loadingTeam, setLoadingTeam] = useState(false);
 
-  // Editable name
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(company.company_name ?? "");
-  const [savingName, setSavingName] = useState(false);
-
-  // Client accounts
-  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
-  const [unlinkConfirmAccount, setUnlinkConfirmAccount] = useState<ClientAccount | null>(null);
-
   const isDeleted = detail?.deleted_at != null;
-  const canEditCompany = !isDeleted;
 
   const loadDetail = useCallback(async () => {
     setLoadingDetail(true);
@@ -348,34 +330,6 @@ export default function ClientDetailPanel({
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  // Keep name in sync if company prop updates
-  useEffect(() => { setNameValue(company.company_name ?? ""); }, [company.company_name]);
-
-  async function handleSaveName() {
-    setSavingName(true);
-    try {
-      await updateCompanyNameAdmin(company.id, nameValue || null);
-      onUpdateName(company.id, nameValue || null);
-      setEditingName(false);
-    } finally { setSavingName(false); }
-  }
-
-  async function handleUpdateAccount(profileId: string, input: { email: string; full_name: string | null }) {
-    const updated = await updateClientAccount(profileId, input);
-    setDetail((prev) =>
-      prev ? { ...prev, profiles: prev.profiles.map((p) => (p.id === profileId ? updated : p)) } : prev
-    );
-    setEditingAccountId(null);
-  }
-
-  async function handleConfirmUnlink(profileId: string) {
-    await unlinkClientFromCompany(company.id, profileId);
-    setDetail((prev) =>
-      prev ? { ...prev, profiles: prev.profiles.filter((p) => p.id !== profileId) } : prev
-    );
-    setUnlinkConfirmAccount(null);
-  }
-
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fade-in" onClick={onClose} />
@@ -384,33 +338,9 @@ export default function ClientDetailPanel({
         className="relative w-full max-w-lg bg-white shadow-2xl h-full overflow-y-auto animate-slide-in-right"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-4 flex items-start gap-2 z-10">
-          {/* Expand button — top-left inside the panel */}
-          <a
-            href={`${linkPrefix}/clientes/${company.id}`}
-            title="Ver detalle completo"
-            className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-brand-teal hover:bg-brand-teal/5 transition-colors cursor-pointer border border-gray-200"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
-            </svg>
-          </a>
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-4 flex items-start gap-3 z-10">
           <div className="flex-1 min-w-0">
-            {editingName ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={nameValue}
-                  onChange={(e) => setNameValue(e.target.value)}
-                  placeholder="Nombre comercial"
-                  className="text-lg font-bold text-brand-navy border-b border-brand-teal/50 focus:outline-none focus:border-brand-teal bg-transparent flex-1 min-w-0"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") { setNameValue(company.company_name ?? ""); setEditingName(false); } }}
-                />
-                <button onClick={handleSaveName} disabled={savingName} className="text-xs text-brand-teal font-medium disabled:opacity-50 cursor-pointer">{savingName ? "..." : "OK"}</button>
-                <button onClick={() => { setNameValue(company.company_name ?? ""); setEditingName(false); }} className="text-xs text-text-muted cursor-pointer">&times;</button>
-              </div>
-            ) : isDeleted ? (
+            {isDeleted ? (
               <div className="text-left">
                 <h2 className="text-lg font-bold font-heading text-text-muted truncate line-through decoration-gray-300">
                   {company.company_name || company.legal_name}
@@ -420,19 +350,14 @@ export default function ClientDetailPanel({
                 )}
               </div>
             ) : (
-              <button onClick={() => setEditingName(true)} className="text-left group/name cursor-pointer" title="Editar nombre comercial">
-                <div className="flex items-center gap-1.5">
-                  <h2 className="text-lg font-bold font-heading text-brand-navy truncate group-hover/name:text-brand-navy/80">
-                    {company.company_name || company.legal_name}
-                  </h2>
-                  <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 group-hover/name:text-brand-teal transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                  </svg>
-                </div>
+              <div className="text-left">
+                <h2 className="text-lg font-bold font-heading text-brand-navy truncate">
+                  {company.company_name || company.legal_name}
+                </h2>
                 {company.company_name && (
                   <p className="text-xs text-text-muted mt-0.5 truncate">{company.legal_name}</p>
                 )}
-              </button>
+              </div>
             )}
             {company.nif && <p className="text-xs text-text-muted font-mono mt-1">{company.nif}</p>}
             <p className="text-xs text-text-muted mt-1">
@@ -447,11 +372,30 @@ export default function ClientDetailPanel({
               </span>
             )}
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0">
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+
+          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+            {/* Expand button — destacado: fondo brand-teal con icono blanco */}
+            <a
+              href={`${linkPrefix}/clientes/${company.id}`}
+              title="Abrir ficha completa"
+              aria-label="Abrir ficha completa"
+              className="w-10 h-10 rounded-lg bg-brand-teal hover:bg-brand-teal/90 active:bg-brand-teal/80 text-white flex items-center justify-center shadow-sm hover:shadow-md transition-all cursor-pointer ring-1 ring-brand-teal/40"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
+              </svg>
+            </a>
+            <button
+              onClick={onClose}
+              title="Cerrar"
+              aria-label="Cerrar"
+              className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="px-6 py-5 space-y-6">
@@ -496,7 +440,7 @@ export default function ClientDetailPanel({
             )}
           </section>
 
-          {/* ---- Profiles (lazy) ---- */}
+          {/* ---- Profiles (lazy, solo lectura) ---- */}
           <section>
             <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Cuentas asociadas</h3>
 
@@ -509,67 +453,25 @@ export default function ClientDetailPanel({
                 {(detail?.profiles ?? []).length === 0 && (
                   <p className="text-sm text-text-muted">Sin cuentas asociadas</p>
                 )}
-                {(detail?.profiles ?? []).map((acc) =>
-                  editingAccountId === acc.id ? (
-                    <EditClientAccountForm
-                      key={acc.id}
-                      initial={acc}
-                      onSave={(input) => handleUpdateAccount(acc.id, input)}
-                      onCancel={() => setEditingAccountId(null)}
-                    />
-                  ) : (
-                    <div key={acc.id} className="bg-gray-50 rounded-lg px-4 py-3 flex items-center gap-3 group">
-                      <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                        </svg>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-text-body truncate">{acc.full_name ?? "Sin nombre"}</p>
-                        <p className="text-xs text-text-muted truncate">{acc.email}</p>
-                      </div>
-                      {canEditCompany && canManageClientAccounts && (
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => setEditingAccountId(acc.id)}
-                            className="p-1 rounded hover:bg-gray-200 cursor-pointer"
-                            title="Editar"
-                          >
-                            <svg className="w-3.5 h-3.5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setUnlinkConfirmAccount(acc)}
-                            className="p-1 rounded hover:bg-red-100 cursor-pointer"
-                            title="Desvincular"
-                          >
-                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
+                {(detail?.profiles ?? []).map((acc) => (
+                  <div key={acc.id} className="bg-gray-50 rounded-lg px-4 py-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-brand-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      </svg>
                     </div>
-                  )
-                )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-text-body truncate">{acc.full_name ?? "Sin nombre"}</p>
+                      <p className="text-xs text-text-muted truncate">{acc.email}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
 
         </div>
       </div>
-
-      {unlinkConfirmAccount && (
-        <ConfirmDialog
-          title="Desvincular cuenta"
-          message={`¿Desvincular ${unlinkConfirmAccount.full_name ?? unlinkConfirmAccount.email} de esta empresa? La cuenta seguirá existiendo y podrás volver a vincularla más tarde.`}
-          confirmLabel="Desvincular"
-          destructive
-          onConfirm={() => handleConfirmUnlink(unlinkConfirmAccount.id)}
-          onCancel={() => setUnlinkConfirmAccount(null)}
-        />
-      )}
     </div>
   );
 }
