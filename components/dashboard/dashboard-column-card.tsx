@@ -21,9 +21,9 @@ export default function DashboardColumnCard({
   monthly,
   headerExtra,
 }: Props) {
-  const [view, setView] = useState<"kpis" | "chart">("kpis");
   const accentBg = accent === "navy" ? "bg-brand-navy" : "bg-brand-teal";
   const hasChart = !!monthly && monthly.length > 0;
+  const [view, setView] = useState<"kpis" | "chart">(hasChart ? "chart" : "kpis");
 
   return (
     <article className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">

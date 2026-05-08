@@ -281,12 +281,14 @@ const SERVICE_ROUTES: Record<string, string> = {
 interface ClientDetailPanelProps {
   company: ClienteCompany;
   linkPrefix: string;
+  canViewDashboard: boolean;
   onClose: () => void;
 }
 
 export default function ClientDetailPanel({
   company,
   linkPrefix,
+  canViewDashboard,
   onClose,
 }: ClientDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -414,6 +416,11 @@ export default function ClientDetailPanel({
               <div className="flex flex-wrap gap-1.5">
                 {company.services.map((svc) => {
                   const route = SERVICE_ROUTES[svc.service_slug];
+                  const dashboardHref =
+                    svc.service_slug === "dashboard" && canViewDashboard
+                      ? `${linkPrefix}/clientes/${company.id}/dashboard`
+                      : null;
+                  const href = dashboardHref ?? (route ? `${linkPrefix}${route}?company=${company.id}` : null);
                   return (
                     <span
                       key={svc.service_id}
@@ -422,9 +429,9 @@ export default function ClientDetailPanel({
                       <span className="font-medium text-text-body">{svc.service_name}</span>
                       <span className="text-[10px] text-text-muted">·</span>
                       <span className="text-[10px] text-text-muted">{svc.department_name}</span>
-                      {route && (
+                      {href && (
                         <a
-                          href={`${linkPrefix}${route}?company=${company.id}`}
+                          href={href}
                           title={`Ir a ${svc.service_name}`}
                           className="ml-0.5 text-brand-teal hover:text-brand-teal/70 transition-colors"
                           onClick={(e) => e.stopPropagation()}

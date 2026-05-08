@@ -156,6 +156,7 @@ export interface SidebarCompany {
 interface ClientSidebarProps {
   profile: ClientSidebarProfile;
   hasTaxModels: boolean;
+  hasDashboard: boolean;
   loginPath: string;
   linkPrefix: string;
   userId: string;
@@ -165,7 +166,7 @@ interface ClientSidebarProps {
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -307,7 +308,9 @@ export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPr
 
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
-      <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
+      {hasDashboard && (
+        <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
+      )}
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
@@ -459,7 +462,9 @@ export default function ClientSidebar({ profile, hasTaxModels, loginPath, linkPr
               </div>
             )}
             <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto" onClick={() => setMobileOpen(false)}>
-              <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
+              {hasDashboard && (
+                <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
+              )}
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
               )}

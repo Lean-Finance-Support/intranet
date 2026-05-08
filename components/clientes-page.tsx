@@ -147,9 +147,11 @@ function FilterPill({
 export default function ClientesPage({
   data,
   linkPrefix,
+  canViewDashboard,
 }: {
   data: ClientesPageData;
   linkPrefix: string;
+  canViewDashboard: boolean;
 }) {
   const router = useRouter();
   // Tailwind `md` = 768px. En desktop (≥md) se abre el sidebar de detalle;
@@ -396,6 +398,7 @@ export default function ClientesPage({
         <ClientDetailPanel
           company={selectedCompany}
           linkPrefix={linkPrefix}
+          canViewDashboard={canViewDashboard}
           onClose={() => setSelectedCompany(null)}
         />
       )}
