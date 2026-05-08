@@ -44,6 +44,7 @@ export default async function AppSidebarLayout({
     : [];
 
   const hasTaxModels = serviceSlugs.includes("tax-models");
+  const hasDashboard = serviceSlugs.includes("dashboard");
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
   const activeCompany = companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
 
@@ -55,6 +56,7 @@ export default async function AppSidebarLayout({
           email: profile?.email ?? user.email ?? null,
         }}
         hasTaxModels={hasTaxModels}
+        hasDashboard={hasDashboard}
         loginPath={`${prefix}/login`}
         linkPrefix={prefix}
         userId={user.id}

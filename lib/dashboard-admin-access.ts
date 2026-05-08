@@ -23,14 +23,14 @@ export async function getFiscalDepartmentId(): Promise<string | null> {
 }
 
 /**
- * Un admin puede ver el dashboard fiscal de un cliente si pertenece al
- * departamento Asesoría Fiscal y Contable (rol "Miembro de departamento" o
- * "Chief", ambos conceden `member_of_department` con scope `department`).
+ * Un admin puede ver el dashboard fiscal de un cliente si tiene acceso de
+ * lectura al dpto Asesoría Fiscal y Contable. Usamos `read_dept_service`,
+ * que comparten Miembro, Chief, Observador y Operador del departamento.
  */
 export async function canViewClientDashboard(): Promise<boolean> {
   const fiscalDeptId = await getFiscalDepartmentId();
   if (!fiscalDeptId) return false;
-  return hasPermission("member_of_department", {
+  return hasPermission("read_dept_service", {
     type: "department",
     id: fiscalDeptId,
   });

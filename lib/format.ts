@@ -3,11 +3,15 @@
 // separador de miles sea "." y los decimales "," (formato español) en toda la
 // UI (KPIs, tablas, tooltips de gráficos, etc.).
 
+// `useGrouping: "always"` fuerza el separador de miles incluso en números de
+// 4 dígitos. Sin esto, el CLDR español agrupa solo a partir de 5 (1234 →
+// "1234", 12345 → "12.345"), que confunde al lector.
 const eurFormatter = new Intl.NumberFormat("es-ES", {
   style: "currency",
   currency: "EUR",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  useGrouping: "always",
 });
 
 const eurFormatterNoDecimals = new Intl.NumberFormat("es-ES", {
@@ -15,11 +19,13 @@ const eurFormatterNoDecimals = new Intl.NumberFormat("es-ES", {
   currency: "EUR",
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
+  useGrouping: "always",
 });
 
 const numberFormatter = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  useGrouping: "always",
 });
 
 /**
