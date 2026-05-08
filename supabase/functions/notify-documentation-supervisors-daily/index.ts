@@ -1,9 +1,15 @@
 // Recordatorio diario a supervisores con apartados pendientes de revisar.
 //
-// Lo invoca pg_cron (ver migración 20260430170000_documentation_notifications.sql)
-// a las 07:00 UTC L-V. Recorre los apartados en estado "enviado", agrupa por
-// supervisor y manda un único email a cada uno con el listado de apartados
-// que tiene a la espera.
+// Lo invoca pg_cron (ver migración 20260430170000_documentation_notifications.sql
+// y la actualización en 20260508080228_documentation_reminders_madrid_time.sql)
+// a las 05:00 y 06:00 UTC L-V. Como pg_cron solo entiende UTC y Madrid alterna
+// entre CET (UTC+1, invierno) y CEST (UTC+2, verano), programamos las dos
+// horas que pueden corresponder a las 07:00 hora local y dejamos que esta
+// function haga early-return si la hora real de Madrid no es las 7 — así el
+// email siempre sale a las 07:00 Madrid, sin importar el cambio de hora.
+//
+// Recorre los apartados en estado "enviado", agrupa por supervisor y manda
+// un único email a cada uno con el listado de apartados que tiene a la espera.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -12,6 +18,18 @@ const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_FROM = "Lean Finance <noreply@leanfinance.es>";
 const ADMIN_URL = "https://admin.leanfinance.es";
+
+// Hora objetivo en Madrid a la que debe salir el recordatorio.
+const TARGET_MADRID_HOUR = 7;
+
+function currentMadridHour(): number {
+  const formatter = new Intl.DateTimeFormat("es-ES", {
+    timeZone: "Europe/Madrid",
+    hour: "numeric",
+    hourCycle: "h23",
+  });
+  return Number.parseInt(formatter.format(new Date()), 10);
+}
 
 interface ApartadoToReview {
   clientApartadoId: string;
@@ -26,6 +44,23 @@ Deno.serve(async (req: Request) => {
   const secret = req.headers.get("x-webhook-secret");
   if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  // Guard horario: pg_cron está programado a las 05:00 y 06:00 UTC para cubrir
+  // ambos lados del DST de Madrid; solo enviamos en la corrida que coincide
+  // con las 07:00 hora local. El parámetro `force=1` permite invocaciones
+  // manuales para pruebas.
+  const url = new URL(req.url);
+  const force = url.searchParams.get("force") === "1";
+  if (!force) {
+    const madridHour = currentMadridHour();
+    if (madridHour !== TARGET_MADRID_HOUR) {
+      return jsonResponse({
+        sent: 0,
+        skipped: true,
+        reason: `madrid hour is ${madridHour}, expected ${TARGET_MADRID_HOUR}`,
+      });
+    }
   }
 
   const supabase = createClient(
