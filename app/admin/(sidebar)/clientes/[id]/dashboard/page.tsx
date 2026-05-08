@@ -33,35 +33,22 @@ export default async function AdminClientDashboardPage({
   if (!detail) notFound();
 
   const displayName = detail.company_name || detail.legal_name;
-  const showsLegalName = !!detail.company_name && detail.company_name !== detail.legal_name;
   const clientHref = `${linkPrefix}/clientes/${id}?tab=servicios`;
 
   return (
     <div className="px-8 py-8 space-y-6">
-      <nav className="text-xs text-text-muted">
-        <Link href={`${linkPrefix}/clientes`} className="hover:text-brand-teal">
-          Clientes
-        </Link>
-        <span className="mx-1.5">/</span>
-        <Link href={clientHref} className="hover:text-brand-teal">
-          {displayName}
-        </Link>
-        <span className="mx-1.5">/</span>
-        <span className="text-text-body">Dashboard fiscal</span>
-      </nav>
-
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="min-w-0">
-          <p className="text-brand-teal text-xs font-semibold uppercase tracking-wider mb-1">
-            Vista admin · Dashboard del cliente
-          </p>
-          <h1 className="text-2xl font-bold font-heading text-brand-navy tracking-tight">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <nav className="text-xs text-text-muted">
+          <Link href={`${linkPrefix}/clientes`} className="hover:text-brand-teal">
+            Clientes
+          </Link>
+          <span className="mx-1.5">/</span>
+          <Link href={clientHref} className="hover:text-brand-teal">
             {displayName}
-          </h1>
-          {showsLegalName && (
-            <p className="text-sm text-text-muted mt-0.5">{detail.legal_name}</p>
-          )}
-        </div>
+          </Link>
+          <span className="mx-1.5">/</span>
+          <span className="text-text-body">Dashboard</span>
+        </nav>
         <Link
           href={clientHref}
           className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-brand-teal transition-colors"
@@ -81,12 +68,12 @@ export default async function AdminClientDashboardPage({
           </svg>
           Volver a la ficha del cliente
         </Link>
-      </header>
+      </div>
 
       {!dashboardConfig ? (
         <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
           <h2 className="text-lg font-semibold text-brand-navy">
-            Dashboard fiscal no configurado
+            Dashboard no configurado
           </h2>
           <p className="mt-2 text-sm text-text-muted">
             Esta empresa no tiene un Google Sheet vinculado al servicio
