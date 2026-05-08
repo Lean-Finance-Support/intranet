@@ -1,4 +1,5 @@
 import { google, sheets_v4 } from "googleapis";
+import { formatEur } from "@/lib/format";
 
 export const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
 
@@ -90,6 +91,7 @@ export type BankPendingTotals = {
 
 export type SaleDetail = {
   date: string; // DD/MM/YYYY
+  documentNumber: string; // Nº documento de la factura (puede venir vacío)
   subtotal: string;
   total: string;
   collected: string;
@@ -98,6 +100,7 @@ export type SaleDetail = {
 
 export type PurchaseDetail = {
   date: string; // DD/MM/YYYY
+  documentNumber: string; // Nº documento de la factura (puede venir vacío)
   subtotal: string;
   total: string;
   paid: string;
@@ -167,6 +170,7 @@ const RAW_SHEET_PATTERNS: Record<"sales" | "purchases" | "banks", { regex: RegEx
 interface RawSaleRow {
   date: string; // YYYY-MM-DD
   client: string;
+  documentNumber: string;
   subtotal: number;
   total: number;
   collected: number;
@@ -175,6 +179,7 @@ interface RawSaleRow {
 interface RawPurchaseRow {
   date: string;
   provider: string;
+  documentNumber: string;
   subtotal: number;
   total: number;
   paid: number;
@@ -182,6 +187,7 @@ interface RawPurchaseRow {
 }
 interface RawBankRow {
   date: string;
+  description: string;
   amount: number;
   reconciled: number;
   status: string;
@@ -289,12 +295,11 @@ function parseDate(v: unknown): string | null {
   return null;
 }
 
+// Formatea importes con separador de miles "." y decimales con coma (formato
+// español). Reusa el helper compartido en `lib/format` para que toda la app
+// muestre los importes igual.
 function fmtMoney(n: number): string {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(n);
+  return formatEur(n);
 }
 
 // Recibe una fecha en formato YYYY-MM-DD y devuelve DD/MM/YYYY.
@@ -356,13 +361,31 @@ async function resolveSheetTabs(
   return { sales: pick("sales"), purchases: pick("purchases"), banks: pick("banks") };
 }
 
+// Patrones de cabeceras que pueden cambiar entre clientes.
+// Usamos regex case-insensitive (mismo patrón que ya aplicamos a los títulos
+// de pestañas) para tolerar variaciones de naming sin romper la integración.
+const SALES_DOC_NUMBER_HEADER_RE = /(n(º|°|um(ero)?)?\.?\s*documento|n(º|°|um(ero)?)?\.?\s*factura|n(º|°|um(ero)?)?\.?\s*doc\.?)/i;
+const PURCHASES_DOC_NUMBER_HEADER_RE = /^(num(ero)?|n(º|°)\.?\s*(factura|documento)?|num\s*interno)$/i;
+const PURCHASES_DOC_INTERNAL_HEADER_RE = /num\s*interno/i;
+const BANK_DESCRIPTION_HEADER_RE = /(descripci(ó|o)n|concepto|referencia)/i;
+
+function findHeaderIndex(headers: string[], re: RegExp): number {
+  for (let i = 0; i < headers.length; i++) {
+    const h = (headers[i] ?? "").toString().trim();
+    if (h && re.test(h)) return i;
+  }
+  return -1;
+}
+
 export async function getRawDashboardData(sheetId: string): Promise<RawDashboardData> {
   const sheets = getSheetsClient();
   const tabs = await resolveSheetTabs(sheets, sheetId);
+  // Leemos desde A1 para capturar la fila de cabeceras y poder localizar
+  // columnas por nombre (p.ej. "Número Documento" en ventas, "Num" en compras).
   const ranges = [
-    `${quoteSheetName(tabs.sales)}!A2:AD`,
-    `${quoteSheetName(tabs.purchases)}!A2:T`,
-    `${quoteSheetName(tabs.banks)}!A2:I`,
+    `${quoteSheetName(tabs.sales)}!A1:AD`,
+    `${quoteSheetName(tabs.purchases)}!A1:T`,
+    `${quoteSheetName(tabs.banks)}!A1:I`,
   ];
 
   let res;
@@ -378,19 +401,52 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   }
 
   const valueRanges = res.data.valueRanges ?? [];
-  const salesRows = (valueRanges[0]?.values ?? []) as string[][];
-  const purchasesRows = (valueRanges[1]?.values ?? []) as string[][];
-  const banksRows = (valueRanges[2]?.values ?? []) as string[][];
+  const salesAll = (valueRanges[0]?.values ?? []) as string[][];
+  const purchasesAll = (valueRanges[1]?.values ?? []) as string[][];
+  const banksAll = (valueRanges[2]?.values ?? []) as string[][];
+
+  const salesHeaders = (salesAll[0] ?? []).map((v) => (v ?? "").toString());
+  const purchasesHeaders = (purchasesAll[0] ?? []).map((v) => (v ?? "").toString());
+  const banksHeaders = (banksAll[0] ?? []).map((v) => (v ?? "").toString());
+
+  const salesRows = salesAll.slice(1);
+  const purchasesRows = purchasesAll.slice(1);
+  const banksRows = banksAll.slice(1);
+
+  // Localizamos la columna de Nº documento por nombre de cabecera. Fallback al
+  // índice esperado del template Holded (col 2 = "Número Documento" en ventas;
+  // col 1 = "Num" en compras) si no encontramos la cabecera.
+  const salesDocIdx = findHeaderIndex(salesHeaders, SALES_DOC_NUMBER_HEADER_RE);
+  const salesDocColumn = salesDocIdx >= 0 ? salesDocIdx : 2;
+  // En compras preferimos "Num" sobre "Num interno" si ambos están presentes:
+  // "Num" es el número de factura visible para el proveedor.
+  let purchasesDocIdx = -1;
+  for (let i = 0; i < purchasesHeaders.length; i++) {
+    const h = (purchasesHeaders[i] ?? "").toString().trim();
+    if (!h) continue;
+    if (PURCHASES_DOC_INTERNAL_HEADER_RE.test(h)) continue;
+    if (PURCHASES_DOC_NUMBER_HEADER_RE.test(h)) {
+      purchasesDocIdx = i;
+      break;
+    }
+  }
+  const purchasesDocColumn = purchasesDocIdx >= 0 ? purchasesDocIdx : 1;
+  const banksDescIdx = findHeaderIndex(banksHeaders, BANK_DESCRIPTION_HEADER_RE);
+  const banksDescColumn = banksDescIdx >= 0 ? banksDescIdx : 1;
 
   const sales: RawSaleRow[] = [];
-  // Columnas (0-indexed): A=Fecha, E=Cliente(4), Q=Subtotal Línea(16), R=Total Línea(18), AC=Cantidad Cobrada(28), AD=Estado Cliente(29).
+  // Columnas (0-indexed) en el template Holded: A=Fecha, C=Número Documento(2),
+  // E=Cliente(4), Q=Subtotal Línea(16), S=Total Línea(18), AC=Cantidad Cobrada(28),
+  // AD=Estado Cliente(29).
   for (const r of salesRows) {
     const date = parseDate(r[0]);
     if (!date) continue;
     const client = (r[4] ?? "").toString().trim() || "(Sin cliente)";
+    const documentNumber = (r[salesDocColumn] ?? "").toString().trim();
     sales.push({
       date,
       client,
+      documentNumber,
       subtotal: toNumber(r[16]),
       total: toNumber(r[18]),
       collected: toNumber(r[28]),
@@ -399,15 +455,18 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   }
 
   const purchases: RawPurchaseRow[] = [];
-  // Columnas: Fecha emisión=col1(idx0), Fecha contable=col4(idx3), Proveedor=col6(idx5), Subtotal=col11(idx10), Total=col16(idx15), Pagado=col17(idx16), Estado=col19(idx18)
+  // Columnas: Fecha emisión=A(0), Num=B(1), Num interno=C(2), Fecha contable=D(3),
+  // Proveedor=F(5), Subtotal=K(10), Total=P(15), Pagado=Q(16), Estado=S(18)
   for (const r of purchasesRows) {
     // Fallback: si Fecha emisión está vacía o no parsea, usamos Fecha contable.
     const date = parseDate(r[0]) ?? parseDate(r[3]);
     if (!date) continue;
     const provider = (r[5] ?? "").toString().trim() || "(Sin proveedor)";
+    const documentNumber = (r[purchasesDocColumn] ?? "").toString().trim();
     purchases.push({
       date,
       provider,
+      documentNumber,
       subtotal: toNumber(r[10]),
       total: toNumber(r[15]),
       paid: toNumber(r[16]),
@@ -416,12 +475,15 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   }
 
   const banks: RawBankRow[] = [];
-  // Columnas: Fecha=col1(idx0), Importe=col3(idx2), Conciliado=col5(idx4), Estado=col7(idx6), Cuenta=col8(idx7)
+  // Columnas: Fecha=A(0), Descripción=B(1), Importe=C(2), Conciliado=E(4),
+  // Estado=G(6), Cuenta=H(7)
   for (const r of banksRows) {
     const date = parseDate(r[0]);
     if (!date) continue;
+    const description = (r[banksDescColumn] ?? "").toString().trim();
     banks.push({
       date,
+      description,
       amount: toNumber(r[2]),
       reconciled: toNumber(r[4]),
       status: (r[6] ?? "").toString().trim(),
@@ -595,6 +657,7 @@ export function aggregateDashboard(
         .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
         .map((r) => ({
           date: fmtDateDmy(r.date),
+          documentNumber: r.documentNumber,
           subtotal: fmtMoney(r.subtotal),
           total: fmtMoney(r.total),
           collected: fmtMoney(r.collected),
@@ -662,6 +725,7 @@ export function aggregateDashboard(
         .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
         .map((r) => ({
           date: fmtDateDmy(r.date),
+          documentNumber: r.documentNumber,
           subtotal: fmtMoney(r.subtotal),
           total: fmtMoney(r.total),
           paid: fmtMoney(r.paid),

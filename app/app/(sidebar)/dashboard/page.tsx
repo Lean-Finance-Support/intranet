@@ -21,7 +21,7 @@ function getFirstName(fullName: string | null | undefined): string | null {
 }
 
 interface PageProps {
-  searchParams: Promise<{ period?: string; bank?: string }>;
+  searchParams: Promise<{ period?: string; bank?: string; view?: string }>;
 }
 
 export default async function ClientDashboardPage({ searchParams }: PageProps) {
@@ -62,6 +62,7 @@ export default async function ClientDashboardPage({ searchParams }: PageProps) {
             companyName={activeCompany.company_name || activeCompany.legal_name}
             periodId={params.period}
             bankAccount={params.bank}
+            view={params.view}
           />
         </div>
       )}
