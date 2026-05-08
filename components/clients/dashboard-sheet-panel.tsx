@@ -164,10 +164,11 @@ export default function DashboardSheetPanel({
         <p className="text-[10px] text-text-muted leading-snug">
           La cuenta{" "}
           <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px]">{authorizedEmail}</code>{" "}
-          debe tener al menos permiso de lectura sobre el Sheet, y este debe contener las pestañas
-          <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px]">facturasVentaHolded_lineas</code>,
-          <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px]">Facturas_compra_holded</code> y
-          <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px]">extractosBancarios</code>.
+          debe tener al menos permiso de lectura sobre el Sheet. Las pestañas se detectan
+          automáticamente por su nombre: una de <strong>ventas</strong> (que contenga
+          &quot;factura&quot; y &quot;venta&quot;), una de <strong>compras</strong>
+          (&quot;factura&quot; y &quot;compra&quot;) y una de <strong>extractos bancarios</strong>
+          (&quot;extracto&quot;, &quot;movimiento&quot; o &quot;banc&quot;).
         </p>
       )}
     </div>
