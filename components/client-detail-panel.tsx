@@ -339,6 +339,19 @@ export default function ClientDetailPanel({
       >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-4 flex items-start gap-3 z-10">
+          {/* Expand button — top-left: abrir ficha completa */}
+          <a
+            href={`${linkPrefix}/clientes/${company.id}`}
+            title="Abrir ficha completa"
+            aria-label="Abrir ficha completa"
+            className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-md bg-brand-teal hover:bg-brand-teal/90 active:bg-brand-teal/80 text-white flex items-center justify-center shadow-sm hover:shadow transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h6v6" />
+              <path d="M10 14L21 3" />
+              <path d="M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5" />
+            </svg>
+          </a>
           <div className="flex-1 min-w-0">
             {isDeleted ? (
               <div className="text-left">
@@ -373,29 +386,16 @@ export default function ClientDetailPanel({
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-2 flex-shrink-0">
-            {/* Expand button — destacado: fondo brand-teal con icono blanco */}
-            <a
-              href={`${linkPrefix}/clientes/${company.id}`}
-              title="Abrir ficha completa"
-              aria-label="Abrir ficha completa"
-              className="w-10 h-10 rounded-lg bg-brand-teal hover:bg-brand-teal/90 active:bg-brand-teal/80 text-white flex items-center justify-center shadow-sm hover:shadow-md transition-all cursor-pointer ring-1 ring-brand-teal/40"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M20.25 20.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
-              </svg>
-            </a>
-            <button
-              onClick={onClose}
-              title="Cerrar"
-              aria-label="Cerrar"
-              className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            title="Cerrar"
+            aria-label="Cerrar"
+            className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         <div className="px-6 py-5 space-y-6">
