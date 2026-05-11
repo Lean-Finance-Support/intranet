@@ -14,9 +14,6 @@ export interface DashboardHoldedContratoPreviewContext {
   emailAssetsBase: string;
 }
 
-const DASHBOARD_VIDEO_URL =
-  "https://drive.google.com/file/d/1N3KOFEjE3aL64UN99qcIxZ7oDK52EBOu/view";
-
 export function buildDashboardHoldedContratoPreviewSubject(
   ctx: Pick<DashboardHoldedContratoPreviewContext, "companyName">
 ): string {
@@ -27,8 +24,7 @@ export function buildDashboardHoldedContratoPreviewHtml(
   ctx: DashboardHoldedContratoPreviewContext
 ): string {
   const greeting = ctx.recipientName ? `Hola, ${ctx.recipientName}` : "Hola";
-  const dashboardImg1 = `${ctx.emailAssetsBase}/dashboard-holded-1.png`;
-  const dashboardImg2 = `${ctx.emailAssetsBase}/dashboard-holded-2.png`;
+  const dashboardImg = `${ctx.emailAssetsBase}/dashboard-anonimo.png`;
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -53,26 +49,10 @@ export function buildDashboardHoldedContratoPreviewHtml(
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Os escribimos con muy buenas noticias: hemos desarrollado una mejora del servicio para vuestra comodidad. Ahora podemos ofreceros la información de <strong>facturación, compras y movimientos bancarios</strong> actualizada en un Dashboard centralizado.</p>
 
           <div style="margin:24px 0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-            <img src="${dashboardImg1}" alt="Dashboard Asesoría — Ventas y Compras" width="520" style="display:block;width:100%;height:auto;" />
-          </div>
-          <div style="margin:0 0 24px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-            <img src="${dashboardImg2}" alt="Dashboard Asesoría — Bancos y Cashflow" width="520" style="display:block;width:100%;height:auto;" />
+            <img src="${dashboardImg}" alt="Dashboard Asesoría Lean Finance" width="520" style="display:block;width:100%;height:auto;" />
           </div>
 
           <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Volcamos vuestra información de <strong>Holded</strong> vía API, para que podáis visualizar con comodidad todos los movimientos pendientes de conciliar: facturas de venta, facturas de compra y bancos. Creemos que os será de gran utilidad en la gestión diaria.</p>
-
-          <p style="margin:0 0 16px;font-size:15px;color:#4b5563;line-height:1.6;">Hemos preparado un vídeo corto en el que os enseñamos la nueva herramienta:</p>
-
-          <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-            <tr>
-              <td style="border:1.5px solid #00B0B7;border-radius:8px;">
-                <a href="${DASHBOARD_VIDEO_URL}" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;font-size:14px;font-weight:600;color:#00B0B7;text-decoration:none;border-radius:8px;">
-                  <span style="display:inline-block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:9px solid #00B0B7;"></span>
-                  Ver vídeo explicativo
-                </a>
-              </td>
-            </tr>
-          </table>
 
           <!-- Bloque destacado: Contrato de Tratamiento de Datos -->
           <div style="margin:32px 0 24px;padding:24px 24px 20px;background:linear-gradient(135deg,#0f2444 0%,#16335a 100%);border-radius:12px;color:#ffffff;">
