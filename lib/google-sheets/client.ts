@@ -5,6 +5,8 @@
 import { google, sheets_v4 } from "googleapis";
 import {
   aggregateDashboard,
+  compactRawDashboard,
+  type CachedDashboardData,
   type DashboardData,
   type RawDashboardData,
   type RawSaleRow,
@@ -17,6 +19,7 @@ export {
   aggregateDashboard,
   buildPeriodOptions,
   resolvePeriodFromId,
+  expandCachedDashboard,
 } from "@/lib/dashboard/aggregate";
 export type {
   PeriodFilter,
@@ -32,6 +35,7 @@ export type {
   MonthlyPoint,
   DashboardData,
   RawDashboardData,
+  CachedDashboardData,
 } from "@/lib/dashboard/aggregate";
 
 export const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
@@ -212,7 +216,6 @@ async function resolveSheetTabs(
 const SALES_DOC_NUMBER_HEADER_RE = /(n(º|°|um(ero)?)?\.?\s*documento|n(º|°|um(ero)?)?\.?\s*factura|n(º|°|um(ero)?)?\.?\s*doc\.?)/i;
 const PURCHASES_DOC_NUMBER_HEADER_RE = /^(num(ero)?|n(º|°)\.?\s*(factura|documento)?|num\s*interno)$/i;
 const PURCHASES_DOC_INTERNAL_HEADER_RE = /num\s*interno/i;
-const BANK_DESCRIPTION_HEADER_RE = /(descripci(ó|o)n|concepto|referencia)/i;
 
 function findHeaderIndex(headers: string[], re: RegExp): number {
   for (let i = 0; i < headers.length; i++) {
@@ -225,10 +228,13 @@ function findHeaderIndex(headers: string[], re: RegExp): number {
 export async function getRawDashboardData(sheetId: string): Promise<RawDashboardData> {
   const sheets = getSheetsClient();
   const tabs = await resolveSheetTabs(sheets, sheetId);
+  // Banco: solo necesitamos A (date), C (amount), E (reconciled), G (status),
+  // H (account). No leemos description/concepto (no se consume y puede llegar
+  // a inflar el payload cacheado por encima del límite de Next.js).
   const ranges = [
     `${quoteSheetName(tabs.sales)}!A1:AD`,
     `${quoteSheetName(tabs.purchases)}!A1:T`,
-    `${quoteSheetName(tabs.banks)}!A1:I`,
+    `${quoteSheetName(tabs.banks)}!A1:H`,
   ];
 
   let res;
@@ -250,7 +256,6 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
 
   const salesHeaders = (salesAll[0] ?? []).map((v) => (v ?? "").toString());
   const purchasesHeaders = (purchasesAll[0] ?? []).map((v) => (v ?? "").toString());
-  const banksHeaders = (banksAll[0] ?? []).map((v) => (v ?? "").toString());
 
   const salesRows = salesAll.slice(1);
   const purchasesRows = purchasesAll.slice(1);
@@ -269,9 +274,6 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
     }
   }
   const purchasesDocColumn = purchasesDocIdx >= 0 ? purchasesDocIdx : 1;
-  const banksDescIdx = findHeaderIndex(banksHeaders, BANK_DESCRIPTION_HEADER_RE);
-  const banksDescColumn = banksDescIdx >= 0 ? banksDescIdx : 1;
-
   const sales: RawSaleRow[] = [];
   for (const r of salesRows) {
     const date = parseDate(r[0]);
@@ -310,10 +312,8 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
   for (const r of banksRows) {
     const date = parseDate(r[0]);
     if (!date) continue;
-    const description = (r[banksDescColumn] ?? "").toString().trim();
     banks.push({
       date,
-      description,
       amount: toNumber(r[2]),
       reconciled: toNumber(r[4]),
       status: (r[6] ?? "").toString().trim(),
@@ -339,6 +339,18 @@ export async function getRawDashboardData(sheetId: string): Promise<RawDashboard
     yearsAvailable,
     bankAccounts,
   };
+}
+
+// Variante que devuelve directamente el formato compacto para `unstable_cache`.
+// Importante: lo cacheado NO debe ser `RawDashboardData` — sheets grandes
+// rebasan el límite de 2 MiB de Next.js. La forma columnar reduce el JSON
+// serializado ~3-4x al deduplicar strings (clientes/proveedores repetidos) y
+// eliminar las keys verbosas por cada fila.
+export async function getCompactDashboardData(
+  sheetId: string
+): Promise<CachedDashboardData> {
+  const raw = await getRawDashboardData(sheetId);
+  return compactRawDashboard(raw);
 }
 
 // ---------------------------------------------------------------------------
