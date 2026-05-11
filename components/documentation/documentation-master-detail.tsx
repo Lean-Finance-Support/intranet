@@ -8,6 +8,7 @@ import type {
   ClientApartado,
   ClientDocumentation,
   DepartmentMember,
+  FormApartadoSlug,
 } from "@/lib/types/documentation";
 import { statusDotColor } from "./status-badge";
 import BlockList from "./block-list";
@@ -29,6 +30,13 @@ export interface DocumentationActionHandlers {
   removeApartado?: (clientApartadoId: string) => Promise<void>;
   removeBlock?: (clientBlockId: string) => Promise<void>;
   toggleOptional?: (clientApartadoId: string, isOptional: boolean) => Promise<void>;
+  // kind='form'
+  submitForm?: (
+    clientApartadoId: string,
+    slug: FormApartadoSlug,
+    payload: unknown
+  ) => Promise<void>;
+  revealEnisaPassword?: (clientApartadoId: string) => Promise<string>;
 }
 
 interface Props {
@@ -690,6 +698,17 @@ export default function DocumentationMasterDetail({
                   handlers.toggleOptional
                     ? (next) =>
                         optimisticToggleOptional(selectedApartado.id, next)
+                    : undefined
+                }
+                onSubmitForm={
+                  handlers.submitForm
+                    ? (slug, payload) =>
+                        handlers.submitForm!(selectedApartado.id, slug, payload)
+                    : undefined
+                }
+                onRevealEnisaPassword={
+                  handlers.revealEnisaPassword
+                    ? () => handlers.revealEnisaPassword!(selectedApartado.id)
                     : undefined
                 }
                 candidateMembers={candidates}

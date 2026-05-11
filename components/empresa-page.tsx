@@ -14,6 +14,7 @@ import {
   getApartadoTemplateSignedUrlForClient,
   getMyDocumentation,
   softDeleteApartadoFile,
+  submitFormApartado,
   uploadApartadoFile,
 } from "@/app/app/empresa/documentation-actions";
 import type { ClientDocumentation } from "@/lib/types/documentation";
@@ -258,6 +259,10 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
                   },
                   addComment: async (clientApartadoId, body) => {
                     await addClientComment(clientApartadoId, body);
+                    await refreshDocumentation();
+                  },
+                  submitForm: async (clientApartadoId, slug, payload) => {
+                    await submitFormApartado({ clientApartadoId, slug, payload });
                     await refreshDocumentation();
                   },
                 }}

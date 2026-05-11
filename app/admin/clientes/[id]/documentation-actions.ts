@@ -24,6 +24,12 @@ import type {
   ClientDocumentation,
   DepartmentMember,
 } from "@/lib/types/documentation";
+import { decryptEnisaPassword } from "@/lib/crypto/enisa";
+import {
+  validateAndEncryptEnisaPayload,
+  validateCompetidoresPayload,
+} from "@/lib/documentation/form-payloads";
+import type { FormApartadoSlug } from "@/lib/types/documentation";
 import {
   buildClientReminderPreviewHtml,
   buildClientReminderPreviewSubject,
@@ -136,7 +142,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
       .schema("documentation")
       .from("client_apartados")
       .select(
-        "id, client_block_id, apartado_id, status, display_order, is_optional, validated_at, validated_by, rejected_at, rejected_by, last_rejection_reason"
+        "id, client_block_id, apartado_id, status, display_order, is_optional, validated_at, validated_by, rejected_at, rejected_by, last_rejection_reason, form_response"
       ),
     admin
       .schema("documentation")
@@ -145,7 +151,7 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, name, description, is_global"),
+      .select("id, name, description, is_global, kind, slug"),
     admin
       .schema("documentation")
       .from("apartado_departments")
@@ -396,6 +402,9 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
               status: ca.status as ApartadoStatus,
               is_global: ap.is_global,
               is_optional: (ca.is_optional as boolean | null) ?? false,
+              kind: ((ap as { kind?: "file" | "form" }).kind ?? "file") as "file" | "form",
+              slug: ((ap as { slug?: string | null }).slug ?? null) as string | null,
+              form_response: (ca as { form_response?: unknown }).form_response ?? null,
               department_ids: deptByApartado.get(ca.apartado_id as string) ?? [],
               supervisors: supervisorsByApartado.get(ca.id as string) ?? [],
               templates: templatesByApartado.get(ca.apartado_id as string) ?? [],
@@ -521,7 +530,7 @@ export async function getAssignableCatalog(
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug, kind, slug")
       .order("display_order"),
     admin
       .schema("documentation")
@@ -661,6 +670,8 @@ function toApartadoTemplate(
     display_order: raw.display_order as number,
     is_global: raw.is_global as boolean,
     is_optional_global: (raw.is_optional_global as boolean | null) ?? false,
+    kind: ((raw.kind as "file" | "form" | undefined) ?? "file") as "file" | "form",
+    slug: ((raw.slug as string | null | undefined) ?? null) as string | null,
     department_ids: links.map((l) => l.department_id),
     departments: links,
     templates: templatesMap.get(id) ?? [],
@@ -1107,6 +1118,150 @@ export async function reopenApartado(
   if (error) throw new Error(error.message);
   await logStatusChange(clientApartadoId, fromStatus, "pendiente", userId, "__event:reopened__");
   revalidatePath(`/admin/clientes/${companyId}`);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Apartados kind='form' — admin rellena el formulario en nombre del cliente.
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function adminSubmitFormApartado(input: {
+  companyId: string;
+  clientApartadoId: string;
+  slug: FormApartadoSlug;
+  payload: unknown;
+}): Promise<void> {
+  await requireAdmin();
+  await authorizeValidation(input.clientApartadoId);
+  const { user } = await getAuthUser();
+  if (!user) throw new Error("No autenticado");
+
+  const admin = createAdminClient();
+  const { data: ca } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("status, apartado_id, form_response")
+    .eq("id", input.clientApartadoId)
+    .single();
+  if (!ca) throw new Error("Apartado no encontrado");
+  if ((ca.status as string) === "validado") {
+    throw new Error("No se puede modificar un apartado validado");
+  }
+
+  const { data: ap } = await admin
+    .schema("documentation")
+    .from("apartados")
+    .select("kind, slug")
+    .eq("id", ca.apartado_id as string)
+    .single();
+  if (!ap) throw new Error("Apartado no encontrado");
+  if ((ap as { kind?: string }).kind !== "form") {
+    throw new Error("Este apartado no admite formulario");
+  }
+  if ((ap as { slug?: string }).slug !== input.slug) {
+    throw new Error("El formulario no corresponde al apartado");
+  }
+
+  let toStore: unknown;
+  if (input.slug === "enisa-credentials") {
+    toStore = validateAndEncryptEnisaPayload(
+      input.payload,
+      ca.form_response as Record<string, unknown> | null
+    );
+  } else if (input.slug === "competidores") {
+    toStore = validateCompetidoresPayload(input.payload);
+  } else {
+    throw new Error(`Formulario desconocido: ${input.slug satisfies never}`);
+  }
+
+  // A diferencia de adminUploadApartadoFile, aquí SÍ transicionamos a
+  // 'enviado' si estaba pendiente/rechazado: el formulario no es "parcial"
+  // como sí lo puede ser una subida de archivo individual — rellenarlo
+  // significa que está listo para validar.
+  const currentStatus = ca.status as ApartadoStatus;
+  const willTransition =
+    currentStatus === "pendiente" || currentStatus === "rechazado";
+  const updates: Record<string, unknown> = { form_response: toStore };
+  if (willTransition) updates.status = "enviado";
+
+  const { error: updErr } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .update(updates)
+    .eq("id", input.clientApartadoId);
+  if (updErr) throw new Error(updErr.message);
+
+  if (willTransition) {
+    await admin.schema("documentation").from("apartado_status_history").insert({
+      client_apartado_id: input.clientApartadoId,
+      from_status: currentStatus,
+      to_status: "enviado",
+      changed_by: user.id,
+      reason: "__event:form_submitted_by_admin__",
+    });
+  } else {
+    // Apartado ya validado nunca llega aquí (lo cortamos arriba). Si está en
+    // 'enviado' y admin actualiza, registramos evento sin cambiar estado.
+    await admin.schema("documentation").from("apartado_status_history").insert({
+      client_apartado_id: input.clientApartadoId,
+      from_status: currentStatus,
+      to_status: currentStatus,
+      changed_by: user.id,
+      reason: "__event:form_submitted_by_admin__",
+    });
+  }
+
+  const labels = await getActorAndApartadoLabel(user.id, input.clientApartadoId);
+  await notifyDocumentationClients({
+    clientApartadoId: input.clientApartadoId,
+    actorId: user.id,
+    summary: buildSummary(
+      labels.actorName,
+      labels.actorEmail,
+      "ha rellenado el formulario",
+      labels.apartadoName
+    ),
+  });
+
+  revalidatePath(`/admin/clientes/${input.companyId}`);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Apartados kind='form' — descifrado on-demand de la contraseña ENISA.
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function getDecryptedEnisaPassword(
+  clientApartadoId: string
+): Promise<string> {
+  await requireAdmin();
+  // Mismo gate que comentar/validar: Chief (validate_documentation) o
+  // Supervisor del apartado.
+  await authorizeValidation(clientApartadoId);
+
+  const admin = createAdminClient();
+  const { data: ca } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("form_response, apartado_id")
+    .eq("id", clientApartadoId)
+    .single();
+  if (!ca) throw new Error("Apartado no encontrado");
+
+  const { data: ap } = await admin
+    .schema("documentation")
+    .from("apartados")
+    .select("slug")
+    .eq("id", ca.apartado_id as string)
+    .single();
+  if (!ap || (ap as { slug?: string }).slug !== "enisa-credentials") {
+    throw new Error("Apartado no es de tipo ENISA");
+  }
+
+  const fr = ca.form_response as { password_encrypted?: unknown } | null;
+  const enc = fr?.password_encrypted;
+  if (typeof enc !== "string" || enc.length === 0) {
+    throw new Error("No hay contraseña almacenada todavía");
+  }
+  return decryptEnisaPassword(enc);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
