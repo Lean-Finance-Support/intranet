@@ -76,7 +76,7 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug")
+      .select("id, block_id, name, description, display_order, is_global, is_optional_global, email_template_slug, kind, slug")
       .order("display_order")
       .order("name"),
     admin
@@ -169,6 +169,8 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
       display_order: a.display_order as number,
       is_global: a.is_global as boolean,
       is_optional_global: (a.is_optional_global as boolean | null) ?? false,
+      kind: ((a as { kind?: "file" | "form" }).kind ?? "file") as "file" | "form",
+      slug: ((a as { slug?: string | null }).slug ?? null) as string | null,
       department_ids: deptLinks.map((d) => d.department_id),
       departments: deptLinks,
       tag_ids: apartadoTagMap.get(a.id as string) ?? [],

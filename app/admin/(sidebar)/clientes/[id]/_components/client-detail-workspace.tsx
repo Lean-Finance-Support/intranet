@@ -39,10 +39,12 @@ import {
   addBlockToClient,
   addSupervisor,
   adminSoftDeleteApartadoFile,
+  adminSubmitFormApartado,
   adminUploadApartadoFile,
   getApartadoFileSignedUrl,
   getApartadoTemplateSignedUrl,
   getClientReminderPreviewHtml,
+  getDecryptedEnisaPassword,
   rejectApartado,
   remindClientDocumentation,
   removeApartadoFromClient,
@@ -552,6 +554,17 @@ export default function ClientDetailWorkspace({
             },
             toggleOptional: (clientApartadoId, isOptional) =>
               optimisticToggleOptional(clientApartadoId, isOptional),
+            submitForm: async (clientApartadoId, slug, payload) => {
+              await adminSubmitFormApartado({
+                companyId: detail.id,
+                clientApartadoId,
+                slug,
+                payload,
+              });
+              router.refresh();
+            },
+            revealEnisaPassword: (clientApartadoId) =>
+              getDecryptedEnisaPassword(clientApartadoId),
           }}
           onAddBlock={
             assignableCatalog.canRequest ? () => setAddingBlock(true) : undefined

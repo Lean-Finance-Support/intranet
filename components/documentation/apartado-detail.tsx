@@ -7,11 +7,13 @@ import type {
   ClientApartado,
   ClientBlock,
   DepartmentMember,
+  FormApartadoSlug,
 } from "@/lib/types/documentation";
 import StatusBadge from "./status-badge";
 import ApartadoFiles from "./apartado-files";
 import ApartadoComments from "./apartado-comments";
 import ApartadoTemplatesList from "./apartado-templates-list";
+import FormDispatcher from "./forms";
 import ConfirmDialog from "@/components/confirm-dialog";
 
 interface Props {
@@ -34,6 +36,10 @@ interface Props {
   onToggleOptional?: (isOptional: boolean) => Promise<void>;
   onAddApartadoToBlock?: () => void;
   onRemoveBlock?: () => void;
+  // kind='form' — submit/desencriptar. Si no se pasan, el formulario se
+  // muestra en modo lectura.
+  onSubmitForm?: (slug: FormApartadoSlug, payload: unknown) => Promise<void>;
+  onRevealEnisaPassword?: () => Promise<string>;
   candidateMembers?: DepartmentMember[];
   canManage?: boolean;
   canValidate?: boolean;
@@ -60,6 +66,8 @@ export default function ApartadoDetail({
   onToggleOptional,
   onAddApartadoToBlock,
   onRemoveBlock,
+  onSubmitForm,
+  onRevealEnisaPassword,
   candidateMembers,
   canManage,
   canValidate,
@@ -73,10 +81,16 @@ export default function ApartadoDetail({
   const [confirmReopen, setConfirmReopen] = useState(false);
 
   const isAdmin = mode === "admin";
+  const isFormApartado = apartado.kind === "form";
   const hasFiles = apartado.files.some((f) => !f.deleted_at);
+  const hasFormResponse =
+    isFormApartado &&
+    apartado.form_response !== null &&
+    typeof apartado.form_response === "object";
   const isFinalStatus =
     apartado.status === "validado" || apartado.status === "rechazado";
-  const canActOnStatus = !isFinalStatus && hasFiles;
+  const canActOnStatus =
+    !isFinalStatus && (isFormApartado ? hasFormResponse : hasFiles);
 
   async function handleValidate() {
     if (!onValidate) return;
@@ -285,7 +299,7 @@ export default function ApartadoDetail({
             />
           )}
 
-          {apartado.templates.length > 0 && (
+          {!isFormApartado && apartado.templates.length > 0 && (
             <ApartadoTemplatesList
               templates={apartado.templates}
               onDownload={onDownloadTemplate}
@@ -293,24 +307,41 @@ export default function ApartadoDetail({
             />
           )}
 
-          <ApartadoFiles
-            files={apartado.files}
-            canUpload={
-              apartado.status !== "validado" &&
-              (mode === "client" ||
-                (mode === "admin" && (canValidate === true || !!canManage)))
-            }
-            canDeleteOwn={mode === "client" && apartado.status !== "validado"}
-            canDeleteAll={
-              !!canDeleteAll &&
-              apartado.status !== "validado" &&
-              (canValidate === true || !!canManage)
-            }
-            ownerId={currentUserId}
-            onUpload={onUploadFile}
-            onDelete={onDeleteOwnFile}
-            onDownload={onDownloadFile}
-          />
+          {isFormApartado && apartado.slug ? (
+            <FormDispatcher
+              slug={apartado.slug}
+              mode={mode}
+              canEdit={
+                apartado.status !== "validado" &&
+                (mode === "client" ||
+                  (mode === "admin" && (canValidate === true || !!canManage)))
+              }
+              formResponse={apartado.form_response}
+              onSubmit={onSubmitForm}
+              onRevealEnisaPassword={
+                mode === "admin" ? onRevealEnisaPassword : undefined
+              }
+            />
+          ) : (
+            <ApartadoFiles
+              files={apartado.files}
+              canUpload={
+                apartado.status !== "validado" &&
+                (mode === "client" ||
+                  (mode === "admin" && (canValidate === true || !!canManage)))
+              }
+              canDeleteOwn={mode === "client" && apartado.status !== "validado"}
+              canDeleteAll={
+                !!canDeleteAll &&
+                apartado.status !== "validado" &&
+                (canValidate === true || !!canManage)
+              }
+              ownerId={currentUserId}
+              onUpload={onUploadFile}
+              onDelete={onDeleteOwnFile}
+              onDownload={onDownloadFile}
+            />
+          )}
 
           {/* Acciones validar/rechazar (solo admin con permiso) */}
           {isAdmin && canValidate && (
@@ -337,7 +368,9 @@ export default function ApartadoDetail({
                 )
               ) : !canActOnStatus ? (
                 <p className="text-[11px] text-text-muted">
-                  El cliente aún no ha subido archivos.
+                  {isFormApartado
+                    ? "El cliente aún no ha rellenado el formulario."
+                    : "El cliente aún no ha subido archivos."}
                 </p>
               ) : !rejecting ? (
                 <div className="flex items-center gap-2">

@@ -4,6 +4,42 @@
 
 export type ApartadoStatus = "pendiente" | "enviado" | "validado" | "rechazado";
 
+// Tipo del apartado: 'file' = el cliente sube archivos (caso por defecto).
+// 'form' = el cliente rellena un formulario estructurado (sin archivos), cuya
+// shape concreta depende del `slug` del apartado y vive en
+// `client_apartados.form_response` (JSONB).
+export type ApartadoKind = "file" | "form";
+
+// Slugs reconocidos para apartados kind='form'. Cada slug mapea a:
+//   · un componente React específico en components/documentation/forms/<slug>.tsx
+//   · una shape de form_response (ver FormResponseBySlug abajo)
+//   · una función de validación en el server action (submitFormApartado)
+export type FormApartadoSlug = "enisa-credentials" | "competidores";
+
+// ───── Shapes de form_response por slug ─────
+
+export interface EnisaFormResponse {
+  user: string;
+  // Texto serializado del cifrado AES-256-GCM (ver lib/crypto/enisa.ts).
+  // Nunca se devuelve al cliente; solo lo descifra el admin vía server action.
+  password_encrypted: string;
+}
+
+export interface CompetidorEntry {
+  comercial: string;
+  fiscal: string;
+  cif: string;
+}
+
+export interface CompetidoresFormResponse {
+  entries: CompetidorEntry[];
+}
+
+export type FormResponseBySlug = {
+  "enisa-credentials": EnisaFormResponse;
+  competidores: CompetidoresFormResponse;
+};
+
 // ───────── Catálogo (templates) ─────────
 
 export interface BlockTemplate {
@@ -22,6 +58,10 @@ export interface ApartadoTemplate {
   description: string | null;
   display_order: number;
   is_global: boolean;
+  kind: ApartadoKind;
+  // Slug estable. Null para apartados kind='file' (no se mapean a componente
+  // específico). NOT NULL para kind='form'.
+  slug: string | null;
   // Solo aplica si is_global=true. Cuando true, el apartado se sugiere como
   // opcional por defecto en el wizard de onboarding y al asignar bloques.
   // Para apartados con dpto la opcionalidad va en `departments[].is_optional`.
@@ -106,6 +146,8 @@ export interface ClientApartado {
   status: ApartadoStatus;
   is_global: boolean;
   is_optional: boolean;
+  kind: ApartadoKind;
+  slug: string | null;
   department_ids: string[];
   supervisors: ApartadoSupervisor[];
   templates: ApartadoTemplateFile[];
@@ -117,6 +159,9 @@ export interface ClientApartado {
   files: ApartadoFile[];
   comments: ApartadoComment[];
   history: ApartadoStatusHistoryEntry[];
+  // Payload del cliente para apartados kind='form'. Para ENISA, password viene
+  // ya cifrada — el descifrado se hace bajo demanda en server action.
+  form_response: unknown;
 }
 
 export interface ClientBlock {

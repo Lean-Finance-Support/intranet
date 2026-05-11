@@ -19,7 +19,12 @@ import type {
   ApartadoSupervisor,
   ApartadoTemplateFile,
   ClientDocumentation,
+  FormApartadoSlug,
 } from "@/lib/types/documentation";
+import {
+  validateAndEncryptEnisaPayload,
+  validateCompetidoresPayload,
+} from "@/lib/documentation/form-payloads";
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
 
@@ -45,7 +50,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
       .schema("documentation")
       .from("client_apartados")
       .select(
-        "id, client_block_id, apartado_id, status, display_order, is_optional, validated_at, rejected_at, last_rejection_reason"
+        "id, client_block_id, apartado_id, status, display_order, is_optional, validated_at, rejected_at, last_rejection_reason, form_response"
       ),
     admin
       .schema("documentation")
@@ -54,7 +59,7 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
     admin
       .schema("documentation")
       .from("apartados")
-      .select("id, name, description, is_global"),
+      .select("id, name, description, is_global, kind, slug"),
     admin
       .schema("documentation")
       .from("apartado_departments")
@@ -276,6 +281,9 @@ export async function getMyDocumentation(): Promise<ClientDocumentation> {
               status: ca.status as ApartadoStatus,
               is_global: ap.is_global as boolean,
               is_optional: (ca.is_optional as boolean | null) ?? false,
+              kind: ((ap as { kind?: "file" | "form" }).kind ?? "file") as "file" | "form",
+              slug: ((ap as { slug?: string | null }).slug ?? null) as string | null,
+              form_response: (ca as { form_response?: unknown }).form_response ?? null,
               department_ids: deptByApartado.get(ca.apartado_id as string) ?? [],
               supervisors: supervisorsByApartado.get(ca.id as string) ?? [],
               templates: templatesByApartado.get(ca.apartado_id as string) ?? [],
@@ -391,6 +399,88 @@ async function ensureClientOwnsApartado(
   void user;
   return { companyId, status: ca.status as ApartadoStatus };
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Apartados kind='form' — envío del formulario desde el cliente.
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function submitFormApartado(input: {
+  clientApartadoId: string;
+  slug: FormApartadoSlug;
+  payload: unknown;
+}): Promise<void> {
+  const { user } = await requireClient();
+  const { status } = await ensureClientOwnsApartado(input.clientApartadoId);
+  if (status === "validado") {
+    throw new Error("No se puede modificar un apartado validado");
+  }
+
+  const admin = createAdminClient();
+  const { data: caRow } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("apartado_id, form_response")
+    .eq("id", input.clientApartadoId)
+    .single();
+  if (!caRow) throw new Error("Apartado no encontrado");
+
+  const { data: apRow } = await admin
+    .schema("documentation")
+    .from("apartados")
+    .select("kind, slug")
+    .eq("id", caRow.apartado_id as string)
+    .single();
+  if (!apRow) throw new Error("Apartado no encontrado");
+  if ((apRow as { kind?: string }).kind !== "form") {
+    throw new Error("Este apartado no admite formulario");
+  }
+  if ((apRow as { slug?: string }).slug !== input.slug) {
+    throw new Error("El formulario no corresponde al apartado");
+  }
+
+  let toStore: unknown;
+  if (input.slug === "enisa-credentials") {
+    toStore = validateAndEncryptEnisaPayload(
+      input.payload,
+      caRow.form_response as Record<string, unknown> | null
+    );
+  } else if (input.slug === "competidores") {
+    toStore = validateCompetidoresPayload(input.payload);
+  } else {
+    throw new Error(`Formulario desconocido: ${input.slug satisfies never}`);
+  }
+
+  const updates: Record<string, unknown> = { form_response: toStore };
+  const willTransition = status === "pendiente" || status === "rechazado";
+  if (willTransition) updates.status = "enviado";
+
+  const { error: updErr } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .update(updates)
+    .eq("id", input.clientApartadoId);
+  if (updErr) throw new Error(updErr.message);
+
+  if (willTransition) {
+    await logStatusChange(input.clientApartadoId, status, "enviado", user.id);
+  }
+
+  const labels = await getActorAndApartadoLabel(user.id, input.clientApartadoId);
+  await notifyDocumentationSupervisors({
+    clientApartadoId: input.clientApartadoId,
+    actorId: user.id,
+    summary: buildSummary(
+      labels.actorName,
+      labels.actorEmail,
+      "ha rellenado el formulario",
+      labels.apartadoName
+    ),
+  });
+
+  revalidatePath("/app/empresa");
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 export async function uploadApartadoFile(input: {
   clientApartadoId: string;
