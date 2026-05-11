@@ -1,0 +1,98 @@
+import type { SearchPageEntry } from "./types";
+
+export const PAGE_ENTRIES: SearchPageEntry[] = [
+  // Admin
+  {
+    id: "admin:inicio",
+    space: "admin",
+    label: "Inicio",
+    path: "/inicio",
+    icon: "home",
+    keywords: ["dashboard", "home", "principal", "panel"],
+  },
+  {
+    id: "admin:modelos",
+    space: "admin",
+    label: "Modelos fiscales",
+    path: "/modelos",
+    icon: "document",
+    keywords: ["impuestos", "iva", "303", "trimestre", "tax", "fiscal"],
+    gate: (ctx) => ctx.hasTaxModels,
+  },
+  {
+    id: "admin:departamento",
+    space: "admin",
+    label: "Mi equipo",
+    path: "/departamento",
+    icon: "users",
+    keywords: ["departamento", "team", "compañeros", "técnicos"],
+  },
+  {
+    id: "admin:clientes",
+    space: "admin",
+    label: "Clientes",
+    path: "/clientes",
+    icon: "building",
+    keywords: ["empresas", "companies", "cartera"],
+  },
+  {
+    id: "admin:clientes-onboarding",
+    space: "admin",
+    label: "Nuevo onboarding",
+    path: "/clientes/onboarding",
+    icon: "building",
+    keywords: ["alta", "nuevo cliente", "registro", "onboarding"],
+  },
+  {
+    id: "admin:documentacion",
+    space: "admin",
+    label: "Catálogo Documentación",
+    path: "/documentacion",
+    icon: "book",
+    keywords: ["docs", "apartados", "plantillas", "documentos"],
+  },
+  {
+    id: "admin:documentacion-asignacion",
+    space: "admin",
+    label: "Asignación múltiple de documentación",
+    path: "/documentacion/asignacion-multiple",
+    icon: "book",
+    keywords: ["bulk", "masiva", "asignar", "varios clientes"],
+  },
+
+  // Cliente
+  {
+    id: "client:dashboard",
+    space: "client",
+    label: "Dashboard",
+    path: "/dashboard",
+    icon: "home",
+    keywords: ["resumen", "inicio", "fiscal"],
+    gate: (ctx) => ctx.hasDashboard,
+  },
+  {
+    id: "client:modelos",
+    space: "client",
+    label: "Modelos fiscales",
+    path: "/modelos",
+    icon: "document",
+    keywords: ["impuestos", "iva", "303", "trimestre", "tax", "fiscal"],
+    gate: (ctx) => ctx.hasTaxModels,
+  },
+  {
+    id: "client:empresa",
+    space: "client",
+    label: "Mi empresa",
+    path: "/empresa",
+    icon: "building",
+    keywords: ["datos", "empresa", "perfil", "documentación"],
+  },
+  {
+    id: "client:contacto",
+    space: "client",
+    label: "Contacto",
+    path: "/contacto",
+    icon: "users",
+    keywords: ["equipo", "técnicos", "responsables", "ayuda"],
+  },
+];

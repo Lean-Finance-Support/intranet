@@ -25,18 +25,20 @@ export default async function SelectCompanyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
-      <div className="max-w-lg w-full space-y-4">
-        <div className="bg-white rounded-2xl shadow-sm p-8">
-          <div className="text-center">
+    <main className="h-screen overflow-y-auto bg-brand-navy">
+      <div className="min-h-full flex items-center justify-center px-4 py-8">
+        <div className="max-w-lg w-full flex flex-col bg-white rounded-2xl shadow-sm max-h-[calc(100vh-4rem)]">
+          <div className="text-center px-8 pt-8 pb-4 flex-shrink-0">
             <h1 className="text-2xl font-bold font-heading text-brand-navy mb-2">
               Selecciona un espacio
             </h1>
-            <p className="text-text-muted text-sm mb-6">
+            <p className="text-text-muted text-sm">
               Tienes acceso a varios espacios. Elige con cuál quieres trabajar.
             </p>
           </div>
-          <CompanySelector companies={companies} linkPrefix={prefix} />
+          <div className="overflow-y-auto px-8 pb-8 pt-2 flex-1 min-h-0">
+            <CompanySelector companies={companies} linkPrefix={prefix} />
+          </div>
         </div>
       </div>
     </main>
