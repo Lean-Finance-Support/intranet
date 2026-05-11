@@ -338,6 +338,9 @@ export async function getCompanyResponsibleTeam(
       : [];
 
   // 4. Apartados de documentación de la company
+  // Excluimos los catalog apartados con is_global=true: sus supervisores son
+  // transversales (gestión de catálogo) y no forman parte del equipo
+  // responsable de un cliente concreto.
   const { data: clientBlocks } = await supabase
     .schema("documentation")
     .from("client_blocks")
@@ -345,7 +348,7 @@ export async function getCompanyResponsibleTeam(
     .eq("company_id", companyId);
 
   const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
-  const clientApartados =
+  const rawClientApartados =
     blockIds.length === 0
       ? []
       : (
@@ -355,6 +358,31 @@ export async function getCompanyResponsibleTeam(
             .select("id, apartado_id")
             .in("client_block_id", blockIds)
         ).data ?? [];
+
+  const rawApartadoCatalogIds = [
+    ...new Set(rawClientApartados.map((ca) => ca.apartado_id as string)),
+  ];
+
+  const apartadoCatalogRows =
+    rawApartadoCatalogIds.length === 0
+      ? []
+      : (
+          await supabase
+            .schema("documentation")
+            .from("apartados")
+            .select("id, is_global")
+            .in("id", rawApartadoCatalogIds)
+        ).data ?? [];
+
+  const nonGlobalApartadoIds = new Set(
+    apartadoCatalogRows
+      .filter((a) => a.is_global !== true)
+      .map((a) => a.id as string)
+  );
+
+  const clientApartados = rawClientApartados.filter((ca) =>
+    nonGlobalApartadoIds.has(ca.apartado_id as string)
+  );
 
   const clientApartadoIds = clientApartados.map((ca) => ca.id as string);
   const apartadoCatalogIds = [...new Set(clientApartados.map((ca) => ca.apartado_id as string))];
@@ -403,23 +431,35 @@ export async function getCompanyResponsibleTeam(
   // 6b. Pertenencia organizacional de cada supervisor a departamentos.
   // Sin esto, un supervisor de un client_apartado se replicaría en TODOS los
   // departamentos del catálogo del apartado (cross-join implícito).
+  // Sólo cuentan los roles que confieren `member_of_department` (Miembro y
+  // Chief). Operador/Observador NO confieren pertenencia y, por tanto, su
+  // departamento no se considera para agrupar al supervisor.
   const supProfileIds = [...new Set(supRows.map((r) => r.profile_id as string))];
   const supDeptMemberships = new Map<string, Set<string>>();
   if (supProfileIds.length > 0) {
-    const { data: deptRoleRows } = await supabase
-      .from("profile_roles")
-      .select("profile_id, scope_id")
-      .in("profile_id", supProfileIds)
-      .eq("scope_type", "department");
-    for (const row of deptRoleRows ?? []) {
-      const pid = row.profile_id as string;
-      const did = row.scope_id as string;
-      let set = supDeptMemberships.get(pid);
-      if (!set) {
-        set = new Set();
-        supDeptMemberships.set(pid, set);
+    const { data: memberRoleRows } = await supabase
+      .from("roles")
+      .select("id")
+      .in("name", ["Miembro de departamento", "Chief"]);
+    const memberRoleIds = (memberRoleRows ?? []).map((r) => r.id as string);
+
+    if (memberRoleIds.length > 0) {
+      const { data: deptRoleRows } = await supabase
+        .from("profile_roles")
+        .select("profile_id, scope_id")
+        .in("profile_id", supProfileIds)
+        .eq("scope_type", "department")
+        .in("role_id", memberRoleIds);
+      for (const row of deptRoleRows ?? []) {
+        const pid = row.profile_id as string;
+        const did = row.scope_id as string;
+        let set = supDeptMemberships.get(pid);
+        if (!set) {
+          set = new Set();
+          supDeptMemberships.set(pid, set);
+        }
+        set.add(did);
       }
-      set.add(did);
     }
   }
 
