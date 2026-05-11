@@ -400,6 +400,29 @@ export async function getCompanyResponsibleTeam(
             .in("client_apartado_id", clientApartadoIds)
         ).data ?? [];
 
+  // 6b. Pertenencia organizacional de cada supervisor a departamentos.
+  // Sin esto, un supervisor de un client_apartado se replicaría en TODOS los
+  // departamentos del catálogo del apartado (cross-join implícito).
+  const supProfileIds = [...new Set(supRows.map((r) => r.profile_id as string))];
+  const supDeptMemberships = new Map<string, Set<string>>();
+  if (supProfileIds.length > 0) {
+    const { data: deptRoleRows } = await supabase
+      .from("profile_roles")
+      .select("profile_id, scope_id")
+      .in("profile_id", supProfileIds)
+      .eq("scope_type", "department");
+    for (const row of deptRoleRows ?? []) {
+      const pid = row.profile_id as string;
+      const did = row.scope_id as string;
+      let set = supDeptMemberships.get(pid);
+      if (!set) {
+        set = new Set();
+        supDeptMemberships.set(pid, set);
+      }
+      set.add(did);
+    }
+  }
+
   // 7. Profiles meta de todos los implicados
   const allProfileIds = [
     ...new Set([
@@ -492,7 +515,22 @@ export async function getCompanyResponsibleTeam(
 
   for (const sr of supRows) {
     const apartadoDeptIds = clientApartadoToDepts.get(sr.client_apartado_id as string) ?? [];
-    for (const deptId of apartadoDeptIds) {
+    const ownDepts = supDeptMemberships.get(sr.profile_id as string);
+    // Atribuir al supervisor solo a los departamentos donde realmente pertenece
+    // y que además cubren este apartado en el catálogo. Si la intersección está
+    // vacía (caso raro: supervisor sin pertenencia coincidente), caemos a sus
+    // propios departamentos para que siga siendo visible; si tampoco tiene
+    // departamentos propios, usamos los del apartado como último recurso.
+    const intersection = ownDepts
+      ? apartadoDeptIds.filter((d) => ownDepts.has(d))
+      : [];
+    const targetDepts =
+      intersection.length > 0
+        ? intersection
+        : ownDepts && ownDepts.size > 0
+        ? [...ownDepts]
+        : apartadoDeptIds;
+    for (const deptId of targetDepts) {
       const m = ensureMember(deptId, sr.profile_id as string);
       m.is_supervisor = true;
     }
