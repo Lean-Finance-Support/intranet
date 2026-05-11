@@ -12,10 +12,29 @@ const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 7, // 7 días
 };
 
+const DEFAULT_NEXT = "/app/dashboard";
+
+// Sanea el parámetro `next` a una ruta interna. `new URL(next, origin)` devuelve
+// la URL absoluta cuando `next` es absoluto, así que sin esta validación
+// `?next=https://evil.com` redirige fuera del dominio (open redirect).
+function safeNextPath(raw: string | null): string {
+  if (typeof raw !== "string" || raw.length === 0) return DEFAULT_NEXT;
+  if (!raw.startsWith("/")) return DEFAULT_NEXT;
+  // Bloquea protocolo-relativas (//evil.com) y escapes con backslash.
+  if (raw.startsWith("//") || raw.startsWith("/\\")) return DEFAULT_NEXT;
+  try {
+    const probe = new URL(raw, "https://placeholder.invalid");
+    if (probe.origin !== "https://placeholder.invalid") return DEFAULT_NEXT;
+    return probe.pathname + probe.search + probe.hash;
+  } catch {
+    return DEFAULT_NEXT;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin, pathname } = new URL(request.url);
   const companyId = searchParams.get("companyId");
-  const rawNext = searchParams.get("next") ?? "/app/dashboard";
+  const rawNext = safeNextPath(searchParams.get("next"));
 
   // En dev (localhost) la ruta se sirve como /app/set-company y el middleware no
   // reescribe rutas. Si `next` viene sin prefijo de espacio, hay que añadir /app
