@@ -171,7 +171,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
     window.location.href = loginPath;
   }
 
-  const dashHref = `${linkPrefix}/dashboard`;
+  const dashHref = `${linkPrefix}/inicio`;
   const modelosHref = `${linkPrefix}/modelos`;
   const deptHref = `${linkPrefix}/departamento`;
   const clientesHref = `${linkPrefix}/clientes`;
@@ -179,7 +179,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
 
   const isActive = (href: string) => {
     const path = pathname ?? "";
-    if (href === dashHref) return path === dashHref || path === "/admin/dashboard";
+    if (href === dashHref) return path === dashHref || path === "/admin/inicio";
     return path === href || path.startsWith(href + "/") || path === href.replace(linkPrefix, "");
   };
 

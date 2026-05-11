@@ -37,7 +37,7 @@ export async function handlePostAuthRedirect(
     const adminUrl = isProd
       ? process.env.NEXT_PUBLIC_ADMIN_URL || origin
       : origin;
-    return NextResponse.redirect(new URL(`${adminPrefix}/dashboard`, adminUrl));
+    return NextResponse.redirect(new URL(`${adminPrefix}/inicio`, adminUrl));
   }
 
   // Client: check associated companies (excluye soft-deleted)

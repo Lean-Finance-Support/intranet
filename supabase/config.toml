@@ -34,3 +34,9 @@ verify_jwt = false
 # supervisores y chiefs).
 [functions.notify-client-onboarding-welcome]
 verify_jwt = false
+
+# Invocada desde el server action notifyClientDashboardReady cuando se
+# activa el dashboard fiscal de una empresa (botón de único uso en el panel
+# admin tras configurar el Google Sheet).
+[functions.notify-client-dashboard-ready]
+verify_jwt = false

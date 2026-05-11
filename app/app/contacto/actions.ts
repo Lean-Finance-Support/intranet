@@ -50,6 +50,6 @@ export async function getMyContactTeam(): Promise<ContactTeamData> {
 
   return {
     byDepartment: team.byDepartment,
-    support: { full_name: "Soporte técnico", email: "tech@leanfinance.es" },
+    support: { full_name: "Soporte técnico", email: "mpantoja@leanfinance.es" },
   };
 }

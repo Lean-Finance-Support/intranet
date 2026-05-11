@@ -4,8 +4,12 @@ import { useState, useTransition } from "react";
 import {
   setDashboardSheet,
   clearDashboardSheet,
+  notifyClientDashboardReady,
+  getDashboardReadyEmailPreview,
   type CompanyDashboardConfig,
 } from "@/app/admin/clientes/actions";
+import ConfirmDialog from "@/components/confirm-dialog";
+import EmailPreviewPopover from "@/components/documentation/email-preview-popover";
 
 interface Props {
   companyId: string;
@@ -24,7 +28,12 @@ export default function DashboardSheetPanel({
   const [editing, setEditing] = useState(initialConfig === null);
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const [notifyInfo, setNotifyInfo] = useState<string | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [confirmingNotify, setConfirmingNotify] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isNotifying, startNotifyTransition] = useTransition();
 
   function handleSave() {
     setError(null);
@@ -36,6 +45,7 @@ export default function DashboardSheetPanel({
           sheet_name: null,
           sheet_gid: null,
           updated_at: new Date().toISOString(),
+          client_notified_at: config?.client_notified_at ?? null,
         });
         setEditing(false);
         setUrl("");
@@ -45,18 +55,53 @@ export default function DashboardSheetPanel({
     });
   }
 
-  function handleClear() {
-    if (!confirm("¿Quitar la configuración del Sheet del dashboard de esta empresa?")) return;
+  async function doClear() {
     setError(null);
-    startTransition(async () => {
-      try {
-        await clearDashboardSheet(companyId);
-        setConfig(null);
-        setEditing(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "No se pudo eliminar la configuración.");
-      }
+    await new Promise<void>((resolve) => {
+      startTransition(async () => {
+        try {
+          await clearDashboardSheet(companyId);
+          setConfig(null);
+          setEditing(true);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "No se pudo eliminar la configuración.");
+        }
+        resolve();
+      });
     });
+    setConfirmingClear(false);
+  }
+
+  async function doNotify() {
+    setNotifyError(null);
+    setNotifyInfo(null);
+    await new Promise<void>((resolve) => {
+      startNotifyTransition(async () => {
+        try {
+          const res = await notifyClientDashboardReady(companyId);
+          setConfig((prev) =>
+            prev ? { ...prev, client_notified_at: res.notified_at } : prev
+          );
+          if (res.email_failed > 0 || res.email_error) {
+            setNotifyError(
+              `Aviso: notificación in-app enviada a ${res.recipients} cuentas, pero el email falló. ${
+                res.email_error ?? ""
+              }`
+            );
+          } else {
+            setNotifyInfo(
+              `Notificación enviada a ${res.recipients} cuenta${res.recipients === 1 ? "" : "s"}.`
+            );
+          }
+        } catch (err) {
+          setNotifyError(
+            err instanceof Error ? err.message : "No se pudo notificar al cliente."
+          );
+        }
+        resolve();
+      });
+    });
+    setConfirmingNotify(false);
   }
 
   return (
@@ -102,7 +147,7 @@ export default function DashboardSheetPanel({
                 <span className="text-text-muted">·</span>
                 <button
                   type="button"
-                  onClick={handleClear}
+                  onClick={() => setConfirmingClear(true)}
                   disabled={isPending}
                   className="text-[11px] text-red-500 hover:text-red-600 font-medium cursor-pointer disabled:opacity-50"
                 >
@@ -111,6 +156,52 @@ export default function DashboardSheetPanel({
               </div>
             )}
           </div>
+
+          {canEdit && (
+            <div className="pt-2 border-t border-gray-100">
+              {config.client_notified_at ? (
+                <p className="text-[11px] text-text-muted leading-snug">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 align-middle"></span>
+                  Cliente notificado el{" "}
+                  <strong className="text-text-body">
+                    {new Date(config.client_notified_at).toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </strong>
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-text-muted leading-snug">
+                    Antes de notificar comprueba que todo está bien en{" "}
+                    <strong>Ver Dashboard</strong>. Al notificar se enviará email y notificación
+                    in-app a las cuentas asociadas — solo una vez.
+                  </p>
+                  <EmailPreviewPopover
+                    caption="Pasa el cursor para ver el email exacto"
+                    trigger={
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingNotify(true)}
+                        disabled={isNotifying}
+                        className="text-xs bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isNotifying ? "Notificando…" : "Notificar al cliente"}
+                      </button>
+                    }
+                    fetchPreview={() => getDashboardReadyEmailPreview(companyId)}
+                  />
+                  {notifyError && (
+                    <p className="text-[11px] text-red-500 leading-snug">{notifyError}</p>
+                  )}
+                  {notifyInfo && (
+                    <p className="text-[11px] text-emerald-600 leading-snug">{notifyInfo}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -167,6 +258,27 @@ export default function DashboardSheetPanel({
           debe poder leer el Sheet. Las pestañas de ventas, compras y extractos se detectan por
           nombre.
         </p>
+      )}
+
+      {confirmingClear && (
+        <ConfirmDialog
+          title="Quitar configuración del Sheet"
+          message="¿Quitar la configuración del Sheet del dashboard de esta empresa? Si la has notificado previamente, esa marca también se eliminará."
+          confirmLabel="Quitar"
+          destructive
+          onConfirm={doClear}
+          onCancel={() => setConfirmingClear(false)}
+        />
+      )}
+
+      {confirmingNotify && (
+        <ConfirmDialog
+          title="Notificar al cliente"
+          message="Se enviará un email y una notificación in-app a las cuentas asociadas. Esta acción solo se puede hacer una vez."
+          confirmLabel="Notificar"
+          onConfirm={doNotify}
+          onCancel={() => setConfirmingNotify(false)}
+        />
       )}
     </div>
   );

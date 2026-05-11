@@ -122,15 +122,16 @@ export async function middleware(request: NextRequest) {
   }
 
   const correctSpace = role === "admin" ? "admin" : "app";
+  const homePath = correctSpace === "admin" ? "/inicio" : "/dashboard";
 
-  // En login con sesión → redirigir al dashboard del espacio correcto
+  // En login con sesión → redirigir al home del espacio correcto
   if (isOnLoginPage) {
     if (isProdDomain) {
       const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
-      return NextResponse.redirect(`${correctOrigin}/dashboard`);
+      return NextResponse.redirect(`${correctOrigin}${homePath}`);
     }
     return NextResponse.redirect(
-      new URL(`/${correctSpace}/dashboard`, request.url)
+      new URL(`/${correctSpace}${homePath}`, request.url)
     );
   }
 
@@ -138,10 +139,10 @@ export async function middleware(request: NextRequest) {
   if (space !== correctSpace) {
     if (isProdDomain) {
       const correctOrigin = correctSpace === "admin" ? ADMIN_URL : APP_URL;
-      return NextResponse.redirect(`${correctOrigin}/dashboard`);
+      return NextResponse.redirect(`${correctOrigin}${homePath}`);
     }
     return NextResponse.redirect(
-      new URL(`/${correctSpace}/dashboard`, request.url)
+      new URL(`/${correctSpace}${homePath}`, request.url)
     );
   }
 
