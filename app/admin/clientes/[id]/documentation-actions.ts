@@ -1600,6 +1600,9 @@ export async function remindClientDocumentation(
     .from("client_reminder_log")
     .insert({ company_id: companyId, sent_by: user.id });
   if (logErr) throw new Error(logErr.message);
+
+  // 5. Revalidar la página del cliente para refrescar "Último recordatorio: ..."
+  revalidatePath(`/admin/clientes/${companyId}`);
 }
 
 // ────────────────────────────────────────────────────────────────────────────

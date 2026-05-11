@@ -575,7 +575,10 @@ export default function ClientDetailWorkspace({
                   setAddingApartado({ clientBlockId, blockId: catalogBlockId })
               : undefined
           }
-          onRemindClient={(comment) => remindClientDocumentation(detail.id, comment)}
+          onRemindClient={async (comment) => {
+            await remindClientDocumentation(detail.id, comment);
+            router.refresh();
+          }}
           getReminderPreview={(comment) =>
             getClientReminderPreviewHtml(detail.id, comment)
           }
