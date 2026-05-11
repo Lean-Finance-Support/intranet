@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireCompanyAccess } from "@/lib/require-company-access";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
 import {
   fetchSupervisorCompanyIds,
@@ -403,7 +404,7 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
 // ---------- Company detail (lazy, on panel open) ----------
 
 export async function getCompanyDetail(companyId: string): Promise<CompanyDetailInfo> {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireCompanyAccess(companyId);
 
   const [{ data: company }, { data: profileLinks }, { data: bankAccounts }] = await Promise.all([
     supabase
@@ -447,7 +448,7 @@ export async function getCompanyDetail(companyId: string): Promise<CompanyDetail
 export async function getCompanyResponsibleTeamAction(
   companyId: string
 ): Promise<ResponsibleTeam> {
-  await requireAdmin();
+  await requireCompanyAccess(companyId);
   return getCachedCompanyResponsibleTeam(companyId);
 }
 
