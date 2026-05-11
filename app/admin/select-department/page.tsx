@@ -23,12 +23,12 @@ export default async function SelectDepartmentPage() {
   ]);
 
   if (!profile || profile.role !== "admin") {
-    redirect("/admin/dashboard");
+    redirect("/admin/inicio");
   }
 
   // Si solo tiene 1, auto-seleccionar
   if (departments.length <= 1) {
-    redirect("/admin/dashboard");
+    redirect("/admin/inicio");
   }
 
   return (
@@ -53,7 +53,7 @@ export default async function SelectDepartmentPage() {
           <DepartmentPicker
             departments={departments}
             currentDeptId={currentDeptId}
-            dashboardUrl={`${prefix}/dashboard`}
+            dashboardUrl={`${prefix}/inicio`}
           />
         </div>
       </div>

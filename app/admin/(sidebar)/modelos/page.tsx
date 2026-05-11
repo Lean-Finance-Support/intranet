@@ -24,14 +24,14 @@ export default async function ModelosPage({
   ]);
 
   if (!profile || profile.role !== "admin") {
-    redirect(`${prefix}/dashboard`);
+    redirect(`${prefix}/inicio`);
   }
 
   const deptIds = departments.map((d) => d.id);
-  if (deptIds.length === 0) redirect(`${prefix}/dashboard`);
+  if (deptIds.length === 0) redirect(`${prefix}/inicio`);
 
   const slugs = await getCachedDepartmentServiceSlugs(deptIds);
-  if (!slugs.includes("tax-models")) redirect(`${prefix}/dashboard`);
+  if (!slugs.includes("tax-models")) redirect(`${prefix}/inicio`);
 
   return (
     <div className="min-h-full">
