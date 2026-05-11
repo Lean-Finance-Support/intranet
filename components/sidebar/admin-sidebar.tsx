@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import NotificationsDrawer from "@/components/notifications-drawer";
 import { useUnreadNotifications } from "@/lib/hooks/use-unread-notifications";
+import SearchTrigger from "@/components/search/search-trigger";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -194,6 +195,12 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
     setDrawerOpen((v) => !v);
   }
 
+  const searchSection = (
+    <div className="py-2 border-b border-white/10 flex-shrink-0">
+      <SearchTrigger collapsed={collapsed} />
+    </div>
+  );
+
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
       <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Inicio" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
@@ -301,6 +308,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
             <ChevronLeftIcon className={`w-4 h-4 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
           </button>
         </div>
+        {searchSection}
         {navItems}
         {userSection}
       </div>
@@ -311,6 +319,9 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
           <div className="relative w-64 h-full flex flex-col bg-brand-navy border-l border-white/10 animate-slide-in-right">
             <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto" onClick={() => setMobileOpen(false)}>
+              <div className="mb-2">
+                <SearchTrigger collapsed={false} />
+              </div>
               <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Inicio" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />

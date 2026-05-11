@@ -32,29 +32,32 @@ export default async function SelectDepartmentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-navy flex items-center justify-center px-4">
-      <div className="max-w-lg w-full space-y-4">
-        <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-          <Image
-            src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
-            alt="LeanFinance"
-            width={279}
-            height={96}
-            className="h-8 w-auto mx-auto mb-6"
-            priority
-          />
-          <h1 className="text-2xl font-bold font-heading text-brand-navy mt-1 mb-2">
-            Selecciona un espacio
-          </h1>
-          <p className="text-text-muted text-sm mb-6">
-            {profile.full_name ?? profile.email ?? user.email}
-          </p>
-
-          <DepartmentPicker
-            departments={departments}
-            currentDeptId={currentDeptId}
-            dashboardUrl={`${prefix}/inicio`}
-          />
+    <main className="h-screen overflow-y-auto bg-brand-navy">
+      <div className="min-h-full flex items-center justify-center px-4 py-8">
+        <div className="max-w-lg w-full flex flex-col bg-white rounded-2xl shadow-sm max-h-[calc(100vh-4rem)]">
+          <div className="text-center px-8 pt-8 pb-4 flex-shrink-0">
+            <Image
+              src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
+              alt="LeanFinance"
+              width={279}
+              height={96}
+              className="h-8 w-auto mx-auto mb-6"
+              priority
+            />
+            <h1 className="text-2xl font-bold font-heading text-brand-navy mt-1 mb-2">
+              Selecciona un espacio
+            </h1>
+            <p className="text-text-muted text-sm">
+              {profile.full_name ?? profile.email ?? user.email}
+            </p>
+          </div>
+          <div className="overflow-y-auto px-8 pb-8 pt-2 flex-1 min-h-0">
+            <DepartmentPicker
+              departments={departments}
+              currentDeptId={currentDeptId}
+              dashboardUrl={`${prefix}/inicio`}
+            />
+          </div>
         </div>
       </div>
       <LogoutButton loginPath={`${prefix}/login`} />

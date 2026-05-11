@@ -102,6 +102,15 @@ a[role="button"]:active {
   transition: transform 0.1s ease;
 }
 
+/* ─── Scroll sin barra visible ───────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ─── Respetar prefers-reduced-motion ────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

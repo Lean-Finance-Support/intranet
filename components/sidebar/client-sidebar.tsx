@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { setActiveCompany } from "@/app/app/select-company/actions";
 import NotificationsDrawer from "@/components/notifications-drawer";
 import { useUnreadNotifications } from "@/lib/hooks/use-unread-notifications";
+import SearchTrigger from "@/components/search/search-trigger";
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -246,63 +247,86 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
     : "Sin empresa";
 
   const companySwitcher = activeCompany && (
-    <div ref={switcherRef} className="relative px-2 py-3 border-b border-white/10 flex-shrink-0">
+    <div ref={switcherRef} className="border-b border-white/10 flex-shrink-0">
       <button
+        type="button"
         onClick={() => hasMultipleCompanies && setCompanySwitcherOpen((v) => !v)}
+        title={hasMultipleCompanies ? "Cambiar de empresa" : activeLabel}
         className={`
-          flex items-center gap-3 w-full px-2 py-2 rounded-lg transition-colors
-          ${hasMultipleCompanies ? "hover:bg-white/10 cursor-pointer" : "cursor-default"}
-          ${collapsed ? "justify-center" : ""}
+          relative w-full flex items-center gap-3 py-3 pr-3 pl-[18px] border-l-2 border-transparent
+          transition-colors group/switcher
+          ${hasMultipleCompanies ? "hover:bg-white/5 cursor-pointer" : "cursor-default"}
         `}
       >
-        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-          <BuildingIcon className="w-4 h-4 text-white" />
-        </div>
-        {!collapsed && (
+        {collapsed ? (
+          <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-white/70">
+            <BuildingIcon className="w-5 h-5" />
+          </span>
+        ) : (
           <>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-semibold text-white truncate">{activeLabel}</p>
-              {hasMultipleCompanies && (
-                <p className="text-[10px] text-white/50">{companies.length} empresas</p>
+              <p className="text-sm font-semibold text-white truncate leading-tight">{activeLabel}</p>
+              {hasMultipleCompanies ? (
+                <p className="text-[10px] text-white/40 mt-0.5">
+                  {companies.length} empresas · Cambiar
+                </p>
+              ) : (
+                activeCompany.company_name &&
+                activeCompany.legal_name !== activeCompany.company_name && (
+                  <p className="text-[10px] text-white/40 truncate mt-0.5">{activeCompany.legal_name}</p>
+                )
               )}
             </div>
             {hasMultipleCompanies && (
-              <ChevronUpDownIcon className="w-4 h-4 text-white/60 flex-shrink-0" />
+              <ChevronUpDownIcon
+                className={`w-4 h-4 flex-shrink-0 transition-all duration-200 ${
+                  companySwitcherOpen
+                    ? "text-white/70 rotate-180"
+                    : "text-white/40 group-hover/switcher:text-white/70"
+                }`}
+              />
             )}
           </>
         )}
       </button>
       {companySwitcherOpen && !collapsed && (
-        <div className="absolute left-2 right-2 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+        <div className="max-h-64 overflow-y-auto scrollbar-hide border-t border-white/10 bg-black/15">
           {companies.map((company) => {
-            const isActive = company.id === activeCompany.id;
+            const isItemActive = company.id === activeCompany.id;
             const label = company.company_name || company.legal_name;
             return (
               <button
                 key={company.id}
-                disabled={isActive || switchingCompany}
+                type="button"
+                disabled={isItemActive || switchingCompany}
                 onClick={() => handleSwitchCompany(company.id)}
                 className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
-                  ${isActive ? "bg-brand-teal/5" : "hover:bg-gray-50 cursor-pointer"}
+                  w-full flex items-center gap-3 pr-3 py-2 pl-[18px] text-left transition-colors border-l-2
+                  ${isItemActive
+                    ? "border-brand-teal bg-white/5 text-white"
+                    : "border-transparent text-white/70 hover:bg-white/5 hover:text-white cursor-pointer"
+                  }
                   disabled:cursor-default
                 `}
               >
-                <div className="w-7 h-7 rounded-md bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
-                  <BuildingIcon className="w-3.5 h-3.5 text-brand-teal" />
-                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-brand-navy truncate">{label}</p>
-                  {company.company_name && (
-                    <p className="text-[10px] text-text-muted truncate">{company.legal_name}</p>
+                  <p className="text-sm font-medium truncate leading-tight">{label}</p>
+                  {company.company_name && company.legal_name !== company.company_name && (
+                    <p className="text-[11px] text-white/40 truncate mt-0.5">{company.legal_name}</p>
                   )}
                 </div>
-                {isActive && <CheckIcon className="w-4 h-4 text-brand-teal flex-shrink-0" />}
+                {isItemActive && <CheckIcon className="w-4 h-4 text-brand-teal flex-shrink-0" />}
               </button>
             );
           })}
         </div>
       )}
+    </div>
+  );
+
+  const searchSection = (
+    <div className="py-2 border-b border-white/10 flex-shrink-0">
+      <SearchTrigger collapsed={collapsed} />
     </div>
   );
 
@@ -314,7 +338,9 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
       )}
-      <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
+      {(hasDashboard || hasTaxModels) && (
+        <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
+      )}
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={collapsed} />
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Contacto" href={contactoHref} active={isActive(contactoHref)} collapsed={collapsed} />
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
@@ -415,6 +441,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
           </button>
         </div>
         {companySwitcher}
+        {searchSection}
         {navItems}
         {userSection}
       </div>
@@ -437,38 +464,40 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
                           disabled={isActive || switchingCompany}
                           onClick={() => handleSwitchCompany(company.id)}
                           className={`
-                            w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors
-                            ${isActive ? "bg-white/10" : "hover:bg-white/5 cursor-pointer"}
+                            w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors border-l-2
+                            ${isActive
+                              ? "border-brand-teal bg-white/10"
+                              : "border-transparent hover:bg-white/5 cursor-pointer"
+                            }
                             disabled:cursor-default
                           `}
                         >
-                          <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center flex-shrink-0">
-                            <BuildingIcon className="w-3.5 h-3.5 text-white" />
-                          </div>
-                          <p className="text-xs font-medium text-white truncate flex-1">{label}</p>
+                          <p className="text-sm font-medium text-white truncate flex-1">{label}</p>
                           {isActive && <CheckIcon className="w-4 h-4 text-brand-teal flex-shrink-0" />}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 px-2 py-2">
-                    <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <BuildingIcon className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <p className="text-xs font-semibold text-white truncate">{activeLabel}</p>
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <p className="text-sm font-semibold text-white truncate">{activeLabel}</p>
                   </div>
                 )}
               </div>
             )}
             <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto" onClick={() => setMobileOpen(false)}>
+              <div className="mb-2">
+                <SearchTrigger collapsed={false} />
+              </div>
               {hasDashboard && (
                 <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               )}
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />
               )}
-              <div className="my-2 border-t border-white/10 mx-2" />
+              {(hasDashboard || hasTaxModels) && (
+                <div className="my-2 border-t border-white/10 mx-2" />
+              )}
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Contacto" href={contactoHref} active={isActive(contactoHref)} collapsed={false} />
             </nav>
