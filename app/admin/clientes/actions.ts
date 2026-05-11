@@ -925,6 +925,7 @@ export interface CompanyDashboardConfig {
   sheet_name: string | null;
   sheet_gid: number | null;
   updated_at: string;
+  client_notified_at: string | null;
 }
 
 async function resolveDashboardServiceDeptId(
@@ -948,7 +949,7 @@ export async function getCompanyDashboardConfig(
   const { data } = await supabase
     .schema("dashboard")
     .from("client_dashboards")
-    .select("sheet_id, sheet_name, sheet_gid, updated_at")
+    .select("sheet_id, sheet_name, sheet_gid, updated_at, client_notified_at")
     .eq("company_id", companyId)
     .maybeSingle<CompanyDashboardConfig>();
   return data ?? null;
@@ -1017,4 +1018,130 @@ export async function clearDashboardSheet(companyId: string): Promise<void> {
   if (error) throw new Error("No se pudo eliminar la configuración del dashboard.");
 
   updateTag(`dashboard:${companyId}`);
+}
+
+export interface NotifyClientDashboardReadyResult {
+  ok: true;
+  notified_at: string;
+  recipients: number;
+  email_sent: number;
+  email_failed: number;
+  email_error: string | null;
+}
+
+/**
+ * Notifica al cliente que su dashboard está listo: email + notificación
+ * in-app. Botón de único uso — falla si ya estaba notificado.
+ */
+export async function notifyClientDashboardReady(
+  companyId: string
+): Promise<NotifyClientDashboardReadyResult> {
+  const { supabase, user } = await requireAdmin();
+  const deptId = await resolveDashboardServiceDeptId(supabase);
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
+
+  // El dashboard tiene que estar configurado y no notificado previamente.
+  const { data: existing } = await supabase
+    .schema("dashboard")
+    .from("client_dashboards")
+    .select("client_notified_at")
+    .eq("company_id", companyId)
+    .maybeSingle<{ client_notified_at: string | null }>();
+  if (!existing) {
+    throw new Error("No hay dashboard configurado para esta empresa.");
+  }
+  if (existing.client_notified_at) {
+    throw new Error("Esta empresa ya fue notificada anteriormente.");
+  }
+
+  // Destinatarios: cuentas asociadas (clientes) de la empresa.
+  const admin = createAdminClient();
+  const { data: pcRows } = await admin
+    .from("profile_companies")
+    .select("profile_id, profiles!inner(id, email, role, deleted_at)")
+    .eq("company_id", companyId);
+  type ProfileLike = { id: string; email: string; role: string; deleted_at: string | null };
+  const recipients = ((pcRows ?? []) as { profiles: ProfileLike | ProfileLike[] }[])
+    .map((r) => (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles))
+    .filter((p): p is ProfileLike => !!p && p.role === "client" && p.deleted_at == null);
+  const recipientIds = [...new Set(recipients.map((r) => r.id))];
+
+  if (recipientIds.length === 0) {
+    throw new Error("La empresa no tiene cuentas cliente asociadas a las que notificar.");
+  }
+
+  // Email vía edge function (no bloqueante por fallos de Resend).
+  let emailSent = 0;
+  let emailFailed = 0;
+  let emailError: string | null = null;
+  try {
+    const { data: invokeResult, error: invokeErr } = await admin.functions.invoke(
+      "notify-client-dashboard-ready",
+      {
+        body: {
+          company_id: companyId,
+          sent_by_id: user.id,
+          to_profile_ids: recipientIds,
+        },
+      }
+    );
+    if (invokeErr) {
+      emailFailed = recipientIds.length;
+      emailError = `Invocación: ${invokeErr.message}`;
+      console.error("[dashboard-ready] error invocando email:", invokeErr.message);
+    } else if (invokeResult && typeof invokeResult === "object") {
+      const r = invokeResult as { sent?: number; failed?: number; error?: string; reason?: string };
+      emailSent = r.sent ?? 0;
+      emailFailed = r.failed ?? 0;
+      if (emailFailed > 0 || emailSent === 0) {
+        emailError = r.error ?? r.reason ?? "Resend no devolvió detalle";
+      }
+    } else {
+      emailFailed = recipientIds.length;
+      emailError = "Respuesta inesperada del edge function";
+    }
+  } catch (err) {
+    emailFailed = recipientIds.length;
+    emailError = err instanceof Error ? err.message : "Error desconocido";
+    console.error("[dashboard-ready] excepción invocando email:", err);
+  }
+
+  // Notificación in-app (una fila por destinatario). Mismo patrón que en
+  // otras notificaciones: si el cliente tiene varias empresas, /set-company
+  // primero activa la empresa correcta antes de saltar al dashboard.
+  const notifLink = `/set-company?companyId=${companyId}&next=${encodeURIComponent("/dashboard")}`;
+  const notifRows = recipientIds.map((rid) => ({
+    recipient_id: rid,
+    title: "Tu dashboard fiscal está listo",
+    message:
+      "Hemos activado el dashboard de tu empresa. Ya puedes consultar ventas, compras y bancos desde el portal.",
+    link: notifLink,
+    company_id: companyId,
+  }));
+  const { error: notifErr } = await admin.from("notifications").insert(notifRows);
+  if (notifErr) {
+    console.error("[dashboard-ready] error insertando notificaciones:", notifErr.message);
+  }
+
+  // Marcar como notificado (sirve como lock — el botón ya no aparecerá).
+  const notifiedAt = new Date().toISOString();
+  const { error: updErr } = await supabase
+    .schema("dashboard")
+    .from("client_dashboards")
+    .update({ client_notified_at: notifiedAt, notified_by: user.id })
+    .eq("company_id", companyId);
+  if (updErr) {
+    throw new Error("No se pudo registrar la notificación. Revisa el log.");
+  }
+
+  updateTag(`dashboard:${companyId}`);
+
+  return {
+    ok: true,
+    notified_at: notifiedAt,
+    recipients: recipientIds.length,
+    email_sent: emailSent,
+    email_failed: emailFailed,
+    email_error: emailError,
+  };
 }

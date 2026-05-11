@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   setDashboardSheet,
   clearDashboardSheet,
+  notifyClientDashboardReady,
   type CompanyDashboardConfig,
 } from "@/app/admin/clientes/actions";
 
@@ -24,7 +25,10 @@ export default function DashboardSheetPanel({
   const [editing, setEditing] = useState(initialConfig === null);
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const [notifyInfo, setNotifyInfo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isNotifying, startNotifyTransition] = useTransition();
 
   function handleSave() {
     setError(null);
@@ -36,6 +40,7 @@ export default function DashboardSheetPanel({
           sheet_name: null,
           sheet_gid: null,
           updated_at: new Date().toISOString(),
+          client_notified_at: config?.client_notified_at ?? null,
         });
         setEditing(false);
         setUrl("");
@@ -55,6 +60,40 @@ export default function DashboardSheetPanel({
         setEditing(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : "No se pudo eliminar la configuración.");
+      }
+    });
+  }
+
+  function handleNotify() {
+    if (
+      !confirm(
+        "¿Notificar al cliente que su dashboard está listo? Se enviará un email y una notificación in-app a las cuentas asociadas. Esta acción solo se puede hacer una vez."
+      )
+    )
+      return;
+    setNotifyError(null);
+    setNotifyInfo(null);
+    startNotifyTransition(async () => {
+      try {
+        const res = await notifyClientDashboardReady(companyId);
+        setConfig((prev) =>
+          prev ? { ...prev, client_notified_at: res.notified_at } : prev
+        );
+        if (res.email_failed > 0 || res.email_error) {
+          setNotifyError(
+            `Aviso: notificación in-app enviada a ${res.recipients} cuentas, pero el email falló. ${
+              res.email_error ?? ""
+            }`
+          );
+        } else {
+          setNotifyInfo(
+            `Notificación enviada a ${res.recipients} cuenta${res.recipients === 1 ? "" : "s"}.`
+          );
+        }
+      } catch (err) {
+        setNotifyError(
+          err instanceof Error ? err.message : "No se pudo notificar al cliente."
+        );
       }
     });
   }
@@ -111,6 +150,45 @@ export default function DashboardSheetPanel({
               </div>
             )}
           </div>
+
+          {canEdit && (
+            <div className="pt-2 border-t border-gray-100">
+              {config.client_notified_at ? (
+                <p className="text-[11px] text-text-muted leading-snug">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 align-middle"></span>
+                  Cliente notificado el{" "}
+                  <strong className="text-text-body">
+                    {new Date(config.client_notified_at).toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </strong>
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-text-muted leading-snug">
+                    Comprueba antes el dashboard en <strong>Ver Dashboard</strong>. Al notificar se
+                    enviará email y notificación in-app a las cuentas asociadas — solo una vez.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleNotify}
+                    disabled={isNotifying}
+                    className="text-xs bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:bg-brand-teal/90 disabled:opacity-50 cursor-pointer"
+                  >
+                    {isNotifying ? "Notificando…" : "Notificar al cliente"}
+                  </button>
+                  {notifyError && (
+                    <p className="text-[11px] text-red-500 leading-snug">{notifyError}</p>
+                  )}
+                  {notifyInfo && (
+                    <p className="text-[11px] text-emerald-600 leading-snug">{notifyInfo}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
