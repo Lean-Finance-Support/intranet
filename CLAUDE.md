@@ -226,6 +226,17 @@ El catálogo soporta dos ejes adicionales que se usan tanto al asignar manualmen
 - Tipos: `lib/types/documentation.ts`. **Importante**: los supervisores están en `apartado.supervisors` (array), no como `supervisor_id` escalar.
 - IMPORTANTE para deploy: el schema `documentation` debe estar añadido a "Exposed schemas" en Supabase Dashboard → API Settings (una vez por proyecto). Sin esto el SDK devuelve 404 al hacer `.schema('documentation')`.
 
+### Apartados kind='form' (sin archivos)
+
+Casos del catálogo en los que el cliente aporta **datos estructurados** en lugar de archivos. Hoy: "Alta en el portal de ENISA" (usuario + contraseña) y "Listado de competidores" (lista repetible {comercial, fiscal, CIF}).
+
+- Schema: `documentation.apartados.kind ∈ ('file','form')` + `apartados.slug` (único cuando kind='form'). El payload del cliente vive en `documentation.client_apartados.form_response` JSONB.
+- Validadores compartidos cliente/admin en `lib/documentation/form-payloads.ts` (no es "use server", lo importan ambas server actions).
+- UI: componente React por slug en `components/documentation/forms/<slug>.tsx`. Dispatcher en `forms/index.tsx`. Patrón uniforme: prop `canEdit` controla edición; admin con `validate_documentation` o supervisor del apartado puede rellenar el form en nombre del cliente.
+- Server actions: `submitFormApartado` (cliente) y `adminSubmitFormApartado` (admin con `authorizeValidation`). **Ambos transicionan** `pendiente`/`rechazado` → `enviado` (a diferencia de `adminUploadApartadoFile` que no transiciona — un form se rellena entero, no por partes).
+- ENISA — cifrado AES-256-GCM en `lib/crypto/enisa.ts`. Key en env `ENISA_ENCRYPTION_KEY` (32 bytes base64, generada con `openssl rand -base64 32`). **Una key distinta por entorno**, ambas con backup en 1Password (LeanFinance/Intranet). Sin la key, las contraseñas almacenadas son irrecuperables. Descifrado on-demand vía server action `getDecryptedEnisaPassword` gateado por `authorizeValidation` (Chief o Supervisor del apartado).
+- Si surge un 3er apartado kind='form': añadir slug a `FormApartadoSlug`, shape a `FormResponseBySlug`, validador a `form-payloads.ts`, componente bajo `forms/<slug>.tsx`, y extender el switch de los 2 server actions. NO construir form-builder genérico.
+
 ---
 
 ## Dashboard fiscal (servicio `dashboard`, schema `dashboard`)
@@ -291,6 +302,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 NEXT_PUBLIC_APP_URL=https://app.leanfinance.es
 NEXT_PUBLIC_ADMIN_URL=https://admin.leanfinance.es
 NEXT_PUBLIC_GOOGLE_CLIENT_ID      # Activa flujo GIS (sin URL de Supabase)
+ENISA_ENCRYPTION_KEY              # 32 bytes base64 — cifra contraseñas ENISA (distinta por entorno, backup en 1Password)
 ```
 
 ---
