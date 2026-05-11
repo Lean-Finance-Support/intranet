@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
+import { invalidateResponsibleTeam } from "@/lib/team-queries";
 import type {
   ApartadoTemplate,
   BlockTemplate,
@@ -567,6 +568,7 @@ export async function finalizeOnboarding(
     console.error("[onboarding] excepción invocando welcome email:", e);
   }
 
+  invalidateResponsibleTeam(companyId);
   revalidatePath("/admin/clientes");
   revalidatePath(`/admin/clientes/${companyId}`);
 

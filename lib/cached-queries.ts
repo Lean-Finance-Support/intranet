@@ -149,6 +149,27 @@ export async function getCachedDepartmentServiceSlugs(deptIds: string[]) {
   )();
 }
 
+/**
+ * Catalog role id por nombre (Técnico, Chief, Miembro de departamento,
+ * Supervisor de apartado, etc.). El catálogo `roles` solo se toca en
+ * migraciones, así que cacheamos 1h sin invalidación manual.
+ */
+export async function getCachedRoleIdByName(name: string): Promise<string | null> {
+  return unstable_cache(
+    async () => {
+      const admin = createAdminClient();
+      const { data } = await admin
+        .from("roles")
+        .select("id")
+        .eq("name", name)
+        .maybeSingle();
+      return (data?.id as string | undefined) ?? null;
+    },
+    ["role-id", name],
+    { tags: ["roles"], revalidate: 3600 }
+  )();
+}
+
 /** Service slugs active for a company. Cached 10 min. */
 export async function getCachedCompanyServiceSlugs(companyId: string) {
   return unstable_cache(

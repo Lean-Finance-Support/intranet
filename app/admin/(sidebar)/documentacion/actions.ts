@@ -18,6 +18,7 @@ import type {
   DocumentationTag,
 } from "@/lib/types/documentation";
 import { isValidDocumentationEmailTemplateSlug } from "@/lib/documentation/email-templates";
+import { invalidateResponsibleTeam } from "@/lib/team-queries";
 import {
   previewApartadoTemplateEmail,
   type EmailPreviewResult,
@@ -407,6 +408,9 @@ export async function updateApartado(
       .insert(input.tag_ids.map((tag_id) => ({ apartado_id: apartadoId, tag_id })));
     if (tagError) throw new Error(tagError.message);
   }
+  // Cambios en is_global o en los departamentos del apartado afectan a la
+  // pertenencia de supervisores en cualquier cliente que lo tenga asignado.
+  invalidateResponsibleTeam();
   revalidatePath("/admin/documentacion");
 }
 

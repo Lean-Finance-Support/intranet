@@ -16,6 +16,7 @@ import {
   getActorAndApartadoLabel,
   notifyDocumentationClients,
 } from "@/lib/notifications/documentation";
+import { invalidateResponsibleTeam } from "@/lib/team-queries";
 import type {
   ApartadoStatus,
   ApartadoSupervisor,
@@ -752,6 +753,7 @@ export async function addBlockToClient(input: {
       if (supErr) throw new Error(supErr.message);
     }
   }
+  invalidateResponsibleTeam(input.companyId);
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
@@ -812,6 +814,7 @@ export async function addApartadoToClient(input: {
     );
     if (supErr) throw new Error(supErr.message);
   }
+  invalidateResponsibleTeam(input.companyId);
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
@@ -853,6 +856,7 @@ export async function removeApartadoFromClient(
     .delete()
     .eq("id", clientApartadoId);
   if (error) throw new Error(error.message);
+  invalidateResponsibleTeam(companyId);
   revalidatePath(`/admin/clientes/${companyId}`);
 }
 
@@ -885,6 +889,7 @@ export async function removeBlockFromClient(
     .delete()
     .eq("id", clientBlockId);
   if (error) throw new Error(error.message);
+  invalidateResponsibleTeam(companyId);
   revalidatePath(`/admin/clientes/${companyId}`);
 }
 
@@ -936,6 +941,7 @@ export async function addSupervisor(input: {
       }
     );
   if (error) throw new Error(error.message);
+  invalidateResponsibleTeam(input.companyId);
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 
@@ -957,6 +963,7 @@ export async function removeSupervisor(input: {
     .eq("scope_type", "client_apartado")
     .eq("scope_id", input.clientApartadoId);
   if (error) throw new Error(error.message);
+  invalidateResponsibleTeam(input.companyId);
   revalidatePath(`/admin/clientes/${input.companyId}`);
 }
 

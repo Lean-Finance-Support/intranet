@@ -10,6 +10,7 @@ import {
   getActorAndApartadoLabel,
 } from "@/lib/notifications/documentation";
 import { isValidDocumentationEmailTemplateSlug } from "@/lib/documentation/email-templates";
+import { invalidateResponsibleTeam } from "@/lib/team-queries";
 import type {
   ApartadoTemplate,
   ApartadoTemplateFile,
@@ -537,6 +538,9 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
       }
     }
   }
+
+  // Invalidar el equipo responsable de cada empresa afectada
+  for (const companyId of input.companyIds) invalidateResponsibleTeam(companyId);
 
   // Revalidar páginas que muestran apartados/clientes
   revalidatePath("/admin/documentacion");

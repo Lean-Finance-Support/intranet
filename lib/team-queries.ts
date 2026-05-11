@@ -13,6 +13,9 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { unstable_cache, updateTag } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/server";
+import { getCachedRoleIdByName } from "@/lib/cached-queries";
 
 type DB = SupabaseClient;
 
@@ -22,22 +25,12 @@ export interface TechRow {
   full_name: string | null;
 }
 
-async function fetchTecnicoRoleId(supabase: DB): Promise<string | null> {
-  const { data } = await supabase
-    .from("roles")
-    .select("id")
-    .eq("name", "Técnico")
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+async function fetchTecnicoRoleId(): Promise<string | null> {
+  return getCachedRoleIdByName("Técnico");
 }
 
-async function fetchChiefRoleId(supabase: DB): Promise<string | null> {
-  const { data } = await supabase
-    .from("roles")
-    .select("id")
-    .eq("name", "Chief")
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+async function fetchChiefRoleId(): Promise<string | null> {
+  return getCachedRoleIdByName("Chief");
 }
 
 /**
@@ -48,7 +41,7 @@ export async function fetchTechniciansForService(
   companyId: string,
   serviceId: string
 ): Promise<TechRow[]> {
-  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  const tecnicoRoleId = await fetchTecnicoRoleId();
   if (!tecnicoRoleId) return [];
 
   // 1. Buscar el company_services.id para este (company, service)
@@ -95,7 +88,7 @@ export async function fetchTechniciansByServiceIds(
 ): Promise<Array<{ company_id: string; service_id: string; technician_id: string }>> {
   if (serviceIds.length === 0) return [];
 
-  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  const tecnicoRoleId = await fetchTecnicoRoleId();
   if (!tecnicoRoleId) return [];
 
   // 1. Todos los company_services con esos service_ids
@@ -144,7 +137,7 @@ export async function fetchChiefsForDepartment(
   supabase: DB,
   departmentId: string
 ): Promise<TechRow[]> {
-  const chiefRoleId = await fetchChiefRoleId(supabase);
+  const chiefRoleId = await fetchChiefRoleId();
   if (!chiefRoleId) return [];
 
   const { data: rolesData } = await supabase
@@ -178,7 +171,7 @@ export async function isTechnicianOf(
   companyId: string,
   serviceId: string
 ): Promise<boolean> {
-  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  const tecnicoRoleId = await fetchTecnicoRoleId();
   if (!tecnicoRoleId) return false;
 
   const { data: cs } = await supabase
@@ -200,13 +193,8 @@ export async function isTechnicianOf(
   return (data ?? []).length > 0;
 }
 
-async function fetchSupervisorRoleId(supabase: DB): Promise<string | null> {
-  const { data } = await supabase
-    .from("roles")
-    .select("id")
-    .eq("name", "Supervisor de apartado")
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+async function fetchSupervisorRoleId(): Promise<string | null> {
+  return getCachedRoleIdByName("Supervisor de apartado");
 }
 
 /**
@@ -218,7 +206,7 @@ export async function fetchSupervisorCompanyIds(
   supabase: DB,
   profileId: string
 ): Promise<Set<string>> {
-  const supervisorRoleId = await fetchSupervisorRoleId(supabase);
+  const supervisorRoleId = await fetchSupervisorRoleId();
   if (!supervisorRoleId) return new Set();
 
   const { data: roleRows } = await supabase
@@ -324,7 +312,7 @@ export async function getCompanyResponsibleTeam(
   }
 
   // 3. Técnicos
-  const tecnicoRoleId = await fetchTecnicoRoleId(supabase);
+  const tecnicoRoleId = await fetchTecnicoRoleId();
   const techRoles =
     csIds.length > 0 && tecnicoRoleId
       ? (
@@ -437,11 +425,13 @@ export async function getCompanyResponsibleTeam(
   const supProfileIds = [...new Set(supRows.map((r) => r.profile_id as string))];
   const supDeptMemberships = new Map<string, Set<string>>();
   if (supProfileIds.length > 0) {
-    const { data: memberRoleRows } = await supabase
-      .from("roles")
-      .select("id")
-      .in("name", ["Miembro de departamento", "Chief"]);
-    const memberRoleIds = (memberRoleRows ?? []).map((r) => r.id as string);
+    const [miembroRoleId, chiefRoleIdForMember] = await Promise.all([
+      getCachedRoleIdByName("Miembro de departamento"),
+      getCachedRoleIdByName("Chief"),
+    ]);
+    const memberRoleIds = [miembroRoleId, chiefRoleIdForMember].filter(
+      (id): id is string => !!id
+    );
 
     if (memberRoleIds.length > 0) {
       const { data: deptRoleRows } = await supabase
@@ -496,7 +486,7 @@ export async function getCompanyResponsibleTeam(
       ? Promise.resolve({ data: [] as { id: string; name: string }[] })
       : supabase.from("departments").select("id, name").in("id", allDeptIds),
     (async () => {
-      const chiefRoleId = await fetchChiefRoleId(supabase);
+      const chiefRoleId = await fetchChiefRoleId();
       if (!chiefRoleId || allDeptIds.length === 0) return [] as { profile_id: string; scope_id: string }[];
       const { data } = await supabase
         .from("profile_roles")
@@ -592,4 +582,42 @@ export async function getCompanyResponsibleTeam(
   byDepartment.sort((a, b) => a.department_name.localeCompare(b.department_name, "es"));
 
   return { byDepartment };
+}
+
+// ─── Versión cacheada + helper de invalidación ──────────────────────────
+//
+// El equipo responsable agrega ~14 queries y se renderiza tanto en el panel
+// admin como en el portal cliente (/app/contacto). Cacheamos por companyId
+// con TTL de 1h como red de seguridad — el camino normal es invalidar con
+// `invalidateResponsibleTeam` desde las server actions que mutan algo que
+// afecta al equipo.
+
+export async function getCachedCompanyResponsibleTeam(
+  companyId: string
+): Promise<ResponsibleTeam> {
+  return unstable_cache(
+    async () => {
+      const admin = createAdminClient();
+      return getCompanyResponsibleTeam(admin, companyId);
+    },
+    ["responsible-team", companyId],
+    {
+      tags: [`responsible-team:${companyId}`, "responsible-team"],
+      revalidate: 3600,
+    }
+  )();
+}
+
+/**
+ * Invalida el cache del equipo responsable. Pasa `companyId` para invalidar
+ * una empresa concreta, o llama sin args para invalidar todas (usar solo
+ * cuando una mutación afecta a varias empresas — p.ej. cambio de chief de
+ * dept que altera todos los clientes con servicios de ese dept).
+ */
+export function invalidateResponsibleTeam(companyId?: string): void {
+  if (companyId) {
+    updateTag(`responsible-team:${companyId}`);
+  } else {
+    updateTag("responsible-team");
+  }
 }

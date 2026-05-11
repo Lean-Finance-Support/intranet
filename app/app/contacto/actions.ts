@@ -4,7 +4,7 @@ import { requireClient } from "@/lib/require-client";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   fetchChiefsForDepartment,
-  getCompanyResponsibleTeam,
+  getCachedCompanyResponsibleTeam,
   type ResponsibleTeamMember,
 } from "@/lib/team-queries";
 
@@ -23,7 +23,7 @@ export async function getMyContactTeam(): Promise<ContactTeamData> {
   const { companyId } = await requireClient();
   const admin = createAdminClient();
 
-  const team = await getCompanyResponsibleTeam(admin, companyId);
+  const team = await getCachedCompanyResponsibleTeam(companyId);
 
   // Para cada departamento implicado (i.e. con técnico o supervisor asignado),
   // asegurar que el chief del departamento aparece — aunque no esté asignado

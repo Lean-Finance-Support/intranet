@@ -6,7 +6,8 @@ import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-pe
 import {
   fetchSupervisorCompanyIds,
   fetchTechniciansByServiceIds,
-  getCompanyResponsibleTeam,
+  getCachedCompanyResponsibleTeam,
+  invalidateResponsibleTeam,
   type ResponsibleTeam,
 } from "@/lib/team-queries";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -447,7 +448,7 @@ export async function getCompanyResponsibleTeamAction(
   companyId: string
 ): Promise<ResponsibleTeam> {
   await requireAdmin();
-  return getCompanyResponsibleTeam(createAdminClient(), companyId);
+  return getCachedCompanyResponsibleTeam(companyId);
 }
 
 // ---------- Update company name ----------
@@ -545,6 +546,7 @@ export async function addServiceToCompany(
   );
 
   if (error) throw new Error("Error al añadir el servicio.");
+  invalidateResponsibleTeam(companyId);
 }
 
 export async function removeServiceFromCompany(
@@ -562,6 +564,7 @@ export async function removeServiceFromCompany(
     .eq("service_id", serviceId);
 
   if (error) throw new Error("Error al eliminar el servicio.");
+  invalidateResponsibleTeam(companyId);
 
   // Si quitamos el servicio Dashboard, limpiamos también la configuración del Sheet.
   const { data: svc } = await supabase
@@ -634,6 +637,7 @@ export async function assignTechnicianAdmin(
     scope_id: csId,
   });
   if (tErr && tErr.code !== "23505") throw new Error("Error al asignar el técnico.");
+  invalidateResponsibleTeam(companyId);
 }
 
 export async function removeTechnicianAdmin(
@@ -657,6 +661,7 @@ export async function removeTechnicianAdmin(
     .eq("scope_type", "company_service")
     .eq("scope_id", csId);
   if (error) throw new Error("Error al quitar el técnico.");
+  invalidateResponsibleTeam(companyId);
 }
 
 export async function assignAllTechniciansAdmin(
@@ -706,6 +711,7 @@ export async function assignAllTechniciansAdmin(
     { onConflict: "profile_id,role_id,scope_type,scope_id", ignoreDuplicates: true }
   );
   if (error && error.code !== "23505") throw new Error("Error al asignar técnicos.");
+  invalidateResponsibleTeam(companyId);
 }
 
 // ---------- Crear empresa ----------

@@ -3,7 +3,10 @@
 import { requireAdmin } from "@/lib/require-admin";
 import { requirePermission } from "@/lib/require-permission";
 import { GRANTABLE_PERMISSIONS } from "@/lib/permission-catalog";
-import { fetchTechniciansByServiceIds } from "@/lib/team-queries";
+import {
+  fetchTechniciansByServiceIds,
+  invalidateResponsibleTeam,
+} from "@/lib/team-queries";
 
 // ---------- Types ----------
 
@@ -455,6 +458,7 @@ export async function assignTechnician(
   const csId = await resolveCompanyServiceId(supabase, companyId, serviceId);
   if (!csId) throw new Error("Servicio no contratado por esta empresa.");
   await addTecnicoRole(supabase, technicianId, csId);
+  invalidateResponsibleTeam(companyId);
 }
 
 // ---------- Remove technician from company service ----------
@@ -471,6 +475,7 @@ export async function removeTechnician(
   const csId = await resolveCompanyServiceId(supabase, companyId, serviceId);
   if (!csId) return;
   await removeTecnicoRole(supabase, technicianId, csId);
+  invalidateResponsibleTeam(companyId);
 }
 
 // ---------- Assign ALL department members to a company service ----------
@@ -521,6 +526,7 @@ export async function assignAllMembers(
     console.error("[admin/departamento] assignAllMembers error:", error.code);
     throw new Error("Error al asignar miembros.");
   }
+  invalidateResponsibleTeam(companyId);
 }
 
 // ---------- Perfiles admin elegibles para añadir a un depto ----------
@@ -580,6 +586,10 @@ export async function addDeptMember(
     console.error("[admin/departamento] addDeptMember error:", error.code);
     throw new Error("No se pudo añadir al departamento.");
   }
+  // Miembro afecta a la pertenencia organizacional de supervisores en varios
+  // clientes; invalidamos todos los responsible-team. Observador/Operador no
+  // cuentan como pertenencia pero invalidamos igualmente por consistencia.
+  invalidateResponsibleTeam();
 }
 
 export async function removeDeptMember(
@@ -602,4 +612,5 @@ export async function removeDeptMember(
     console.error("[admin/departamento] removeDeptMember error:", error.code);
     throw new Error("No se pudo quitar del departamento.");
   }
+  invalidateResponsibleTeam();
 }
