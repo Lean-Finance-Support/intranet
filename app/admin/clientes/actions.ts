@@ -12,6 +12,10 @@ import {
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import { getDashboardData, parseSheetUrl, DashboardSheetError } from "@/lib/google-sheets/client";
+import {
+  buildClientDashboardReadyPreviewHtml,
+  buildClientDashboardReadyPreviewSubject,
+} from "@/lib/dashboard/email-previews/client-dashboard-ready";
 
 /**
  * Resuelve el departamento activo para un servicio (vía department_services).
@@ -1054,17 +1058,16 @@ export async function notifyClientDashboardReady(
     throw new Error("Esta empresa ya fue notificada anteriormente.");
   }
 
-  // Destinatarios: cuentas asociadas (clientes) de la empresa.
+  // Destinatarios: cuentas asociadas (clientes) de la empresa. profile_companies
+  // solo contiene cuentas cliente por convención del producto.
   const admin = createAdminClient();
   const { data: pcRows } = await admin
     .from("profile_companies")
-    .select("profile_id, profiles!inner(id, email, role, deleted_at)")
+    .select("profile_id")
     .eq("company_id", companyId);
-  type ProfileLike = { id: string; email: string; role: string; deleted_at: string | null };
-  const recipients = ((pcRows ?? []) as { profiles: ProfileLike | ProfileLike[] }[])
-    .map((r) => (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles))
-    .filter((p): p is ProfileLike => !!p && p.role === "client" && p.deleted_at == null);
-  const recipientIds = [...new Set(recipients.map((r) => r.id))];
+  const recipientIds = [
+    ...new Set((pcRows ?? []).map((r) => r.profile_id as string)),
+  ];
 
   if (recipientIds.length === 0) {
     throw new Error("La empresa no tiene cuentas cliente asociadas a las que notificar.");
@@ -1144,4 +1147,65 @@ export async function notifyClientDashboardReady(
     email_failed: emailFailed,
     email_error: emailError,
   };
+}
+
+/**
+ * Genera la vista previa del email que se enviaría al notificar al cliente.
+ * Usado por el popover de hover en el panel admin del dashboard.
+ */
+export async function getDashboardReadyEmailPreview(
+  companyId: string
+): Promise<{ subject: string; html: string }> {
+  const { supabase } = await requireAdmin();
+  const deptId = await resolveDashboardServiceDeptId(supabase);
+  await requirePermission("write_dept_service", { type: "department", id: deptId });
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("legal_name, company_name")
+    .eq("id", companyId)
+    .maybeSingle<{ legal_name: string | null; company_name: string | null }>();
+  const companyName =
+    company?.company_name ?? company?.legal_name ?? "tu empresa";
+
+  const admin = createAdminClient();
+  const { data: pcRows } = await admin
+    .from("profile_companies")
+    .select("profile_id")
+    .eq("company_id", companyId);
+  const recipientIds = [
+    ...new Set((pcRows ?? []).map((r) => r.profile_id as string)),
+  ];
+
+  let recipientNames: string[] = [];
+  if (recipientIds.length > 0) {
+    const { data: profiles } = await admin
+      .from("profiles")
+      .select("email, full_name")
+      .in("id", recipientIds);
+    recipientNames = (profiles ?? [])
+      .map((p) => firstName((p.full_name as string | null) ?? null, p.email as string))
+      .filter(Boolean);
+  }
+
+  const portalUrl = `https://app.leanfinance.es/set-company?companyId=${companyId}&next=${encodeURIComponent(
+    "/dashboard"
+  )}`;
+
+  return {
+    subject: buildClientDashboardReadyPreviewSubject({ companyName }),
+    html: buildClientDashboardReadyPreviewHtml({
+      companyName,
+      recipientNames,
+      portalUrl,
+    }),
+  };
+}
+
+function firstName(fullName: string | null, email: string): string {
+  const trimmed = (fullName ?? "").trim();
+  if (trimmed) return trimmed.split(/\s+/)[0];
+  const local = (email ?? "").split("@")[0] ?? "";
+  if (!local) return "";
+  return local.charAt(0).toUpperCase() + local.slice(1);
 }
