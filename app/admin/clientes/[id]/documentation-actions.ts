@@ -1584,6 +1584,10 @@ export async function remindClientDocumentation(
 
   // 3. Invocar edge function — solo si responde 2xx grabamos el throttle
   const trimmedComment = comment?.trim();
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw new Error("WEBHOOK_SECRET no configurado en el servidor");
+  }
   const { data, error: invokeErr } = await admin.functions.invoke(
     "notify-documentation-client-reminder",
     {
@@ -1592,6 +1596,7 @@ export async function remindClientDocumentation(
         sent_by_id: user.id,
         comment: trimmedComment ? trimmedComment : undefined,
       },
+      headers: { "x-webhook-secret": webhookSecret },
     }
   );
   if (invokeErr) {

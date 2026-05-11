@@ -14,6 +14,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { verifyWebhookSecret } from "../_shared/verify-webhook-secret.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_FROM = "Lean Finance <noreply@leanfinance.es>";
@@ -42,6 +43,9 @@ interface SupervisorInfo {
 }
 
 Deno.serve(async (req: Request) => {
+  const unauthorized = verifyWebhookSecret(req);
+  if (unauthorized) return unauthorized;
+
   let payload: Payload;
   try {
     payload = await req.json();

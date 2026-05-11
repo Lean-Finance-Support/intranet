@@ -13,8 +13,8 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { verifyWebhookSecret } from "../_shared/verify-webhook-secret.ts";
 
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_FROM = "Lean Finance <noreply@leanfinance.es>";
 const ADMIN_URL = "https://admin.leanfinance.es";
@@ -41,10 +41,8 @@ interface ApartadoToReview {
 }
 
 Deno.serve(async (req: Request) => {
-  const secret = req.headers.get("x-webhook-secret");
-  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const unauthorized = verifyWebhookSecret(req);
+  if (unauthorized) return unauthorized;
 
   // Guard horario: pg_cron está programado a las 05:00 y 06:00 UTC para cubrir
   // ambos lados del DST de Madrid; solo enviamos en la corrida que coincide

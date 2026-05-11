@@ -1083,36 +1083,44 @@ export async function notifyClientDashboardReady(
   let emailSent = 0;
   let emailFailed = 0;
   let emailError: string | null = null;
-  try {
-    const { data: invokeResult, error: invokeErr } = await admin.functions.invoke(
-      "notify-client-dashboard-ready",
-      {
-        body: {
-          company_id: companyId,
-          sent_by_id: user.id,
-          to_profile_ids: recipientIds,
-        },
-      }
-    );
-    if (invokeErr) {
-      emailFailed = recipientIds.length;
-      emailError = `Invocación: ${invokeErr.message}`;
-      console.error("[dashboard-ready] error invocando email:", invokeErr.message);
-    } else if (invokeResult && typeof invokeResult === "object") {
-      const r = invokeResult as { sent?: number; failed?: number; error?: string; reason?: string };
-      emailSent = r.sent ?? 0;
-      emailFailed = r.failed ?? 0;
-      if (emailFailed > 0 || emailSent === 0) {
-        emailError = r.error ?? r.reason ?? "Resend no devolvió detalle";
-      }
-    } else {
-      emailFailed = recipientIds.length;
-      emailError = "Respuesta inesperada del edge function";
-    }
-  } catch (err) {
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) {
     emailFailed = recipientIds.length;
-    emailError = err instanceof Error ? err.message : "Error desconocido";
-    console.error("[dashboard-ready] excepción invocando email:", err);
+    emailError = "WEBHOOK_SECRET no configurado en el servidor";
+    console.error("[dashboard-ready] WEBHOOK_SECRET no configurado — omitiendo email");
+  } else {
+    try {
+      const { data: invokeResult, error: invokeErr } = await admin.functions.invoke(
+        "notify-client-dashboard-ready",
+        {
+          body: {
+            company_id: companyId,
+            sent_by_id: user.id,
+            to_profile_ids: recipientIds,
+          },
+          headers: { "x-webhook-secret": webhookSecret },
+        }
+      );
+      if (invokeErr) {
+        emailFailed = recipientIds.length;
+        emailError = `Invocación: ${invokeErr.message}`;
+        console.error("[dashboard-ready] error invocando email:", invokeErr.message);
+      } else if (invokeResult && typeof invokeResult === "object") {
+        const r = invokeResult as { sent?: number; failed?: number; error?: string; reason?: string };
+        emailSent = r.sent ?? 0;
+        emailFailed = r.failed ?? 0;
+        if (emailFailed > 0 || emailSent === 0) {
+          emailError = r.error ?? r.reason ?? "Resend no devolvió detalle";
+        }
+      } else {
+        emailFailed = recipientIds.length;
+        emailError = "Respuesta inesperada del edge function";
+      }
+    } catch (err) {
+      emailFailed = recipientIds.length;
+      emailError = err instanceof Error ? err.message : "Error desconocido";
+      console.error("[dashboard-ready] excepción invocando email:", err);
+    }
   }
 
   // Notificación in-app (una fila por destinatario). Mismo patrón que en
