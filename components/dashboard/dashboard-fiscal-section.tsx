@@ -1,7 +1,14 @@
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardSheetError, getRawDashboardData } from "@/lib/google-sheets/client";
-import type { RawDashboardData } from "@/lib/dashboard/aggregate";
+import {
+  DashboardSheetError,
+  expandCachedDashboard,
+  getCompactDashboardData,
+} from "@/lib/google-sheets/client";
+import type {
+  CachedDashboardData,
+  RawDashboardData,
+} from "@/lib/dashboard/aggregate";
 import DashboardFiscalClient from "./dashboard-fiscal-client";
 
 interface Props {
@@ -25,12 +32,17 @@ async function loadDashboardConfig(
   return data ?? null;
 }
 
-function getCachedRawData(sheetId: string, companyId: string) {
+function getCachedCompactData(
+  sheetId: string,
+  companyId: string
+): Promise<CachedDashboardData> {
   return unstable_cache(
-    async () => getRawDashboardData(sheetId),
-    // v5: añade `documentNumber` en SaleDetail/PurchaseDetail y `description`
-    // en RawBankRow. Bumpear si cambia el shape de RawDashboardData.
-    ["dashboard-raw-v5", companyId, sheetId],
+    async () => getCompactDashboardData(sheetId),
+    // v6: pasa a formato columnar `CachedDashboardData` (string interning +
+    // tuplas) para no rebasar el límite de 2 MiB de unstable_cache con sheets
+    // grandes. Quita `description` del banco (no se consumía). Bumpear si
+    // cambia el shape de CachedDashboardData.
+    ["dashboard-raw-v6", companyId, sheetId],
     // El Sheet del equipo se actualiza 1x/día, cacheamos 24h. El admin puede
     // forzar refresh quitando+poniendo la config del Sheet si es urgente.
     { tags: [`dashboard:${companyId}`], revalidate: 86400 }
@@ -65,7 +77,8 @@ export default async function DashboardFiscalSection({
 
   let raw: RawDashboardData;
   try {
-    raw = await getCachedRawData(config.sheet_id, companyId);
+    const cached = await getCachedCompactData(config.sheet_id, companyId);
+    raw = expandCachedDashboard(cached);
   } catch (err) {
     const message =
       err instanceof DashboardSheetError

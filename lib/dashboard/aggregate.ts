@@ -132,7 +132,6 @@ export interface RawPurchaseRow {
 }
 export interface RawBankRow {
   date: string;
-  description: string;
   amount: number;
   reconciled: number;
   status: string;
@@ -146,6 +145,136 @@ export interface RawDashboardData {
   fetchedAt: string;
   yearsAvailable: number[];
   bankAccounts: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Formato compacto para `unstable_cache`
+// ---------------------------------------------------------------------------
+//
+// Next.js limita las entradas de `unstable_cache` a 2 MiB. Sheets grandes
+// pueden generar payloads `RawDashboardData` por encima de ese límite cuando
+// se serializan a JSON (los nombres de cliente/proveedor se repiten miles de
+// veces y cada fila lleva 7+ keys verbosas). Cacheamos un formato columnar:
+// arrays paralelos de campos primitivos + diccionario de strings deduplicado
+// (clientes, proveedores, cuentas, estados). En memoria se vuelve a expandir
+// a `RawDashboardData` antes de pasarlo a la agregación, así el resto del
+// pipeline no se entera.
+//
+// Reducción típica: ~3-4x menos bytes que el JSON de `RawDashboardData`.
+
+export interface CachedDashboardData {
+  v: 1;
+  // Diccionario único de strings — cada fila referencia por índice.
+  strings: string[];
+  // Cada fila se serializa como tupla posicional. Los strings se reemplazan
+  // por su índice en `strings`. Los números se preservan.
+  // sales: [dateIdx, clientIdx, docIdx, subtotal, total, collected, statusIdx]
+  sales: Array<[number, number, number, number, number, number, number]>;
+  // purchases: [dateIdx, providerIdx, docIdx, subtotal, total, paid, statusIdx]
+  purchases: Array<[number, number, number, number, number, number, number]>;
+  // banks: [dateIdx, amount, reconciled, statusIdx, accountIdx]
+  banks: Array<[number, number, number, number, number]>;
+  fetchedAt: string;
+  yearsAvailable: number[];
+  bankAccounts: string[];
+}
+
+class StringInterner {
+  private readonly map = new Map<string, number>();
+  readonly list: string[] = [];
+  intern(s: string): number {
+    const existing = this.map.get(s);
+    if (existing !== undefined) return existing;
+    const idx = this.list.length;
+    this.list.push(s);
+    this.map.set(s, idx);
+    return idx;
+  }
+}
+
+export function compactRawDashboard(raw: RawDashboardData): CachedDashboardData {
+  const interner = new StringInterner();
+  const sales = raw.sales.map(
+    (s) =>
+      [
+        interner.intern(s.date),
+        interner.intern(s.client),
+        interner.intern(s.documentNumber),
+        s.subtotal,
+        s.total,
+        s.collected,
+        interner.intern(s.status),
+      ] as [number, number, number, number, number, number, number]
+  );
+  const purchases = raw.purchases.map(
+    (p) =>
+      [
+        interner.intern(p.date),
+        interner.intern(p.provider),
+        interner.intern(p.documentNumber),
+        p.subtotal,
+        p.total,
+        p.paid,
+        interner.intern(p.status),
+      ] as [number, number, number, number, number, number, number]
+  );
+  const banks = raw.banks.map(
+    (b) =>
+      [
+        interner.intern(b.date),
+        b.amount,
+        b.reconciled,
+        interner.intern(b.status),
+        interner.intern(b.account),
+      ] as [number, number, number, number, number]
+  );
+  return {
+    v: 1,
+    strings: interner.list,
+    sales,
+    purchases,
+    banks,
+    fetchedAt: raw.fetchedAt,
+    yearsAvailable: raw.yearsAvailable,
+    bankAccounts: raw.bankAccounts,
+  };
+}
+
+export function expandCachedDashboard(cached: CachedDashboardData): RawDashboardData {
+  const s = cached.strings;
+  const sales: RawSaleRow[] = cached.sales.map((r) => ({
+    date: s[r[0]],
+    client: s[r[1]],
+    documentNumber: s[r[2]],
+    subtotal: r[3],
+    total: r[4],
+    collected: r[5],
+    status: s[r[6]],
+  }));
+  const purchases: RawPurchaseRow[] = cached.purchases.map((r) => ({
+    date: s[r[0]],
+    provider: s[r[1]],
+    documentNumber: s[r[2]],
+    subtotal: r[3],
+    total: r[4],
+    paid: r[5],
+    status: s[r[6]],
+  }));
+  const banks: RawBankRow[] = cached.banks.map((r) => ({
+    date: s[r[0]],
+    amount: r[1],
+    reconciled: r[2],
+    status: s[r[3]],
+    account: s[r[4]],
+  }));
+  return {
+    sales,
+    purchases,
+    banks,
+    fetchedAt: cached.fetchedAt,
+    yearsAvailable: cached.yearsAvailable,
+    bankAccounts: cached.bankAccounts,
+  };
 }
 
 // ---------------------------------------------------------------------------
