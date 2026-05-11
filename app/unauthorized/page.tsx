@@ -42,7 +42,7 @@ export default function UnauthorizedPage() {
           </p>
 
           <a
-            href="mailto:tech@leanfinance.es"
+            href="mailto:mpantoja@leanfinance.es"
             className="inline-block bg-brand-teal text-white font-medium text-sm px-6 py-3 rounded-full hover:bg-opacity-90 transition-colors"
           >
             Contactar con soporte
