@@ -1,15 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { verifyWebhookSecret } from "../_shared/verify-webhook-secret.ts";
 
 const ADMIN_URL = "https://admin.leanfinance.es";
 const EMAIL_FROM = "LeanFinance <noreply@leanfinance.es>";
-const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
 
 Deno.serve(async (req: Request) => {
-  const secret = req.headers.get("x-webhook-secret");
-  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  const unauthorized = verifyWebhookSecret(req);
+  if (unauthorized) return unauthorized;
 
   let payload: { company_id?: string; year?: number; quarter?: number };
   try {

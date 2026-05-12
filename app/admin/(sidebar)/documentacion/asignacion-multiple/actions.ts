@@ -391,6 +391,7 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
   let supervisorsAssigned = 0;
   let emailsSent = 0;
   const emailErrors: string[] = [];
+  const webhookSecret = process.env.WEBHOOK_SECRET;
 
   for (const companyId of input.companyIds) {
     // 5a. client_blocks
@@ -511,29 +512,36 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
       const slug = a.email_template_slug as string | null;
       const sendEmail = !!slug && input.sendEmailByApartado[aid] === true;
       if (sendEmail) {
-        const { data: invokeData, error: invokeErr } = await adminCli.functions.invoke(
-          "notify-documentation-template-email",
-          {
-            body: {
-              company_id: companyId,
-              client_apartado_id: clientApartadoId,
-              template_slug: slug,
-              sent_by_id: user.id,
-            },
-          }
-        );
-        if (invokeErr) {
-          const detail =
-            invokeData && typeof invokeData === "object" && "error" in invokeData
-              ? String((invokeData as { error: unknown }).error)
-              : invokeErr.message;
-          emailErrors.push(`empresa ${companyId} / apartado "${a.name as string}": ${detail}`);
+        if (!webhookSecret) {
+          emailErrors.push(
+            `empresa ${companyId} / apartado "${a.name as string}": WEBHOOK_SECRET no configurado`
+          );
         } else {
-          const sentN =
-            invokeData && typeof invokeData === "object" && "sent" in invokeData
-              ? Number((invokeData as { sent: number }).sent)
-              : 0;
-          emailsSent += sentN;
+          const { data: invokeData, error: invokeErr } = await adminCli.functions.invoke(
+            "notify-documentation-template-email",
+            {
+              body: {
+                company_id: companyId,
+                client_apartado_id: clientApartadoId,
+                template_slug: slug,
+                sent_by_id: user.id,
+              },
+              headers: { "x-webhook-secret": webhookSecret },
+            }
+          );
+          if (invokeErr) {
+            const detail =
+              invokeData && typeof invokeData === "object" && "error" in invokeData
+                ? String((invokeData as { error: unknown }).error)
+                : invokeErr.message;
+            emailErrors.push(`empresa ${companyId} / apartado "${a.name as string}": ${detail}`);
+          } else {
+            const sentN =
+              invokeData && typeof invokeData === "object" && "sent" in invokeData
+                ? Number((invokeData as { sent: number }).sent)
+                : 0;
+            emailsSent += sentN;
+          }
         }
       }
     }

@@ -528,44 +528,52 @@ export async function finalizeOnboarding(
   let emailSent = 0;
   let emailFailed = 0;
   let emailError: string | null = null;
-  try {
-    const supervisorIds = uniq(input.apartados.flatMap((a) => a.supervisor_ids));
-    const { data: invokeResult, error: invokeErr } = await admin.functions.invoke(
-      "notify-client-onboarding-welcome",
-      {
-        body: {
-          company_id: companyId,
-          sent_by_id: user.id,
-          to_profile_ids: resolvedClients.map((c) => c.profile_id),
-          cc_supervisor_ids: supervisorIds,
-          cc_department_ids: input.department_ids,
-        },
-      }
-    );
-    if (invokeErr) {
-      emailFailed = resolvedClients.length;
-      emailError = `Invocación: ${invokeErr.message}`;
-      console.error("[onboarding] error invocando welcome email:", invokeErr.message);
-    } else if (invokeResult && typeof invokeResult === "object") {
-      const r = invokeResult as {
-        sent?: number;
-        failed?: number;
-        error?: string;
-        reason?: string;
-      };
-      emailSent = r.sent ?? 0;
-      emailFailed = r.failed ?? 0;
-      if (emailFailed > 0 || emailSent === 0) {
-        emailError = r.error ?? r.reason ?? "Resend no devolvió detalle";
-      }
-    } else {
-      emailFailed = resolvedClients.length;
-      emailError = "La edge function no devolvió respuesta válida";
-    }
-  } catch (e) {
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) {
     emailFailed = resolvedClients.length;
-    emailError = e instanceof Error ? e.message : String(e);
-    console.error("[onboarding] excepción invocando welcome email:", e);
+    emailError = "WEBHOOK_SECRET no configurado en el servidor";
+    console.error("[onboarding] WEBHOOK_SECRET no configurado — omitiendo welcome email");
+  } else {
+    try {
+      const supervisorIds = uniq(input.apartados.flatMap((a) => a.supervisor_ids));
+      const { data: invokeResult, error: invokeErr } = await admin.functions.invoke(
+        "notify-client-onboarding-welcome",
+        {
+          body: {
+            company_id: companyId,
+            sent_by_id: user.id,
+            to_profile_ids: resolvedClients.map((c) => c.profile_id),
+            cc_supervisor_ids: supervisorIds,
+            cc_department_ids: input.department_ids,
+          },
+          headers: { "x-webhook-secret": webhookSecret },
+        }
+      );
+      if (invokeErr) {
+        emailFailed = resolvedClients.length;
+        emailError = `Invocación: ${invokeErr.message}`;
+        console.error("[onboarding] error invocando welcome email:", invokeErr.message);
+      } else if (invokeResult && typeof invokeResult === "object") {
+        const r = invokeResult as {
+          sent?: number;
+          failed?: number;
+          error?: string;
+          reason?: string;
+        };
+        emailSent = r.sent ?? 0;
+        emailFailed = r.failed ?? 0;
+        if (emailFailed > 0 || emailSent === 0) {
+          emailError = r.error ?? r.reason ?? "Resend no devolvió detalle";
+        }
+      } else {
+        emailFailed = resolvedClients.length;
+        emailError = "La edge function no devolvió respuesta válida";
+      }
+    } catch (e) {
+      emailFailed = resolvedClients.length;
+      emailError = e instanceof Error ? e.message : String(e);
+      console.error("[onboarding] excepción invocando welcome email:", e);
+    }
   }
 
   invalidateResponsibleTeam(companyId);

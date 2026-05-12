@@ -7,6 +7,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { verifyWebhookSecret } from "../_shared/verify-webhook-secret.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_FROM = "Lean Finance <noreply@leanfinance.es>";
@@ -24,8 +25,13 @@ interface ApartadoRow {
 }
 
 // Invocada desde un server action con admin client; verify_jwt=false en
-// config.toml. La URL no se expone al frontend.
+// config.toml. La URL no se expone al frontend, pero la protegemos con
+// `x-webhook-secret` igualmente para evitar abuso desde cualquier cliente con
+// la anon key.
 Deno.serve(async (req: Request) => {
+  const unauthorized = verifyWebhookSecret(req);
+  if (unauthorized) return unauthorized;
+
   let payload: { company_id: string; sent_by_id: string; comment?: string };
   try {
     payload = await req.json();
