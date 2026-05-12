@@ -25,8 +25,7 @@ import {
   validateAndEncryptEnisaPayload,
   validateCompetidoresPayload,
 } from "@/lib/documentation/form-payloads";
-
-const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
+import { validateUpload } from "@/lib/storage/upload-validation";
 
 export async function getMyDocumentation(): Promise<ClientDocumentation> {
   const { companyId } = await requireClient();
@@ -496,10 +495,11 @@ export async function uploadApartadoFile(input: {
 
   const admin = createAdminClient();
   const buffer = Buffer.from(input.fileBase64, "base64");
-  if (buffer.byteLength === 0) throw new Error("Archivo vacío");
-  if (buffer.byteLength > MAX_FILE_BYTES) {
-    throw new Error("El archivo supera el tamaño máximo (25 MB)");
-  }
+  validateUpload({
+    mimeType: input.mimeType,
+    fileName: input.fileName,
+    sizeBytes: buffer.byteLength,
+  });
 
   const fileId = crypto.randomUUID();
   const storagePath = buildDocumentationStoragePath({

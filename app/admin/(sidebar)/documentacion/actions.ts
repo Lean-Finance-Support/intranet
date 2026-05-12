@@ -10,6 +10,7 @@ import {
   buildTemplateStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
+import { validateUpload } from "@/lib/storage/upload-validation";
 import type {
   BlockTemplate,
   ApartadoTemplate,
@@ -483,7 +484,6 @@ export async function reorderApartados(
 // Plantillas (archivos base) por apartado del catálogo
 // ============================================================================
 
-const MAX_TEMPLATE_BYTES = 25 * 1024 * 1024;
 
 export async function uploadApartadoTemplate(input: {
   apartadoId: string;
@@ -497,10 +497,11 @@ export async function uploadApartadoTemplate(input: {
   if (!user) throw new Error("No autenticado");
 
   const buffer = Buffer.from(input.fileBase64, "base64");
-  if (buffer.byteLength === 0) throw new Error("Archivo vacío");
-  if (buffer.byteLength > MAX_TEMPLATE_BYTES) {
-    throw new Error("La plantilla supera el tamaño máximo (25 MB)");
-  }
+  validateUpload({
+    mimeType: input.mimeType,
+    fileName: input.fileName,
+    sizeBytes: buffer.byteLength,
+  });
 
   const admin = createAdminClient();
   const templateId = crypto.randomUUID();

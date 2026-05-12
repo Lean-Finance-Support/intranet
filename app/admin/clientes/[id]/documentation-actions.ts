@@ -15,6 +15,7 @@ import {
   buildDocumentationStoragePath,
   getDocumentationSignedUrl,
 } from "@/lib/storage/documentation";
+import { validateUpload } from "@/lib/storage/upload-validation";
 import {
   buildSummary,
   getActorAndApartadoLabel,
@@ -1350,6 +1351,13 @@ export async function adminUploadApartadoFile(input: {
     .single();
   if (!cb) throw new Error("Bloque no encontrado");
 
+  const buffer = Buffer.from(input.fileBase64, "base64");
+  validateUpload({
+    mimeType: input.mimeType,
+    fileName: input.fileName,
+    sizeBytes: buffer.byteLength,
+  });
+
   const fileId = crypto.randomUUID();
   const storagePath = buildDocumentationStoragePath({
     companyId: cb.company_id as string,
@@ -1357,7 +1365,6 @@ export async function adminUploadApartadoFile(input: {
     fileId,
     fileName: input.fileName,
   });
-  const buffer = Buffer.from(input.fileBase64, "base64");
   const { error: uploadError } = await admin.storage
     .from(DOCUMENTATION_BUCKET)
     .upload(storagePath, buffer, { contentType: input.mimeType });
