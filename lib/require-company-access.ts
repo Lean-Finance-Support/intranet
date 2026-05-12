@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { hasPermission } from "@/lib/require-permission";
+import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { fetchSupervisorCompanyIds } from "@/lib/team-queries";
 
 /**
@@ -10,10 +10,15 @@ import { fetchSupervisorCompanyIds } from "@/lib/team-queries";
  * "Sin permisos" si no.
  *
  * Tienen acceso (need-to-know):
- *  - Backoffice (`manage_users` global) — soporte/superadmin.
- *  - Técnico de algún servicio contratado por la empresa.
- *  - Miembro o Chief de un departamento que cubre algún servicio contratado.
+ *  - Backoffice: tiene `manage_client_accounts` global. Atajo, ve todo.
+ *  - Técnico: `write_assigned_company` sobre algún `company_service` de la empresa.
+ *  - Miembro/Chief/Operador/Observador de un dpto: `read_dept_service` sobre
+ *    algún dpto que cubre algún servicio contratado por la empresa.
  *  - Supervisor de algún apartado de documentación de la empresa.
+ *
+ * La autorización se evalúa contra permisos atómicos (no contra nombres de
+ * rol) — así nuevos roles que reciban estos permisos heredan el acceso
+ * automáticamente sin tener que tocar este helper.
  *
  * Devuelve `{ supabase, user }` como `requireAdmin()` para encadenar el resto
  * de la server action sin rehacer auth.
@@ -22,8 +27,8 @@ export async function requireCompanyAccess(companyId: string) {
   const { supabase, user } = await requireAdmin();
   if (!companyId) throw new Error("Sin permisos");
 
-  // Atajo: Backoffice ve todo.
-  if (await hasPermission("manage_users")) return { supabase, user };
+  // Atajo: Backoffice (manage_client_accounts global) ve todo.
+  if (await hasPermission("manage_client_accounts")) return { supabase, user };
 
   const admin = createAdminClient();
 
@@ -38,24 +43,15 @@ export async function requireCompanyAccess(companyId: string) {
   const csIds = csRows.map((r) => r.id);
   const serviceIds = csRows.map((r) => r.service_id);
 
-  // 1) Técnico de algún company_service de la empresa.
+  // 1) Técnico: tiene write_assigned_company sobre algún company_service de la empresa.
   if (csIds.length > 0) {
-    const { data: techRoleMatches } = await admin
-      .from("profile_roles")
-      .select("scope_id, role:roles!inner(name)")
-      .eq("profile_id", user.id)
-      .eq("scope_type", "company_service")
-      .in("scope_id", csIds);
-
-    const techRows = (techRoleMatches ?? []) as unknown as {
-      scope_id: string;
-      role: { name: string } | null;
-    }[];
-    const isTech = techRows.some((r) => r.role?.name === "Técnico");
-    if (isTech) return { supabase, user };
+    const userTechCsIds = await userScopeIds("write_assigned_company", "company_service");
+    const csSet = new Set(csIds);
+    if (userTechCsIds.some((id) => csSet.has(id))) return { supabase, user };
   }
 
-  // 2) Miembro/Chief de un dpto que cubre algún servicio contratado.
+  // 2) Miembro/Chief/Operador/Observador de un dpto que cubre algún servicio
+  //    contratado. read_dept_service es el permiso común a todos esos roles.
   if (serviceIds.length > 0) {
     const { data: deptSvcLinks } = await admin
       .from("department_services")
@@ -64,25 +60,11 @@ export async function requireCompanyAccess(companyId: string) {
       .eq("is_active", true);
 
     const deptSvcRows = (deptSvcLinks ?? []) as { department_id: string }[];
-    const deptIds = [...new Set(deptSvcRows.map((d) => d.department_id))];
+    const deptIds = new Set(deptSvcRows.map((d) => d.department_id));
 
-    if (deptIds.length > 0) {
-      const { data: deptRoleMatches } = await admin
-        .from("profile_roles")
-        .select("scope_id, role:roles!inner(name)")
-        .eq("profile_id", user.id)
-        .eq("scope_type", "department")
-        .in("scope_id", deptIds);
-
-      const deptRows = (deptRoleMatches ?? []) as unknown as {
-        scope_id: string;
-        role: { name: string } | null;
-      }[];
-      const isDeptMember = deptRows.some((r) => {
-        const name = r.role?.name;
-        return name === "Miembro de departamento" || name === "Chief";
-      });
-      if (isDeptMember) return { supabase, user };
+    if (deptIds.size > 0) {
+      const userReadDeptIds = await userScopeIds("read_dept_service", "department");
+      if (userReadDeptIds.some((id) => deptIds.has(id))) return { supabase, user };
     }
   }
 
