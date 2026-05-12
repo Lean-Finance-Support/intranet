@@ -2,10 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
-import {
-  requireCompanyAccess,
-  requireCompanyAccessByFile,
-} from "@/lib/require-company-access";
 import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -125,7 +121,7 @@ async function ensureProfileInApartadoDept(
 // ────────────────────────────────────────────────────────────────────────────
 
 export async function getClientDocumentation(companyId: string): Promise<ClientDocumentation> {
-  await requireCompanyAccess(companyId);
+  await requireAdmin();
   const admin = createAdminClient();
 
   const [
@@ -1488,7 +1484,7 @@ async function maybeResetToPendiente(
 // ────────────────────────────────────────────────────────────────────────────
 
 export async function getApartadoFileSignedUrl(fileId: string): Promise<string> {
-  await requireCompanyAccessByFile(fileId);
+  await requireAdmin();
   const admin = createAdminClient();
   const { data: file } = await admin
     .schema("documentation")
