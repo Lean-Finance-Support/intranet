@@ -7,7 +7,7 @@ import {
 } from "@/lib/dashboard-admin-access";
 import { getAuthUser } from "@/lib/cached-queries";
 import {
-  getAllCompaniesData,
+  getCompanyContextForDetail,
   getCompanyDashboardConfig,
   getCompanyDetail,
   getCompanyResponsibleTeamAction,
@@ -35,7 +35,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     detail,
     documentation,
     assignable,
-    listing,
+    context,
     linkPrefix,
     canValidateGlobal,
     supervisorClientApartadoIds,
@@ -47,7 +47,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
     getCompanyDetail(id),
     getClientDocumentation(id),
     getAssignableCatalog(id),
-    getAllCompaniesData(),
+    getCompanyContextForDetail(id),
     getLinkPrefix("admin"),
     hasPermission("validate_documentation"),
     userScopeIds("validate_client_documentation", "client_apartado"),
@@ -61,22 +61,19 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
 
   if (!detail) notFound();
 
-  const company = listing.companies.find((c) => c.id === id);
-  if (!company) notFound();
-
   return (
     <div className="min-h-full px-8 pt-4 pb-8">
       <div className="max-w-screen-2xl">
         <ClientDetailWorkspace
           detail={detail}
-          company={company}
-          userChiefDeptIds={listing.userChiefDeptIds}
-          deptMembers={listing.deptMembers}
-          chiefAvailableServices={listing.chiefAvailableServices}
-          canCreateCompany={listing.canCreateCompany}
-          canDeleteCompany={listing.canDeleteCompany}
-          canManageClientAccounts={listing.canManageClientAccounts}
-          canManageBankAccounts={listing.canManageBankAccounts}
+          company={context.company}
+          userChiefDeptIds={context.userChiefDeptIds}
+          deptMembers={context.deptMembers}
+          chiefAvailableServices={context.chiefAvailableServices}
+          canCreateCompany={context.canCreateCompany}
+          canDeleteCompany={context.canDeleteCompany}
+          canManageClientAccounts={context.canManageClientAccounts}
+          canManageBankAccounts={context.canManageBankAccounts}
           linkPrefix={linkPrefix}
           documentation={documentation}
           assignableCatalog={assignable}

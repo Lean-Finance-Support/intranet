@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission } from "@/lib/require-permission";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -547,8 +547,12 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
     }
   }
 
-  // Invalidar el equipo responsable de cada empresa afectada
-  for (const companyId of input.companyIds) invalidateResponsibleTeam(companyId);
+  // Invalidar el equipo responsable de cada empresa afectada y su caché de
+  // documentación (al asignar bloques/apartados cambia el listado del cliente).
+  for (const companyId of input.companyIds) {
+    invalidateResponsibleTeam(companyId);
+    updateTag(`doc:client:${companyId}`);
+  }
 
   // Revalidar páginas que muestran apartados/clientes
   revalidatePath("/admin/documentacion");

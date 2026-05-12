@@ -65,9 +65,16 @@ import DocumentationMasterDetail from "@/components/documentation/documentation-
 import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
 import ServiceDetailSection from "@/components/clients/service-detail-section";
 import ConfirmDialog from "@/components/confirm-dialog";
-import DeleteCompanyModal from "@/components/delete-company-modal";
-import AddBlockModal from "./add-block-modal";
-import AddApartadoModal from "./add-apartado-modal";
+import dynamic from "next/dynamic";
+
+// Modales que solo aparecen al pulsar acciones puntuales: cargamos su JS solo
+// cuando se necesitan, recortando el bundle inicial del workspace.
+const DeleteCompanyModal = dynamic(
+  () => import("@/components/delete-company-modal"),
+  { ssr: false },
+);
+const AddBlockModal = dynamic(() => import("./add-block-modal"), { ssr: false });
+const AddApartadoModal = dynamic(() => import("./add-apartado-modal"), { ssr: false });
 
 interface Props {
   detail: CompanyDetailInfo;

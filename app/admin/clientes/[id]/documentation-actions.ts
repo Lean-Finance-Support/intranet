@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
@@ -121,8 +121,7 @@ async function ensureProfileInApartadoDept(
 // Loaders
 // ────────────────────────────────────────────────────────────────────────────
 
-export async function getClientDocumentation(companyId: string): Promise<ClientDocumentation> {
-  await requireAdmin();
+async function fetchClientDocumentation(companyId: string): Promise<ClientDocumentation> {
   const admin = createAdminClient();
 
   const [
@@ -498,6 +497,32 @@ export async function getClientDocumentation(companyId: string): Promise<ClientD
   };
 }
 
+// Cache 10 min con invalidación por tag. Cada mutación de la documentación
+// (añadir/quitar bloque, subir archivo, validar, rechazar, asignar supervisor,
+// etc.) llama a `invalidateClientDocumentation(companyId)` para invalidar
+// tanto el cache como la ruta SSR.
+function getCachedClientDocumentation(
+  companyId: string,
+): Promise<ClientDocumentation> {
+  return unstable_cache(
+    () => fetchClientDocumentation(companyId),
+    ["client-documentation", companyId],
+    { tags: [`doc:client:${companyId}`], revalidate: 600 },
+  )();
+}
+
+function invalidateClientDocumentation(companyId: string): void {
+  updateTag(`doc:client:${companyId}`);
+  revalidatePath(`/admin/clientes/${companyId}`);
+}
+
+export async function getClientDocumentation(
+  companyId: string,
+): Promise<ClientDocumentation> {
+  await requireAdmin();
+  return getCachedClientDocumentation(companyId);
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Catálogo asignable + miembros candidatos
 // ────────────────────────────────────────────────────────────────────────────
@@ -755,7 +780,7 @@ export async function addBlockToClient(input: {
     }
   }
   invalidateResponsibleTeam(input.companyId);
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 let cachedSupervisorRoleId: string | null = null;
@@ -816,7 +841,7 @@ export async function addApartadoToClient(input: {
     if (supErr) throw new Error(supErr.message);
   }
   invalidateResponsibleTeam(input.companyId);
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 export async function setApartadoOptional(input: {
@@ -833,7 +858,7 @@ export async function setApartadoOptional(input: {
     .update({ is_optional: input.isOptional })
     .eq("id", input.clientApartadoId);
   if (error) throw new Error(error.message);
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 export async function removeApartadoFromClient(
@@ -858,7 +883,7 @@ export async function removeApartadoFromClient(
     .eq("id", clientApartadoId);
   if (error) throw new Error(error.message);
   invalidateResponsibleTeam(companyId);
-  revalidatePath(`/admin/clientes/${companyId}`);
+  invalidateClientDocumentation(companyId);
 }
 
 export async function removeBlockFromClient(
@@ -891,7 +916,7 @@ export async function removeBlockFromClient(
     .eq("id", clientBlockId);
   if (error) throw new Error(error.message);
   invalidateResponsibleTeam(companyId);
-  revalidatePath(`/admin/clientes/${companyId}`);
+  invalidateClientDocumentation(companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -943,7 +968,7 @@ export async function addSupervisor(input: {
     );
   if (error) throw new Error(error.message);
   invalidateResponsibleTeam(input.companyId);
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 export async function removeSupervisor(input: {
@@ -965,7 +990,7 @@ export async function removeSupervisor(input: {
     .eq("scope_id", input.clientApartadoId);
   if (error) throw new Error(error.message);
   invalidateResponsibleTeam(input.companyId);
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1041,7 +1066,7 @@ export async function validateApartado(
     summary: buildSummary(labels.actorName, labels.actorEmail, "ha validado", labels.apartadoName),
   });
 
-  revalidatePath(`/admin/clientes/${companyId}`);
+  invalidateClientDocumentation(companyId);
 }
 
 export async function rejectApartado(input: {
@@ -1083,7 +1108,7 @@ export async function rejectApartado(input: {
     summary: buildSummary(labels.actorName, labels.actorEmail, "ha rechazado", labels.apartadoName),
   });
 
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 /**
@@ -1125,7 +1150,7 @@ export async function reopenApartado(
     .eq("id", clientApartadoId);
   if (error) throw new Error(error.message);
   await logStatusChange(clientApartadoId, fromStatus, "pendiente", userId, "__event:reopened__");
-  revalidatePath(`/admin/clientes/${companyId}`);
+  invalidateClientDocumentation(companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1230,7 +1255,7 @@ export async function adminSubmitFormApartado(input: {
     ),
   });
 
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1307,7 +1332,7 @@ export async function addAdminComment(
     summary: buildSummary(labels.actorName, labels.actorEmail, "ha comentado", labels.apartadoName),
   });
 
-  revalidatePath(`/admin/clientes/${companyId}`);
+  invalidateClientDocumentation(companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1401,7 +1426,7 @@ export async function adminUploadApartadoFile(input: {
     ),
   });
 
-  revalidatePath(`/admin/clientes/${input.companyId}`);
+  invalidateClientDocumentation(input.companyId);
 }
 
 export async function adminSoftDeleteApartadoFile(fileId: string): Promise<void> {
@@ -1451,7 +1476,7 @@ export async function adminSoftDeleteApartadoFile(fileId: string): Promise<void>
   await maybeResetToPendiente(clientApartadoId, currentStatus, user.id);
 
   if (cb?.company_id) {
-    revalidatePath(`/admin/clientes/${cb.company_id as string}`);
+    invalidateClientDocumentation(cb.company_id as string);
   }
 }
 
@@ -1623,7 +1648,7 @@ export async function remindClientDocumentation(
   if (logErr) throw new Error(logErr.message);
 
   // 5. Revalidar la página del cliente para refrescar "Último recordatorio: ..."
-  revalidatePath(`/admin/clientes/${companyId}`);
+  invalidateClientDocumentation(companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────

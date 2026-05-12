@@ -1,8 +1,24 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import type { KpiCard, MonthlyPoint } from "@/lib/dashboard/aggregate";
-import DashboardMonthlyChart from "./dashboard-monthly-chart";
+
+// Recharts pesa ~80 KB gz. Lo cargamos solo cuando se renderiza el gráfico
+// (vista por defecto si hay datos, pero el split mantiene el bundle inicial
+// más ligero y evita SSR del SVG que no aporta nada — el usuario lo ve igual
+// porque el contenedor mantiene min-h-[220px]).
+const DashboardMonthlyChart = dynamic(
+  () => import("./dashboard-monthly-chart"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[220px] flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-brand-teal/30 border-t-brand-teal rounded-full animate-spin" />
+      </div>
+    ),
+  },
+);
 
 interface Props {
   title: string;

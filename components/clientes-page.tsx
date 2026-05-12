@@ -5,9 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ClienteCompany, ClientesPageData } from "@/app/admin/clientes/actions";
 import { createCompanyAdmin } from "@/app/admin/clientes/actions";
-import ClientDetailPanel from "@/components/client-detail-panel";
-import NewCompanyModal from "@/components/new-company-modal";
+import dynamic from "next/dynamic";
 import { useMediaQuery } from "@/lib/use-media-query";
+
+// Panel y modal solo aparecen al seleccionar/crear empresa: lazy split.
+const ClientDetailPanel = dynamic(
+  () => import("@/components/client-detail-panel"),
+  { ssr: false },
+);
+const NewCompanyModal = dynamic(
+  () => import("@/components/new-company-modal"),
+  { ssr: false },
+);
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
