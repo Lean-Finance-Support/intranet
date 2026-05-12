@@ -3,6 +3,7 @@
 import { requireClient } from "@/lib/require-client";
 import { createAdminClient } from "@/lib/supabase/server";
 import { fetchTechniciansForService, fetchChiefsForDepartment } from "@/lib/team-queries";
+import { invalidateNotifications } from "@/lib/actions/notifications";
 import type {
   TaxEntryForClient,
   TaxClientResponsePayload,
@@ -431,6 +432,8 @@ export async function submitQuarter(
       .insert(notificationRows);
     if (notifError) {
       console.error("[app/modelos] notifications insert error:", notifError.code);
+    } else {
+      await invalidateNotifications(notificationRows.map((n) => n.recipient_id));
     }
   }
 

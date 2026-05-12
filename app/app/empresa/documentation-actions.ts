@@ -1,7 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireClient } from "@/lib/require-client";
+
+// Invalida tanto la ruta del portal cliente como el caché del listado admin
+// de documentación de esta empresa. Lo llama cada mutación cliente para que
+// los técnicos/supervisores vean el cambio en `/admin/clientes/[id]` sin
+// esperar al TTL del cache.
+function invalidateDocumentationForCompany(companyId: string): void {
+  updateTag(`doc:client:${companyId}`);
+  revalidatePath("/app/empresa");
+}
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   DOCUMENTATION_BUCKET,
@@ -408,7 +417,7 @@ export async function submitFormApartado(input: {
   slug: FormApartadoSlug;
   payload: unknown;
 }): Promise<void> {
-  const { user } = await requireClient();
+  const { user, companyId } = await requireClient();
   const { status } = await ensureClientOwnsApartado(input.clientApartadoId);
   if (status === "validado") {
     throw new Error("No se puede modificar un apartado validado");
@@ -476,7 +485,7 @@ export async function submitFormApartado(input: {
     ),
   });
 
-  revalidatePath("/app/empresa");
+  invalidateDocumentationForCompany(companyId);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -549,11 +558,11 @@ export async function uploadApartadoFile(input: {
     ),
   });
 
-  revalidatePath("/app/empresa");
+  invalidateDocumentationForCompany(companyId);
 }
 
 export async function softDeleteApartadoFile(fileId: string): Promise<void> {
-  const { user } = await requireClient();
+  const { user, companyId } = await requireClient();
   const admin = createAdminClient();
 
   const { data: file } = await admin
@@ -579,7 +588,7 @@ export async function softDeleteApartadoFile(fileId: string): Promise<void> {
   if (error) throw new Error(error.message);
 
   await maybeResetToPendiente(clientApartadoId, status, user.id);
-  revalidatePath("/app/empresa");
+  invalidateDocumentationForCompany(companyId);
 }
 
 /** Si tras una operación no quedan archivos vivos y el status no es ya `pendiente` ni `validado`, lo lleva a `pendiente`. */
@@ -618,7 +627,7 @@ export async function addClientComment(
   body: string
 ): Promise<void> {
   if (!body.trim()) throw new Error("Comentario vacío");
-  const { user } = await requireClient();
+  const { user, companyId } = await requireClient();
   await ensureClientOwnsApartado(clientApartadoId);
 
   const admin = createAdminClient();
@@ -644,7 +653,7 @@ export async function addClientComment(
     ),
   });
 
-  revalidatePath("/app/empresa");
+  invalidateDocumentationForCompany(companyId);
 }
 
 export async function getApartadoFileSignedUrlForClient(fileId: string): Promise<string> {

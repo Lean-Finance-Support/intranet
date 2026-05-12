@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { userScopeIds } from "@/lib/require-permission";
+import { invalidateNotifications } from "@/lib/actions/notifications";
 import type { Company, TaxModelWithEntry, EntryPayload, TaxModelStatus } from "@/lib/types/tax";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 
@@ -382,6 +383,9 @@ export async function notifyClient(
       link: modelsLink,
     });
   }
+  await invalidateNotifications(
+    (profileLinks ?? []).map((l) => l.profile_id as string),
+  );
   // El email lo gestiona la Edge Function notify-tax-models
   // disparada automáticamente por el trigger en tax_notifications
 }
@@ -612,5 +616,6 @@ export async function notifyPresentation(
 
   if (notificationRows.length > 0) {
     await supabase.from("notifications").insert(notificationRows);
+    await invalidateNotifications(notificationRows.map((n) => n.recipient_id as string));
   }
 }

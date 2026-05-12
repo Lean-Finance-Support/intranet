@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
@@ -577,6 +577,7 @@ export async function finalizeOnboarding(
   }
 
   invalidateResponsibleTeam(companyId);
+  updateTag(`doc:client:${companyId}`);
   revalidatePath("/admin/clientes");
   revalidatePath(`/admin/clientes/${companyId}`);
 

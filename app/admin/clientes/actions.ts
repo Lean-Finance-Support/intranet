@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
+import { invalidateNotifications } from "@/lib/actions/notifications";
 import {
   fetchSupervisorCompanyIds,
   fetchTechniciansByServiceIds,
@@ -449,6 +450,217 @@ export async function getCompanyResponsibleTeamAction(
 ): Promise<ResponsibleTeam> {
   await requireAdmin();
   return getCachedCompanyResponsibleTeam(companyId);
+}
+
+// ---------- Contexto para la ficha de cliente ----------
+//
+// Versión scoped de `getAllCompaniesData` para `/admin/clientes/[id]`: trae
+// solo lo que el workspace de detalle consume (la empresa concreta + sus
+// servicios y técnicos + depts del usuario chief + miembros para la UI de
+// asignación + permisos globales). Evita cargar todas las empresas, sus
+// documentaciones y sus supervisores, que es lo que `getAllCompaniesData`
+// computa para el listado de `/admin/clientes`.
+
+export interface CompanyContextForDetail {
+  company: ClienteCompany;
+  userChiefDeptIds: string[];
+  deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  chiefAvailableServices: {
+    service_id: string;
+    service_name: string;
+    service_slug: string;
+    department_id: string;
+  }[];
+  canCreateCompany: boolean;
+  canDeleteCompany: boolean;
+  canManageClientAccounts: boolean;
+  canManageBankAccounts: boolean;
+}
+
+export async function getCompanyContextForDetail(
+  companyId: string
+): Promise<CompanyContextForDetail> {
+  const { supabase } = await requireAdmin();
+
+  const [
+    { data: companyRow },
+    { data: companyServicesRows },
+    { data: allServices },
+    { data: deptSvcLinks },
+    { data: allDepts },
+    userChiefDeptIds,
+    canCreateCompany,
+    canDeleteCompany,
+    canManageClientAccounts,
+    canManageBankAccounts,
+  ] = await Promise.all([
+    supabase
+      .from("companies")
+      .select("id, legal_name, company_name, nif, deleted_at, created_at")
+      .eq("id", companyId)
+      .single(),
+    supabase
+      .from("company_services")
+      .select("id, service_id")
+      .eq("company_id", companyId)
+      .eq("is_active", true),
+    supabase.from("services").select("id, name, slug"),
+    supabase
+      .from("department_services")
+      .select("department_id, service_id")
+      .eq("is_active", true),
+    supabase.from("departments").select("id, name").order("name"),
+    userScopeIds("write_dept_service", "department"),
+    hasPermission("create_company"),
+    hasPermission("delete_company"),
+    hasPermission("manage_client_accounts"),
+    hasPermission("manage_bank_accounts"),
+  ]);
+
+  if (!companyRow) throw new Error("Empresa no encontrada.");
+
+  const serviceMap = new Map(
+    (allServices ?? []).map((s) => [
+      s.id as string,
+      s as { id: string; name: string; slug: string },
+    ])
+  );
+  const deptMap = new Map<string, string>(
+    (allDepts ?? []).map((d) => [d.id as string, d.name as string])
+  );
+  const serviceToDeptId = new Map<string, string>();
+  for (const ds of deptSvcLinks ?? []) {
+    if (!serviceToDeptId.has(ds.service_id as string)) {
+      serviceToDeptId.set(ds.service_id as string, ds.department_id as string);
+    }
+  }
+
+  const serviceIdsForThisCompany = (companyServicesRows ?? []).map(
+    (cs) => cs.service_id as string
+  );
+
+  const techRows =
+    serviceIdsForThisCompany.length > 0
+      ? (await fetchTechniciansByServiceIds(supabase, serviceIdsForThisCompany)).filter(
+          (t) => t.company_id === companyId
+        )
+      : [];
+
+  const techProfileIds = [...new Set(techRows.map((t) => t.technician_id))];
+  const techNameMap = new Map<string, string | null>();
+  if (techProfileIds.length > 0) {
+    const { data: techProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", techProfileIds);
+    for (const p of techProfiles ?? []) {
+      techNameMap.set(p.id as string, (p.full_name as string | null) ?? null);
+    }
+  }
+
+  // Construir servicios contratados con sus técnicos
+  const services: ClienteService[] = [];
+  for (const cs of companyServicesRows ?? []) {
+    const svc = serviceMap.get(cs.service_id as string);
+    if (!svc) continue;
+    const deptId = serviceToDeptId.get(cs.service_id as string);
+    if (!deptId) continue;
+    const technicians = techRows
+      .filter((t) => t.service_id === cs.service_id)
+      .map((t) => ({
+        id: t.technician_id,
+        name: techNameMap.get(t.technician_id) ?? null,
+      }));
+    services.push({
+      service_id: svc.id,
+      service_name: svc.name,
+      service_slug: svc.slug,
+      department_id: deptId,
+      department_name: deptMap.get(deptId) ?? "",
+      technicians,
+    });
+  }
+
+  // Depts del equipo responsable (vía técnicos asignados; supervisores se
+  // resuelven aparte en la sección equipo via `responsibleTeam`).
+  const responsibleTeamDepts = new Set<string>();
+  for (const t of techRows) {
+    const deptId = serviceToDeptId.get(t.service_id);
+    if (deptId) responsibleTeamDepts.add(deptId);
+  }
+
+  // Dept members + chief available services (solo si el usuario es chief).
+  const deptMembers: { [deptId: string]: DeptMemberSlim[] } = {};
+  const chiefAvailableServices: {
+    service_id: string;
+    service_name: string;
+    service_slug: string;
+    department_id: string;
+  }[] = [];
+
+  if (userChiefDeptIds.length > 0) {
+    const { data: memberRoles } = await supabase
+      .from("profile_roles")
+      .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
+      .eq("scope_type", "department")
+      .in("scope_id", userChiefDeptIds);
+
+    const seen = new Set<string>();
+    for (const link of memberRoles ?? []) {
+      const role = link.role as unknown as { name: string } | null;
+      if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief"))
+        continue;
+      const p = link.profile as unknown as
+        | { id: string; full_name: string | null }
+        | null;
+      if (!p || !link.scope_id) continue;
+      const key = `${link.scope_id}|${p.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (!deptMembers[link.scope_id as string])
+        deptMembers[link.scope_id as string] = [];
+      deptMembers[link.scope_id as string].push({ id: p.id, name: p.full_name });
+    }
+
+    for (const ds of deptSvcLinks ?? []) {
+      if (!userChiefDeptIds.includes(ds.department_id as string)) continue;
+      const svc = serviceMap.get(ds.service_id as string);
+      if (svc) {
+        chiefAvailableServices.push({
+          service_id: svc.id,
+          service_name: svc.name,
+          service_slug: svc.slug,
+          department_id: ds.department_id as string,
+        });
+      }
+    }
+  }
+
+  const company: ClienteCompany = {
+    id: companyRow.id as string,
+    legal_name: companyRow.legal_name as string,
+    company_name: (companyRow.company_name as string | null) ?? null,
+    nif: (companyRow.nif as string | null) ?? null,
+    services,
+    responsible_team_dept_ids: [...responsibleTeamDepts],
+    // El workspace no consulta is_assigned ni documentation_progress: ahorramos
+    // las queries que las computaban (apartados, supervisores).
+    is_assigned: false,
+    deleted_at: (companyRow.deleted_at as string | null) ?? null,
+    created_at: companyRow.created_at as string,
+    documentation_progress: null,
+  };
+
+  return {
+    company,
+    userChiefDeptIds,
+    deptMembers,
+    chiefAvailableServices,
+    canCreateCompany,
+    canDeleteCompany,
+    canManageClientAccounts,
+    canManageBankAccounts,
+  };
 }
 
 // ---------- Update company name ----------
@@ -1138,6 +1350,8 @@ export async function notifyClientDashboardReady(
   const { error: notifErr } = await admin.from("notifications").insert(notifRows);
   if (notifErr) {
     console.error("[dashboard-ready] error insertando notificaciones:", notifErr.message);
+  } else {
+    await invalidateNotifications(recipientIds);
   }
 
   // Marcar como notificado (sirve como lock — el botón ya no aparecerá).
