@@ -42,6 +42,7 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     path: "/clientes/onboarding",
     icon: "building",
     keywords: ["alta", "nuevo cliente", "registro", "onboarding"],
+    gate: (ctx) => ctx.canCreateOnboarding,
   },
   {
     id: "admin:documentacion",
@@ -58,6 +59,7 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     path: "/documentacion/asignacion-multiple",
     icon: "book",
     keywords: ["bulk", "masiva", "asignar", "varios clientes"],
+    gate: (ctx) => ctx.canRequestDocumentation,
   },
 
   // Cliente

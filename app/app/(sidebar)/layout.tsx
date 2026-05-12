@@ -66,6 +66,9 @@ export default async function AppSidebarLayout({
         role: "client",
         hasTaxModels,
         hasDashboard,
+        canViewClientDashboard: false,
+        canCreateOnboarding: false,
+        canRequestDocumentation: false,
         companies: searchableCompanies,
         activeCompanyId: resolvedCompanyId ?? null,
       }}

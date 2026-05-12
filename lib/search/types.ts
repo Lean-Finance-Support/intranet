@@ -27,6 +27,12 @@ export interface SearchContext {
   hasTaxModels: boolean;
   /** Solo aplica al espacio cliente. */
   hasDashboard: boolean;
+  /** Admin: tiene permiso para abrir el dashboard fiscal de un cliente. */
+  canViewClientDashboard: boolean;
+  /** Admin: tiene los 3 permisos para crear un onboarding nuevo. */
+  canCreateOnboarding: boolean;
+  /** Admin: puede asignar documentación en bulk (permiso request_client_documentation). */
+  canRequestDocumentation: boolean;
   /** Empresas visibles para búsqueda. Admin = todas las que ve. Client = sus propias empresas. */
   companies: SearchableCompany[];
   /** Empresa activa en el portal cliente (cookie x-active-company-id). */

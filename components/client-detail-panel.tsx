@@ -273,15 +273,12 @@ export function AddClientAccountForm({
   );
 }
 
-const SERVICE_ROUTES: Record<string, string> = {
-  "tax-models": "/modelos",
-};
-
 // ---- Main Panel ----
 interface ClientDetailPanelProps {
   company: ClienteCompany;
   linkPrefix: string;
   canViewDashboard: boolean;
+  canViewTaxModels: boolean;
   onClose: () => void;
 }
 
@@ -289,6 +286,7 @@ export default function ClientDetailPanel({
   company,
   linkPrefix,
   canViewDashboard,
+  canViewTaxModels,
   onClose,
 }: ClientDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -415,12 +413,15 @@ export default function ClientDetailPanel({
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {company.services.map((svc) => {
-                  const route = SERVICE_ROUTES[svc.service_slug];
                   const dashboardHref =
                     svc.service_slug === "dashboard" && canViewDashboard
                       ? `${linkPrefix}/clientes/${company.id}/dashboard`
                       : null;
-                  const href = dashboardHref ?? (route ? `${linkPrefix}${route}?company=${company.id}` : null);
+                  const taxModelsHref =
+                    svc.service_slug === "tax-models" && canViewTaxModels
+                      ? `${linkPrefix}/modelos?company=${company.id}`
+                      : null;
+                  const href = dashboardHref ?? taxModelsHref;
                   return (
                     <span
                       key={svc.service_id}

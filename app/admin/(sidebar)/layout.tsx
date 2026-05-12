@@ -4,6 +4,8 @@ import SearchProvider from "@/components/search/search-provider";
 import { getNotifications } from "@/lib/actions/notifications";
 import { getSearchableCompanies } from "@/lib/actions/search";
 import { getLinkPrefix } from "@/lib/link-prefix";
+import { hasPermission } from "@/lib/require-permission";
+import { canViewClientDashboard } from "@/lib/dashboard-admin-access";
 import {
   getAuthUser,
   getCachedProfile,
@@ -18,17 +20,34 @@ export default async function AdminSidebarLayout({
   const { user } = await getAuthUser();
   if (!user) redirect("/admin/login");
 
-  const [prefix, profile, departments, allNotifications, searchableCompanies] = await Promise.all([
+  const [
+    prefix,
+    profile,
+    departments,
+    allNotifications,
+    searchableCompanies,
+    canViewDashboard,
+    canCreateCompany,
+    canManageClientAccounts,
+    canRequestDocumentation,
+  ] = await Promise.all([
     getLinkPrefix("admin"),
     getCachedProfile(user.id),
     getCachedUserServiceDepts(user.id),
     getNotifications(),
     getSearchableCompanies(),
+    canViewClientDashboard(),
+    hasPermission("create_company"),
+    hasPermission("manage_client_accounts"),
+    hasPermission("request_client_documentation"),
   ]);
 
   const deptIds = departments.map((d) => d.id);
   const slugs = deptIds.length > 0 ? await getCachedDepartmentServiceSlugs(deptIds) : [];
   const hasTaxModels = slugs.includes("tax-models");
+  // Onboarding requiere los 3 permisos globales (ver CLAUDE.md sección "Onboarding").
+  const canCreateOnboarding =
+    canCreateCompany && canManageClientAccounts && canRequestDocumentation;
 
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
 
@@ -40,6 +59,9 @@ export default async function AdminSidebarLayout({
         role: "admin",
         hasTaxModels,
         hasDashboard: false,
+        canViewClientDashboard: canViewDashboard,
+        canCreateOnboarding,
+        canRequestDocumentation,
         companies: searchableCompanies,
         activeCompanyId: null,
       }}

@@ -39,7 +39,7 @@ export function buildDestinations(ctx: SearchContext): SearchDestination[] {
         keywords,
       });
 
-      if (company.has_dashboard_service) {
+      if (company.has_dashboard_service && ctx.canViewClientDashboard) {
         out.push({
           id: `company-dashboard:${company.id}`,
           group: "client-sections",

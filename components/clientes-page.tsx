@@ -148,10 +148,12 @@ export default function ClientesPage({
   data,
   linkPrefix,
   canViewDashboard,
+  canViewTaxModels,
 }: {
   data: ClientesPageData;
   linkPrefix: string;
   canViewDashboard: boolean;
+  canViewTaxModels: boolean;
 }) {
   const router = useRouter();
   // Tailwind `md` = 768px. En desktop (≥md) se abre el sidebar de detalle;
@@ -399,6 +401,7 @@ export default function ClientesPage({
           company={selectedCompany}
           linkPrefix={linkPrefix}
           canViewDashboard={canViewDashboard}
+          canViewTaxModels={canViewTaxModels}
           onClose={() => setSelectedCompany(null)}
         />
       )}

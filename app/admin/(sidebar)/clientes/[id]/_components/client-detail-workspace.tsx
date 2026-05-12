@@ -100,6 +100,7 @@ interface Props {
   dashboardConfig: CompanyDashboardConfig | null;
   dashboardAuthorizedEmail: string | null;
   canViewClientDashboard: boolean;
+  canViewClientTaxModels: boolean;
 }
 
 type TabKey = "documentacion" | "equipo" | "servicios" | "datos";
@@ -155,6 +156,7 @@ export default function ClientDetailWorkspace({
   dashboardConfig,
   dashboardAuthorizedEmail,
   canViewClientDashboard,
+  canViewClientTaxModels,
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(resolveInitialTab(initialTab));
@@ -918,6 +920,7 @@ export default function ClientDetailWorkspace({
                     dashboardConfig={svc.service_slug === "dashboard" ? dashboardConfig : null}
                     dashboardAuthorizedEmail={dashboardAuthorizedEmail}
                     canViewClientDashboard={canViewClientDashboard}
+                    canViewClientTaxModels={canViewClientTaxModels}
                   />
                 );
               })}

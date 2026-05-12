@@ -7,10 +7,6 @@ import type {
 } from "@/app/admin/clientes/actions";
 import DashboardSheetPanel from "./dashboard-sheet-panel";
 
-const SERVICE_ROUTES: Record<string, string> = {
-  "tax-models": "/modelos",
-};
-
 interface Props {
   service: ClienteService;
   isChiefOfDept: boolean;
@@ -24,6 +20,7 @@ interface Props {
   dashboardConfig?: CompanyDashboardConfig | null;
   dashboardAuthorizedEmail?: string | null;
   canViewClientDashboard?: boolean;
+  canViewClientTaxModels?: boolean;
 }
 
 export default function ServiceDetailSection({
@@ -39,15 +36,22 @@ export default function ServiceDetailSection({
   dashboardConfig,
   dashboardAuthorizedEmail,
   canViewClientDashboard,
+  canViewClientTaxModels,
 }: Props) {
   const existingIds = new Set(service.technicians.map((t) => t.id));
   const available = members.filter((m) => !existingIds.has(m.id));
-  const serviceRoute = SERVICE_ROUTES[service.service_slug];
   const isDashboardService = service.service_slug === "dashboard";
   const showDashboardLink =
     isDashboardService &&
     !!canViewClientDashboard &&
     !!dashboardConfig;
+  // Solo mostramos el icono de redirección a /modelos si el admin tiene
+  // permiso de lectura sobre el dpto fiscal (mismo gate que el dashboard).
+  // Si pincha sin permiso, la página /modelos rebotaría con error.
+  const taxModelsHref =
+    service.service_slug === "tax-models" && canViewClientTaxModels
+      ? `${linkPrefix}/modelos?company=${companyId}`
+      : null;
 
   return (
     <div className="border border-gray-100 rounded-lg p-3 space-y-2 bg-white">
@@ -81,9 +85,9 @@ export default function ServiceDetailSection({
               Ver dashboard
             </a>
           )}
-          {serviceRoute && (
+          {taxModelsHref && (
             <a
-              href={`${linkPrefix}${serviceRoute}?company=${companyId}`}
+              href={taxModelsHref}
               className="p-1 rounded hover:bg-brand-teal/10 text-brand-teal transition-colors"
               title={`Ir a ${service.service_name}`}
             >

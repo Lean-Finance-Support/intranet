@@ -35,3 +35,17 @@ export async function canViewClientDashboard(): Promise<boolean> {
     id: fiscalDeptId,
   });
 }
+
+/**
+ * Un admin puede ver la vista de modelos fiscales de un cliente con los
+ * mismos criterios que el dashboard: pertenencia al dpto fiscal vía
+ * `read_dept_service`.
+ */
+export async function canViewClientTaxModels(): Promise<boolean> {
+  const fiscalDeptId = await getFiscalDepartmentId();
+  if (!fiscalDeptId) return false;
+  return hasPermission("read_dept_service", {
+    type: "department",
+    id: fiscalDeptId,
+  });
+}
