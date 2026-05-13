@@ -482,6 +482,9 @@ export interface CompanyContextForDetail {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  /** Lista de admins disponibles como candidatos a técnico para servicios sin
+   *  departamento. Para servicios con dpto usar `deptMembers[deptId]`. */
+  allAdminCandidates: DeptMemberSlim[];
   chiefAvailableServices: {
     service_id: string;
     service_name: string;
@@ -688,6 +691,20 @@ export async function getCompanyContextForDetail(
     }
   }
 
+  // Candidatos para técnicos de servicios sin dpto: cualquier admin activo.
+  // Lo cargamos siempre (1 query barata) — la UI lo usará solo cuando el
+  // servicio no tenga dpto, igual que los apartados globales de doc.
+  const { data: allAdmins } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("role", "admin");
+  const allAdminCandidates: DeptMemberSlim[] = (allAdmins ?? [])
+    .map((p) => ({
+      id: p.id as string,
+      name: (p.full_name as string | null) ?? (p.email as string),
+    }))
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "es"));
+
   const company: ClienteCompany = {
     id: companyRow.id as string,
     legal_name: companyRow.legal_name as string,
@@ -707,6 +724,7 @@ export async function getCompanyContextForDetail(
     company,
     userChiefDeptIds,
     deptMembers,
+    allAdminCandidates,
     chiefAvailableServices,
     canCreateCompany,
     canDeleteCompany,
@@ -1020,18 +1038,30 @@ export async function assignTechnicianAdmin(
   technicianId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
-  // Asegurar Miembro del dept (idempotente)
-  const miembroRoleId = await lookupRoleId(supabase, "Miembro de departamento");
-  const { error: mErr } = await supabase.from("profile_roles").insert({
-    profile_id: technicianId,
-    role_id: miembroRoleId,
-    scope_type: "department",
-    scope_id: deptId,
-  });
-  if (mErr && mErr.code !== "23505") throw new Error("No se pudo añadir al departamento.");
+  // Autorización: si el servicio tiene dpts, requerir permiso en TODOS.
+  // Si es transversal (sin dpto), basta con ser admin — cualquier admin puede
+  // asignar técnicos a servicios transversales.
+  for (const did of deptIds) {
+    await requirePermission("write_dept_service", { type: "department", id: did });
+  }
+
+  // Solo aseguramos membresía al dpto si el servicio tiene dpto(s).
+  if (deptIds.length > 0) {
+    const miembroRoleId = await lookupRoleId(supabase, "Miembro de departamento");
+    for (const did of deptIds) {
+      const { error: mErr } = await supabase.from("profile_roles").insert({
+        profile_id: technicianId,
+        role_id: miembroRoleId,
+        scope_type: "department",
+        scope_id: did,
+      });
+      if (mErr && mErr.code !== "23505") {
+        throw new Error("No se pudo añadir al departamento.");
+      }
+    }
+  }
 
   const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
   if (!csId) throw new Error("Servicio no contratado por esta empresa.");
@@ -1053,8 +1083,10 @@ export async function removeTechnicianAdmin(
   technicianId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
+  for (const did of deptIds) {
+    await requirePermission("write_dept_service", { type: "department", id: did });
+  }
 
   const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
   if (!csId) return;

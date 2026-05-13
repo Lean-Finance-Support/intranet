@@ -112,21 +112,11 @@ export default function ServiceFormDialog({
         </div>
 
         {isLoadBearing && (
-          <div>
-            <label className="block text-xs font-medium text-text-muted mb-1">
-              Identificador del sistema
-            </label>
-            <input
-              type="text"
-              value={slug}
-              disabled
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono bg-gray-50 text-text-muted cursor-not-allowed"
-            />
-            <p className="mt-1 text-[11px] text-text-muted/80">
-              Este servicio está referenciado en código. El identificador no se
-              puede modificar.
-            </p>
-          </div>
+          <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+            Servicio del sistema. Algunas partes de la plataforma dependen de él
+            (sidebar del cliente, Dashboard fiscal), así que tiene
+            funcionalidades fijas en código y no se puede archivar.
+          </p>
         )}
 
         <div>

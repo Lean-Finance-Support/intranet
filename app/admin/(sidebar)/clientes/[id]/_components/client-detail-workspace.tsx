@@ -85,6 +85,7 @@ interface Props {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  allAdminCandidates: DeptMemberSlim[];
   chiefAvailableServices: {
     service_id: string;
     service_name: string;
@@ -151,6 +152,7 @@ export default function ClientDetailWorkspace({
   company: initialCompany,
   userChiefDeptIds,
   deptMembers,
+  allAdminCandidates,
   chiefAvailableServices,
   canCreateCompany,
   canDeleteCompany,
@@ -453,7 +455,10 @@ export default function ClientDetailWorkspace({
   async function handleAssignTech(serviceId: string, techId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
-    const member = deptMembers[svc.department_id]?.find((m) => m.id === techId);
+    const pool = svc.department_id
+      ? (deptMembers[svc.department_id] ?? [])
+      : allAdminCandidates;
+    const member = pool.find((m) => m.id === techId);
     setCompany((prev) => ({
       ...prev,
       services: prev.services.map((s) =>
@@ -480,6 +485,9 @@ export default function ClientDetailWorkspace({
   async function handleAssignAll(serviceId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
+    // Para servicios transversales no hay "asignar todos" — la pool sería
+    // todos los admins, raramente deseable. Ignoramos el caso.
+    if (!svc.department_id) return;
     const members = deptMembers[svc.department_id] ?? [];
     const existingIds = new Set(svc.technicians.map((t) => t.id));
     const toAdd = members.filter((m) => !existingIds.has(m.id));
@@ -972,14 +980,20 @@ export default function ClientDetailWorkspace({
           ) : (
             <div className="space-y-2">
               {company.services.map((svc) => {
-                const isChiefOfDept = canEditCompany && userChiefDeptIds.includes(svc.department_id);
-                const members = deptMembers[svc.department_id] ?? [];
+                const isTransversal = !svc.department_id;
+                const isChiefOfDept = canEditCompany && (
+                  isTransversal || userChiefDeptIds.includes(svc.department_id)
+                );
+                const members = isTransversal
+                  ? allAdminCandidates
+                  : (deptMembers[svc.department_id] ?? []);
                 return (
                   <ServiceDetailSection
                     key={svc.service_id}
                     service={svc}
                     isChiefOfDept={isChiefOfDept}
                     members={members}
+                    hideAssignAll={isTransversal}
                     linkPrefix={linkPrefix}
                     companyId={company.id}
                     onAssign={handleAssignTech}

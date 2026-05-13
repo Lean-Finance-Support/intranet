@@ -11,6 +11,9 @@ interface Props {
   service: ClienteService;
   isChiefOfDept: boolean;
   members: DeptMemberSlim[];
+  /** Si el servicio es transversal (sin dpto), ocultamos "Asignar todos" — no
+   *  tiene sentido asignar a todos los admins por defecto. */
+  hideAssignAll?: boolean;
   linkPrefix: string;
   companyId: string;
   onAssign: (serviceId: string, techId: string) => void;
@@ -27,6 +30,7 @@ export default function ServiceDetailSection({
   service,
   isChiefOfDept,
   members,
+  hideAssignAll,
   linkPrefix,
   companyId,
   onAssign,
@@ -202,12 +206,14 @@ export default function ServiceDetailSection({
                 </option>
               ))}
             </select>
-            <button
-              onClick={() => onAssignAll(service.service_id)}
-              className="text-[11px] text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
-            >
-              Asignar todos
-            </button>
+            {!hideAssignAll && (
+              <button
+                onClick={() => onAssignAll(service.service_id)}
+                className="text-[11px] text-brand-teal hover:text-brand-teal/80 font-medium cursor-pointer"
+              >
+                Asignar todos
+              </button>
+            )}
           </div>
         )}
       </div>
