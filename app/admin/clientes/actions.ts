@@ -521,7 +521,12 @@ export async function getCompanyContextForDetail(
       .select("id, service_id")
       .eq("company_id", companyId)
       .eq("is_active", true),
-    supabase.from("services").select("id, name, slug"),
+    supabase
+      .from("services")
+      .select("id, name, slug, display_order")
+      .eq("is_active", true)
+      .order("display_order")
+      .order("name"),
     supabase
       .from("department_services")
       .select("department_id, service_id")
@@ -539,17 +544,24 @@ export async function getCompanyContextForDetail(
   const serviceMap = new Map(
     (allServices ?? []).map((s) => [
       s.id as string,
-      s as { id: string; name: string; slug: string },
+      s as { id: string; name: string; slug: string; display_order: number },
     ])
   );
   const deptMap = new Map<string, string>(
     (allDepts ?? []).map((d) => [d.id as string, d.name as string])
   );
-  const serviceToDeptId = new Map<string, string>();
+  // Modelo M:N: un servicio puede tener 0, 1 o varios dpts.
+  const deptIdsByService = new Map<string, string[]>();
   for (const ds of deptSvcLinks ?? []) {
-    if (!serviceToDeptId.has(ds.service_id as string)) {
-      serviceToDeptId.set(ds.service_id as string, ds.department_id as string);
-    }
+    const sid = ds.service_id as string;
+    const list = deptIdsByService.get(sid) ?? [];
+    list.push(ds.department_id as string);
+    deptIdsByService.set(sid, list);
+  }
+  // Helper para flujos legacy que esperan 1 dpto por servicio (técnicos, etc.).
+  const serviceToDeptId = new Map<string, string>();
+  for (const [sid, dids] of deptIdsByService) {
+    if (dids.length > 0) serviceToDeptId.set(sid, dids[0]);
   }
 
   const serviceIdsForThisCompany = (companyServicesRows ?? []).map(
@@ -575,13 +587,15 @@ export async function getCompanyContextForDetail(
     }
   }
 
-  // Construir servicios contratados con sus técnicos
+  // Construir servicios contratados con sus técnicos. Soporta servicios sin
+  // dpto (transversales) — se muestran con dept_name="Sin departamento". Para
+  // servicios con varios dpts (M:N raro), se elige el primero para mantener
+  // compat con el tipo ClienteService.
   const services: ClienteService[] = [];
   for (const cs of companyServicesRows ?? []) {
     const svc = serviceMap.get(cs.service_id as string);
     if (!svc) continue;
-    const deptId = serviceToDeptId.get(cs.service_id as string);
-    if (!deptId) continue;
+    const deptId = serviceToDeptId.get(cs.service_id as string) ?? "";
     const technicians = techRows
       .filter((t) => t.service_id === cs.service_id)
       .map((t) => ({
@@ -593,7 +607,7 @@ export async function getCompanyContextForDetail(
       service_name: svc.name,
       service_slug: svc.slug,
       department_id: deptId,
-      department_name: deptMap.get(deptId) ?? "",
+      department_name: deptId ? (deptMap.get(deptId) ?? "") : "Sin departamento",
       technicians,
     });
   }
@@ -606,7 +620,14 @@ export async function getCompanyContextForDetail(
     if (deptId) responsibleTeamDepts.add(deptId);
   }
 
-  // Dept members + chief available services (solo si el usuario es chief).
+  // Dept members + servicios disponibles para añadir.
+  //
+  // Servicios contratables:
+  //  - Servicios SIN dpto (transversales): cualquier admin puede contratarlos.
+  //  - Servicios CON dpto(s): el actor necesita write_dept_service en al menos
+  //    uno de los dpts del servicio.
+  // Deduplicado por service_id (un servicio en N dpts aparece una sola vez).
+  // Se ordena por display_order, name (heredado de la query).
   const deptMembers: { [deptId: string]: DeptMemberSlim[] } = {};
   const chiefAvailableServices: {
     service_id: string;
@@ -614,6 +635,8 @@ export async function getCompanyContextForDetail(
     service_slug: string;
     department_id: string;
   }[] = [];
+
+  const userChiefDeptSet = new Set(userChiefDeptIds);
 
   if (userChiefDeptIds.length > 0) {
     const { data: memberRoles } = await supabase
@@ -638,18 +661,30 @@ export async function getCompanyContextForDetail(
         deptMembers[link.scope_id as string] = [];
       deptMembers[link.scope_id as string].push({ id: p.id, name: p.full_name });
     }
+  }
 
-    for (const ds of deptSvcLinks ?? []) {
-      if (!userChiefDeptIds.includes(ds.department_id as string)) continue;
-      const svc = serviceMap.get(ds.service_id as string);
-      if (svc) {
-        chiefAvailableServices.push({
-          service_id: svc.id,
-          service_name: svc.name,
-          service_slug: svc.slug,
-          department_id: ds.department_id as string,
-        });
+  for (const svc of allServices ?? []) {
+    const dids = deptIdsByService.get(svc.id as string) ?? [];
+    let canOffer = false;
+    let pickDeptId = "";
+    if (dids.length === 0) {
+      // Servicio transversal: cualquier admin puede contratarlo.
+      canOffer = true;
+    } else {
+      // Servicio con dpto(s): debe haber al menos un match con los dpts del actor.
+      const match = dids.find((d) => userChiefDeptSet.has(d));
+      if (match) {
+        canOffer = true;
+        pickDeptId = match;
       }
+    }
+    if (canOffer) {
+      chiefAvailableServices.push({
+        service_id: svc.id as string,
+        service_name: svc.name as string,
+        service_slug: svc.slug as string,
+        department_id: pickDeptId,
+      });
     }
   }
 
@@ -1624,15 +1659,16 @@ export interface TeamMemberCandidate {
 /**
  * Empleados disponibles para añadir al equipo de un cliente: cualquier admin
  * con rol Miembro/Chief en alguno de los dpts donde el actor tiene
- * `assign_technician`. Excluye a los que ya son miembros del equipo (técnicos
- * o supervisores activos en este cliente).
+ * `write_dept_service`. Excluye a los que ya son miembros del equipo (técnicos
+ * o supervisores activos en este cliente). Devuelve también los dpts donde el
+ * actor puede gestionar (para que la UI sepa en qué miembros mostrar X).
  */
 export async function listTeamMemberCandidates(
   companyId: string
-): Promise<TeamMemberCandidate[]> {
+): Promise<{ candidates: TeamMemberCandidate[]; manageableDeptIds: string[] }> {
   await requireAdmin();
-  const allowedDeptIds = await userScopeIds("assign_technician", "department");
-  if (allowedDeptIds.length === 0) return [];
+  const allowedDeptIds = await userScopeIds("write_dept_service", "department");
+  if (allowedDeptIds.length === 0) return { candidates: [], manageableDeptIds: [] };
 
   const admin = createAdminClient();
   const [miembroRoleId, chiefRoleId] = await Promise.all([
@@ -1660,7 +1696,9 @@ export async function listTeamMemberCandidates(
   }
 
   const profileIds = [...deptIdsByProfile.keys()];
-  if (profileIds.length === 0) return [];
+  if (profileIds.length === 0) {
+    return { candidates: [], manageableDeptIds: allowedDeptIds };
+  }
 
   // Excluir los que ya están en el equipo del cliente.
   const existingTeam = await getTeamMemberIdsForDepts(admin, companyId, allowedDeptIds);
@@ -1678,7 +1716,7 @@ export async function listTeamMemberCandidates(
   const deptNameById = new Map<string, string>();
   for (const d of depts ?? []) deptNameById.set(d.id as string, d.name as string);
 
-  return (profiles ?? [])
+  const candidates = (profiles ?? [])
     .filter((p) => !existingSet.has(p.id as string))
     .map((p) => {
       const dids = [...(deptIdsByProfile.get(p.id as string) ?? [])];
@@ -1695,6 +1733,7 @@ export async function listTeamMemberCandidates(
     .sort((a, b) =>
       (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, "es")
     );
+  return { candidates, manageableDeptIds: allowedDeptIds };
 }
 
 export async function addTeamMemberToCompany(
@@ -1730,7 +1769,7 @@ export async function addTeamMemberToCompany(
   // 2. Filtrar a los dpts donde el actor tiene assign_technician.
   const allowedDeptIds: string[] = [];
   for (const did of memberDeptIds) {
-    if (await hasPermission("assign_technician", { type: "department", id: did })) {
+    if (await hasPermission("write_dept_service", { type: "department", id: did })) {
       allowedDeptIds.push(did);
     }
   }
@@ -1859,7 +1898,7 @@ export async function removeTeamMemberFromCompany(
   // Solo en dpts donde el actor tiene permiso.
   const allowedDeptIds: string[] = [];
   for (const did of memberDeptIds) {
-    if (await hasPermission("assign_technician", { type: "department", id: did })) {
+    if (await hasPermission("write_dept_service", { type: "department", id: did })) {
       allowedDeptIds.push(did);
     }
   }

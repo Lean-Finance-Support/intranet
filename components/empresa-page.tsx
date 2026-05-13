@@ -346,32 +346,6 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
                               {s.service_description}
                             </p>
                           )}
-                          {s.technicians.length > 0 ? (
-                            <div className="mt-3">
-                              <p className="text-[11px] uppercase tracking-wider text-text-muted/80 mb-1.5">
-                                Técnico
-                                {s.technicians.length === 1 ? "" : "s"} asignado
-                                {s.technicians.length === 1 ? "" : "s"}
-                              </p>
-                              <ul className="flex flex-wrap gap-2">
-                                {s.technicians.map((t) => (
-                                  <li
-                                    key={t.profile_id}
-                                    className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1 text-text-body"
-                                    title={t.email}
-                                  >
-                                    {t.full_name?.trim() || t.email}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : (
-                            s.department_names.length > 0 && (
-                              <p className="text-[11px] text-amber-700 mt-3">
-                                Pendiente de asignar técnico.
-                              </p>
-                            )
-                          )}
                         </li>
                       ))}
                     </ul>

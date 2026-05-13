@@ -8,6 +8,9 @@ import ConfirmDialog from "@/components/confirm-dialog";
 export interface TeamManageProps {
   canManage: boolean;
   candidates: TeamMemberCandidate[];
+  /** Dpts donde el actor tiene write_dept_service. Solo los miembros cuyos
+   *  dpts intersectan con este set ofrecen la X de "quitar". */
+  manageableDeptIds: string[];
   onAdd: (profileId: string) => Promise<void>;
   onRemove: (profileId: string) => Promise<void>;
 }
@@ -160,6 +163,7 @@ export default function ResponsibleTeamSection({
 
   const departments = team?.byDepartment ?? [];
   const canManage = manage?.canManage === true;
+  const manageableDeptSet = new Set(manage?.manageableDeptIds ?? []);
   const candidatesAll = manage?.candidates ?? [];
   const visibleCandidates = pickerFilter
     ? candidatesAll.filter((c) => c.department_ids.includes(pickerFilter))
@@ -211,22 +215,26 @@ export default function ResponsibleTeamSection({
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {dept.members.map((m) => (
-                    <MemberRow
-                      key={`${dept.department_id}-${m.profile_id}`}
-                      member={m}
-                      onRemove={
-                        canManage
-                          ? () =>
-                              setPendingRemove({
-                                profileId: m.profile_id,
-                                name: m.full_name ?? m.email,
-                              })
-                          : undefined
-                      }
-                      busy={busyProfileId === m.profile_id}
-                    />
-                  ))}
+                  {dept.members.map((m) => {
+                    const canRemoveThis =
+                      canManage && manageableDeptSet.has(dept.department_id);
+                    return (
+                      <MemberRow
+                        key={`${dept.department_id}-${m.profile_id}`}
+                        member={m}
+                        onRemove={
+                          canRemoveThis
+                            ? () =>
+                                setPendingRemove({
+                                  profileId: m.profile_id,
+                                  name: m.full_name ?? m.email,
+                                })
+                            : undefined
+                        }
+                        busy={busyProfileId === m.profile_id}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ))}

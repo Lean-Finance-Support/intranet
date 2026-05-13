@@ -11,7 +11,6 @@ interface Props {
     slug: string;
     description: string | null;
     department_ids: string[];
-    display_order: number;
   }) => Promise<void> | void;
   onClose: () => void;
 }
@@ -33,21 +32,19 @@ export default function ServiceFormDialog({
 }: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
-  const [slugTouched, setSlugTouched] = useState(!!initial);
   const [description, setDescription] = useState(initial?.description ?? "");
   const [deptIds, setDeptIds] = useState<string[]>(initial?.department_ids ?? []);
-  const [displayOrder, setDisplayOrder] = useState<number>(
-    initial?.display_order ?? 100
-  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isLoadBearing = initial?.is_load_bearing ?? false;
 
+  // Al crear, el slug se deriva automáticamente del nombre (no editable por
+  // el usuario). Al editar, se mantiene el slug existente sin tocarlo.
   useEffect(() => {
-    if (slugTouched || initial) return;
+    if (initial) return;
     setSlug(slugify(name));
-  }, [name, slugTouched, initial]);
+  }, [name, initial]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -77,7 +74,6 @@ export default function ServiceFormDialog({
         slug: slug.trim(),
         description: description.trim() || null,
         department_ids: deptIds,
-        display_order: Number.isFinite(displayOrder) ? displayOrder : 100,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error inesperado");
@@ -115,33 +111,23 @@ export default function ServiceFormDialog({
           />
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">
-            Slug *{" "}
-            {isLoadBearing && (
-              <span
-                className="ml-1 text-[10px] uppercase tracking-wider text-amber-600"
-                title="Referenciado en código — no se puede cambiar"
-              >
-                bloqueado
-              </span>
-            )}
-          </label>
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => {
-              setSlug(e.target.value);
-              setSlugTouched(true);
-            }}
-            disabled={isLoadBearing}
-            required
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal disabled:bg-gray-50 disabled:text-text-muted disabled:cursor-not-allowed"
-          />
-          <p className="mt-1 text-[11px] text-text-muted/80">
-            Identificador URL-safe. Solo minúsculas, números y guiones.
-          </p>
-        </div>
+        {isLoadBearing && (
+          <div>
+            <label className="block text-xs font-medium text-text-muted mb-1">
+              Identificador del sistema
+            </label>
+            <input
+              type="text"
+              value={slug}
+              disabled
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 font-mono bg-gray-50 text-text-muted cursor-not-allowed"
+            />
+            <p className="mt-1 text-[11px] text-text-muted/80">
+              Este servicio está referenciado en código. El identificador no se
+              puede modificar.
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-medium text-text-muted mb-1">
@@ -191,19 +177,6 @@ export default function ServiceFormDialog({
             Un servicio sin departamento se ofrecerá como transversal — no
             tendrá técnicos asignables.
           </p>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-text-muted mb-1">
-            Orden de visualización
-          </label>
-          <input
-            type="number"
-            value={displayOrder}
-            onChange={(e) => setDisplayOrder(Number(e.target.value))}
-            min={0}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
-          />
         </div>
 
         {error && (

@@ -184,21 +184,25 @@ export default function ClientDetailWorkspace({
   const [serviceError, setServiceError] = useState<string | null>(null);
 
   // Equipo responsable — candidatos para añadir (cargados on-demand cuando se
-  // abre el tab equipo). `canManageTeam` = el actor tiene scope en al menos un
-  // dpto. Si no, el listado vendrá vacío y los botones quedan deshabilitados.
-  const [teamCandidates, setTeamCandidates] = useState<TeamMemberCandidate[] | null>(null);
+  // abre el tab equipo). Además recibimos los dpts donde el actor puede
+  // gestionar (write_dept_service), que la UI usa para mostrar/ocultar la X
+  // en cada miembro según su dpto.
+  const [teamData, setTeamData] = useState<{
+    candidates: TeamMemberCandidate[];
+    manageableDeptIds: string[];
+  } | null>(null);
   const [teamCandidatesLoading, setTeamCandidatesLoading] = useState(false);
   useEffect(() => {
     if (tab !== "equipo") return;
-    if (teamCandidates !== null) return;
+    if (teamData !== null) return;
     let cancelled = false;
     setTeamCandidatesLoading(true);
     listTeamMemberCandidates(company.id)
       .then((rows) => {
-        if (!cancelled) setTeamCandidates(rows);
+        if (!cancelled) setTeamData(rows);
       })
       .catch(() => {
-        if (!cancelled) setTeamCandidates([]);
+        if (!cancelled) setTeamData({ candidates: [], manageableDeptIds: [] });
       })
       .finally(() => {
         if (!cancelled) setTeamCandidatesLoading(false);
@@ -206,13 +210,13 @@ export default function ClientDetailWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [tab, teamCandidates, company.id]);
+  }, [tab, teamData, company.id]);
   async function refreshTeamCandidates() {
     try {
       const rows = await listTeamMemberCandidates(company.id);
-      setTeamCandidates(rows);
+      setTeamData(rows);
     } catch {
-      setTeamCandidates([]);
+      setTeamData({ candidates: [], manageableDeptIds: [] });
     }
   }
   async function handleAddTeamMember(profileId: string) {
@@ -646,10 +650,11 @@ export default function ClientDetailWorkspace({
         <ResponsibleTeamSection
           team={responsibleTeam}
           variant="expanded"
-          loading={teamCandidatesLoading && teamCandidates === null}
+          loading={teamCandidatesLoading && teamData === null}
           manage={{
-            canManage: true,
-            candidates: teamCandidates ?? [],
+            canManage: (teamData?.manageableDeptIds.length ?? 0) > 0,
+            candidates: teamData?.candidates ?? [],
+            manageableDeptIds: teamData?.manageableDeptIds ?? [],
             onAdd: handleAddTeamMember,
             onRemove: handleRemoveTeamMember,
           }}
@@ -928,7 +933,7 @@ export default function ClientDetailWorkspace({
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Servicios contratados
             </p>
-            {canEditCompany && isChiefOfAny && availableToAdd.length > 0 && !addingService && (
+            {canEditCompany && availableToAdd.length > 0 && !addingService && (
               <button
                 onClick={() => setAddingService(true)}
                 className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer"

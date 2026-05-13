@@ -64,7 +64,7 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
   {
     id: "admin:servicios",
     space: "admin",
-    label: "Catálogo Servicios",
+    label: "Servicios",
     path: "/servicios",
     icon: "briefcase",
     keywords: ["servicios", "catalogo", "catálogo", "oferta", "productos"],

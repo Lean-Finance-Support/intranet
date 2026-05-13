@@ -219,7 +219,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
       <NavItem icon={<BookIcon className="w-5 h-5" />} label="Catálogo Doc." href={docCatalogHref} active={isActive(docCatalogHref)} collapsed={collapsed} />
-      <NavItem icon={<BriefcaseIcon className="w-5 h-5" />} label="Catálogo Servicios" href={serviciosHref} active={isActive(serviciosHref)} collapsed={collapsed} />
+      <NavItem icon={<BriefcaseIcon className="w-5 h-5" />} label="Servicios" href={serviciosHref} active={isActive(serviciosHref)} collapsed={collapsed} />
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
   );
@@ -339,7 +339,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={false} />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
               <NavItem icon={<BookIcon className="w-5 h-5" />} label="Catálogo Doc." href={docCatalogHref} active={isActive(docCatalogHref)} collapsed={false} />
-              <NavItem icon={<BriefcaseIcon className="w-5 h-5" />} label="Catálogo Servicios" href={serviciosHref} active={isActive(serviciosHref)} collapsed={false} />
+              <NavItem icon={<BriefcaseIcon className="w-5 h-5" />} label="Servicios" href={serviciosHref} active={isActive(serviciosHref)} collapsed={false} />
             </nav>
           </div>
         </div>

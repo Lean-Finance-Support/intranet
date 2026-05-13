@@ -33,6 +33,11 @@ export default function ServicesWorkspace({ initial }: Props) {
   );
   const [error, setError] = useState<string | null>(null);
 
+  const hasArchived = useMemo(
+    () => services.some((s) => !s.is_active),
+    [services]
+  );
+
   const visibleServices = useMemo(
     () => services.filter((s) => (showArchived ? true : s.is_active)),
     [services, showArchived]
@@ -42,11 +47,8 @@ export default function ServicesWorkspace({ initial }: Props) {
   // cada sección. Los servicios sin dpto van a NO_DEPT_KEY.
   const groups = useMemo(() => {
     const byDept = new Map<string, ServiceCatalogItem[]>();
-    for (const dept of initial.departments) {
-      byDept.set(dept.id, []);
-    }
+    for (const dept of initial.departments) byDept.set(dept.id, []);
     byDept.set(NO_DEPT_KEY, []);
-
     for (const s of visibleServices) {
       if (s.department_ids.length === 0) {
         byDept.get(NO_DEPT_KEY)!.push(s);
@@ -74,10 +76,10 @@ export default function ServicesWorkspace({ initial }: Props) {
     slug: string;
     description: string | null;
     department_ids: string[];
-    display_order: number;
   }) {
     try {
-      const { id } = await createService(input);
+      const nextDisplayOrder = computeNextDisplayOrder(services);
+      const { id } = await createService({ ...input, display_order: nextDisplayOrder });
       const deptNames = initial.departments
         .filter((d) => input.department_ids.includes(d.id))
         .map((d) => d.name);
@@ -87,7 +89,7 @@ export default function ServicesWorkspace({ initial }: Props) {
         slug: input.slug,
         description: input.description,
         is_active: true,
-        display_order: input.display_order,
+        display_order: nextDisplayOrder,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         department_ids: input.department_ids,
@@ -95,9 +97,7 @@ export default function ServicesWorkspace({ initial }: Props) {
         company_count: 0,
         is_load_bearing: false,
       };
-      refreshOptimistic((prev) =>
-        [...prev, newItem].sort(sortServices)
-      );
+      refreshOptimistic((prev) => [...prev, newItem].sort(sortServices));
       setCreating(false);
     } catch (e) {
       showError(e);
@@ -112,11 +112,14 @@ export default function ServicesWorkspace({ initial }: Props) {
       slug: string;
       description: string | null;
       department_ids: string[];
-      display_order: number;
     }
   ) {
     try {
-      await updateService(id, input);
+      const current = services.find((s) => s.id === id);
+      await updateService(id, {
+        ...input,
+        display_order: current?.display_order,
+      });
       const deptNames = initial.departments
         .filter((d) => input.department_ids.includes(d.id))
         .map((d) => d.name);
@@ -129,7 +132,6 @@ export default function ServicesWorkspace({ initial }: Props) {
                   name: input.name,
                   slug: input.slug,
                   description: input.description,
-                  display_order: input.display_order,
                   department_ids: input.department_ids,
                   department_names: deptNames,
                 }
@@ -169,7 +171,7 @@ export default function ServicesWorkspace({ initial }: Props) {
     });
   }
 
-  const sections: { id: string; name: string; items: ServiceCatalogItem[] }[] = [
+  const orderedSections: { id: string; name: string; items: ServiceCatalogItem[] }[] = [
     ...initial.departments.map((d) => ({
       id: d.id,
       name: d.name,
@@ -185,159 +187,145 @@ export default function ServicesWorkspace({ initial }: Props) {
   return (
     <div className="min-h-full px-8 py-12">
       <div className="max-w-7xl">
-        <p className="text-xs uppercase tracking-wider text-text-muted mb-3">
-          Catálogo
-        </p>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold text-brand-navy">
-              Catálogo de servicios
+        <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
+              Servicios
             </h1>
-            <p className="text-sm text-text-muted mt-2 max-w-2xl">
+            <p className="text-text-muted text-sm mt-2 max-w-xl">
               Servicios que Lean Finance ofrece a sus clientes. Cada servicio
-              puede pertenecer a uno o varios departamentos — los técnicos
-              asignados al servicio se gestionan en la ficha de cada cliente.
+              puede pertenecer a uno o varios departamentos — los técnicos del
+              servicio se gestionan en la ficha de cada cliente.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-              />
-              Mostrar archivados
-            </label>
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {hasArchived && (
+              <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer select-none px-2.5 py-2">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                />
+                Ver archivados
+              </label>
+            )}
             {initial.canManage && (
               <button
                 onClick={() => setCreating(true)}
-                className="text-sm px-4 py-2 rounded-lg bg-brand-teal text-white hover:bg-brand-teal/90 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
               >
-                + Nuevo servicio
+                <svg
+                  width={14}
+                  height={14}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Nuevo servicio
               </button>
             )}
           </div>
         </div>
 
         {error && (
-          <div className="mt-4 text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+          <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
             {error}
           </div>
         )}
 
         {!initial.canManage && (
-          <div className="mt-6 text-xs text-text-muted bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-            Solo lectura. Necesitas el permiso{" "}
-            <code className="font-mono">manage_services_catalog</code> para
-            editar el catálogo.
-          </div>
+          <p className="mt-6 text-sm text-text-muted bg-white rounded-xl px-4 py-3 border border-gray-100 flex items-start gap-2">
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="flex-shrink-0 mt-0.5"
+              aria-hidden
+            >
+              <rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span>
+              Estás viendo el catálogo en modo lectura. Para editarlo necesitas
+              el permiso correspondiente.
+            </span>
+          </p>
         )}
 
         <div className="mt-8 space-y-4">
-          {sections.map((section) => (
-            <div
-              key={section.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm"
-            >
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-brand-navy">
-                  {section.name}
-                </h2>
-                <span className="text-xs text-text-muted">
-                  {section.items.length}{" "}
-                  {section.items.length === 1 ? "servicio" : "servicios"}
-                </span>
+          {orderedSections.map((section, sectionIdx) => {
+            if (section.items.length === 0 && !showArchived && section.id !== NO_DEPT_KEY) {
+              // sección de dpto vacía y no estamos viendo archivados → ocultar
+              return null;
+            }
+            if (section.items.length === 0) return null;
+            const isNoDept = section.id === NO_DEPT_KEY;
+            return (
+              <div
+                key={section.id}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm"
+              >
+                <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div
+                      className="rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{
+                        width: 28,
+                        height: 28,
+                        backgroundColor: "white",
+                        border: isNoDept
+                          ? "1.5px solid #94a3b8"
+                          : "1.5px solid #00B0B7",
+                        color: isNoDept ? "#94a3b8" : "#00B0B7",
+                      }}
+                      aria-hidden
+                    >
+                      <span className="text-[11px] font-bold">
+                        {sectionIdx + 1}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base font-semibold text-brand-navy font-heading">
+                        {section.name}
+                      </h3>
+                      {isNoDept && (
+                        <p className="text-xs text-text-muted mt-0.5">
+                          Servicios transversales sin departamento responsable.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs text-text-muted whitespace-nowrap mt-1">
+                    {section.items.length}{" "}
+                    {section.items.length === 1 ? "servicio" : "servicios"}
+                  </span>
+                </div>
+                <div className="px-5 py-4 space-y-2">
+                  {section.items.map((s) => (
+                    <ServiceRow
+                      key={`${section.id}-${s.id}`}
+                      service={s}
+                      canManage={initial.canManage}
+                      onEdit={() => setEditing(s)}
+                      onArchive={() => setPendingArchive(s)}
+                      onUnarchive={() => handleUnarchive(s)}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="px-5 py-4">
-                {section.items.length === 0 ? (
-                  <p className="text-xs text-text-muted/80 italic py-2">
-                    Sin servicios en esta categoría.
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {section.items.map((s) => (
-                      <li
-                        key={`${section.id}-${s.id}`}
-                        className={`flex items-start gap-3 border border-gray-100 rounded-xl px-3 py-2.5 ${
-                          s.is_active ? "bg-white" : "bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span
-                              className={`text-sm font-medium ${
-                                s.is_active ? "text-text-body" : "text-text-muted"
-                              }`}
-                            >
-                              {s.name}
-                            </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 bg-gray-100 text-text-muted rounded">
-                              {s.slug}
-                            </span>
-                            {s.is_load_bearing && (
-                              <span
-                                title="Referenciado en código"
-                                className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded"
-                              >
-                                Sistema
-                              </span>
-                            )}
-                            {!s.is_active && (
-                              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-gray-200 text-text-muted rounded">
-                                Archivado
-                              </span>
-                            )}
-                          </div>
-                          {s.description && (
-                            <p className="text-xs text-text-muted mt-1 line-clamp-2">
-                              {s.description}
-                            </p>
-                          )}
-                          <p className="text-[11px] text-text-muted/80 mt-1.5">
-                            {s.company_count}{" "}
-                            {s.company_count === 1
-                              ? "empresa lo tiene contratado"
-                              : "empresas lo tienen contratado"}
-                          </p>
-                        </div>
-                        {initial.canManage && (
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <button
-                              onClick={() => setEditing(s)}
-                              className="text-xs text-brand-teal hover:bg-brand-teal/10 rounded-lg px-2.5 py-1.5 cursor-pointer"
-                            >
-                              Editar
-                            </button>
-                            {s.is_active ? (
-                              <button
-                                onClick={() => setPendingArchive(s)}
-                                disabled={s.is_load_bearing}
-                                title={
-                                  s.is_load_bearing
-                                    ? "Servicio referenciado en código"
-                                    : undefined
-                                }
-                                className="text-xs text-red-600 hover:bg-red-50 rounded-lg px-2.5 py-1.5 cursor-pointer disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                              >
-                                Archivar
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleUnarchive(s)}
-                                className="text-xs text-brand-navy hover:bg-brand-navy/5 rounded-lg px-2.5 py-1.5 cursor-pointer"
-                              >
-                                Restaurar
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -359,7 +347,7 @@ export default function ServicesWorkspace({ initial }: Props) {
       {pendingArchive && (
         <ConfirmDialog
           title="Archivar servicio"
-          message={`¿Archivar "${pendingArchive.name}"? Dejará de ofrecerse en nuevos onboardings. Los clientes que ya lo tengan contratado no se ven afectados.`}
+          message={`¿Archivar "${pendingArchive.name}"? Dejará de ofrecerse en nuevos onboardings. Las empresas que ya lo tengan contratado no se ven afectadas. Puedes restaurarlo más tarde.`}
           confirmLabel="Archivar"
           destructive
           onConfirm={async () => {
@@ -373,7 +361,125 @@ export default function ServicesWorkspace({ initial }: Props) {
   );
 }
 
+function ServiceRow({
+  service: s,
+  canManage,
+  onEdit,
+  onArchive,
+  onUnarchive,
+}: {
+  service: ServiceCatalogItem;
+  canManage: boolean;
+  onEdit: () => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
+}) {
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-xl border border-gray-100 px-4 py-3 ${
+        s.is_active ? "bg-white" : "bg-gray-50"
+      }`}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={`text-sm font-medium ${
+              s.is_active ? "text-text-body" : "text-text-muted"
+            }`}
+          >
+            {s.name}
+          </span>
+          {s.is_load_bearing && (
+            <span
+              title="Servicio del sistema: el slug está referenciado en código (sidebar cliente, OAuth Dashboard). No se puede renombrar ni archivar."
+              className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded inline-flex items-center gap-1"
+            >
+              <svg
+                width={10}
+                height={10}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Sistema
+            </span>
+          )}
+          {!s.is_active && (
+            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-gray-200 text-text-muted rounded">
+              Archivado
+            </span>
+          )}
+        </div>
+        {s.description && (
+          <p className="text-xs text-text-muted mt-1 line-clamp-2">
+            {s.description}
+          </p>
+        )}
+        <p className="text-[11px] text-text-muted/80 mt-1.5">
+          {s.company_count > 0 ? (
+            <>
+              {s.company_count}{" "}
+              {s.company_count === 1
+                ? "empresa lo tiene contratado"
+                : "empresas lo tienen contratado"}
+            </>
+          ) : (
+            "Sin empresas contratadas"
+          )}
+        </p>
+      </div>
+      {canManage && (
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={onEdit}
+            className="text-xs text-text-muted hover:text-brand-teal hover:bg-brand-teal/8 px-2.5 py-1 rounded-md cursor-pointer transition-colors"
+          >
+            Editar
+          </button>
+          {s.is_active ? (
+            <button
+              onClick={onArchive}
+              disabled={s.is_load_bearing}
+              title={
+                s.is_load_bearing
+                  ? "Servicio del sistema — no se puede archivar"
+                  : undefined
+              }
+              className="text-xs text-text-muted hover:text-red-600 hover:bg-red-50/60 px-2.5 py-1 rounded-md cursor-pointer transition-colors disabled:text-gray-300 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-300"
+            >
+              Archivar
+            </button>
+          ) : (
+            <button
+              onClick={onUnarchive}
+              className="text-xs text-text-muted hover:text-brand-navy hover:bg-brand-navy/5 px-2.5 py-1 rounded-md cursor-pointer transition-colors"
+            >
+              Restaurar
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function sortServices(a: ServiceCatalogItem, b: ServiceCatalogItem): number {
   if (a.display_order !== b.display_order) return a.display_order - b.display_order;
   return a.name.localeCompare(b.name, "es");
+}
+
+function computeNextDisplayOrder(services: ServiceCatalogItem[]): number {
+  if (services.length === 0) return 100;
+  const max = services.reduce(
+    (m, s) => (s.display_order > m ? s.display_order : m),
+    0
+  );
+  return max + 10;
 }
