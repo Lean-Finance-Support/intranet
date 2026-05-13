@@ -307,21 +307,12 @@ export async function archiveService(id: string): Promise<void> {
     .maybeSingle();
   if (!existing) throw new Error("Servicio no encontrado.");
   if (LOAD_BEARING_SERVICE_SLUGS.has(existing.slug as string)) {
-    throw new Error("No se puede archivar un servicio referenciado en código.");
+    throw new Error("No se puede archivar un servicio del sistema.");
   }
 
-  const { count } = await supabase
-    .from("company_services")
-    .select("id", { count: "exact", head: true })
-    .eq("service_id", id)
-    .eq("is_active", true);
-
-  if ((count ?? 0) > 0) {
-    throw new Error(
-      `No se puede archivar: ${count} empresa(s) lo tienen contratado. Quítaselo primero.`
-    );
-  }
-
+  // Archivar = soft-delete del catálogo. Las empresas que ya lo tengan
+  // contratado lo conservan; el servicio simplemente deja de ofrecerse en
+  // nuevos onboardings y la ficha del catálogo.
   const { error } = await supabase
     .from("services")
     .update({ is_active: false })

@@ -158,13 +158,14 @@ export async function getCompanyContractedServices(): Promise<ContractedServiceF
   const csIds = csList.map((cs) => cs.id as string);
   const serviceIds = [...new Set(csList.map((cs) => cs.service_id as string))];
 
-  // 2. Meta de los servicios + dpts vinculados activos.
+  // 2. Meta de los servicios + dpts vinculados activos. Los servicios
+  // archivados también se incluyen: la empresa los tiene contratados y debe
+  // verlos hasta que se le quiten manualmente.
   const [{ data: services }, { data: deptLinks }] = await Promise.all([
     admin
       .from("services")
       .select("id, name, slug, description, display_order")
-      .in("id", serviceIds)
-      .eq("is_active", true),
+      .in("id", serviceIds),
     admin
       .from("department_services")
       .select("service_id, department_id")

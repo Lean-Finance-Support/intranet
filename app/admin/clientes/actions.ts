@@ -536,10 +536,12 @@ export async function getCompanyContextForDetail(
       .select("id, service_id")
       .eq("company_id", companyId)
       .eq("is_active", true),
+    // Cargamos TODOS los servicios (activos y archivados). Los activos nutren
+    // `chiefAvailableServices` (lo contratable); los archivados se siguen
+    // mostrando en `company.services` si la empresa ya los tenía contratados.
     supabase
       .from("services")
-      .select("id, name, slug, display_order")
-      .eq("is_active", true)
+      .select("id, name, slug, display_order, is_active")
       .order("display_order")
       .order("name"),
     supabase
@@ -679,6 +681,9 @@ export async function getCompanyContextForDetail(
   }
 
   for (const svc of allServices ?? []) {
+    // Los servicios archivados nunca son contratables (aunque pueden seguir
+    // apareciendo en company.services si ya estaban contratados).
+    if (svc.is_active === false) continue;
     const dids = deptIdsByService.get(svc.id as string) ?? [];
     let canOffer = false;
     let pickDeptId = "";
