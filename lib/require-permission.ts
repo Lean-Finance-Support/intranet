@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { getAuthUser } from "@/lib/cached-queries";
 
 export type PermissionScope =
@@ -27,21 +28,56 @@ function scopeArgs(scope: PermissionScope) {
   }
 }
 
+// Per-request memoization (React cache). Una página típica dispara varias
+// veces `hasPermission()` / `userScopeIds()` (en `Promise.all`, en helpers
+// como `canViewClientDashboard`/`canViewClientTaxModels`, en `requireAdmin`+
+// page+action chain). Con `cache()` cada combinación (perm, scope) se ejecuta
+// UNA sola vez por render — sin riesgo de staleness, sin invalidación, sin
+// cookies-in-cache. Solo deduplicación in-memory dentro del request.
+const hasPermissionImpl = cache(
+  async (
+    userId: string,
+    perm: string,
+    scopeType: string,
+    scopeId: string | null,
+  ): Promise<boolean> => {
+    const { supabase } = await getAuthUser();
+    const { data, error } = await supabase.rpc("has_permission", {
+      uid: userId,
+      perm,
+      p_scope_type: scopeType,
+      p_scope_id: scopeId,
+    });
+    if (error) throw error;
+    return data === true;
+  },
+);
+
+const userScopeIdsImpl = cache(
+  async (
+    userId: string,
+    perm: string,
+    scopeType: string,
+  ): Promise<string[]> => {
+    const { supabase } = await getAuthUser();
+    const { data, error } = await supabase.rpc("user_scope_ids", {
+      uid: userId,
+      perm,
+      p_scope_type: scopeType,
+    });
+    if (error) throw error;
+    return (data ?? []).map((row: { scope_id: string }) => row.scope_id);
+  },
+);
+
 export async function hasPermission(
   perm: string,
   scope: PermissionScope = { type: "none" }
 ): Promise<boolean> {
-  const { supabase, user } = await getAuthUser();
+  const { user } = await getAuthUser();
   if (!user) return false;
-
-  const { data, error } = await supabase.rpc("has_permission", {
-    uid: user.id,
-    perm,
-    ...scopeArgs(scope),
-  });
-
-  if (error) throw error;
-  return data === true;
+  const args = scopeArgs(scope);
+  return hasPermissionImpl(user.id, perm, args.p_scope_type, args.p_scope_id);
 }
 
 export async function requirePermission(
@@ -50,16 +86,8 @@ export async function requirePermission(
 ) {
   const { supabase, user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
-
-  const { data, error } = await supabase.rpc("has_permission", {
-    uid: user.id,
-    perm,
-    ...scopeArgs(scope),
-  });
-
-  if (error) throw error;
-  if (data !== true) throw new Error("Sin permisos");
-
+  const ok = await hasPermission(perm, scope);
+  if (!ok) throw new Error("Sin permisos");
   return { supabase, user };
 }
 
@@ -71,17 +99,9 @@ export async function userScopeIds(
   perm: string,
   scopeType: "department" | "company" | "service" | "company_service" | "client_apartado"
 ): Promise<string[]> {
-  const { supabase, user } = await getAuthUser();
+  const { user } = await getAuthUser();
   if (!user) return [];
-
-  const { data, error } = await supabase.rpc("user_scope_ids", {
-    uid: user.id,
-    perm,
-    p_scope_type: scopeType,
-  });
-
-  if (error) throw error;
-  return (data ?? []).map((row: { scope_id: string }) => row.scope_id);
+  return userScopeIdsImpl(user.id, perm, scopeType);
 }
 
 export async function requireAnyPermission(
@@ -98,22 +118,34 @@ export async function requireAnyPermission(
 
 export type GrantLevel = 0 | 1 | 2 | 3;
 
+const userGrantLevelImpl = cache(
+  async (
+    userId: string,
+    perm: string,
+    scopeType: string,
+    scopeId: string | null,
+  ): Promise<GrantLevel> => {
+    const { supabase } = await getAuthUser();
+    const { data, error } = await supabase.rpc("user_grant_level", {
+      uid: userId,
+      perm,
+      p_scope_type: scopeType,
+      p_scope_id: scopeId,
+    });
+    if (error) throw error;
+    const n = Number(data ?? 0);
+    return (n >= 0 && n <= 3 ? n : 0) as GrantLevel;
+  },
+);
+
 export async function userGrantLevel(
   perm: string,
   scope: PermissionScope = { type: "none" }
 ): Promise<GrantLevel> {
-  const { supabase, user } = await getAuthUser();
+  const { user } = await getAuthUser();
   if (!user) return 0;
-
-  const { data, error } = await supabase.rpc("user_grant_level", {
-    uid: user.id,
-    perm,
-    ...scopeArgs(scope),
-  });
-
-  if (error) throw error;
-  const n = Number(data ?? 0);
-  return (n >= 0 && n <= 3 ? n : 0) as GrantLevel;
+  const args = scopeArgs(scope);
+  return userGrantLevelImpl(user.id, perm, args.p_scope_type, args.p_scope_id);
 }
 
 export async function canGrantToLevel(

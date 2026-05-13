@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { hasPermission } from "@/lib/require-permission";
 
@@ -10,7 +11,11 @@ const FISCAL_DEPARTMENT_SLUG = "asesoria-fiscal-y-contable";
 // cookies y Next 15 prohíbe cookies() dentro de unstable_cache.
 let cachedFiscalDeptId: string | null | undefined;
 
-export async function getFiscalDepartmentId(): Promise<string | null> {
+// Per-request dedupe: si una página llama 2-3 veces (canViewClientDashboard +
+// canViewClientTaxModels + algún server action), las llamadas concurrentes
+// comparten la misma promesa en vez de cada una resolverse aparte. La caché
+// de proceso por encima salva las llamadas posteriores al primer request.
+const getFiscalDeptIdInner = cache(async (): Promise<string | null> => {
   if (cachedFiscalDeptId !== undefined) return cachedFiscalDeptId;
   const supabase = await createClient();
   const { data } = await supabase
@@ -20,12 +25,20 @@ export async function getFiscalDepartmentId(): Promise<string | null> {
     .maybeSingle<{ id: string }>();
   cachedFiscalDeptId = data?.id ?? null;
   return cachedFiscalDeptId;
+});
+
+export async function getFiscalDepartmentId(): Promise<string | null> {
+  return getFiscalDeptIdInner();
 }
 
 /**
  * Un admin puede ver el dashboard fiscal de un cliente si tiene acceso de
  * lectura al dpto Asesoría Fiscal y Contable. Usamos `read_dept_service`,
  * que comparten Miembro, Chief, Observador y Operador del departamento.
+ *
+ * `canViewClientTaxModels` usa exactamente el mismo permiso → con la
+ * deduplicación per-request de `hasPermission` (ver lib/require-permission.ts)
+ * el RPC se ejecuta UNA sola vez aunque se llame a ambas.
  */
 export async function canViewClientDashboard(): Promise<boolean> {
   const fiscalDeptId = await getFiscalDepartmentId();
