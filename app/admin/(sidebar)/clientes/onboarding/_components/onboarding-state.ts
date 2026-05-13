@@ -2,6 +2,8 @@
 // finalizar. Solo se persiste en BD al pulsar "Finalizar onboarding" en el
 // paso 4 — antes de eso, todo es volátil.
 
+import type { OnboardingServiceItem } from "../actions";
+
 export interface OnboardingClientAccountState {
   id: string; // UUID local para keys de React
   email: string;
@@ -41,9 +43,11 @@ export interface OnboardingState {
   bank_accounts: OnboardingBankAccountState[];
   client_accounts: OnboardingClientAccountState[];
 
-  // Paso 2
-  selected_dept_ids: string[];
-  supervisors_by_dept: Record<string, string[]>; // dept_id → profile_ids
+  // Paso 2 — Equipo responsable
+  // Servicios contratados (resuelven los departamentos derivados M:N vía
+  // department_services). El equipo se agrupa por departamento derivado.
+  selected_service_ids: string[];
+  team_by_dept: Record<string, string[]>; // dept_id → profile_ids
   client_no_holded: boolean;
   alta_empresa: boolean;
 
@@ -57,8 +61,8 @@ export const initialOnboardingState: OnboardingState = {
   nif: "",
   bank_accounts: [],
   client_accounts: [],
-  selected_dept_ids: [],
-  supervisors_by_dept: {},
+  selected_service_ids: [],
+  team_by_dept: {},
   client_no_holded: false,
   alta_empresa: false,
   apartado_overrides: {},
@@ -69,6 +73,22 @@ export function genId(): string {
     return crypto.randomUUID();
   }
   return Math.random().toString(36).slice(2);
+}
+
+// Departamentos derivados de los servicios contratados (M:N: un servicio
+// puede pertenecer a 0, 1 o N departamentos). Si el resultado es vacío, el
+// cliente solo recibirá documentación global y no tendrá equipo asignado.
+export function deriveSelectedDeptIds(
+  state: OnboardingState,
+  services: OnboardingServiceItem[]
+): string[] {
+  const sel = new Set(state.selected_service_ids);
+  const out = new Set<string>();
+  for (const s of services) {
+    if (!sel.has(s.id)) continue;
+    for (const d of s.department_ids) out.add(d);
+  }
+  return [...out];
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -95,6 +115,7 @@ export interface ApartadoComputed {
 
 export function computeApartados(
   state: OnboardingState,
+  services: OnboardingServiceItem[],
   blocks: BlockTemplate[],
   tags: DocumentationTag[]
 ): ApartadoComputed[] {
@@ -110,7 +131,8 @@ export function computeApartados(
     if (t) activeTagIds.add(t);
   }
 
-  const selectedDeptSet = new Set(state.selected_dept_ids);
+  const derivedDeptIds = deriveSelectedDeptIds(state, services);
+  const selectedDeptSet = new Set(derivedDeptIds);
   const out: ApartadoComputed[] = [];
 
   for (const block of blocks) {
@@ -152,12 +174,12 @@ export function computeApartados(
       } else {
         const ids = new Set<string>();
         const deptScope: string[] = ap.is_global
-          ? state.selected_dept_ids
+          ? derivedDeptIds
           : (ap.department_ids ?? (ap.departments ?? []).map((d) => d.department_id)).filter((d) =>
               selectedDeptSet.has(d)
             );
         for (const did of deptScope) {
-          for (const sid of state.supervisors_by_dept[did] ?? []) ids.add(sid);
+          for (const sid of state.team_by_dept[did] ?? []) ids.add(sid);
         }
         supervisorIds = [...ids];
       }
@@ -168,7 +190,7 @@ export function computeApartados(
         is_optional: isOptional,
         supervisor_ids: supervisorIds,
         matched_dept_ids: ap.is_global
-          ? state.selected_dept_ids
+          ? derivedDeptIds
           : (ap.department_ids ?? (ap.departments ?? []).map((d) => d.department_id)).filter((d) =>
               selectedDeptSet.has(d)
             ),

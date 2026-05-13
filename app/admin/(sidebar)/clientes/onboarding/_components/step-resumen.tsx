@@ -6,8 +6,8 @@ import type {
   ApartadoOverride,
   ApartadoComputed,
 } from "./onboarding-state";
-import { computeApartados } from "./onboarding-state";
-import type { OnboardingDepartment } from "../actions";
+import { computeApartados, deriveSelectedDeptIds } from "./onboarding-state";
+import type { OnboardingDepartment, OnboardingServiceItem } from "../actions";
 import type {
   BlockTemplate,
   ApartadoTemplate,
@@ -18,6 +18,7 @@ interface Props {
   state: OnboardingState;
   setState: React.Dispatch<React.SetStateAction<OnboardingState>>;
   departments: OnboardingDepartment[];
+  services: OnboardingServiceItem[];
   blocks: BlockTemplate[];
   tags: DocumentationTag[];
 }
@@ -26,6 +27,7 @@ export default function StepResumen({
   state,
   setState,
   departments,
+  services,
   blocks,
   tags,
 }: Props) {
@@ -33,8 +35,12 @@ export default function StepResumen({
   const [supervisorEditingFor, setSupervisorEditingFor] = useState<string | null>(null);
 
   const computed = useMemo(
-    () => computeApartados(state, blocks, tags),
-    [state, blocks, tags]
+    () => computeApartados(state, services, blocks, tags),
+    [state, services, blocks, tags]
+  );
+  const derivedDeptIds = useMemo(
+    () => deriveSelectedDeptIds(state, services),
+    [state, services]
   );
 
   function setOverride(apartadoId: string, patch: Partial<ApartadoOverride>) {
@@ -248,7 +254,7 @@ export default function StepResumen({
                   <ApartadoRow
                     key={c.apartado.id}
                     item={c}
-                    state={state}
+                    derivedDeptIds={derivedDeptIds}
                     departments={departments}
                     tags={tags}
                     profileNameMap={profileNameMap}
@@ -331,7 +337,7 @@ function Stat({
 
 function ApartadoRow({
   item: c,
-  state,
+  derivedDeptIds,
   departments,
   tags,
   profileNameMap,
@@ -342,7 +348,7 @@ function ApartadoRow({
   onSetSupervisors,
 }: {
   item: ApartadoComputed;
-  state: OnboardingState;
+  derivedDeptIds: string[];
   departments: OnboardingDepartment[];
   tags: DocumentationTag[];
   profileNameMap: Map<string, string>;
@@ -354,7 +360,7 @@ function ApartadoRow({
 }) {
   // Departamentos efectivos del apartado (los que tocan tras filtros).
   const apartadoDeptIds = c.apartado.is_global
-    ? state.selected_dept_ids
+    ? derivedDeptIds
     : c.matched_dept_ids;
   const apartadoDepts = departments.filter((d) => apartadoDeptIds.includes(d.id));
 

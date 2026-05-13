@@ -1,11 +1,13 @@
 "use client";
 
 import type { OnboardingState, ApartadoComputed } from "./onboarding-state";
-import type { OnboardingDepartment } from "../actions";
+import type { OnboardingDepartment, OnboardingServiceItem } from "../actions";
 
 interface Props {
   state: OnboardingState;
   departments: OnboardingDepartment[];
+  services: OnboardingServiceItem[];
+  derivedDeptIds: string[];
   apartados: ApartadoComputed[];
   submitting: boolean;
   onSubmit: () => void;
@@ -14,12 +16,15 @@ interface Props {
 export default function StepFinal({
   state,
   departments,
+  services,
+  derivedDeptIds,
   apartados,
   submitting,
   onSubmit,
 }: Props) {
-  const selectedDepts = departments.filter((d) =>
-    state.selected_dept_ids.includes(d.id)
+  const selectedDepts = departments.filter((d) => derivedDeptIds.includes(d.id));
+  const selectedServices = services.filter((s) =>
+    state.selected_service_ids.includes(s.id)
   );
 
   const allSupervisorIds = uniq(apartados.flatMap((a) => a.supervisor_ids));
@@ -71,24 +76,52 @@ export default function StepFinal({
         </ul>
       </Section>
 
-      <Section title="Departamentos y supervisores">
-        <ul className="space-y-2">
-          {selectedDepts.map((d) => {
-            const supIds = state.supervisors_by_dept[d.id] ?? [];
-            return (
-              <li key={d.id}>
-                <p className="text-xs font-semibold text-brand-navy">{d.name}</p>
-                {supIds.length === 0 ? (
-                  <p className="text-[11px] text-amber-700">Sin supervisores</p>
-                ) : (
-                  <p className="text-[11px] text-text-muted">
-                    {supIds.map((sid) => profileNameMap.get(sid) ?? sid).join(", ")}
-                  </p>
-                )}
+      <Section title={`Servicios contratados (${selectedServices.length})`}>
+        {selectedServices.length === 0 ? (
+          <p className="text-xs text-amber-700">Sin servicios.</p>
+        ) : (
+          <ul className="space-y-1">
+            {selectedServices.map((s) => (
+              <li key={s.id} className="text-xs text-text-body">
+                <span className="font-medium">{s.name}</span>
+                <span className="text-text-muted">
+                  {" "}
+                  ·{" "}
+                  {s.department_names.length > 0
+                    ? s.department_names.join(", ")
+                    : "Sin departamento"}
+                </span>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title="Equipo responsable">
+        {selectedDepts.length === 0 ? (
+          <p className="text-[11px] text-text-muted italic">
+            Los servicios contratados no están vinculados a ningún departamento.
+            No habrá equipo asignado automáticamente.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {selectedDepts.map((d) => {
+              const memberIds = state.team_by_dept[d.id] ?? [];
+              return (
+                <li key={d.id}>
+                  <p className="text-xs font-semibold text-brand-navy">{d.name}</p>
+                  {memberIds.length === 0 ? (
+                    <p className="text-[11px] text-amber-700">Sin miembros</p>
+                  ) : (
+                    <p className="text-[11px] text-text-muted">
+                      {memberIds.map((sid) => profileNameMap.get(sid) ?? sid).join(", ")}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </Section>
 
       <Section title="Documentación inicial">
