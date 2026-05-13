@@ -981,8 +981,12 @@ export default function ClientDetailWorkspace({
             <div className="space-y-2">
               {company.services.map((svc) => {
                 const isTransversal = !svc.department_id;
+                // Para servicios transversales, basta con tener
+                // write_dept_service en algún dpto (= ser chief de algo).
                 const isChiefOfDept = canEditCompany && (
-                  isTransversal || userChiefDeptIds.includes(svc.department_id)
+                  isTransversal
+                    ? userChiefDeptIds.length > 0
+                    : userChiefDeptIds.includes(svc.department_id)
                 );
                 const members = isTransversal
                   ? allAdminCandidates

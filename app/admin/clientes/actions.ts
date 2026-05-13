@@ -41,6 +41,18 @@ async function resolveServiceDepartment(
   return data.department_id as string;
 }
 
+/**
+ * Gate para acciones sobre servicios transversales (sin dpto): el actor debe
+ * tener write_dept_service en al menos un dpto (cualquiera). Equivale a "el
+ * actor puede gestionar servicios en alguna parte de la organización".
+ */
+async function requireWriteDeptServiceInAny(): Promise<void> {
+  const scopes = await userScopeIds("write_dept_service", "department");
+  if (scopes.length === 0) {
+    throw new Error("Sin permisos");
+  }
+}
+
 /** Versión M:N — devuelve todos los dpts activos del servicio (puede ser []). */
 async function resolveServiceDepartments(
   supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
@@ -671,8 +683,9 @@ export async function getCompanyContextForDetail(
     let canOffer = false;
     let pickDeptId = "";
     if (dids.length === 0) {
-      // Servicio transversal: cualquier admin puede contratarlo.
-      canOffer = true;
+      // Servicio transversal: el actor debe poder gestionar servicios en
+      // algún dpto (mismo criterio que apartados globales de doc).
+      canOffer = userChiefDeptIds.length > 0;
     } else {
       // Servicio con dpto(s): debe haber al menos un match con los dpts del actor.
       const match = dids.find((d) => userChiefDeptSet.has(d));
@@ -822,10 +835,15 @@ export async function addServiceToCompany(
   const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
   // Autorización: si el servicio pertenece a uno o varios dpts, requerir
-  // permiso en TODOS (conservador). Si es transversal (0 dpts), basta con ser
-  // admin — ya gateado por requireAdmin().
-  for (const did of deptIds) {
-    await requirePermission("write_dept_service", { type: "department", id: did });
+  // permiso en TODOS (conservador). Si es transversal (0 dpts), el actor debe
+  // tener `write_dept_service` en al menos un dpto (= debe poder gestionar
+  // servicios en algún sitio); no basta con ser admin.
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
   }
 
   const { data: upserted, error } = await supabase
@@ -976,10 +994,13 @@ export async function removeServiceFromCompany(
   const { supabase } = await requireAdmin();
   const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
-  // Autorización: si el servicio pertenece a uno o varios dpts, requerir
-  // permiso en TODOS. Transversal (0 dpts) → solo requireAdmin.
-  for (const did of deptIds) {
-    await requirePermission("write_dept_service", { type: "department", id: did });
+  // Autorización equivalente a addServiceToCompany.
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
   }
 
   const { error } = await supabase
@@ -1041,10 +1062,14 @@ export async function assignTechnicianAdmin(
   const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
   // Autorización: si el servicio tiene dpts, requerir permiso en TODOS.
-  // Si es transversal (sin dpto), basta con ser admin — cualquier admin puede
-  // asignar técnicos a servicios transversales.
-  for (const did of deptIds) {
-    await requirePermission("write_dept_service", { type: "department", id: did });
+  // Si es transversal (sin dpto), el actor debe tener write_dept_service en
+  // al menos un dpto (mismo gate que para contratar el servicio).
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
   }
 
   // Solo aseguramos membresía al dpto si el servicio tiene dpto(s).
@@ -1084,8 +1109,12 @@ export async function removeTechnicianAdmin(
 ): Promise<void> {
   const { supabase } = await requireAdmin();
   const deptIds = await resolveServiceDepartments(supabase, serviceId);
-  for (const did of deptIds) {
-    await requirePermission("write_dept_service", { type: "department", id: did });
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
   }
 
   const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);

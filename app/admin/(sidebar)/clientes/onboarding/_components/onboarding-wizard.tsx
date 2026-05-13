@@ -26,7 +26,7 @@ interface Props {
 
 const STEPS = [
   { id: 1, name: "Datos" },
-  { id: 2, name: "Equipo responsable" },
+  { id: 2, name: "Servicios contratados" },
   { id: 3, name: "Documentación inicial" },
   { id: 4, name: "Confirmación" },
 ] as const;
