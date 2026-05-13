@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import type { CompanyInfo } from "@/app/app/empresa/actions";
+import type {
+  CompanyInfo,
+  ContractedServiceForClient,
+} from "@/app/app/empresa/actions";
 import {
   getCompanyInfo,
   addCompanyBankAccount,
   updateCompanyBankAccount,
   deleteCompanyBankAccount,
+  getCompanyContractedServices,
 } from "@/app/app/empresa/actions";
 import {
   addClientComment,
@@ -21,10 +25,11 @@ import type { ClientDocumentation } from "@/lib/types/documentation";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import DocumentationMasterDetail from "@/components/documentation/documentation-master-detail";
 
-type TabKey = "documentacion" | "datos";
+type TabKey = "documentacion" | "servicios" | "datos";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "documentacion", label: "Documentación" },
+  { key: "servicios", label: "Servicios contratados" },
   { key: "datos", label: "Datos" },
 ];
 
@@ -120,6 +125,28 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
   const [addingBank, setAddingBank] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
+
+  // Servicios contratados — cargados on-demand al abrir el tab.
+  const [services, setServices] = useState<ContractedServiceForClient[] | null>(null);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  useEffect(() => {
+    if (tab !== "servicios" || services !== null) return;
+    let cancelled = false;
+    setServicesLoading(true);
+    getCompanyContractedServices()
+      .then((rows) => {
+        if (!cancelled) setServices(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setServices([]);
+      })
+      .finally(() => {
+        if (!cancelled) setServicesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, services]);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -267,6 +294,90 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
                   },
                 }}
               />
+            )}
+
+            {tab === "servicios" && (
+              <div className="space-y-3">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      Servicios contratados
+                    </p>
+                    {services && (
+                      <span className="text-xs text-text-muted">
+                        {services.length}{" "}
+                        {services.length === 1 ? "servicio" : "servicios"}
+                      </span>
+                    )}
+                  </div>
+                  {servicesLoading && services === null && (
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-16 bg-gray-100 rounded-lg" />
+                      <div className="h-16 bg-gray-100 rounded-lg" />
+                    </div>
+                  )}
+                  {services && services.length === 0 && (
+                    <p className="text-sm text-text-muted">
+                      Aún no tienes servicios contratados. Habla con tu equipo de
+                      Lean Finance.
+                    </p>
+                  )}
+                  {services && services.length > 0 && (
+                    <ul className="space-y-2">
+                      {services.map((s) => (
+                        <li
+                          key={s.service_id}
+                          className="bg-gray-50 rounded-lg px-4 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-2 flex-wrap">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-brand-navy">
+                                {s.service_name}
+                              </p>
+                              {s.department_names.length > 0 && (
+                                <p className="text-[11px] text-text-muted mt-0.5">
+                                  {s.department_names.join(" · ")}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {s.service_description && (
+                            <p className="text-xs text-text-muted mt-2">
+                              {s.service_description}
+                            </p>
+                          )}
+                          {s.technicians.length > 0 ? (
+                            <div className="mt-3">
+                              <p className="text-[11px] uppercase tracking-wider text-text-muted/80 mb-1.5">
+                                Técnico
+                                {s.technicians.length === 1 ? "" : "s"} asignado
+                                {s.technicians.length === 1 ? "" : "s"}
+                              </p>
+                              <ul className="flex flex-wrap gap-2">
+                                {s.technicians.map((t) => (
+                                  <li
+                                    key={t.profile_id}
+                                    className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1 text-text-body"
+                                    title={t.email}
+                                  >
+                                    {t.full_name?.trim() || t.email}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            s.department_names.length > 0 && (
+                              <p className="text-[11px] text-amber-700 mt-3">
+                                Pendiente de asignar técnico.
+                              </p>
+                            )
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             )}
 
             {tab === "datos" && (
