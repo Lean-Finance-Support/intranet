@@ -183,20 +183,46 @@ Proyectos: prod `wgxugccbatusioubnsfl` (eu-west-1), dev `rvnflidcbiinmlfpzsbf` (
 
 ---
 
+## Catálogo de servicios
+
+Listado global de los servicios que Lean Finance ofrece a sus clientes, gestionable desde `/admin/servicios`. La página es de **lectura libre para todos los admins**; las mutaciones (crear/editar/archivar) requieren el permiso atómico `manage_services_catalog` (global, grantable, sin pertenencia a roles — se concede manualmente vía `profile_permissions`).
+
+- Tabla `public.services` (catálogo) + `public.department_services` (M:N) + `public.company_services` (contrataciones por empresa).
+- Cardinalidad servicio↔dpto: 0..N (un servicio puede ser transversal sin dpto, tener uno o pertenecer a varios).
+- Slugs `tax-models` y `dashboard` son **load-bearing** (referenciados en código por gates de sidebar y OAuth Dashboard). El catálogo bloquea editar el slug y archivar el servicio (flag `is_load_bearing` en `ServiceCatalogItem`, constante `LOAD_BEARING_SERVICE_SLUGS` en `lib/types/services.ts`).
+- Server actions en `app/admin/(sidebar)/servicios/actions.ts` (`listServicesCatalog`, `createService`, `updateService`, `archiveService`, `unarchiveService`).
+
 ## Onboarding de cliente
 
 Flujo de alta integral en `/admin/clientes/onboarding` (botón **"+ Nuevo onboarding"** debajo de "+ Nuevo cliente" en `/admin/clientes`). Wizard de 4 pasos:
 
 1. **Datos** — datos básicos de empresa, cuentas bancarias (opcionales, solo si `manage_bank_accounts`), cuentas asociadas (≥1 obligatoria, con prebúsqueda por email tipo `findClientProfileByEmail` para vincular cuentas existentes).
-2. **Departamentos implicados** — selector multi-dpto, supervisores por dpto (≥1) y dos checkboxes condicionales: "Cliente no viene de Holded" y "Solicita Alta de Empresa" (este último solo se habilita si Asesoría Laboral está entre los deptos).
-3. **Documentación inicial** — listado editable de apartados sugeridos según deptos + tags. Permite añadir/quitar (bloque entero o apartado suelto), togglear opcional y editar supervisores agrupados por dpto.
+2. **Equipo responsable** — selector de **servicios contratados** (no de departamentos; los dpts responsables se derivan vía `department_services`). Miembros del equipo por dpto derivado (≥1 por dpto). Dos checkboxes condicionales: "Cliente no viene de Holded" y "Solicita Alta de Empresa" (este último se habilita si algún servicio contratado pertenece a Asesoría Laboral). Si todos los servicios son transversales (sin dpto), el wizard avisa y permite seguir con solo documentación global.
+3. **Documentación inicial** — listado editable de apartados sugeridos según los dpts derivados + tags. Permite añadir/quitar (bloque entero o apartado suelto), togglear opcional y editar supervisores agrupados por dpto.
 4. **Confirmación** — resumen, finalización transaccional + email de bienvenida.
 
 Acceso: requiere los 3 permisos `create_company` + `manage_client_accounts` + `request_client_documentation` (hoy solo concedidos manualmente vía `profile_permissions`; no hay rol que los aglutine).
 
+Al finalizar, `finalizeOnboarding` inserta `company_services` para los servicios elegidos y, para cada miembro del equipo, inserta filas en `profile_roles`:
+- Rol **Técnico** con `scope_type=company_service` para cada servicio del dpto del miembro.
+- Rol **Supervisor de apartado** con `scope_type=client_apartado` para los apartados del cliente vinculados al dpto del miembro.
+
 Server actions: `app/admin/(sidebar)/clientes/onboarding/actions.ts` (`getOnboardingData`, `lookupExistingClientByEmail`, `finalizeOnboarding`).
 
 Email de bienvenida: edge function `notify-client-onboarding-welcome` (un único email a las cuentas asociadas en TO, con CC a supervisores y chiefs de los deptos implicados; tarjetas clickables `mailto:` por técnico). Necesita `verify_jwt = false` en `supabase/config.toml` para que el server action pueda invocarla con service role.
+
+## Equipo responsable (gestión post-onboarding)
+
+El "equipo responsable" de un cliente se computa derivado a partir de `profile_roles` (técnicos en `company_service` + supervisores en `client_apartado` + chiefs del dpto). Helper `getCompanyResponsibleTeam` en `lib/team-queries.ts`, cacheado por `companyId`.
+
+En la ficha del cliente (`/admin/clientes/[id]` tab "Equipo responsable") se ofrecen dos operaciones masivas:
+
+- **Añadir empleado al equipo** (`addTeamMemberToCompany`): toma un `profileId`, resuelve sus dpts (rol Miembro/Chief), filtra a los dpts donde el actor tiene `assign_technician`, y le crea filas `profile_roles` como técnico de cada servicio contratado del dpto + supervisor de cada apartado del cliente vinculado al dpto.
+- **Quitar empleado del equipo** (`removeTeamMemberFromCompany`): elimina todas sus filas en `profile_roles` para este cliente (técnicos + supervisores), acotado por los dpts donde el actor tiene permiso.
+
+Hook automático: al contratar un servicio nuevo a una empresa que ya tiene equipo (`addServiceToCompany`), los miembros del equipo del dpto del nuevo servicio se autoasignan como técnicos del nuevo `company_service` (idempotente vía `ignoreDuplicates`). La granularidad fina (asignar/quitar técnicos uno a uno) sigue editable desde el tab "Servicios contratados".
+
+Permiso: `assign_technician` con scope `department` — un chief solo puede gestionar empleados de su propio dpto. Si el empleado pertenece a varios dpts y el actor solo tiene permiso en uno, la operación se ejecuta sobre el subset autorizado (no falla globalmente).
 
 ## Documentación por cliente (schema `documentation`)
 
