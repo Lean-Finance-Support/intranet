@@ -61,6 +61,14 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     keywords: ["bulk", "masiva", "asignar", "varios clientes"],
     gate: (ctx) => ctx.canRequestDocumentation,
   },
+  {
+    id: "admin:servicios",
+    space: "admin",
+    label: "Catálogo Servicios",
+    path: "/servicios",
+    icon: "briefcase",
+    keywords: ["servicios", "catalogo", "catálogo", "oferta", "productos"],
+  },
 
   // Cliente
   {

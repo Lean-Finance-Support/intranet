@@ -6,6 +6,7 @@ export type SearchIconName =
   | "users"
   | "building"
   | "book"
+  | "briefcase"
   | "chart"
   | "swap";
 

@@ -44,6 +44,13 @@ function BookIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function BriefcaseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.075a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25v-4.075m16.5 0V8.625a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25v5.525m16.5 0a48.667 48.667 0 01-16.5 0M9.75 6.375V4.5A1.5 1.5 0 0111.25 3h1.5a1.5 1.5 0 011.5 1.5v1.875" />
+    </svg>
+  );
+}
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -177,6 +184,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
   const deptHref = `${linkPrefix}/departamento`;
   const clientesHref = `${linkPrefix}/clientes`;
   const docCatalogHref = `${linkPrefix}/documentacion`;
+  const serviciosHref = `${linkPrefix}/servicios`;
 
   const isActive = (href: string) => {
     const path = pathname ?? "";
@@ -211,6 +219,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={collapsed} />
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={collapsed} />
       <NavItem icon={<BookIcon className="w-5 h-5" />} label="Catálogo Doc." href={docCatalogHref} active={isActive(docCatalogHref)} collapsed={collapsed} />
+      <NavItem icon={<BriefcaseIcon className="w-5 h-5" />} label="Catálogo Servicios" href={serviciosHref} active={isActive(serviciosHref)} collapsed={collapsed} />
       <NavItem icon={<BellIcon className="w-5 h-5" />} label="Notificaciones" onClick={handleNotifClick} collapsed={collapsed} badge={unreadCount} />
     </nav>
   );
@@ -330,6 +339,7 @@ export default function AdminSidebar({ profile, hasTaxModels, loginPath, linkPre
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Mi equipo" href={deptHref} active={isDeptActive} collapsed={false} />
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Clientes" href={clientesHref} active={isActive(clientesHref)} collapsed={false} />
               <NavItem icon={<BookIcon className="w-5 h-5" />} label="Catálogo Doc." href={docCatalogHref} active={isActive(docCatalogHref)} collapsed={false} />
+              <NavItem icon={<BriefcaseIcon className="w-5 h-5" />} label="Catálogo Servicios" href={serviciosHref} active={isActive(serviciosHref)} collapsed={false} />
             </nav>
           </div>
         </div>
