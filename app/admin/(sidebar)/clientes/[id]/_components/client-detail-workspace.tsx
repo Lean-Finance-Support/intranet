@@ -67,9 +67,6 @@ import {
   AddClientAccountForm,
 } from "@/components/client-detail-panel";
 import DocumentationMasterDetail from "@/components/documentation/documentation-master-detail";
-import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
-import ServiceDetailSection from "@/components/clients/service-detail-section";
-import DashboardSheetPanel from "@/components/clients/dashboard-sheet-panel";
 import ConfirmDialog from "@/components/confirm-dialog";
 import dynamic from "next/dynamic";
 
@@ -81,6 +78,20 @@ const DeleteCompanyModal = dynamic(
 );
 const AddBlockModal = dynamic(() => import("./add-block-modal"), { ssr: false });
 const AddApartadoModal = dynamic(() => import("./add-apartado-modal"), { ssr: false });
+
+// Secciones de tabs distintas a la default ("documentacion"). El usuario solo
+// las ve al hacer clic en la pestaña correspondiente; postergamos su JS para
+// recortar el bundle inicial del workspace (1.3k líneas de host + estas
+// secciones suman ~900 líneas extra).
+const ResponsibleTeamSection = dynamic(
+  () => import("@/components/clients/responsible-team-section"),
+);
+const ServiceDetailSection = dynamic(
+  () => import("@/components/clients/service-detail-section"),
+);
+const DashboardSheetPanel = dynamic(
+  () => import("@/components/clients/dashboard-sheet-panel"),
+);
 
 interface Props {
   detail: CompanyDetailInfo;

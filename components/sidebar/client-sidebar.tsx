@@ -3,11 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { setActiveCompany } from "@/app/app/select-company/actions";
-import NotificationsDrawer from "@/components/notifications-drawer";
 import { useUnreadNotifications } from "@/lib/hooks/use-unread-notifications";
 import SearchTrigger from "@/components/search/search-trigger";
+
+// El drawer pesa ~300 líneas y solo se monta al pulsar la campana — postergamos
+// su JS para que no entre en el bundle inicial del sidebar (presente en TODAS
+// las páginas del portal cliente).
+const NotificationsDrawer = dynamic(
+  () => import("@/components/notifications-drawer"),
+  { ssr: false },
+);
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
