@@ -26,6 +26,10 @@ import {
   createClientAccount,
   updateClientAccount,
   unlinkClientFromCompany,
+  listTeamMemberCandidates,
+  addTeamMemberToCompany,
+  removeTeamMemberFromCompany,
+  type TeamMemberCandidate,
 } from "@/app/admin/clientes/actions";
 import type {
   BlockTemplate,
@@ -178,6 +182,49 @@ export default function ClientDetailWorkspace({
   const [addingService, setAddingService] = useState(false);
   const [savingService, setSavingService] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
+
+  // Equipo responsable — candidatos para añadir (cargados on-demand cuando se
+  // abre el tab equipo). `canManageTeam` = el actor tiene scope en al menos un
+  // dpto. Si no, el listado vendrá vacío y los botones quedan deshabilitados.
+  const [teamCandidates, setTeamCandidates] = useState<TeamMemberCandidate[] | null>(null);
+  const [teamCandidatesLoading, setTeamCandidatesLoading] = useState(false);
+  useEffect(() => {
+    if (tab !== "equipo") return;
+    if (teamCandidates !== null) return;
+    let cancelled = false;
+    setTeamCandidatesLoading(true);
+    listTeamMemberCandidates(company.id)
+      .then((rows) => {
+        if (!cancelled) setTeamCandidates(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setTeamCandidates([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTeamCandidatesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, teamCandidates, company.id]);
+  async function refreshTeamCandidates() {
+    try {
+      const rows = await listTeamMemberCandidates(company.id);
+      setTeamCandidates(rows);
+    } catch {
+      setTeamCandidates([]);
+    }
+  }
+  async function handleAddTeamMember(profileId: string) {
+    await addTeamMemberToCompany(company.id, profileId);
+    router.refresh();
+    await refreshTeamCandidates();
+  }
+  async function handleRemoveTeamMember(profileId: string) {
+    await removeTeamMemberFromCompany(company.id, profileId);
+    router.refresh();
+    await refreshTeamCandidates();
+  }
 
   // Danger zone state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -596,7 +643,17 @@ export default function ClientDetailWorkspace({
 
       {/* ── Equipo responsable ── */}
       {tab === "equipo" && (
-        <ResponsibleTeamSection team={responsibleTeam} variant="expanded" />
+        <ResponsibleTeamSection
+          team={responsibleTeam}
+          variant="expanded"
+          loading={teamCandidatesLoading && teamCandidates === null}
+          manage={{
+            canManage: true,
+            candidates: teamCandidates ?? [],
+            onAdd: handleAddTeamMember,
+            onRemove: handleRemoveTeamMember,
+          }}
+        />
       )}
 
       {/* ── Datos (incluye cuentas asociadas y cuentas bancarias) ── */}

@@ -22,6 +22,10 @@ import {
 /**
  * Resuelve el departamento activo para un servicio (vía department_services).
  * Devuelve el department_id o lanza si el servicio no está activo en ninguno.
+ * Nota: con el modelo M:N (0..N dpts por servicio) este helper asume que el
+ * servicio tiene exactamente 1 dpto — solo se sigue usando para flujos donde
+ * esa garantía existe (tax-models, dashboard). Para servicios nuevos con 0 o
+ * >1 dpts usa `resolveServiceDepartments`.
  */
 async function resolveServiceDepartment(
   supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
@@ -35,6 +39,19 @@ async function resolveServiceDepartment(
     .maybeSingle();
   if (!data) throw new Error("Servicio no encontrado");
   return data.department_id as string;
+}
+
+/** Versión M:N — devuelve todos los dpts activos del servicio (puede ser []). */
+async function resolveServiceDepartments(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  serviceId: string
+): Promise<string[]> {
+  const { data } = await supabase
+    .from("department_services")
+    .select("department_id")
+    .eq("service_id", serviceId)
+    .eq("is_active", true);
+  return [...new Set((data ?? []).map((r) => r.department_id as string))];
 }
 
 // La lectura del listado y detalle de clientes es abierta a cualquier admin
@@ -749,16 +766,154 @@ export async function addServiceToCompany(
   serviceId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
-  const { error } = await supabase.from("company_services").upsert(
-    { company_id: companyId, service_id: serviceId, is_active: true },
-    { onConflict: "company_id,service_id" }
-  );
+  // Autorización: si el servicio pertenece a uno o varios dpts, requerir
+  // permiso en TODOS (conservador). Si es transversal (0 dpts), basta con ser
+  // admin — ya gateado por requireAdmin().
+  for (const did of deptIds) {
+    await requirePermission("write_dept_service", { type: "department", id: did });
+  }
 
-  if (error) throw new Error("Error al añadir el servicio.");
+  const { data: upserted, error } = await supabase
+    .from("company_services")
+    .upsert(
+      { company_id: companyId, service_id: serviceId, is_active: true },
+      { onConflict: "company_id,service_id" }
+    )
+    .select("id")
+    .single();
+  if (error || !upserted) throw new Error("Error al añadir el servicio.");
+
+  // Auto-asignación: para cada dpto del servicio, los miembros del equipo de
+  // ese dpto en este cliente (= técnicos de OTROS servicios del dpto o
+  // supervisores de apartados del dpto) se vuelven técnicos del nuevo cs.
+  if (deptIds.length > 0) {
+    const newCsId = upserted.id as string;
+    await autoAssignTechniciansForNewService({
+      companyId,
+      newCsId,
+      deptIds,
+    });
+  }
+
   invalidateResponsibleTeam(companyId);
+}
+
+/**
+ * Recoge los miembros del equipo del cliente que tocan a alguno de los dpts
+ * dados y los inserta como técnicos del company_service recién creado.
+ * Idempotente vía ignoreDuplicates.
+ */
+async function autoAssignTechniciansForNewService(args: {
+  companyId: string;
+  newCsId: string;
+  deptIds: string[];
+}): Promise<void> {
+  const admin = createAdminClient();
+  const memberIds = await getTeamMemberIdsForDepts(admin, args.companyId, args.deptIds);
+  if (memberIds.length === 0) return;
+  const tecnicoRoleId = await lookupRoleId(admin, "Técnico");
+  const rows = memberIds.map((profileId) => ({
+    profile_id: profileId,
+    role_id: tecnicoRoleId,
+    scope_type: "company_service" as const,
+    scope_id: args.newCsId,
+  }));
+  const { error } = await admin
+    .from("profile_roles")
+    .upsert(rows, {
+      onConflict: "profile_id,role_id,scope_type,scope_id",
+      ignoreDuplicates: true,
+    });
+  if (error) {
+    console.error("[addServiceToCompany] error auto-asignando técnicos:", error.message);
+  }
+}
+
+/**
+ * Profile_ids que ya forman parte del equipo del cliente en alguno de los
+ * dpts dados. "Equipo" = técnico en cualquier company_service del cliente cuyo
+ * service pertenece al dpto, o supervisor en cualquier client_apartado del
+ * cliente cuyo apartado-template está vinculado al dpto.
+ */
+async function getTeamMemberIdsForDepts(
+  admin: ReturnType<typeof createAdminClient>,
+  companyId: string,
+  deptIds: string[]
+): Promise<string[]> {
+  if (deptIds.length === 0) return [];
+  const out = new Set<string>();
+
+  // Técnicos: company_services del cliente cuyos services están en deptIds.
+  const { data: deptSvcLinks } = await admin
+    .from("department_services")
+    .select("service_id")
+    .in("department_id", deptIds)
+    .eq("is_active", true);
+  const dptoSvcIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+  if (dptoSvcIds.length > 0) {
+    const { data: csRows } = await admin
+      .from("company_services")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .in("service_id", dptoSvcIds);
+    const csIds = (csRows ?? []).map((r) => r.id as string);
+    if (csIds.length > 0) {
+      const tecnicoRoleId = await lookupRoleId(admin, "Técnico");
+      const { data: techRoles } = await admin
+        .from("profile_roles")
+        .select("profile_id")
+        .eq("role_id", tecnicoRoleId)
+        .eq("scope_type", "company_service")
+        .in("scope_id", csIds);
+      for (const r of techRoles ?? []) out.add(r.profile_id as string);
+    }
+  }
+
+  // Supervisores: client_apartados del cliente cuyo apartado-template está
+  // vinculado a alguno de los dpts.
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, apartado_id")
+      .in("client_block_id", blockIds);
+    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
+    if (allCatalogIds.length > 0) {
+      const { data: aptDeptLinks } = await admin
+        .schema("documentation")
+        .from("apartado_departments")
+        .select("apartado_id")
+        .in("apartado_id", allCatalogIds)
+        .in("department_id", deptIds);
+      const catalogIdsInDept = new Set(
+        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
+      );
+      const caIds = (cas ?? [])
+        .filter((ca) => catalogIdsInDept.has(ca.apartado_id as string))
+        .map((ca) => ca.id as string);
+      if (caIds.length > 0) {
+        const supervisorRoleId = await lookupRoleId(admin, "Supervisor de apartado");
+        const { data: supRoles } = await admin
+          .from("profile_roles")
+          .select("profile_id")
+          .eq("role_id", supervisorRoleId)
+          .eq("scope_type", "client_apartado")
+          .in("scope_id", caIds);
+        for (const r of supRoles ?? []) out.add(r.profile_id as string);
+      }
+    }
+  }
+
+  return [...out];
 }
 
 export async function removeServiceFromCompany(
@@ -766,8 +921,13 @@ export async function removeServiceFromCompany(
   serviceId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
+
+  // Autorización: si el servicio pertenece a uno o varios dpts, requerir
+  // permiso en TODOS. Transversal (0 dpts) → solo requireAdmin.
+  for (const did of deptIds) {
+    await requirePermission("write_dept_service", { type: "department", id: did });
+  }
 
   const { error } = await supabase
     .from("company_services")
@@ -1436,4 +1596,355 @@ function firstName(fullName: string | null, email: string): string {
   const local = (email ?? "").split("@")[0] ?? "";
   if (!local) return "";
   return local.charAt(0).toUpperCase() + local.slice(1);
+}
+
+// ─── Equipo responsable: alta/baja masiva ────────────────────────────────
+//
+// addTeamMemberToCompany: añade un empleado al equipo del cliente. Lo asigna
+// automáticamente como técnico de todos los servicios contratados cuyo dpto
+// pertenezca al empleado, y como supervisor de todos los apartados del cliente
+// vinculados a esos dpts.
+//
+// removeTeamMemberFromCompany: revierte (elimina todas las filas relevantes).
+//
+// Autorización: el actor debe tener `assign_technician` con scope=dpto del
+// empleado, en AL MENOS uno de sus dpts. La operación se ejecuta solo en los
+// dpts donde el actor tiene permiso; los demás se ignoran (sin error global).
+// Eso significa que un chief de Fiscal puede gestionar empleados de Fiscal
+// pero no de Laboral, aunque el empleado pertenezca a ambos.
+
+export interface TeamMemberCandidate {
+  profile_id: string;
+  full_name: string | null;
+  email: string;
+  department_ids: string[];
+  department_names: string[];
+}
+
+/**
+ * Empleados disponibles para añadir al equipo de un cliente: cualquier admin
+ * con rol Miembro/Chief en alguno de los dpts donde el actor tiene
+ * `assign_technician`. Excluye a los que ya son miembros del equipo (técnicos
+ * o supervisores activos en este cliente).
+ */
+export async function listTeamMemberCandidates(
+  companyId: string
+): Promise<TeamMemberCandidate[]> {
+  await requireAdmin();
+  const allowedDeptIds = await userScopeIds("assign_technician", "department");
+  if (allowedDeptIds.length === 0) return [];
+
+  const admin = createAdminClient();
+  const [miembroRoleId, chiefRoleId] = await Promise.all([
+    lookupRoleId(admin, "Miembro de departamento"),
+    lookupRoleId(admin, "Chief"),
+  ]);
+
+  const { data: deptRoleRows } = await admin
+    .from("profile_roles")
+    .select("profile_id, scope_id")
+    .eq("scope_type", "department")
+    .in("scope_id", allowedDeptIds)
+    .in("role_id", [miembroRoleId, chiefRoleId]);
+
+  const deptIdsByProfile = new Map<string, Set<string>>();
+  for (const row of deptRoleRows ?? []) {
+    const pid = row.profile_id as string;
+    const did = row.scope_id as string;
+    let set = deptIdsByProfile.get(pid);
+    if (!set) {
+      set = new Set();
+      deptIdsByProfile.set(pid, set);
+    }
+    set.add(did);
+  }
+
+  const profileIds = [...deptIdsByProfile.keys()];
+  if (profileIds.length === 0) return [];
+
+  // Excluir los que ya están en el equipo del cliente.
+  const existingTeam = await getTeamMemberIdsForDepts(admin, companyId, allowedDeptIds);
+  const existingSet = new Set(existingTeam);
+
+  const [{ data: profiles }, { data: depts }] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", profileIds)
+      .eq("role", "admin"),
+    admin.from("departments").select("id, name").in("id", allowedDeptIds),
+  ]);
+
+  const deptNameById = new Map<string, string>();
+  for (const d of depts ?? []) deptNameById.set(d.id as string, d.name as string);
+
+  return (profiles ?? [])
+    .filter((p) => !existingSet.has(p.id as string))
+    .map((p) => {
+      const dids = [...(deptIdsByProfile.get(p.id as string) ?? [])];
+      return {
+        profile_id: p.id as string,
+        full_name: (p.full_name as string | null) ?? null,
+        email: p.email as string,
+        department_ids: dids,
+        department_names: dids
+          .map((d) => deptNameById.get(d) ?? "")
+          .filter((n) => n.length > 0),
+      };
+    })
+    .sort((a, b) =>
+      (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, "es")
+    );
+}
+
+export async function addTeamMemberToCompany(
+  companyId: string,
+  profileId: string
+): Promise<{ added_to_dept_ids: string[]; tech_count: number; supervisor_count: number }> {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+
+  const [miembroRoleId, chiefRoleId, tecnicoRoleId, supervisorRoleId] =
+    await Promise.all([
+      lookupRoleId(admin, "Miembro de departamento"),
+      lookupRoleId(admin, "Chief"),
+      lookupRoleId(admin, "Técnico"),
+      lookupRoleId(admin, "Supervisor de apartado"),
+    ]);
+
+  // 1. Dpts del empleado (Miembro o Chief).
+  const { data: memberRoles } = await admin
+    .from("profile_roles")
+    .select("scope_id")
+    .eq("profile_id", profileId)
+    .eq("scope_type", "department")
+    .in("role_id", [miembroRoleId, chiefRoleId]);
+  const memberDeptIds = [
+    ...new Set((memberRoles ?? []).map((r) => r.scope_id as string)),
+  ];
+  if (memberDeptIds.length === 0) {
+    throw new Error("El empleado no pertenece a ningún departamento.");
+  }
+
+  // 2. Filtrar a los dpts donde el actor tiene assign_technician.
+  const allowedDeptIds: string[] = [];
+  for (const did of memberDeptIds) {
+    if (await hasPermission("assign_technician", { type: "department", id: did })) {
+      allowedDeptIds.push(did);
+    }
+  }
+  if (allowedDeptIds.length === 0) {
+    throw new Error("No tienes permiso para añadir empleados de este departamento al equipo.");
+  }
+
+  // 3. Resolver company_services del cliente cuyos services están en los
+  //    dpts permitidos. Para cada uno → fila Técnico.
+  const { data: deptSvcLinks } = await admin
+    .from("department_services")
+    .select("service_id")
+    .in("department_id", allowedDeptIds)
+    .eq("is_active", true);
+  const serviceIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+
+  const techRows: { profile_id: string; role_id: string; scope_type: string; scope_id: string }[] = [];
+  if (serviceIds.length > 0) {
+    const { data: csRows } = await admin
+      .from("company_services")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .in("service_id", serviceIds);
+    for (const cs of csRows ?? []) {
+      techRows.push({
+        profile_id: profileId,
+        role_id: tecnicoRoleId,
+        scope_type: "company_service",
+        scope_id: cs.id as string,
+      });
+    }
+  }
+
+  // 4. Resolver client_apartados del cliente cuyo apartado-template está
+  //    vinculado a los dpts permitidos. Para cada uno → fila Supervisor.
+  const supRows: typeof techRows = [];
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, apartado_id")
+      .in("client_block_id", blockIds);
+    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
+    if (allCatalogIds.length > 0) {
+      const { data: aptDeptLinks } = await admin
+        .schema("documentation")
+        .from("apartado_departments")
+        .select("apartado_id")
+        .in("apartado_id", allCatalogIds)
+        .in("department_id", allowedDeptIds);
+      const catalogIdsInScope = new Set(
+        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
+      );
+      for (const ca of cas ?? []) {
+        if (catalogIdsInScope.has(ca.apartado_id as string)) {
+          supRows.push({
+            profile_id: profileId,
+            role_id: supervisorRoleId,
+            scope_type: "client_apartado",
+            scope_id: ca.id as string,
+          });
+        }
+      }
+    }
+  }
+
+  // 5. Upsert idempotente.
+  const allRows = [...techRows, ...supRows];
+  if (allRows.length > 0) {
+    const { error } = await admin
+      .from("profile_roles")
+      .upsert(allRows, {
+        onConflict: "profile_id,role_id,scope_type,scope_id",
+        ignoreDuplicates: true,
+      });
+    if (error) {
+      throw new Error(`Error al asignar el equipo: ${error.message}`);
+    }
+  }
+
+  invalidateResponsibleTeam(companyId);
+  return {
+    added_to_dept_ids: allowedDeptIds,
+    tech_count: techRows.length,
+    supervisor_count: supRows.length,
+  };
+}
+
+export async function removeTeamMemberFromCompany(
+  companyId: string,
+  profileId: string
+): Promise<{ removed_from_dept_ids: string[] }> {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+
+  const [miembroRoleId, chiefRoleId, tecnicoRoleId, supervisorRoleId] =
+    await Promise.all([
+      lookupRoleId(admin, "Miembro de departamento"),
+      lookupRoleId(admin, "Chief"),
+      lookupRoleId(admin, "Técnico"),
+      lookupRoleId(admin, "Supervisor de apartado"),
+    ]);
+
+  // Dpts del empleado.
+  const { data: memberRoles } = await admin
+    .from("profile_roles")
+    .select("scope_id")
+    .eq("profile_id", profileId)
+    .eq("scope_type", "department")
+    .in("role_id", [miembroRoleId, chiefRoleId]);
+  const memberDeptIds = [
+    ...new Set((memberRoles ?? []).map((r) => r.scope_id as string)),
+  ];
+  if (memberDeptIds.length === 0) {
+    throw new Error("El empleado no pertenece a ningún departamento.");
+  }
+
+  // Solo en dpts donde el actor tiene permiso.
+  const allowedDeptIds: string[] = [];
+  for (const did of memberDeptIds) {
+    if (await hasPermission("assign_technician", { type: "department", id: did })) {
+      allowedDeptIds.push(did);
+    }
+  }
+  if (allowedDeptIds.length === 0) {
+    throw new Error("No tienes permiso para quitar empleados de este departamento del equipo.");
+  }
+
+  // company_services scope IDs a limpiar.
+  const { data: deptSvcLinks } = await admin
+    .from("department_services")
+    .select("service_id")
+    .in("department_id", allowedDeptIds)
+    .eq("is_active", true);
+  const serviceIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+
+  const csIds: string[] = [];
+  if (serviceIds.length > 0) {
+    const { data: csRows } = await admin
+      .from("company_services")
+      .select("id")
+      .eq("company_id", companyId)
+      .in("service_id", serviceIds);
+    for (const r of csRows ?? []) csIds.push(r.id as string);
+  }
+
+  // client_apartados scope IDs a limpiar.
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  const caIds: string[] = [];
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, apartado_id")
+      .in("client_block_id", blockIds);
+    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
+    if (allCatalogIds.length > 0) {
+      const { data: aptDeptLinks } = await admin
+        .schema("documentation")
+        .from("apartado_departments")
+        .select("apartado_id")
+        .in("apartado_id", allCatalogIds)
+        .in("department_id", allowedDeptIds);
+      const catalogIdsInScope = new Set(
+        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
+      );
+      for (const ca of cas ?? []) {
+        if (catalogIdsInScope.has(ca.apartado_id as string)) {
+          caIds.push(ca.id as string);
+        }
+      }
+    }
+  }
+
+  // Borrar técnicos.
+  if (csIds.length > 0) {
+    const { error } = await admin
+      .from("profile_roles")
+      .delete()
+      .eq("profile_id", profileId)
+      .eq("role_id", tecnicoRoleId)
+      .eq("scope_type", "company_service")
+      .in("scope_id", csIds);
+    if (error) {
+      throw new Error(`Error al quitar técnicos: ${error.message}`);
+    }
+  }
+  // Borrar supervisores.
+  if (caIds.length > 0) {
+    const { error } = await admin
+      .from("profile_roles")
+      .delete()
+      .eq("profile_id", profileId)
+      .eq("role_id", supervisorRoleId)
+      .eq("scope_type", "client_apartado")
+      .in("scope_id", caIds);
+    if (error) {
+      throw new Error(`Error al quitar supervisores: ${error.message}`);
+    }
+  }
+
+  invalidateResponsibleTeam(companyId);
+  return { removed_from_dept_ids: allowedDeptIds };
 }
