@@ -85,6 +85,7 @@ interface Props {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  departments: { id: string; name: string }[];
   allAdminCandidates: DeptMemberSlim[];
   chiefAvailableServices: {
     service_id: string;
@@ -134,6 +135,55 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
 }
 
+/**
+ * Construye los grupos de candidatos a técnico que renderiza el selector
+ * agrupado por departamento de `ServiceDetailSection`.
+ *
+ * - Servicio con dpto: 1 grupo (los miembros del dpto del servicio).
+ * - Servicio transversal: N grupos (todos los dpts con miembros + grupo "Sin
+ *   departamento" para admins que no pertenecen a ningún dpto).
+ */
+function buildMemberGroups(args: {
+  isTransversal: boolean;
+  svcDeptId: string;
+  deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  departments: { id: string; name: string }[];
+  allAdminCandidates: DeptMemberSlim[];
+}): { dept_id: string; dept_name: string; members: DeptMemberSlim[] }[] {
+  if (!args.isTransversal) {
+    const dept = args.departments.find((d) => d.id === args.svcDeptId);
+    return [
+      {
+        dept_id: args.svcDeptId,
+        dept_name: dept?.name ?? "Departamento",
+        members: args.deptMembers[args.svcDeptId] ?? [],
+      },
+    ];
+  }
+  const groups = args.departments
+    .map((d) => ({
+      dept_id: d.id,
+      dept_name: d.name,
+      members: args.deptMembers[d.id] ?? [],
+    }))
+    .filter((g) => g.members.length > 0);
+  // Admins que no pertenecen a ningún dpto → grupo "Sin departamento".
+  const deptMembersFlat = new Set(
+    Object.values(args.deptMembers).flat().map((m) => m.id)
+  );
+  const noDeptAdmins = args.allAdminCandidates.filter(
+    (m) => !deptMembersFlat.has(m.id)
+  );
+  if (noDeptAdmins.length > 0) {
+    groups.push({
+      dept_id: "__no_dept__",
+      dept_name: "Sin departamento",
+      members: noDeptAdmins,
+    });
+  }
+  return groups;
+}
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -152,6 +202,7 @@ export default function ClientDetailWorkspace({
   company: initialCompany,
   userChiefDeptIds,
   deptMembers,
+  departments,
   allAdminCandidates,
   chiefAvailableServices,
   canCreateCompany,
@@ -459,10 +510,12 @@ export default function ClientDetailWorkspace({
   async function handleAssignTech(serviceId: string, techId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
-    const pool = svc.department_id
-      ? (deptMembers[svc.department_id] ?? [])
-      : allAdminCandidates;
-    const member = pool.find((m) => m.id === techId);
+    // Buscar nombre en cualquier dpto o en allAdminCandidates.
+    const member =
+      Object.values(deptMembers)
+        .flat()
+        .find((m) => m.id === techId) ??
+      allAdminCandidates.find((m) => m.id === techId);
     setCompany((prev) => ({
       ...prev,
       services: prev.services.map((s) =>
@@ -992,15 +1045,19 @@ export default function ClientDetailWorkspace({
                     ? userChiefDeptIds.length > 0
                     : userChiefDeptIds.includes(svc.department_id)
                 );
-                const members = isTransversal
-                  ? allAdminCandidates
-                  : (deptMembers[svc.department_id] ?? []);
+                const memberGroups = buildMemberGroups({
+                  isTransversal,
+                  svcDeptId: svc.department_id,
+                  deptMembers,
+                  departments,
+                  allAdminCandidates,
+                });
                 return (
                   <ServiceDetailSection
                     key={svc.service_id}
                     service={svc}
                     isChiefOfDept={isChiefOfDept}
-                    members={members}
+                    memberGroups={memberGroups}
                     hideAssignAll={isTransversal}
                     linkPrefix={linkPrefix}
                     companyId={company.id}

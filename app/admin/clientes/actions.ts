@@ -494,6 +494,8 @@ export interface CompanyContextForDetail {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  /** Lista ordenada de dpts (id+name) para el selector agrupado de técnicos. */
+  departments: { id: string; name: string }[];
   /** Lista de admins disponibles como candidatos a técnico para servicios sin
    *  departamento. Para servicios con dpto usar `deptMembers[deptId]`. */
   allAdminCandidates: DeptMemberSlim[];
@@ -738,10 +740,16 @@ export async function getCompanyContextForDetail(
     documentation_progress: null,
   };
 
+  const departments = (allDepts ?? []).map((d) => ({
+    id: d.id as string,
+    name: d.name as string,
+  }));
+
   return {
     company,
     userChiefDeptIds,
     deptMembers,
+    departments,
     allAdminCandidates,
     chiefAvailableServices,
     canCreateCompany,

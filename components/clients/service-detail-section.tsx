@@ -7,10 +7,19 @@ import type {
 } from "@/app/admin/clientes/actions";
 import DashboardSheetPanel from "./dashboard-sheet-panel";
 
+export interface MemberGroup {
+  dept_id: string;
+  dept_name: string;
+  members: DeptMemberSlim[];
+}
+
 interface Props {
   service: ClienteService;
   isChiefOfDept: boolean;
-  members: DeptMemberSlim[];
+  /** Grupos de candidatos a técnico agrupados por departamento. Para servicios
+   *  con dpto, normalmente 1 grupo (el del dpto). Para servicios transversales,
+   *  N grupos (todos los dpts + grupo "Sin departamento" para admins sin dpto). */
+  memberGroups: MemberGroup[];
   /** Si el servicio es transversal (sin dpto), ocultamos "Asignar todos" — no
    *  tiene sentido asignar a todos los admins por defecto. */
   hideAssignAll?: boolean;
@@ -29,7 +38,7 @@ interface Props {
 export default function ServiceDetailSection({
   service,
   isChiefOfDept,
-  members,
+  memberGroups,
   hideAssignAll,
   linkPrefix,
   companyId,
@@ -43,7 +52,14 @@ export default function ServiceDetailSection({
   canViewClientTaxModels,
 }: Props) {
   const existingIds = new Set(service.technicians.map((t) => t.id));
-  const available = members.filter((m) => !existingIds.has(m.id));
+  // Filtra los ya asignados de cada grupo y omite grupos vacíos.
+  const availableGroups: MemberGroup[] = memberGroups
+    .map((g) => ({
+      ...g,
+      members: g.members.filter((m) => !existingIds.has(m.id)),
+    }))
+    .filter((g) => g.members.length > 0);
+  const totalAvailable = availableGroups.reduce((sum, g) => sum + g.members.length, 0);
   const isDashboardService = service.service_slug === "dashboard";
   const showDashboardLink =
     isDashboardService &&
@@ -185,7 +201,7 @@ export default function ServiceDetailSection({
             ))}
           </div>
         )}
-        {isChiefOfDept && available.length > 0 && (
+        {isChiefOfDept && totalAvailable > 0 && (
           <div className="mt-2 flex items-center gap-2">
             <select
               onChange={(e) => {
@@ -200,10 +216,14 @@ export default function ServiceDetailSection({
               <option value="" disabled>
                 + Añadir técnico
               </option>
-              {available.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name ?? m.id}
-                </option>
+              {availableGroups.map((g) => (
+                <optgroup key={g.dept_id} label={g.dept_name}>
+                  {g.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name ?? m.id}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             {!hideAssignAll && (

@@ -69,6 +69,7 @@ export default async function AdminClientDetailPage({ params, searchParams }: Pa
           company={context.company}
           userChiefDeptIds={context.userChiefDeptIds}
           deptMembers={context.deptMembers}
+          departments={context.departments}
           allAdminCandidates={context.allAdminCandidates}
           chiefAvailableServices={context.chiefAvailableServices}
           canCreateCompany={context.canCreateCompany}
