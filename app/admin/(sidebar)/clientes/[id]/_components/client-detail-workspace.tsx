@@ -174,6 +174,10 @@ export default function ClientDetailWorkspace({
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(resolveInitialTab(initialTab));
   const [company, setCompany] = useState(initialCompany);
+  // Sincroniza el estado local con los nuevos datos del server tras
+  // router.refresh(). Esto refleja, p.ej., los técnicos auto-asignados a un
+  // servicio recién contratado sin necesidad de recargar manualmente.
+  useEffect(() => setCompany(initialCompany), [initialCompany]);
   const [addingBlock, setAddingBlock] = useState(false);
   const [addingApartado, setAddingApartado] = useState<{
     clientBlockId: string;

@@ -1870,8 +1870,10 @@ export async function addTeamMemberToCompany(
     }
   }
 
-  // 4. Resolver client_apartados del cliente cuyo apartado-template está
-  //    vinculado a los dpts permitidos. Para cada uno → fila Supervisor.
+  // 4. Resolver client_apartados del cliente que tocan al empleado:
+  //    (a) apartados vinculados a alguno de los dpts permitidos, o
+  //    (b) apartados globales (is_global=true) — todo miembro del equipo es
+  //        supervisor de los apartados globales del cliente.
   const supRows: typeof techRows = [];
   const { data: clientBlocks } = await admin
     .schema("documentation")
@@ -1887,15 +1889,27 @@ export async function addTeamMemberToCompany(
       .in("client_block_id", blockIds);
     const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
     if (allCatalogIds.length > 0) {
-      const { data: aptDeptLinks } = await admin
-        .schema("documentation")
-        .from("apartado_departments")
-        .select("apartado_id")
-        .in("apartado_id", allCatalogIds)
-        .in("department_id", allowedDeptIds);
-      const catalogIdsInScope = new Set(
-        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
-      );
+      const [{ data: aptDeptLinks }, { data: globalApartados }] = await Promise.all([
+        admin
+          .schema("documentation")
+          .from("apartado_departments")
+          .select("apartado_id")
+          .in("apartado_id", allCatalogIds)
+          .in("department_id", allowedDeptIds),
+        admin
+          .schema("documentation")
+          .from("apartados")
+          .select("id")
+          .in("id", allCatalogIds)
+          .eq("is_global", true),
+      ]);
+      const catalogIdsInScope = new Set<string>();
+      for (const l of aptDeptLinks ?? []) {
+        catalogIdsInScope.add(l.apartado_id as string);
+      }
+      for (const a of globalApartados ?? []) {
+        catalogIdsInScope.add(a.id as string);
+      }
       for (const ca of cas ?? []) {
         if (catalogIdsInScope.has(ca.apartado_id as string)) {
           supRows.push({
@@ -1990,7 +2004,9 @@ export async function removeTeamMemberFromCompany(
     for (const r of csRows ?? []) csIds.push(r.id as string);
   }
 
-  // client_apartados scope IDs a limpiar.
+  // client_apartados scope IDs a limpiar: los del dpto del empleado +
+  // todos los apartados globales (un miembro del equipo es supervisor de los
+  // globales mientras esté en el equipo).
   const { data: clientBlocks } = await admin
     .schema("documentation")
     .from("client_blocks")
@@ -2006,15 +2022,27 @@ export async function removeTeamMemberFromCompany(
       .in("client_block_id", blockIds);
     const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
     if (allCatalogIds.length > 0) {
-      const { data: aptDeptLinks } = await admin
-        .schema("documentation")
-        .from("apartado_departments")
-        .select("apartado_id")
-        .in("apartado_id", allCatalogIds)
-        .in("department_id", allowedDeptIds);
-      const catalogIdsInScope = new Set(
-        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
-      );
+      const [{ data: aptDeptLinks }, { data: globalApartados }] = await Promise.all([
+        admin
+          .schema("documentation")
+          .from("apartado_departments")
+          .select("apartado_id")
+          .in("apartado_id", allCatalogIds)
+          .in("department_id", allowedDeptIds),
+        admin
+          .schema("documentation")
+          .from("apartados")
+          .select("id")
+          .in("id", allCatalogIds)
+          .eq("is_global", true),
+      ]);
+      const catalogIdsInScope = new Set<string>();
+      for (const l of aptDeptLinks ?? []) {
+        catalogIdsInScope.add(l.apartado_id as string);
+      }
+      for (const a of globalApartados ?? []) {
+        catalogIdsInScope.add(a.id as string);
+      }
       for (const ca of cas ?? []) {
         if (catalogIdsInScope.has(ca.apartado_id as string)) {
           caIds.push(ca.id as string);
