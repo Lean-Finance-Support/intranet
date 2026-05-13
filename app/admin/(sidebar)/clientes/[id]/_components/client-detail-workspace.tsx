@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type {
   ClienteCompany,
@@ -612,37 +611,12 @@ export default function ClientDetailWorkspace({
 
   return (
     <div className="animate-fade-in-up">
-      {/* Sticky header + tabs */}
-      <div className="sticky top-0 z-20 bg-surface-gray pt-4 pb-0 -mt-4">
-        {/* Breadcrumb */}
-        <nav className="text-xs text-text-muted mb-3 flex items-center gap-1.5">
-          <Link href={`${linkPrefix}/clientes`} className="hover:text-text-body cursor-pointer">
-            Clientes
-          </Link>
-          <span>/</span>
-          <span className="text-text-body font-medium truncate">{detail.legal_name}</span>
-        </nav>
-
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
-            {detail.legal_name}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-text-muted">
-            {company.company_name && (
-              <span className="text-text-body">{company.company_name}</span>
-            )}
-            {detail.nif && <span className="font-mono">{detail.nif}</span>}
-            {isDeleted && (
-              <span className="inline-flex items-center gap-1 text-[11px] bg-gray-200 text-text-muted px-2 py-0.5 rounded-full font-medium">
-                Empresa eliminada
-              </span>
-            )}
-          </div>
-        </div>
-
+      {/* Sticky tabs. La cabecera (breadcrumb + h1 + NIF) la pinta la page
+          como shell instantáneo (ClientHeaderShell) — no la repetimos aquí
+          para evitar el doble header al llegar el workspace via streaming. */}
+      <div className="sticky top-0 z-20 bg-surface-gray pt-2 pb-0">
         {/* Tabs */}
-        <div className="mt-4 border-b border-gray-200 flex items-center gap-4 flex-wrap">
+        <div className="border-b border-gray-200 flex items-center gap-4 flex-wrap">
           {TABS.map((t) => {
             const active = t.key === tab;
             return (
