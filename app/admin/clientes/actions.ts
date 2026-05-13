@@ -197,25 +197,59 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     hasPermission("request_client_documentation"),
   ]);
 
-  // 3. Company services + technicians
-  let companyServicesData: { company_id: string; service_id: string }[] = [];
-  let techData: { company_id: string; service_id: string; technician_id: string }[] = [];
+  // 3. Company services + technicians.
+  // Para reducir el waterfall:
+  //  - companyServicesData (depende de companyIds) y memberRoles (depende de
+  //    userChiefDeptIds) y myDocSupervisorCompanyIds (independiente) se lanzan
+  //    en PARALELO. Antes iban una tras otra.
+  //  - Una vez tenemos companyServicesData, lanzamos en paralelo:
+  //    fetchTechniciansByServiceIds + clientBlocks (documentation).
+  const adminClientForDocs = createAdminClient();
+  const [
+    csRes,
+    memberRolesRes,
+    myDocSupervisorCompanyIds,
+    clientBlocksRes,
+  ] = await Promise.all([
+    companyIds.length > 0
+      ? supabase
+          .from("company_services")
+          .select("company_id, service_id")
+          .in("company_id", companyIds)
+          .eq("is_active", true)
+      : Promise.resolve({ data: [] as { company_id: string; service_id: string }[] }),
+    userChiefDeptIds.length > 0
+      ? supabase
+          .from("profile_roles")
+          .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
+          .eq("scope_type", "department")
+          .in("scope_id", userChiefDeptIds)
+      : Promise.resolve({ data: [] }),
+    fetchSupervisorCompanyIds(adminClientForDocs, user.id),
+    companyIds.length > 0
+      ? adminClientForDocs
+          .schema("documentation")
+          .from("client_blocks")
+          .select("id, company_id")
+          .in("company_id", companyIds)
+      : Promise.resolve({ data: [] as { id: string; company_id: string }[] }),
+  ]);
 
-  if (companyIds.length > 0) {
-    const csRes = await supabase
-      .from("company_services")
-      .select("company_id, service_id")
-      .in("company_id", companyIds)
-      .eq("is_active", true);
-    companyServicesData = csRes.data ?? [];
+  const companyServicesData = csRes.data ?? [];
+  const allServiceIds = [...new Set(companyServicesData.map((cs) => cs.service_id))];
+  const companyIdSet = new Set(companyIds);
 
-    const allServiceIds = [...new Set(companyServicesData.map((cs) => cs.service_id))];
-    const techRows = await fetchTechniciansByServiceIds(supabase, allServiceIds);
-    const companyIdSet = new Set(companyIds);
-    techData = techRows.filter((t) => companyIdSet.has(t.company_id));
-  }
+  // techRows depende de companyServicesData (necesita allServiceIds). Lanzamos
+  // ahora en paralelo: técnicos por service_ids + nombres de técnicos. El segundo
+  // lo lanzamos optimista en cuanto tengamos profileIds — para no perder un
+  // roundtrip lo hacemos secuencial pero envuelto en Promise.all junto a las
+  // queries de documentation que dependen de clientBlocks.
+  const techRowsAll = await fetchTechniciansByServiceIds(supabase, allServiceIds);
+  const techData = techRowsAll.filter((t) => companyIdSet.has(t.company_id));
 
-  // 4. Technician names
+  // 4-5. Technician names + procesamiento de dept members (no requiere I/O extra
+  // si los embeds del paso anterior ya traen los profiles). Solo si techData
+  // tiene técnicos hacemos la query de nombres.
   const allTechIds = [...new Set(techData.map((t) => t.technician_id))];
   const techNameMap = new Map<string, string | null>();
   if (allTechIds.length > 0) {
@@ -226,18 +260,14 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     for (const p of techProfiles ?? []) techNameMap.set(p.id, p.full_name);
   }
 
-  // 5. Dept members for chief depts (for technician assignment) — vía profile_roles
+  // 5. Dept members (ya cargados en paralelo arriba) — vía profile_roles.
   // Miembros/Chiefs son elegibles como técnicos; Observadores NO.
   const deptMembersMap: { [deptId: string]: DeptMemberSlim[] } = {};
   if (userChiefDeptIds.length > 0) {
-    const { data: memberRoles } = await supabase
-      .from("profile_roles")
-      .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
-      .eq("scope_type", "department")
-      .in("scope_id", userChiefDeptIds);
+    const memberRoles = memberRolesRes.data ?? [];
 
     const seen = new Set<string>(); // scope_id|profile_id
-    for (const link of memberRoles ?? []) {
+    for (const link of memberRoles) {
       const role = link.role as unknown as { name: string } | null;
       if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief")) continue;
       const p = link.profile as unknown as { id: string; full_name: string | null } | null;
@@ -274,12 +304,10 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   // Companies donde el usuario actual está asignado:
   //  - como técnico de algún servicio, o
   //  - como supervisor de algún apartado de documentación.
+  // myDocSupervisorCompanyIds se cargó arriba en paralelo con las queries
+  // de company_services / member_roles / client_blocks.
   const myAssignedCompanyIds = new Set(
     techData.filter((t) => t.technician_id === user.id).map((t) => t.company_id)
-  );
-  const myDocSupervisorCompanyIds = await fetchSupervisorCompanyIds(
-    createAdminClient(),
-    user.id
   );
   for (const id of myDocSupervisorCompanyIds) myAssignedCompanyIds.add(id);
 
@@ -318,87 +346,84 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     teamDeptsMap.get(t.company_id)!.add(deptId);
   }
 
-  if (companyIds.length > 0) {
-    const adminClient = createAdminClient();
-    const { data: clientBlocks } = await adminClient
-      .schema("documentation")
-      .from("client_blocks")
-      .select("id, company_id")
-      .in("company_id", companyIds);
-
+  // Documentation: clientBlocks ya viene cargado del Promise.all paralelo de
+  // arriba. Aquí solo seguimos el waterfall que sí es real (apartados →
+  // supervisores → departamentos). Las queries `apartado_supervisors_v` y
+  // (sus depts) las paralelizamos cuando es posible.
+  const clientBlocks = (clientBlocksRes.data ?? []) as { id: string; company_id: string }[];
+  if (clientBlocks.length > 0) {
+    const adminClient = adminClientForDocs;
     const blockToCompany = new Map<string, string>();
-    for (const cb of clientBlocks ?? []) {
-      blockToCompany.set(cb.id as string, cb.company_id as string);
+    for (const cb of clientBlocks) {
+      blockToCompany.set(cb.id, cb.company_id);
     }
 
     const blockIds = Array.from(blockToCompany.keys());
-    if (blockIds.length > 0) {
-      const { data: clientApartados } = await adminClient
-        .schema("documentation")
-        .from("client_apartados")
-        .select("id, status, client_block_id, apartado_id")
-        .in("client_block_id", blockIds);
+    const { data: clientApartados } = await adminClient
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, status, client_block_id, apartado_id")
+      .in("client_block_id", blockIds);
 
-      const clientApartadoToCompany = new Map<string, string>();
-      const clientApartadoToCatalog = new Map<string, string>();
-      for (const ca of clientApartados ?? []) {
-        const companyId = blockToCompany.get(ca.client_block_id as string);
-        if (!companyId) continue;
-        const entry = docProgressMap.get(companyId) ?? { validated: 0, total: 0, in_review: 0 };
-        entry.total += 1;
-        if (ca.status === "validado") entry.validated += 1;
-        if (ca.status === "enviado") entry.in_review += 1;
-        docProgressMap.set(companyId, entry);
-        clientApartadoToCompany.set(ca.id as string, companyId);
-        clientApartadoToCatalog.set(ca.id as string, ca.apartado_id as string);
+    const clientApartadoToCompany = new Map<string, string>();
+    const clientApartadoToCatalog = new Map<string, string>();
+    for (const ca of clientApartados ?? []) {
+      const companyId = blockToCompany.get(ca.client_block_id as string);
+      if (!companyId) continue;
+      const entry = docProgressMap.get(companyId) ?? { validated: 0, total: 0, in_review: 0 };
+      entry.total += 1;
+      if (ca.status === "validado") entry.validated += 1;
+      if (ca.status === "enviado") entry.in_review += 1;
+      docProgressMap.set(companyId, entry);
+      clientApartadoToCompany.set(ca.id as string, companyId);
+      clientApartadoToCatalog.set(ca.id as string, ca.apartado_id as string);
+    }
+
+    // Depts via supervisores: para cada client_apartado supervisado, traemos
+    // los depts del apartado del catálogo y los añadimos al equipo del cliente.
+    const clientApartadoIds = Array.from(clientApartadoToCompany.keys());
+    if (clientApartadoIds.length > 0) {
+      const { data: supRows } = await adminClient
+        .schema("documentation")
+        .from("apartado_supervisors_v")
+        .select("client_apartado_id")
+        .in("client_apartado_id", clientApartadoIds);
+
+      const supervisedClientApartadoIds = new Set(
+        (supRows ?? []).map((r) => r.client_apartado_id as string)
+      );
+
+      const catalogIdsToLookUp = new Set<string>();
+      for (const caId of supervisedClientApartadoIds) {
+        const cat = clientApartadoToCatalog.get(caId);
+        if (cat) catalogIdsToLookUp.add(cat);
       }
 
-      // Depts via supervisores: para cada client_apartado supervisado, traemos
-      // los depts del apartado del catálogo y los añadimos al equipo del cliente.
-      const clientApartadoIds = Array.from(clientApartadoToCompany.keys());
-      if (clientApartadoIds.length > 0) {
-        const { data: supRows } = await adminClient
+      if (catalogIdsToLookUp.size > 0) {
+        const { data: apartadoDepts } = await adminClient
           .schema("documentation")
-          .from("apartado_supervisors_v")
-          .select("client_apartado_id")
-          .in("client_apartado_id", clientApartadoIds);
+          .from("apartado_departments")
+          .select("apartado_id, department_id")
+          .in("apartado_id", Array.from(catalogIdsToLookUp));
 
-        const supervisedClientApartadoIds = new Set(
-          (supRows ?? []).map((r) => r.client_apartado_id as string)
-        );
-
-        const catalogIdsToLookUp = new Set<string>();
-        for (const caId of supervisedClientApartadoIds) {
-          const cat = clientApartadoToCatalog.get(caId);
-          if (cat) catalogIdsToLookUp.add(cat);
+        const catalogToDepts = new Map<string, string[]>();
+        for (const link of apartadoDepts ?? []) {
+          const aid = link.apartado_id as string;
+          const did = link.department_id as string;
+          const list = catalogToDepts.get(aid) ?? [];
+          if (!list.includes(did)) list.push(did);
+          catalogToDepts.set(aid, list);
         }
 
-        if (catalogIdsToLookUp.size > 0) {
-          const { data: apartadoDepts } = await adminClient
-            .schema("documentation")
-            .from("apartado_departments")
-            .select("apartado_id, department_id")
-            .in("apartado_id", Array.from(catalogIdsToLookUp));
-
-          const catalogToDepts = new Map<string, string[]>();
-          for (const link of apartadoDepts ?? []) {
-            const aid = link.apartado_id as string;
-            const did = link.department_id as string;
-            const list = catalogToDepts.get(aid) ?? [];
-            if (!list.includes(did)) list.push(did);
-            catalogToDepts.set(aid, list);
-          }
-
-          for (const caId of supervisedClientApartadoIds) {
-            const companyId = clientApartadoToCompany.get(caId);
-            const catalogId = clientApartadoToCatalog.get(caId);
-            if (!companyId || !catalogId) continue;
-            const depts = catalogToDepts.get(catalogId) ?? [];
-            if (depts.length === 0) continue;
-            if (!teamDeptsMap.has(companyId)) teamDeptsMap.set(companyId, new Set());
-            const set = teamDeptsMap.get(companyId)!;
-            for (const did of depts) set.add(did);
-          }
+        for (const caId of supervisedClientApartadoIds) {
+          const companyId = clientApartadoToCompany.get(caId);
+          const catalogId = clientApartadoToCatalog.get(caId);
+          if (!companyId || !catalogId) continue;
+          const depts = catalogToDepts.get(catalogId) ?? [];
+          if (depts.length === 0) continue;
+          if (!teamDeptsMap.has(companyId)) teamDeptsMap.set(companyId, new Set());
+          const set = teamDeptsMap.get(companyId)!;
+          for (const did of depts) set.add(did);
         }
       }
     }
@@ -588,12 +613,28 @@ export async function getCompanyContextForDetail(
     (cs) => cs.service_id as string
   );
 
-  const techRows =
+  // Paralelizamos las 3 queries auxiliares que NO dependen de techRows:
+  // - memberRoles (dept members del actor para asignar técnicos)
+  // - allAdmins (candidatos para servicios transversales)
+  // - techRows (sí dependen de serviceIds — pero los lanzamos en paralelo con
+  //   las otras dos en lugar de seriarlos como antes).
+  const [techRowsRaw, memberRolesRes, allAdminsRes] = await Promise.all([
     serviceIdsForThisCompany.length > 0
-      ? (await fetchTechniciansByServiceIds(supabase, serviceIdsForThisCompany)).filter(
-          (t) => t.company_id === companyId
-        )
-      : [];
+      ? fetchTechniciansByServiceIds(supabase, serviceIdsForThisCompany)
+      : Promise.resolve([] as Array<{ company_id: string; service_id: string; technician_id: string }>),
+    userChiefDeptIds.length > 0
+      ? supabase
+          .from("profile_roles")
+          .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
+          .eq("scope_type", "department")
+          .in("scope_id", userChiefDeptIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("role", "admin"),
+  ]);
+  const techRows = techRowsRaw.filter((t) => t.company_id === companyId);
 
   const techProfileIds = [...new Set(techRows.map((t) => t.technician_id))];
   const techNameMap = new Map<string, string | null>();
@@ -659,14 +700,11 @@ export async function getCompanyContextForDetail(
   const userChiefDeptSet = new Set(userChiefDeptIds);
 
   if (userChiefDeptIds.length > 0) {
-    const { data: memberRoles } = await supabase
-      .from("profile_roles")
-      .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
-      .eq("scope_type", "department")
-      .in("scope_id", userChiefDeptIds);
+    // memberRoles ya viene cargado del Promise.all paralelo de arriba.
+    const memberRoles = memberRolesRes.data ?? [];
 
     const seen = new Set<string>();
-    for (const link of memberRoles ?? []) {
+    for (const link of memberRoles) {
       const role = link.role as unknown as { name: string } | null;
       if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief"))
         continue;
@@ -713,12 +751,9 @@ export async function getCompanyContextForDetail(
   }
 
   // Candidatos para técnicos de servicios sin dpto: cualquier admin activo.
-  // Lo cargamos siempre (1 query barata) — la UI lo usará solo cuando el
-  // servicio no tenga dpto, igual que los apartados globales de doc.
-  const { data: allAdmins } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .eq("role", "admin");
+  // Ya cargado en paralelo en el Promise.all de arriba (junto a techRows y
+  // memberRoles).
+  const allAdmins = allAdminsRes.data;
   const allAdminCandidates: DeptMemberSlim[] = (allAdmins ?? [])
     .map((p) => ({
       id: p.id as string,
