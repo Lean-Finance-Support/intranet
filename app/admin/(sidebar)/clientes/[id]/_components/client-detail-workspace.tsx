@@ -31,6 +31,7 @@ import {
   removeTeamMemberFromCompany,
   type TeamMemberCandidate,
 } from "@/app/admin/clientes/actions";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 import type {
   BlockTemplate,
   ClientDocumentation,
@@ -68,6 +69,7 @@ import {
 import DocumentationMasterDetail from "@/components/documentation/documentation-master-detail";
 import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
 import ServiceDetailSection from "@/components/clients/service-detail-section";
+import DashboardSheetPanel from "@/components/clients/dashboard-sheet-panel";
 import ConfirmDialog from "@/components/confirm-dialog";
 import dynamic from "next/dynamic";
 
@@ -116,12 +118,20 @@ interface Props {
   canViewClientTaxModels: boolean;
 }
 
-type TabKey = "documentacion" | "equipo" | "servicios" | "datos";
+type TabKey =
+  | "documentacion"
+  | "equipo"
+  | "servicios"
+  | "aplicaciones"
+  | "informes"
+  | "datos";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "documentacion", label: "Documentación" },
   { key: "equipo", label: "Equipo responsable" },
   { key: "servicios", label: "Servicios contratados" },
+  { key: "aplicaciones", label: "Aplicaciones" },
+  { key: "informes", label: "Informes / Formularios" },
   { key: "datos", label: "Datos" },
 ];
 
@@ -316,6 +326,24 @@ export default function ClientDetailWorkspace({
   const availableToAdd = chiefAvailableServices.filter(
     (s) => !existingServiceIds.has(s.service_id)
   );
+
+  // Features desbloqueadas por servicios padre. Modelos fiscales = Asesoramiento
+  // fiscal y contable; Dashboard fiscal = Gestión administrativa externalizada.
+  const hasTaxAccountingAdvice = company.services.some(
+    (s) => s.service_slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE
+  );
+  const hasExternalizedAdmin = company.services.some(
+    (s) => s.service_slug === SERVICE_SLUGS.EXTERNALIZED_ADMIN
+  );
+  // Para editar la config del Sheet del Dashboard hace falta ser chief del dpto
+  // Asesoría Fiscal y Contable (servicio padre vive ahí).
+  const externalizedAdminDeptId = company.services.find(
+    (s) => s.service_slug === SERVICE_SLUGS.EXTERNALIZED_ADMIN
+  )?.department_id;
+  const canEditDashboardSheet =
+    canEditCompany &&
+    !!externalizedAdminDeptId &&
+    userChiefDeptIds.includes(externalizedAdminDeptId);
 
   const supervisorApartadoSet = new Set(supervisorClientApartadoIds);
   function resolveCanValidate(apartado: ClientApartado): boolean {
@@ -1036,7 +1064,7 @@ export default function ClientDetailWorkspace({
             <p className="text-sm text-text-muted italic">Sin servicios contratados</p>
           ) : (
             <div className="space-y-2">
-              {company.services.map((svc) => {
+              {company.services.map((svc): React.ReactNode => {
                 const isTransversal = !svc.department_id;
                 // Para servicios transversales, basta con tener
                 // write_dept_service en algún dpto (= ser chief de algo).
@@ -1059,20 +1087,105 @@ export default function ClientDetailWorkspace({
                     isChiefOfDept={isChiefOfDept}
                     memberGroups={memberGroups}
                     hideAssignAll={isTransversal}
-                    linkPrefix={linkPrefix}
                     companyId={company.id}
                     onAssign={handleAssignTech}
                     onRemove={handleRemoveTech}
                     onRemoveService={handleRemoveService}
                     onAssignAll={handleAssignAll}
-                    dashboardConfig={svc.service_slug === "dashboard" ? dashboardConfig : null}
-                    dashboardAuthorizedEmail={dashboardAuthorizedEmail}
-                    canViewClientDashboard={canViewClientDashboard}
-                    canViewClientTaxModels={canViewClientTaxModels}
                   />
                 );
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Aplicaciones ── */}
+      {tab === "aplicaciones" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Aplicaciones disponibles
+          </p>
+          <p className="text-xs text-text-muted">
+            Donde cliente y equipo trabajan juntos.
+          </p>
+
+          {hasTaxAccountingAdvice && canViewClientTaxModels ? (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              title="Modelos fiscales"
+              description="Tramitación trimestral de modelos."
+              unlockedBy="Asesoramiento fiscal y contable"
+              href={`${linkPrefix}/modelos?company=${company.id}`}
+              ctaLabel="Abrir modelos"
+            />
+          ) : hasTaxAccountingAdvice ? (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              title="Modelos fiscales"
+              description="Tramitación trimestral de modelos."
+              unlockedBy="Asesoramiento fiscal y contable"
+              noAccessHint="Sin permiso para acceder."
+            />
+          ) : (
+            <EmptyFeaturesState
+              message="Esta empresa todavía no tiene aplicaciones desbloqueadas."
+              hint="Contrata 'Asesoramiento fiscal y contable' para habilitar Modelos fiscales."
+            />
+          )}
+        </div>
+      )}
+
+      {/* ── Informes / Formularios ── */}
+      {tab === "informes" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Informes y formularios
+          </p>
+          <p className="text-xs text-text-muted">
+            Para consultar o rellenar una vez.
+          </p>
+
+          {hasExternalizedAdmin ? (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5V21a.5.5 0 00.5.5h6V13.5H3zM10.5 21.5h10a.5.5 0 00.5-.5v-7.5h-10.5V21.5zM3 12h18V3.5a.5.5 0 00-.5-.5h-17a.5.5 0 00-.5.5V12z" />
+                </svg>
+              }
+              title="Dashboard fiscal"
+              description="Ventas, compras y bancos al día."
+              unlockedBy="Gestión administrativa externalizada"
+              href={canViewClientDashboard ? `${linkPrefix}/clientes/${company.id}/dashboard` : undefined}
+              ctaLabel={canViewClientDashboard ? "Abrir dashboard" : undefined}
+              noAccessHint={!canViewClientDashboard ? "Sin permiso para acceder a esta vista del cliente." : undefined}
+              extra={
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-2">
+                    Configuración del Sheet
+                  </p>
+                  <DashboardSheetPanel
+                    companyId={company.id}
+                    initialConfig={dashboardConfig}
+                    authorizedEmail={dashboardAuthorizedEmail}
+                    canEdit={canEditDashboardSheet}
+                  />
+                </div>
+              }
+            />
+          ) : (
+            <EmptyFeaturesState
+              message="Esta empresa todavía no tiene informes desbloqueados."
+              hint="Contrata 'Gestión administrativa externalizada' para habilitar el Dashboard fiscal."
+            />
           )}
         </div>
       )}
@@ -1159,6 +1272,78 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
     <div>
       <p className="text-xs text-text-muted">{label}</p>
       <p className={`text-sm font-medium text-text-body mt-0.5 ${mono ? "font-mono" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+  unlockedBy,
+  href,
+  ctaLabel,
+  noAccessHint,
+  extra,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  unlockedBy: string;
+  href?: string;
+  ctaLabel?: string;
+  /** Texto que reemplaza al CTA cuando el actor no tiene permiso. */
+  noAccessHint?: string;
+  /** Contenido extra que se renderiza dentro del mismo box, debajo del header. */
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-100 p-4 hover:border-brand-teal/40 transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center">
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-brand-navy">{title}</h4>
+          <p className="text-xs text-text-muted mt-0.5">{description}</p>
+          <p className="text-[11px] text-text-muted/80 mt-1.5">
+            Desbloqueada por{" "}
+            <span className="font-medium text-text-muted">{unlockedBy}</span>
+          </p>
+          {noAccessHint && (
+            <p className="text-[11px] text-text-muted/80 italic mt-1">
+              {noAccessHint}
+            </p>
+          )}
+        </div>
+        {href && ctaLabel && (
+          <a
+            href={href}
+            className="flex-shrink-0 self-center inline-flex items-center gap-1.5 text-xs font-medium bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            {ctaLabel}
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        )}
+      </div>
+      {extra}
+    </div>
+  );
+}
+
+function EmptyFeaturesState({
+  message,
+  hint,
+}: {
+  message: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center">
+      <p className="text-sm text-text-muted">{message}</p>
+      <p className="text-xs text-text-muted/80 mt-1">{hint}</p>
     </div>
   );
 }

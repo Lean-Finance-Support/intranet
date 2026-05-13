@@ -1,6 +1,6 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { updateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
 import { invalidateNotifications } from "@/lib/actions/notifications";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/team-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 import { getDashboardData, parseSheetUrl, DashboardSheetError } from "@/lib/google-sheets/client";
 import {
   buildClientDashboardReadyPreviewHtml,
@@ -24,8 +25,8 @@ import {
  * Devuelve el department_id o lanza si el servicio no está activo en ninguno.
  * Nota: con el modelo M:N (0..N dpts por servicio) este helper asume que el
  * servicio tiene exactamente 1 dpto — solo se sigue usando para flujos donde
- * esa garantía existe (tax-models, dashboard). Para servicios nuevos con 0 o
- * >1 dpts usa `resolveServiceDepartments`.
+ * esa garantía existe (asesoramiento-fiscal-y-contable, gestion-administrativa-externalizada).
+ * Para servicios nuevos con 0 o >1 dpts usa `resolveServiceDepartments`.
  */
 async function resolveServiceDepartment(
   supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
@@ -1031,7 +1032,7 @@ export async function removeServiceFromCompany(
     .select("slug")
     .eq("id", serviceId)
     .maybeSingle();
-  if (svc?.slug === "dashboard") {
+  if (svc?.slug === SERVICE_SLUGS.EXTERNALIZED_ADMIN) {
     await supabase
       .schema("dashboard")
       .from("client_dashboards")
@@ -1425,7 +1426,7 @@ async function resolveDashboardServiceDeptId(
   const { data } = await supabase
     .from("services")
     .select("id, department_services!inner(department_id)")
-    .eq("slug", "dashboard")
+    .eq("slug", SERVICE_SLUGS.EXTERNALIZED_ADMIN)
     .eq("department_services.is_active", true)
     .maybeSingle<{ id: string; department_services: { department_id: string }[] }>();
   const deptId = data?.department_services?.[0]?.department_id;
@@ -1737,13 +1738,10 @@ export interface TeamMemberCandidate {
  * o supervisores activos en este cliente). Devuelve también los dpts donde el
  * actor puede gestionar (para que la UI sepa en qué miembros mostrar X).
  */
-export async function listTeamMemberCandidates(
-  companyId: string
+async function fetchTeamCandidatesForDepts(
+  companyId: string,
+  allowedDeptIds: string[]
 ): Promise<{ candidates: TeamMemberCandidate[]; manageableDeptIds: string[] }> {
-  await requireAdmin();
-  const allowedDeptIds = await userScopeIds("write_dept_service", "department");
-  if (allowedDeptIds.length === 0) return { candidates: [], manageableDeptIds: [] };
-
   const admin = createAdminClient();
   const [miembroRoleId, chiefRoleId] = await Promise.all([
     lookupRoleId(admin, "Miembro de departamento"),
@@ -1808,6 +1806,30 @@ export async function listTeamMemberCandidates(
       (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, "es")
     );
   return { candidates, manageableDeptIds: allowedDeptIds };
+}
+
+export async function listTeamMemberCandidates(
+  companyId: string
+): Promise<{ candidates: TeamMemberCandidate[]; manageableDeptIds: string[] }> {
+  await requireAdmin();
+  const allowedDeptIds = await userScopeIds("write_dept_service", "department");
+  if (allowedDeptIds.length === 0) return { candidates: [], manageableDeptIds: [] };
+
+  // Cacheamos el resultado por (companyId, allowedDeptIds ordenados): la
+  // función ejecuta ~12 queries entre profile_roles, profiles, departments,
+  // department_services, company_services y client_blocks/apartados (vía
+  // getTeamMemberIdsForDepts), lo que hacía que el tab tardara visiblemente.
+  // El cache se invalida desde `invalidateResponsibleTeam(companyId)` en las
+  // mutaciones que afectan al equipo del cliente.
+  const sortedDepts = [...allowedDeptIds].sort();
+  return unstable_cache(
+    async () => fetchTeamCandidatesForDepts(companyId, sortedDepts),
+    ["team-candidates", companyId, sortedDepts.join(",")],
+    {
+      tags: [`team-candidates:${companyId}`, "team-candidates"],
+      revalidate: 600,
+    }
+  )();
 }
 
 export async function addTeamMemberToCompany(

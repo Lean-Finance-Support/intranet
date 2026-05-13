@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
 import type { SearchableCompany } from "@/lib/search/types";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 async function fetchSearchableCompanies(): Promise<SearchableCompany[]> {
   const admin = createAdminClient();
@@ -27,8 +28,8 @@ async function fetchSearchableCompanies(): Promise<SearchableCompany[]> {
       id: row.id as string,
       legal_name: row.legal_name as string,
       company_name: (row.company_name as string | null) ?? null,
-      has_dashboard_service: activeSlugs.includes("dashboard"),
-      has_tax_models_service: activeSlugs.includes("tax-models"),
+      has_dashboard_service: activeSlugs.includes(SERVICE_SLUGS.EXTERNALIZED_ADMIN),
+      has_tax_models_service: activeSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE),
     };
   });
 }

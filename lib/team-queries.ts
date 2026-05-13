@@ -462,15 +462,22 @@ export async function getCachedCompanyResponsibleTeam(
 }
 
 /**
- * Invalida el cache del equipo responsable. Pasa `companyId` para invalidar
- * una empresa concreta, o llama sin args para invalidar todas (usar solo
- * cuando una mutación afecta a varias empresas — p.ej. cambio de chief de
- * dept que altera todos los clientes con servicios de ese dept).
+ * Invalida el cache del equipo responsable Y el de candidatos a añadir.
+ * Ambos comparten los mismos triggers de invalidación (cualquier cambio en
+ * técnicos/servicios del cliente o en la pertenencia a departamentos altera
+ * tanto el listado actual como el de candidatos disponibles).
+ *
+ * Pasa `companyId` para invalidar una empresa concreta, o llama sin args para
+ * invalidar todas (usar solo cuando una mutación afecta a varias empresas —
+ * p.ej. cambio de chief de dept que altera todos los clientes con servicios
+ * de ese dept).
  */
 export function invalidateResponsibleTeam(companyId?: string): void {
   if (companyId) {
     updateTag(`responsible-team:${companyId}`);
+    updateTag(`team-candidates:${companyId}`);
   } else {
     updateTag("responsible-team");
+    updateTag("team-candidates");
   }
 }

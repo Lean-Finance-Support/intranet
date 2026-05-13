@@ -341,11 +341,6 @@ export default function EmpresaPage({ currentUserId }: { currentUserId: string }
                               )}
                             </div>
                           </div>
-                          {s.service_description && (
-                            <p className="text-xs text-text-muted mt-2">
-                              {s.service_description}
-                            </p>
-                          )}
                         </li>
                       ))}
                     </ul>

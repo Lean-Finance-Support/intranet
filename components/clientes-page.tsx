@@ -156,12 +156,10 @@ function FilterPill({
 export default function ClientesPage({
   data,
   linkPrefix,
-  canViewDashboard,
   canViewTaxModels,
 }: {
   data: ClientesPageData;
   linkPrefix: string;
-  canViewDashboard: boolean;
   canViewTaxModels: boolean;
 }) {
   const router = useRouter();
@@ -409,7 +407,6 @@ export default function ClientesPage({
         <ClientDetailPanel
           company={selectedCompany}
           linkPrefix={linkPrefix}
-          canViewDashboard={canViewDashboard}
           canViewTaxModels={canViewTaxModels}
           onClose={() => setSelectedCompany(null)}
         />

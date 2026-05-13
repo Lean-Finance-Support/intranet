@@ -11,6 +11,7 @@ import {
   getCachedUserCompanies,
   getCachedCompanyServiceSlugs,
 } from "@/lib/cached-queries";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 export default async function AppSidebarLayout({
   children,
@@ -45,8 +46,8 @@ export default async function AppSidebarLayout({
     ? await getCachedCompanyServiceSlugs(resolvedCompanyId)
     : [];
 
-  const hasTaxModels = serviceSlugs.includes("tax-models");
-  const hasDashboard = serviceSlugs.includes("dashboard");
+  const hasTaxModels = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
+  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.EXTERNALIZED_ADMIN);
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
   const activeCompany = companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
 

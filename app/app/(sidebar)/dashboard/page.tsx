@@ -7,6 +7,7 @@ import {
   getCachedUserCompanies,
 } from "@/lib/cached-queries";
 import DashboardFiscalSection from "@/components/dashboard/dashboard-fiscal-section";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -45,7 +46,7 @@ export default async function ClientDashboardPage({ searchParams }: PageProps) {
   const serviceSlugs = resolvedCompanyId
     ? await getCachedCompanyServiceSlugs(resolvedCompanyId)
     : [];
-  const hasDashboard = serviceSlugs.includes("dashboard");
+  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.EXTERNALIZED_ADMIN);
 
   return (
     <div className="px-8 py-12">

@@ -6,6 +6,7 @@ import {
   getAuthUser,
   getCachedCompanyServiceSlugs,
 } from "@/lib/cached-queries";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 export default async function ClientModelosPage({
   searchParams,
@@ -25,7 +26,7 @@ export default async function ClientModelosPage({
   }
 
   const slugs = await getCachedCompanyServiceSlugs(activeCompanyId);
-  if (!slugs.includes("tax-models")) {
+  if (!slugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)) {
     redirect(`${prefix}/dashboard`);
   }
 

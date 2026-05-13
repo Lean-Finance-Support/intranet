@@ -333,7 +333,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
       {hasDashboard && (
-        <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
+        <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard fiscal" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
       )}
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
@@ -490,7 +490,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
                 <SearchTrigger collapsed={false} />
               </div>
               {hasDashboard && (
-                <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
+                <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard fiscal" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               )}
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />

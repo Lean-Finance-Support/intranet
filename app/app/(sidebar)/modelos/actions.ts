@@ -10,6 +10,7 @@ import type {
   TaxModelStatus,
 } from "@/lib/types/tax";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 export async function getClientQuarterData(
   year: number,
@@ -331,7 +332,7 @@ export async function getAdvisorContactInfo(): Promise<{
     admin
       .from("services")
       .select("id")
-      .eq("slug", "tax-models")
+      .eq("slug", SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)
       .single(),
   ]);
 
@@ -391,7 +392,7 @@ export async function submitQuarter(
   const { data: taxService } = await admin
     .from("services")
     .select("id")
-    .eq("slug", "tax-models")
+    .eq("slug", SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)
     .single();
 
   const recipients = new Set<string>();

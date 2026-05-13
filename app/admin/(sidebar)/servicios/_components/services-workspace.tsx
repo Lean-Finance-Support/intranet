@@ -263,67 +263,21 @@ export default function ServicesWorkspace({ initial }: Props) {
           </p>
         )}
 
-        <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-3">
           {orderedSections.map((section, sectionIdx) => {
-            if (section.items.length === 0 && !showArchived && section.id !== NO_DEPT_KEY) {
-              // sección de dpto vacía y no estamos viendo archivados → ocultar
-              return null;
-            }
             if (section.items.length === 0) return null;
             const isNoDept = section.id === NO_DEPT_KEY;
             return (
-              <div
+              <DepartmentSection
                 key={section.id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm"
-              >
-                <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div
-                      className="rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{
-                        width: 28,
-                        height: 28,
-                        backgroundColor: "white",
-                        border: isNoDept
-                          ? "1.5px solid #94a3b8"
-                          : "1.5px solid #00B0B7",
-                        color: isNoDept ? "#94a3b8" : "#00B0B7",
-                      }}
-                      aria-hidden
-                    >
-                      <span className="text-[11px] font-bold">
-                        {sectionIdx + 1}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-base font-semibold text-brand-navy font-heading">
-                        {section.name}
-                      </h3>
-                      {isNoDept && (
-                        <p className="text-xs text-text-muted mt-0.5">
-                          Servicios transversales sin departamento responsable.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-xs text-text-muted whitespace-nowrap mt-1">
-                    {section.items.length}{" "}
-                    {section.items.length === 1 ? "servicio" : "servicios"}
-                  </span>
-                </div>
-                <div className="px-5 py-4 space-y-2">
-                  {section.items.map((s) => (
-                    <ServiceRow
-                      key={`${section.id}-${s.id}`}
-                      service={s}
-                      canManage={initial.canManage}
-                      onEdit={() => setEditing(s)}
-                      onArchive={() => setPendingArchive(s)}
-                      onUnarchive={() => handleUnarchive(s)}
-                    />
-                  ))}
-                </div>
-              </div>
+                section={section}
+                sectionIdx={sectionIdx}
+                isNoDept={isNoDept}
+                canManage={initial.canManage}
+                onEdit={(s) => setEditing(s)}
+                onArchive={(s) => setPendingArchive(s)}
+                onUnarchive={(s) => handleUnarchive(s)}
+              />
             );
           })}
         </div>
@@ -356,6 +310,96 @@ export default function ServicesWorkspace({ initial }: Props) {
           }}
           onCancel={() => setPendingArchive(null)}
         />
+      )}
+    </div>
+  );
+}
+
+function DepartmentSection({
+  section,
+  sectionIdx,
+  isNoDept,
+  canManage,
+  onEdit,
+  onArchive,
+  onUnarchive,
+}: {
+  section: { id: string; name: string; items: ServiceCatalogItem[] };
+  sectionIdx: number;
+  isNoDept: boolean;
+  canManage: boolean;
+  onEdit: (s: ServiceCatalogItem) => void;
+  onArchive: (s: ServiceCatalogItem) => void;
+  onUnarchive: (s: ServiceCatalogItem) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full px-5 py-4 flex items-start justify-between gap-3 text-left hover:bg-gray-50/60 transition-colors cursor-pointer"
+      >
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div
+            className="rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+            style={{
+              width: 28,
+              height: 28,
+              backgroundColor: "white",
+              border: isNoDept ? "1.5px solid #94a3b8" : "1.5px solid #00B0B7",
+              color: isNoDept ? "#94a3b8" : "#00B0B7",
+            }}
+            aria-hidden
+          >
+            <span className="text-[11px] font-bold">{sectionIdx + 1}</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-semibold text-brand-navy font-heading">
+              {section.name}
+            </h3>
+            {isNoDept && (
+              <p className="text-xs text-text-muted mt-0.5">
+                Servicios transversales sin departamento responsable.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0 mt-1">
+          <span className="text-xs text-text-muted whitespace-nowrap">
+            {section.items.length}{" "}
+            {section.items.length === 1 ? "servicio" : "servicios"}
+          </span>
+          <svg
+            width={14}
+            height={14}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`text-text-muted transition-transform ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+      </button>
+      {open && (
+        <div className="px-5 pb-4 pt-1 space-y-2 border-t border-gray-100">
+          {section.items.map((s) => (
+            <ServiceRow
+              key={`${section.id}-${s.id}`}
+              service={s}
+              canManage={canManage}
+              onEdit={() => onEdit(s)}
+              onArchive={() => onArchive(s)}
+              onUnarchive={() => onUnarchive(s)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

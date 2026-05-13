@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
   const { data: taxService } = await supabase
     .from("services")
     .select("id")
-    .eq("slug", "tax-models")
+    .eq("slug", "asesoramiento-fiscal-y-contable")
     .single();
 
   async function addProfilesById(ids: string[], fallbackName: string) {

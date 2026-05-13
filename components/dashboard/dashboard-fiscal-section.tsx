@@ -65,11 +65,17 @@ export default async function DashboardFiscalSection({
 
   if (!config) {
     return (
-      <section className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <h2 className="text-lg font-semibold text-brand-navy">Dashboard</h2>
-        <p className="mt-2 text-sm text-text-muted">
-          Tu dashboard se está configurando. En breve aparecerá aquí. Si llevas más de 24 h sin
-          verlo, contacta con tu asesor.
+      <section className="rounded-2xl border border-gray-200 bg-white p-10 shadow-sm flex flex-col items-center text-center">
+        <div className="w-14 h-14 rounded-full bg-brand-teal/10 text-brand-teal flex items-center justify-center mb-4">
+          <svg className="w-7 h-7 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5V21a.5.5 0 00.5.5h6V13.5H3zM10.5 21.5h10a.5.5 0 00.5-.5v-7.5h-10.5V21.5zM3 12h18V3.5a.5.5 0 00-.5-.5h-17a.5.5 0 00-.5.5V12z" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-semibold text-brand-navy">
+          Estamos preparando tu dashboard fiscal
+        </h2>
+        <p className="mt-2 text-sm text-text-muted max-w-sm">
+          Pronto aparecerá aquí.
         </p>
       </section>
     );
