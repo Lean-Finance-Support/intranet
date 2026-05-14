@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { submitRenta, verifyDni } from "../actions";
 import { evaluateRule } from "@/lib/renta/rule-engine";
+import { humanizeRule } from "@/lib/renta/humanize-rule";
 import { PROFILE_QUESTIONS } from "@/lib/renta/profile-schema";
 import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { CCAA_LABELS, type CCAACode, type RentaDeduction, type RentaProfileResponse } from "@/lib/types/renta";
@@ -917,13 +918,13 @@ function DeductionsWizardStep({
 
       <div className="space-y-2">
         <h2 className="text-lg font-semibold text-brand-navy">{deduction.title}</h2>
-        {deduction.summary && (
-          <p className="text-sm text-text-muted">{deduction.summary}</p>
-        )}
+        {deduction.summary && <DeductionSummary text={deduction.summary} />}
         {deduction.legal_reference && (
           <p className="text-[11px] text-text-muted/80 italic">{deduction.legal_reference}</p>
         )}
       </div>
+
+      <DeductionRequirements rule={deduction.eligibility_rule} />
 
       {applies === undefined && (
         <div className="space-y-3">
@@ -1013,6 +1014,85 @@ function DeductionsWizardStep({
         )}
       </div>
     </form>
+  );
+}
+
+/**
+ * Lista de "requisitos que cumples" derivada del AST de elegibilidad. Cuando
+ * el wizard llega a una deducción todas las condiciones ya se cumplen, así que
+ * mostramos los bullets como hechos confirmados con un tick. Si solo había
+ * filtro de CCAA (omitido) el resultado es vacío y no renderizamos nada.
+ */
+function DeductionRequirements({ rule }: { rule: import("@/lib/types/renta").RentaRule }) {
+  const bullets = useMemo(() => humanizeRule(rule), [rule]);
+  if (bullets.length === 0) return null;
+  return (
+    <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/15 p-4 space-y-2">
+      <p className="text-[11px] uppercase tracking-wider font-semibold text-brand-teal">
+        Requisitos que cumples
+      </p>
+      <p className="text-xs text-text-muted">
+        Según tus respuestas, ya cumples estos requisitos. Marca si te aplica:
+      </p>
+      <ul className="space-y-1 pt-1">
+        {bullets.map((b, i) => {
+          const isNested = b.startsWith("› ");
+          const text = isNested ? b.slice(2) : b;
+          return (
+            <li
+              key={i}
+              className={`flex items-start gap-2 text-sm text-brand-navy ${
+                isNested ? "pl-6" : ""
+              }`}
+            >
+              <span
+                aria-hidden
+                className="mt-0.5 inline-flex w-4 h-4 shrink-0 items-center justify-center rounded-full bg-brand-teal/20 text-brand-teal text-[10px] font-bold"
+              >
+                ✓
+              </span>
+              <span>{text}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Render del `summary` de una deducción. Si contiene saltos de línea o bullets
+ * de texto (-, •, *), respetamos esos saltos visualmente; si no, prose simple.
+ */
+function DeductionSummary({ text }: { text: string }) {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const hasStructure = lines.length > 1 || /^[-•*]\s+/.test(text.trim());
+
+  if (!hasStructure) {
+    return <p className="text-sm text-text-muted">{text}</p>;
+  }
+
+  const bullets: string[] = [];
+  const paragraphs: string[] = [];
+  for (const line of lines) {
+    const m = line.match(/^[-•*]\s+(.+)$/);
+    if (m) bullets.push(m[1]);
+    else paragraphs.push(line);
+  }
+
+  return (
+    <div className="space-y-1.5 text-sm text-text-muted">
+      {paragraphs.map((p, i) => (
+        <p key={`p-${i}`}>{p}</p>
+      ))}
+      {bullets.length > 0 && (
+        <ul className="list-disc list-inside space-y-0.5 pl-1">
+          {bullets.map((b, i) => (
+            <li key={`b-${i}`}>{b}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

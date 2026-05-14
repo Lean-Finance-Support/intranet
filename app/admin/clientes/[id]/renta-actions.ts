@@ -326,6 +326,66 @@ export async function setSubmissionStatus(
 }
 
 /**
+ * Resumen agregado del estado del servicio "Declaración de la renta" para una
+ * empresa: nº de DNIs autorizados, recuento de submissions por estado y si
+ * existe un enlace público activo. Se usa en la tarjeta resumen del tab
+ * "Informes / Formularios" para mostrar métricas de un vistazo sin cargar el
+ * panel completo (que vive ahora en `/admin/clientes/[id]/renta`).
+ */
+export async function getRentaSummary(companyId: string): Promise<{
+  filersCount: number;
+  pendingCount: number;
+  reviewedCount: number;
+  revokedCount: number;
+  hasActiveInvitation: boolean;
+}> {
+  await requireAdmin();
+  const supabase = createAdminClient().schema("renta");
+
+  const [filersRes, submissionsRes, invitationRes] = await Promise.all([
+    supabase
+      .from("authorized_filers")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId),
+    supabase
+      .from("submissions")
+      .select("status, revoked_at")
+      .eq("company_id", companyId),
+    supabase
+      .from("invitations")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .eq("status", "activa"),
+  ]);
+
+  const submissions = (submissionsRes.data ?? []) as {
+    status: RentaSubmissionStatus;
+    revoked_at: string | null;
+  }[];
+
+  let pendingCount = 0;
+  let reviewedCount = 0;
+  let revokedCount = 0;
+  for (const s of submissions) {
+    if (s.revoked_at != null) {
+      revokedCount += 1;
+    } else if (s.status === "revisada") {
+      reviewedCount += 1;
+    } else {
+      pendingCount += 1;
+    }
+  }
+
+  return {
+    filersCount: filersRes.count ?? 0,
+    pendingCount,
+    reviewedCount,
+    revokedCount,
+    hasActiveInvitation: (invitationRes.count ?? 0) > 0,
+  };
+}
+
+/**
  * Devuelve el catálogo completo de deducciones (todas las CCAA, activas e inactivas).
  * Se usa en el panel admin para hacer lookup de id → title + extra_fields al
  * pintar las submissions: las deducciones pueden haberse desactivado o cambiado

@@ -813,7 +813,7 @@ function SubmissionDeductionsDump({
       <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-2">
         Deducciones aplicables ({entries.length})
       </p>
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {entries.map(([deductionId, payload]) => {
           const def = deductionsIndex.get(deductionId);
           const fieldsByKey = new Map<string, RentaExtraField>();
@@ -824,34 +824,32 @@ function SubmissionDeductionsDump({
           return (
             <li
               key={deductionId}
-              className="rounded-lg border border-gray-100 bg-white p-3"
+              className="rounded-xl border border-gray-100 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
             >
-              <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <p className="text-xs font-medium text-brand-navy leading-snug">
+              <div className="flex items-start gap-2">
+                <span
+                  aria-hidden
+                  className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-teal flex-shrink-0"
+                />
+                <h5 className="text-sm font-semibold text-brand-navy leading-snug">
                   {def?.title ?? deductionId}
-                </p>
-                <code className="text-[10px] font-mono text-text-muted/70 shrink-0">
-                  {deductionId}
-                </code>
+                </h5>
               </div>
               {def?.summary && (
-                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                <p className="text-xs text-text-muted mt-2 leading-relaxed pl-4">
                   {def.summary}
                 </p>
               )}
               {payloadEntries.length > 0 && (
-                <dl
-                  className={
-                    "mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]" +
-                    (def?.summary ? " pt-2 border-t border-gray-50" : "")
-                  }
-                >
+                <dl className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
                   {payloadEntries.map(([k, v]) => {
                     const field = fieldsByKey.get(k);
                     const label = field?.label ?? k;
                     return (
                       <div key={k} className="flex flex-col gap-0.5 min-w-0">
-                        <dt className="text-text-muted truncate">{label}</dt>
+                        <dt className="text-[10px] uppercase tracking-wide text-text-muted/80 font-medium">
+                          {label}
+                        </dt>
                         <dd className="text-brand-navy font-medium break-words">
                           {formatExtraFieldValue(v, field, label)}
                         </dd>
@@ -859,6 +857,11 @@ function SubmissionDeductionsDump({
                     );
                   })}
                 </dl>
+              )}
+              {def?.legal_reference && (
+                <p className="mt-3 text-[10px] font-mono italic text-text-muted/70 text-right">
+                  {def.legal_reference}
+                </p>
               )}
             </li>
           );

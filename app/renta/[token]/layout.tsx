@@ -5,8 +5,6 @@ export default function RentaPublicLayout({ children }: { children: React.ReactN
     // pública sin sidebar, así que necesita su propio contenedor scrolleable.
     <div className="h-screen overflow-y-auto bg-surface-gray flex flex-col">
       <header className="w-full bg-white border-b border-gray-100 shadow-[0_1px_2px_rgba(15,36,68,0.04)]">
-        {/* Franja decorativa teal muy fina como acento de marca */}
-        <div className="h-[3px] bg-brand-teal" />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-7 flex items-center justify-between gap-4">
           <a
             href="https://leanfinance.es"

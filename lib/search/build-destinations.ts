@@ -69,7 +69,7 @@ export function buildDestinations(ctx: SearchContext): SearchDestination[] {
           group: "client-sections",
           label: `Declaración de la renta de ${displayName}`,
           sublabel: "Formulario y envíos",
-          href: `${ctx.linkPrefix}/clientes/${company.id}?tab=informes`,
+          href: `${ctx.linkPrefix}/clientes/${company.id}/renta`,
           icon: "document",
           keywords: ["renta", "irpf", "declaración", "deducciones", displayName, alt ?? ""].filter(Boolean),
         });
