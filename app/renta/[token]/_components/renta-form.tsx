@@ -916,15 +916,14 @@ function DeductionsWizardStep({
         }
       />
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         <h2 className="text-lg font-semibold text-brand-navy">{deduction.title}</h2>
-        {deduction.summary && <DeductionSummary text={deduction.summary} />}
-        {deduction.legal_reference && (
-          <p className="text-[11px] text-text-muted/80 italic">{deduction.legal_reference}</p>
-        )}
       </div>
 
-      <DeductionRequirements rule={deduction.eligibility_rule} />
+      <DeductionInfo
+        summary={deduction.summary}
+        rule={deduction.eligibility_rule}
+      />
 
       {applies === undefined && (
         <div className="space-y-3">
@@ -1013,87 +1012,134 @@ function DeductionsWizardStep({
           </span>
         )}
       </div>
+
+      {deduction.legal_reference && (
+        <p className="text-[10px] text-text-muted/70 italic font-mono pt-2 border-t border-gray-100">
+          {deduction.legal_reference}
+        </p>
+      )}
     </form>
   );
 }
 
 /**
- * Lista de "requisitos que cumples" derivada del AST de elegibilidad. Cuando
- * el wizard llega a una deducción todas las condiciones ya se cumplen, así que
- * mostramos los bullets como hechos confirmados con un tick. Si solo había
- * filtro de CCAA (omitido) el resultado es vacío y no renderizamos nada.
+ * Bloque informativo de la deducción con dos tarjetas claramente separadas:
+ *   1. "Qué cubre" — derivada del `summary` (descripción de la deducción).
+ *      Si detectamos una mención de "límite N €" la extraemos como chip aparte.
+ *   2. "Requisitos para aplicar" — siempre visible. Si el AST aporta bullets
+ *      (via humanizeRule) los pintamos con tick. Si no, descomponemos el
+ *      summary en frases y las pintamos como bullets — así el usuario tiene
+ *      siempre una checklist concreta para decidir si le aplica.
  */
-function DeductionRequirements({ rule }: { rule: import("@/lib/types/renta").RentaRule }) {
-  const bullets = useMemo(() => humanizeRule(rule), [rule]);
-  if (bullets.length === 0) return null;
+function DeductionInfo({
+  summary,
+  rule,
+}: {
+  summary: string | null;
+  rule: import("@/lib/types/renta").RentaRule;
+}) {
+  const astBullets = useMemo(() => humanizeRule(rule), [rule]);
+  const parsed = useMemo(() => parseSummary(summary ?? ""), [summary]);
+
+  // Si el AST tiene bullets concretos los usamos como requisitos. Si no
+  // (típicamente cuando solo había filtro de CCAA), partimos del summary
+  // en frases para que el usuario tenga al menos una checklist visible.
+  const requirementsFromAst = astBullets.length > 0;
+  const requirementBullets = requirementsFromAst ? astBullets : parsed.sentences;
+
   return (
-    <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/15 p-4 space-y-2">
-      <p className="text-[11px] uppercase tracking-wider font-semibold text-brand-teal">
-        Requisitos que cumples
-      </p>
-      <p className="text-xs text-text-muted">
-        Según tus respuestas, ya cumples estos requisitos. Marca si te aplica:
-      </p>
-      <ul className="space-y-1 pt-1">
-        {bullets.map((b, i) => {
-          const isNested = b.startsWith("› ");
-          const text = isNested ? b.slice(2) : b;
-          return (
-            <li
-              key={i}
-              className={`flex items-start gap-2 text-sm text-brand-navy ${
-                isNested ? "pl-6" : ""
-              }`}
-            >
-              <span
-                aria-hidden
-                className="mt-0.5 inline-flex w-4 h-4 shrink-0 items-center justify-center rounded-full bg-brand-teal/20 text-brand-teal text-[10px] font-bold"
-              >
-                ✓
-              </span>
-              <span>{text}</span>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="space-y-3">
+      {(parsed.description || parsed.limit) && (
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4 space-y-2">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-text-muted">
+            Qué cubre
+          </p>
+          {parsed.description && (
+            <p className="text-sm text-brand-navy leading-relaxed">{parsed.description}</p>
+          )}
+          {parsed.limit && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white border border-brand-teal/25 px-3 py-1 text-xs">
+              <span className="text-text-muted">Importe / límite:</span>
+              <span className="font-medium text-brand-navy">{parsed.limit}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {requirementBullets.length > 0 && (
+        <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 p-4 space-y-2">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-brand-teal">
+            {requirementsFromAst ? "Requisitos que cumples" : "Comprueba si te aplica"}
+          </p>
+          <p className="text-xs text-text-muted">
+            {requirementsFromAst
+              ? "Según tus respuestas anteriores, ya cumples estos requisitos. Confirma si te aplica:"
+              : "Repasa estos puntos para decidir si te aplica:"}
+          </p>
+          <ul className="space-y-1.5 pt-1">
+            {requirementBullets.map((b, i) => {
+              const isNested = b.startsWith("› ");
+              const text = isNested ? b.slice(2) : b;
+              return (
+                <li
+                  key={i}
+                  className={`flex items-start gap-2 text-sm text-brand-navy ${
+                    isNested ? "pl-6" : ""
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={
+                      requirementsFromAst
+                        ? "mt-0.5 inline-flex w-4 h-4 shrink-0 items-center justify-center rounded-full bg-brand-teal/20 text-brand-teal text-[10px] font-bold"
+                        : "mt-1 inline-block w-1.5 h-1.5 shrink-0 rounded-full bg-brand-teal"
+                    }
+                  >
+                    {requirementsFromAst ? "✓" : ""}
+                  </span>
+                  <span>{text}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Render del `summary` de una deducción. Si contiene saltos de línea o bullets
- * de texto (-, •, *), respetamos esos saltos visualmente; si no, prose simple.
+ * Parsea el campo `summary` de una deducción para separar:
+ *   - description: la descripción principal (1-2 frases sin la cláusula de límite).
+ *   - limit: la mención de "Límite N €" si existe (cualquier formato razonable).
+ *   - sentences: el summary descompuesto en frases (cortando por punto), útil
+ *     como fallback cuando el AST de elegibilidad no produce bullets.
  */
-function DeductionSummary({ text }: { text: string }) {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const hasStructure = lines.length > 1 || /^[-•*]\s+/.test(text.trim());
+function parseSummary(text: string): {
+  description: string;
+  limit: string | null;
+  sentences: string[];
+} {
+  const trimmed = text.trim();
+  if (!trimmed) return { description: "", limit: null, sentences: [] };
 
-  if (!hasStructure) {
-    return <p className="text-sm text-text-muted">{text}</p>;
-  }
-
-  const bullets: string[] = [];
-  const paragraphs: string[] = [];
-  for (const line of lines) {
-    const m = line.match(/^[-•*]\s+(.+)$/);
-    if (m) bullets.push(m[1]);
-    else paragraphs.push(line);
-  }
-
-  return (
-    <div className="space-y-1.5 text-sm text-text-muted">
-      {paragraphs.map((p, i) => (
-        <p key={`p-${i}`}>{p}</p>
-      ))}
-      {bullets.length > 0 && (
-        <ul className="list-disc list-inside space-y-0.5 pl-1">
-          {bullets.map((b, i) => (
-            <li key={`b-${i}`}>{b}</li>
-          ))}
-        </ul>
-      )}
-    </div>
+  // Extraer "Límite XXX € [(...)]" en cualquier punto del texto.
+  const limitMatch = trimmed.match(
+    /(L[íi]mite[^.]*?\d[\d.,]*\s*€[^.]*?(?:\([^)]+\))?)/i,
   );
+  const limit = limitMatch ? limitMatch[1].replace(/^\s*L[íi]mite[:\s]*/i, "").trim() : null;
+  const description = limitMatch
+    ? trimmed.replace(limitMatch[1], "").replace(/\.\s*\./g, ".").trim()
+    : trimmed;
+
+  // Partir en frases para los bullets fallback. Quitamos vacíos y cortamos en
+  // "." que no esté precedido de número (evita "5.000 €" → ["5", "000 €"]).
+  const sentences = description
+    .split(/(?<!\d)\.(?!\d)/g)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  return { description, limit, sentences };
 }
 
 function ExtraFieldInput({
