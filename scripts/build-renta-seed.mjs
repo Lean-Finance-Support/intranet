@@ -16,9 +16,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, "..");
 const SEEDS_DIR = join(ROOT, "supabase/seeds/renta/deductions");
+// Apunta al último seed activo. El original 20260514110100 se conserva como
+// histórico (ya aplicado en dev con el viejo esquema summary). Si en el
+// futuro necesitas re-aplicar tras editar los JSON en un entorno donde ya
+// existe esta migración, crea una nueva con timestamp posterior y actualiza
+// esta constante.
 const MIGRATION_PATH = join(
   ROOT,
-  "supabase/migrations/20260514110100_renta_seed_deductions.sql",
+  "supabase/migrations/20260514140000_renta_reseed_deductions.sql",
 );
 
 const files = readdirSync(SEEDS_DIR)
@@ -59,24 +64,23 @@ for (const [ccaa, count] of Object.entries(summary)) {
 // JSON serializado y escapado para PostgreSQL string literal.
 const jsonLiteral = JSON.stringify(allDeductions).replaceAll("'", "''");
 
-const sql = `-- Seed del catálogo de deducciones autonómicas.
+const sql = `-- Re-seed del catálogo de deducciones (autogenerado).
 --
--- Carga las deducciones del manual "Renta 2025 — Parte 2" de la AEAT.
--- Origen: archivos supabase/seeds/renta/deductions/<CCAA>.json (extraídos del
--- PDF oficial). Para regenerar esta migración tras editar los JSON, ejecuta:
+-- Fuente: archivos supabase/seeds/renta/deductions/<CCAA>.json.
+-- Regenerar con: node scripts/build-renta-seed.mjs
 --
---     node scripts/build-renta-seed.mjs
+-- Idempotente: TRUNCATE limpia cualquier estado previo (seeds anteriores
+-- 20260514110100 / 20260514140000 inclusive) y re-inserta el catálogo
+-- completo.
 --
 -- NOTAS:
--- - Navarra y País Vasco NO están: tienen régimen foral propio (no aparecen
---   en el manual de la AEAT).
--- - Para deducciones con fórmulas de cálculo complejas (% sobre cuota,
---   prorrateos, etc.) solo se encoda el gate básico de elegibilidad; el
---   importe lo calcula el asesor revisando la submission.
+-- - Navarra y País Vasco NO están (régimen foral propio, no aparecen en el
+--   manual estatal de la AEAT).
+-- - Para deducciones con fórmulas complejas (% sobre cuota, prorrateos),
+--   solo se encoda el gate básico de elegibilidad; el importe lo calcula
+--   el asesor revisando la submission.
 -- - Total deducciones cargadas: ${allDeductions.length} en ${Object.keys(summary).length} CCAA.
 
--- Idempotencia: TRUNCATE garantiza que deducciones eliminadas del manual
--- desaparezcan de la BD al re-ejecutar el seed.
 TRUNCATE TABLE renta.deductions;
 
 INSERT INTO renta.deductions (
