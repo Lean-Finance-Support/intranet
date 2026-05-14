@@ -11,10 +11,11 @@ import { finalizeOnboarding } from "../actions";
 import {
   initialOnboardingState,
   computeApartados,
+  deriveSelectedDeptIds,
   type OnboardingState,
 } from "./onboarding-state";
 import StepEmpresa from "./step-empresa";
-import StepDeptos from "./step-deptos";
+import StepEquipo from "./step-equipo";
 import StepResumen from "./step-resumen";
 import StepFinal from "./step-final";
 
@@ -25,7 +26,7 @@ interface Props {
 
 const STEPS = [
   { id: 1, name: "Datos" },
-  { id: 2, name: "Departamentos implicados" },
+  { id: 2, name: "Servicios contratados" },
   { id: 3, name: "Documentación inicial" },
   { id: 4, name: "Confirmación" },
 ] as const;
@@ -48,8 +49,13 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
   // que mandar al server. Si el usuario está en el paso 4 sin haber tocado el
   // paso 3, los overrides están vacíos pero el cómputo derivado ya funciona.
   const computedForFinal = useMemo(
-    () => computeApartados(state, data.blocks, data.tags),
+    () => computeApartados(state, data.services, data.blocks, data.tags),
     [state, data]
+  );
+
+  const derivedDeptIds = useMemo(
+    () => deriveSelectedDeptIds(state, data.services),
+    [state, data.services]
   );
 
   // ───── Validación por paso ─────
@@ -74,21 +80,23 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
     return null;
   }
   function step2Valid(): string | null {
-    if (state.selected_dept_ids.length === 0) {
-      return "Selecciona al menos un departamento.";
+    if (state.selected_service_ids.length === 0) {
+      return "Selecciona al menos un servicio contratado.";
     }
-    for (const did of state.selected_dept_ids) {
-      const sup = state.supervisors_by_dept[did] ?? [];
-      if (sup.length === 0) {
+    for (const did of derivedDeptIds) {
+      const team = state.team_by_dept[did] ?? [];
+      if (team.length === 0) {
         const dept = data.departments.find((d) => d.id === did);
-        return `Asigna al menos un supervisor para ${dept?.name ?? "el departamento"}.`;
+        return `Asigna al menos un miembro del equipo para ${dept?.name ?? "el departamento"}.`;
       }
     }
     return null;
   }
   function step3Valid(): string | null {
-    if (computedForFinal.length === 0) {
-      return "La documentación inicial está vacía. Añade apartados o vuelve a configurar departamentos.";
+    // Si no hay deptos derivados (servicios solo transversales), la documentación
+    // inicial puede salir vacía — se permite seguir, no es error.
+    if (computedForFinal.length === 0 && derivedDeptIds.length > 0) {
+      return "La documentación inicial está vacía. Añade apartados o vuelve a configurar los servicios.";
     }
     const noSup = computedForFinal.find((c) => c.supervisor_ids.length === 0);
     if (noSup) {
@@ -133,7 +141,8 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
           email: c.email,
           full_name: c.full_name || null,
         })),
-        department_ids: state.selected_dept_ids,
+        service_ids: state.selected_service_ids,
+        team_by_dept: state.team_by_dept,
         apartados,
       });
       setSuccess({
@@ -298,10 +307,11 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
             />
           )}
           {step === 2 && (
-            <StepDeptos
+            <StepEquipo
               state={state}
               setState={setState}
               departments={data.departments}
+              services={data.services}
               tags={data.tags}
             />
           )}
@@ -310,6 +320,7 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
               state={state}
               setState={setState}
               departments={data.departments}
+              services={data.services}
               blocks={data.blocks}
               tags={data.tags}
             />
@@ -318,6 +329,8 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
             <StepFinal
               state={state}
               departments={data.departments}
+              services={data.services}
+              derivedDeptIds={derivedDeptIds}
               apartados={computedForFinal}
               submitting={submitting}
               onSubmit={handleSubmit}

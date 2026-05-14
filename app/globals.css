@@ -57,6 +57,11 @@ body {
 .animate-delay-225 { animation-delay: 225ms; }
 .animate-delay-300 { animation-delay: 300ms; }
 
+/* Shimmer para skeletons de carga (ver components/loading-skeletons.tsx). */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
 /* ─── Panel lateral slide-in ────────────────────────────────────────── */
 @keyframes slide-in-right {
   from {

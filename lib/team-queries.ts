@@ -311,7 +311,10 @@ export async function getCompanyResponsibleTeam(
     }
   }
 
-  // 3. Técnicos
+  // 3. Técnicos. Son la ÚNICA fuente del equipo responsable: solo aparecen
+  // en el equipo quienes tienen rol Técnico en algún servicio del cliente.
+  // Ser supervisor de apartados no mete a nadie en el equipo (ver cambio de
+  // política en el README de la feature).
   const tecnicoRoleId = await fetchTecnicoRoleId();
   const techRoles =
     csIds.length > 0 && tecnicoRoleId
@@ -325,141 +328,8 @@ export async function getCompanyResponsibleTeam(
         ).data ?? []
       : [];
 
-  // 4. Apartados de documentación de la company
-  // Excluimos los catalog apartados con is_global=true: sus supervisores son
-  // transversales (gestión de catálogo) y no forman parte del equipo
-  // responsable de un cliente concreto.
-  const { data: clientBlocks } = await supabase
-    .schema("documentation")
-    .from("client_blocks")
-    .select("id")
-    .eq("company_id", companyId);
-
-  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
-  const rawClientApartados =
-    blockIds.length === 0
-      ? []
-      : (
-          await supabase
-            .schema("documentation")
-            .from("client_apartados")
-            .select("id, apartado_id")
-            .in("client_block_id", blockIds)
-        ).data ?? [];
-
-  const rawApartadoCatalogIds = [
-    ...new Set(rawClientApartados.map((ca) => ca.apartado_id as string)),
-  ];
-
-  const apartadoCatalogRows =
-    rawApartadoCatalogIds.length === 0
-      ? []
-      : (
-          await supabase
-            .schema("documentation")
-            .from("apartados")
-            .select("id, is_global")
-            .in("id", rawApartadoCatalogIds)
-        ).data ?? [];
-
-  const nonGlobalApartadoIds = new Set(
-    apartadoCatalogRows
-      .filter((a) => a.is_global !== true)
-      .map((a) => a.id as string)
-  );
-
-  const clientApartados = rawClientApartados.filter((ca) =>
-    nonGlobalApartadoIds.has(ca.apartado_id as string)
-  );
-
-  const clientApartadoIds = clientApartados.map((ca) => ca.id as string);
-  const apartadoCatalogIds = [...new Set(clientApartados.map((ca) => ca.apartado_id as string))];
-
-  // 5. apartado_departments → mapa client_apartado.id → department_ids[]
-  const apartadoDeptLinks =
-    apartadoCatalogIds.length === 0
-      ? []
-      : (
-          await supabase
-            .schema("documentation")
-            .from("apartado_departments")
-            .select("apartado_id, department_id")
-            .in("apartado_id", apartadoCatalogIds)
-        ).data ?? [];
-
-  const apartadoToDepts = new Map<string, string[]>();
-  for (const link of apartadoDeptLinks) {
-    const aid = link.apartado_id as string;
-    const did = link.department_id as string;
-    const list = apartadoToDepts.get(aid) ?? [];
-    if (!list.includes(did)) list.push(did);
-    apartadoToDepts.set(aid, list);
-  }
-
-  const clientApartadoToDepts = new Map<string, string[]>();
-  for (const ca of clientApartados) {
-    clientApartadoToDepts.set(
-      ca.id as string,
-      apartadoToDepts.get(ca.apartado_id as string) ?? []
-    );
-  }
-
-  // 6. Supervisores (vía view ya filtrada al rol)
-  const supRows =
-    clientApartadoIds.length === 0
-      ? []
-      : (
-          await supabase
-            .schema("documentation")
-            .from("apartado_supervisors_v")
-            .select("client_apartado_id, profile_id")
-            .in("client_apartado_id", clientApartadoIds)
-        ).data ?? [];
-
-  // 6b. Pertenencia organizacional de cada supervisor a departamentos.
-  // Sin esto, un supervisor de un client_apartado se replicaría en TODOS los
-  // departamentos del catálogo del apartado (cross-join implícito).
-  // Sólo cuentan los roles que confieren `member_of_department` (Miembro y
-  // Chief). Operador/Observador NO confieren pertenencia y, por tanto, su
-  // departamento no se considera para agrupar al supervisor.
-  const supProfileIds = [...new Set(supRows.map((r) => r.profile_id as string))];
-  const supDeptMemberships = new Map<string, Set<string>>();
-  if (supProfileIds.length > 0) {
-    const [miembroRoleId, chiefRoleIdForMember] = await Promise.all([
-      getCachedRoleIdByName("Miembro de departamento"),
-      getCachedRoleIdByName("Chief"),
-    ]);
-    const memberRoleIds = [miembroRoleId, chiefRoleIdForMember].filter(
-      (id): id is string => !!id
-    );
-
-    if (memberRoleIds.length > 0) {
-      const { data: deptRoleRows } = await supabase
-        .from("profile_roles")
-        .select("profile_id, scope_id")
-        .in("profile_id", supProfileIds)
-        .eq("scope_type", "department")
-        .in("role_id", memberRoleIds);
-      for (const row of deptRoleRows ?? []) {
-        const pid = row.profile_id as string;
-        const did = row.scope_id as string;
-        let set = supDeptMemberships.get(pid);
-        if (!set) {
-          set = new Set();
-          supDeptMemberships.set(pid, set);
-        }
-        set.add(did);
-      }
-    }
-  }
-
-  // 7. Profiles meta de todos los implicados
-  const allProfileIds = [
-    ...new Set([
-      ...techRoles.map((r) => r.profile_id as string),
-      ...supRows.map((r) => r.profile_id as string),
-    ]),
-  ];
+  // 7. Profiles meta de los técnicos (única fuente del equipo).
+  const allProfileIds = [...new Set(techRoles.map((r) => r.profile_id as string))];
   const profileMap = new Map<string, { full_name: string | null; email: string }>();
   if (allProfileIds.length > 0) {
     const { data: profiles } = await supabase
@@ -474,13 +344,10 @@ export async function getCompanyResponsibleTeam(
     }
   }
 
-  // 8. Departments meta y chiefs por dept
-  const allDeptIds = [
-    ...new Set([
-      ...Array.from(serviceToDept.values()),
-      ...Array.from(apartadoToDepts.values()).flat(),
-    ]),
-  ];
+  // 8. Departments meta y chiefs por dept. Solo nos interesan los dpts que
+  // tocan algún servicio contratado (resto del modelo se ignora porque ya no
+  // contamos supervisores).
+  const allDeptIds = [...new Set(Array.from(serviceToDept.values()))];
   const [{ data: depts }, chiefRows] = await Promise.all([
     allDeptIds.length === 0
       ? Promise.resolve({ data: [] as { id: string; name: string }[] })
@@ -498,8 +365,11 @@ export async function getCompanyResponsibleTeam(
     })(),
   ]);
 
+  // Clave virtual para agrupar técnicos de servicios sin dpto.
+  const NO_DEPT_KEY = "__no_dept__";
   const deptMap = new Map<string, string>();
   for (const d of depts ?? []) deptMap.set(d.id as string, d.name as string);
+  deptMap.set(NO_DEPT_KEY, "Sin departamento");
 
   const chiefSet = new Set<string>();
   for (const c of chiefRows) chiefSet.add(`${c.scope_id}|${c.profile_id}`);
@@ -533,36 +403,14 @@ export async function getCompanyResponsibleTeam(
   for (const tr of techRoles) {
     const csInfo = csById.get(tr.scope_id as string);
     if (!csInfo) continue;
-    const deptId = serviceToDept.get(csInfo.service_id);
-    if (!deptId) continue;
+    // Si el servicio del técnico no tiene dpto, lo agrupamos en
+    // "Sin departamento" — el técnico igualmente está en el equipo.
+    const deptId = serviceToDept.get(csInfo.service_id) ?? NO_DEPT_KEY;
     const m = ensureMember(deptId, tr.profile_id as string);
     m.is_technician = true;
     const svc = serviceById.get(csInfo.service_id);
     if (svc && !m.technician_services.some((ts) => ts.service_id === svc.id)) {
       m.technician_services.push({ service_id: svc.id, service_name: svc.name });
-    }
-  }
-
-  for (const sr of supRows) {
-    const apartadoDeptIds = clientApartadoToDepts.get(sr.client_apartado_id as string) ?? [];
-    const ownDepts = supDeptMemberships.get(sr.profile_id as string);
-    // Atribuir al supervisor solo a los departamentos donde realmente pertenece
-    // y que además cubren este apartado en el catálogo. Si la intersección está
-    // vacía (caso raro: supervisor sin pertenencia coincidente), caemos a sus
-    // propios departamentos para que siga siendo visible; si tampoco tiene
-    // departamentos propios, usamos los del apartado como último recurso.
-    const intersection = ownDepts
-      ? apartadoDeptIds.filter((d) => ownDepts.has(d))
-      : [];
-    const targetDepts =
-      intersection.length > 0
-        ? intersection
-        : ownDepts && ownDepts.size > 0
-        ? [...ownDepts]
-        : apartadoDeptIds;
-    for (const deptId of targetDepts) {
-      const m = ensureMember(deptId, sr.profile_id as string);
-      m.is_supervisor = true;
     }
   }
 
@@ -579,7 +427,12 @@ export async function getCompanyResponsibleTeam(
       members,
     });
   }
-  byDepartment.sort((a, b) => a.department_name.localeCompare(b.department_name, "es"));
+  byDepartment.sort((a, b) => {
+    // "Sin departamento" siempre al final.
+    if (a.department_id === NO_DEPT_KEY) return 1;
+    if (b.department_id === NO_DEPT_KEY) return -1;
+    return a.department_name.localeCompare(b.department_name, "es");
+  });
 
   return { byDepartment };
 }
@@ -609,15 +462,22 @@ export async function getCachedCompanyResponsibleTeam(
 }
 
 /**
- * Invalida el cache del equipo responsable. Pasa `companyId` para invalidar
- * una empresa concreta, o llama sin args para invalidar todas (usar solo
- * cuando una mutación afecta a varias empresas — p.ej. cambio de chief de
- * dept que altera todos los clientes con servicios de ese dept).
+ * Invalida el cache del equipo responsable Y el de candidatos a añadir.
+ * Ambos comparten los mismos triggers de invalidación (cualquier cambio en
+ * técnicos/servicios del cliente o en la pertenencia a departamentos altera
+ * tanto el listado actual como el de candidatos disponibles).
+ *
+ * Pasa `companyId` para invalidar una empresa concreta, o llama sin args para
+ * invalidar todas (usar solo cuando una mutación afecta a varias empresas —
+ * p.ej. cambio de chief de dept que altera todos los clientes con servicios
+ * de ese dept).
  */
 export function invalidateResponsibleTeam(companyId?: string): void {
   if (companyId) {
     updateTag(`responsible-team:${companyId}`);
+    updateTag(`team-candidates:${companyId}`);
   } else {
     updateTag("responsible-team");
+    updateTag("team-candidates");
   }
 }

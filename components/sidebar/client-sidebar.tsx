@@ -3,11 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { setActiveCompany } from "@/app/app/select-company/actions";
-import NotificationsDrawer from "@/components/notifications-drawer";
 import { useUnreadNotifications } from "@/lib/hooks/use-unread-notifications";
 import SearchTrigger from "@/components/search/search-trigger";
+
+// El drawer pesa ~300 líneas y solo se monta al pulsar la campana — postergamos
+// su JS para que no entre en el bundle inicial del sidebar (presente en TODAS
+// las páginas del portal cliente).
+const NotificationsDrawer = dynamic(
+  () => import("@/components/notifications-drawer"),
+  { ssr: false },
+);
 
 // ---- Icons ----
 function HomeIcon({ className }: { className?: string }) {
@@ -333,7 +341,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
   const navItems = (
     <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
       {hasDashboard && (
-        <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
+        <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard fiscal" href={dashHref} active={isActive(dashHref)} collapsed={collapsed} />
       )}
       {hasTaxModels && (
         <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={collapsed} />
@@ -490,7 +498,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
                 <SearchTrigger collapsed={false} />
               </div>
               {hasDashboard && (
-                <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard" href={dashHref} active={isActive(dashHref)} collapsed={false} />
+                <NavItem icon={<HomeIcon className="w-5 h-5" />} label="Dashboard fiscal" href={dashHref} active={isActive(dashHref)} collapsed={false} />
               )}
               {hasTaxModels && (
                 <NavItem icon={<DocumentIcon className="w-5 h-5" />} label="Modelos fiscales" href={modelosHref} active={isActive(modelosHref)} collapsed={false} />

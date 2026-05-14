@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/require-admin";
@@ -8,6 +9,7 @@ import {
 } from "@/app/admin/clientes/actions";
 import { getLinkPrefix } from "@/lib/link-prefix";
 import DashboardFiscalSection from "@/components/dashboard/dashboard-fiscal-section";
+import DashboardFiscalSkeleton from "@/components/dashboard/dashboard-fiscal-skeleton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -88,13 +90,15 @@ export default async function AdminClientDashboardPage({
           </Link>
         </section>
       ) : (
-        <DashboardFiscalSection
-          companyId={id}
-          companyName={displayName}
-          periodId={sp.period}
-          bankAccount={sp.bank}
-          view={sp.view}
-        />
+        <Suspense fallback={<DashboardFiscalSkeleton />}>
+          <DashboardFiscalSection
+            companyId={id}
+            companyName={displayName}
+            periodId={sp.period}
+            bankAccount={sp.bank}
+            view={sp.view}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -20,6 +20,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Tree-shaking agresivo de barrel exports en libs grandes que el cliente
+  // hidrata. recharts entra incluso con dynamic() porque sus subcomponentes
+  // se re-exportan vía index.ts. Reduce el chunk del gráfico mensual de ~328K
+  // a aprox. la mitad cuando se carga.
+  experimental: {
+    optimizePackageImports: ["recharts"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

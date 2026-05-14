@@ -10,6 +10,7 @@ import {
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
 import type { ResponsibleTeam } from "@/lib/team-queries";
 import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
@@ -277,7 +278,6 @@ export function AddClientAccountForm({
 interface ClientDetailPanelProps {
   company: ClienteCompany;
   linkPrefix: string;
-  canViewDashboard: boolean;
   canViewTaxModels: boolean;
   onClose: () => void;
 }
@@ -285,7 +285,6 @@ interface ClientDetailPanelProps {
 export default function ClientDetailPanel({
   company,
   linkPrefix,
-  canViewDashboard,
   canViewTaxModels,
   onClose,
 }: ClientDetailPanelProps) {
@@ -403,6 +402,40 @@ export default function ClientDetailPanel({
           {/* ---- Equipo responsable ---- */}
           <ResponsibleTeamSection team={team} loading={loadingTeam} variant="panel" />
 
+          {/* ---- Aplicaciones (accesos rápidos a features colaborativas) ---- */}
+          {canViewTaxModels &&
+            company.services.some(
+              (s) => s.service_slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE
+            ) && (
+              <section>
+                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                  Aplicaciones
+                </h3>
+                <a
+                  href={`${linkPrefix}/modelos?company=${company.id}`}
+                  className="group flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2.5 hover:border-brand-teal/40 hover:bg-brand-teal/5 transition-colors"
+                >
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <span className="flex-1 text-sm font-medium text-text-body">
+                    Modelos fiscales
+                  </span>
+                  <svg
+                    className="w-3.5 h-3.5 text-text-muted group-hover:text-brand-teal transition-colors"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
+              </section>
+            )}
+
           {/* ---- Services (read-only en el drawer; gestión en /clientes/[id]) ---- */}
           <section>
             <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
@@ -412,39 +445,16 @@ export default function ClientDetailPanel({
               <p className="text-sm text-text-muted italic">Sin servicios contratados</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {company.services.map((svc) => {
-                  const dashboardHref =
-                    svc.service_slug === "dashboard" && canViewDashboard
-                      ? `${linkPrefix}/clientes/${company.id}/dashboard`
-                      : null;
-                  const taxModelsHref =
-                    svc.service_slug === "tax-models" && canViewTaxModels
-                      ? `${linkPrefix}/modelos?company=${company.id}`
-                      : null;
-                  const href = dashboardHref ?? taxModelsHref;
-                  return (
-                    <span
-                      key={svc.service_id}
-                      className="inline-flex items-center gap-1.5 text-xs bg-gray-50 border border-gray-100 rounded-full pl-3 pr-2 py-1"
-                    >
-                      <span className="font-medium text-text-body">{svc.service_name}</span>
-                      <span className="text-[10px] text-text-muted">·</span>
-                      <span className="text-[10px] text-text-muted">{svc.department_name}</span>
-                      {href && (
-                        <a
-                          href={href}
-                          title={`Ir a ${svc.service_name}`}
-                          className="ml-0.5 text-brand-teal hover:text-brand-teal/70 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                          </svg>
-                        </a>
-                      )}
-                    </span>
-                  );
-                })}
+                {company.services.map((svc) => (
+                  <span
+                    key={svc.service_id}
+                    className="inline-flex items-center gap-1.5 text-xs bg-gray-50 border border-gray-100 rounded-full px-3 py-1"
+                  >
+                    <span className="font-medium text-text-body">{svc.service_name}</span>
+                    <span className="text-[10px] text-text-muted">·</span>
+                    <span className="text-[10px] text-text-muted">{svc.department_name}</span>
+                  </span>
+                ))}
               </div>
             )}
           </section>

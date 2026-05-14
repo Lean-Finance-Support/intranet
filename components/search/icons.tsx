@@ -44,6 +44,14 @@ function BookIcon({ className }: IconProps) {
   );
 }
 
+function BriefcaseIcon({ className }: IconProps) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.075a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25v-4.075m16.5 0V8.625a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25v5.525m16.5 0a48.667 48.667 0 01-16.5 0M9.75 6.375V4.5A1.5 1.5 0 0111.25 3h1.5a1.5 1.5 0 011.5 1.5v1.875" />
+    </svg>
+  );
+}
+
 function ChartIcon({ className }: IconProps) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -72,6 +80,8 @@ export function SearchIcon({ name, className }: { name: SearchIconName; classNam
       return <BuildingIcon className={className} />;
     case "book":
       return <BookIcon className={className} />;
+    case "briefcase":
+      return <BriefcaseIcon className={className} />;
     case "chart":
       return <ChartIcon className={className} />;
     case "swap":

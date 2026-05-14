@@ -182,7 +182,7 @@ async function getContactEmails(supabase: any, companyId: string): Promise<strin
   const { data: taxService } = await supabase
     .from("services")
     .select("id")
-    .eq("slug", "tax-models")
+    .eq("slug", "asesoramiento-fiscal-y-contable")
     .single();
 
   async function emailsByProfileIds(ids: string[]): Promise<string[]> {

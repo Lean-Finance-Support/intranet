@@ -1,6 +1,6 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { updateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
 import { invalidateNotifications } from "@/lib/actions/notifications";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/team-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { CompanyBankAccount } from "@/lib/types/bank-accounts";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 import { getDashboardData, parseSheetUrl, DashboardSheetError } from "@/lib/google-sheets/client";
 import {
   buildClientDashboardReadyPreviewHtml,
@@ -22,6 +23,10 @@ import {
 /**
  * Resuelve el departamento activo para un servicio (vía department_services).
  * Devuelve el department_id o lanza si el servicio no está activo en ninguno.
+ * Nota: con el modelo M:N (0..N dpts por servicio) este helper asume que el
+ * servicio tiene exactamente 1 dpto — solo se sigue usando para flujos donde
+ * esa garantía existe (asesoramiento-fiscal-y-contable).
+ * Para servicios nuevos con 0 o >1 dpts usa `resolveServiceDepartments`.
  */
 async function resolveServiceDepartment(
   supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
@@ -35,6 +40,31 @@ async function resolveServiceDepartment(
     .maybeSingle();
   if (!data) throw new Error("Servicio no encontrado");
   return data.department_id as string;
+}
+
+/**
+ * Gate para acciones sobre servicios transversales (sin dpto): el actor debe
+ * tener write_dept_service en al menos un dpto (cualquiera). Equivale a "el
+ * actor puede gestionar servicios en alguna parte de la organización".
+ */
+async function requireWriteDeptServiceInAny(): Promise<void> {
+  const scopes = await userScopeIds("write_dept_service", "department");
+  if (scopes.length === 0) {
+    throw new Error("Sin permisos");
+  }
+}
+
+/** Versión M:N — devuelve todos los dpts activos del servicio (puede ser []). */
+async function resolveServiceDepartments(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  serviceId: string
+): Promise<string[]> {
+  const { data } = await supabase
+    .from("department_services")
+    .select("department_id")
+    .eq("service_id", serviceId)
+    .eq("is_active", true);
+  return [...new Set((data ?? []).map((r) => r.department_id as string))];
 }
 
 // La lectura del listado y detalle de clientes es abierta a cualquier admin
@@ -167,25 +197,59 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     hasPermission("request_client_documentation"),
   ]);
 
-  // 3. Company services + technicians
-  let companyServicesData: { company_id: string; service_id: string }[] = [];
-  let techData: { company_id: string; service_id: string; technician_id: string }[] = [];
+  // 3. Company services + technicians.
+  // Para reducir el waterfall:
+  //  - companyServicesData (depende de companyIds) y memberRoles (depende de
+  //    userChiefDeptIds) y myDocSupervisorCompanyIds (independiente) se lanzan
+  //    en PARALELO. Antes iban una tras otra.
+  //  - Una vez tenemos companyServicesData, lanzamos en paralelo:
+  //    fetchTechniciansByServiceIds + clientBlocks (documentation).
+  const adminClientForDocs = createAdminClient();
+  const [
+    csRes,
+    memberRolesRes,
+    myDocSupervisorCompanyIds,
+    clientBlocksRes,
+  ] = await Promise.all([
+    companyIds.length > 0
+      ? supabase
+          .from("company_services")
+          .select("company_id, service_id")
+          .in("company_id", companyIds)
+          .eq("is_active", true)
+      : Promise.resolve({ data: [] as { company_id: string; service_id: string }[] }),
+    userChiefDeptIds.length > 0
+      ? supabase
+          .from("profile_roles")
+          .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
+          .eq("scope_type", "department")
+          .in("scope_id", userChiefDeptIds)
+      : Promise.resolve({ data: [] }),
+    fetchSupervisorCompanyIds(adminClientForDocs, user.id),
+    companyIds.length > 0
+      ? adminClientForDocs
+          .schema("documentation")
+          .from("client_blocks")
+          .select("id, company_id")
+          .in("company_id", companyIds)
+      : Promise.resolve({ data: [] as { id: string; company_id: string }[] }),
+  ]);
 
-  if (companyIds.length > 0) {
-    const csRes = await supabase
-      .from("company_services")
-      .select("company_id, service_id")
-      .in("company_id", companyIds)
-      .eq("is_active", true);
-    companyServicesData = csRes.data ?? [];
+  const companyServicesData = csRes.data ?? [];
+  const allServiceIds = [...new Set(companyServicesData.map((cs) => cs.service_id))];
+  const companyIdSet = new Set(companyIds);
 
-    const allServiceIds = [...new Set(companyServicesData.map((cs) => cs.service_id))];
-    const techRows = await fetchTechniciansByServiceIds(supabase, allServiceIds);
-    const companyIdSet = new Set(companyIds);
-    techData = techRows.filter((t) => companyIdSet.has(t.company_id));
-  }
+  // techRows depende de companyServicesData (necesita allServiceIds). Lanzamos
+  // ahora en paralelo: técnicos por service_ids + nombres de técnicos. El segundo
+  // lo lanzamos optimista en cuanto tengamos profileIds — para no perder un
+  // roundtrip lo hacemos secuencial pero envuelto en Promise.all junto a las
+  // queries de documentation que dependen de clientBlocks.
+  const techRowsAll = await fetchTechniciansByServiceIds(supabase, allServiceIds);
+  const techData = techRowsAll.filter((t) => companyIdSet.has(t.company_id));
 
-  // 4. Technician names
+  // 4-5. Technician names + procesamiento de dept members (no requiere I/O extra
+  // si los embeds del paso anterior ya traen los profiles). Solo si techData
+  // tiene técnicos hacemos la query de nombres.
   const allTechIds = [...new Set(techData.map((t) => t.technician_id))];
   const techNameMap = new Map<string, string | null>();
   if (allTechIds.length > 0) {
@@ -196,18 +260,14 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     for (const p of techProfiles ?? []) techNameMap.set(p.id, p.full_name);
   }
 
-  // 5. Dept members for chief depts (for technician assignment) — vía profile_roles
+  // 5. Dept members (ya cargados en paralelo arriba) — vía profile_roles.
   // Miembros/Chiefs son elegibles como técnicos; Observadores NO.
   const deptMembersMap: { [deptId: string]: DeptMemberSlim[] } = {};
   if (userChiefDeptIds.length > 0) {
-    const { data: memberRoles } = await supabase
-      .from("profile_roles")
-      .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
-      .eq("scope_type", "department")
-      .in("scope_id", userChiefDeptIds);
+    const memberRoles = memberRolesRes.data ?? [];
 
     const seen = new Set<string>(); // scope_id|profile_id
-    for (const link of memberRoles ?? []) {
+    for (const link of memberRoles) {
       const role = link.role as unknown as { name: string } | null;
       if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief")) continue;
       const p = link.profile as unknown as { id: string; full_name: string | null } | null;
@@ -244,12 +304,10 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
   // Companies donde el usuario actual está asignado:
   //  - como técnico de algún servicio, o
   //  - como supervisor de algún apartado de documentación.
+  // myDocSupervisorCompanyIds se cargó arriba en paralelo con las queries
+  // de company_services / member_roles / client_blocks.
   const myAssignedCompanyIds = new Set(
     techData.filter((t) => t.technician_id === user.id).map((t) => t.company_id)
-  );
-  const myDocSupervisorCompanyIds = await fetchSupervisorCompanyIds(
-    createAdminClient(),
-    user.id
   );
   for (const id of myDocSupervisorCompanyIds) myAssignedCompanyIds.add(id);
 
@@ -288,87 +346,84 @@ export async function getAllCompaniesData(): Promise<ClientesPageData> {
     teamDeptsMap.get(t.company_id)!.add(deptId);
   }
 
-  if (companyIds.length > 0) {
-    const adminClient = createAdminClient();
-    const { data: clientBlocks } = await adminClient
-      .schema("documentation")
-      .from("client_blocks")
-      .select("id, company_id")
-      .in("company_id", companyIds);
-
+  // Documentation: clientBlocks ya viene cargado del Promise.all paralelo de
+  // arriba. Aquí solo seguimos el waterfall que sí es real (apartados →
+  // supervisores → departamentos). Las queries `apartado_supervisors_v` y
+  // (sus depts) las paralelizamos cuando es posible.
+  const clientBlocks = (clientBlocksRes.data ?? []) as { id: string; company_id: string }[];
+  if (clientBlocks.length > 0) {
+    const adminClient = adminClientForDocs;
     const blockToCompany = new Map<string, string>();
-    for (const cb of clientBlocks ?? []) {
-      blockToCompany.set(cb.id as string, cb.company_id as string);
+    for (const cb of clientBlocks) {
+      blockToCompany.set(cb.id, cb.company_id);
     }
 
     const blockIds = Array.from(blockToCompany.keys());
-    if (blockIds.length > 0) {
-      const { data: clientApartados } = await adminClient
-        .schema("documentation")
-        .from("client_apartados")
-        .select("id, status, client_block_id, apartado_id")
-        .in("client_block_id", blockIds);
+    const { data: clientApartados } = await adminClient
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, status, client_block_id, apartado_id")
+      .in("client_block_id", blockIds);
 
-      const clientApartadoToCompany = new Map<string, string>();
-      const clientApartadoToCatalog = new Map<string, string>();
-      for (const ca of clientApartados ?? []) {
-        const companyId = blockToCompany.get(ca.client_block_id as string);
-        if (!companyId) continue;
-        const entry = docProgressMap.get(companyId) ?? { validated: 0, total: 0, in_review: 0 };
-        entry.total += 1;
-        if (ca.status === "validado") entry.validated += 1;
-        if (ca.status === "enviado") entry.in_review += 1;
-        docProgressMap.set(companyId, entry);
-        clientApartadoToCompany.set(ca.id as string, companyId);
-        clientApartadoToCatalog.set(ca.id as string, ca.apartado_id as string);
+    const clientApartadoToCompany = new Map<string, string>();
+    const clientApartadoToCatalog = new Map<string, string>();
+    for (const ca of clientApartados ?? []) {
+      const companyId = blockToCompany.get(ca.client_block_id as string);
+      if (!companyId) continue;
+      const entry = docProgressMap.get(companyId) ?? { validated: 0, total: 0, in_review: 0 };
+      entry.total += 1;
+      if (ca.status === "validado") entry.validated += 1;
+      if (ca.status === "enviado") entry.in_review += 1;
+      docProgressMap.set(companyId, entry);
+      clientApartadoToCompany.set(ca.id as string, companyId);
+      clientApartadoToCatalog.set(ca.id as string, ca.apartado_id as string);
+    }
+
+    // Depts via supervisores: para cada client_apartado supervisado, traemos
+    // los depts del apartado del catálogo y los añadimos al equipo del cliente.
+    const clientApartadoIds = Array.from(clientApartadoToCompany.keys());
+    if (clientApartadoIds.length > 0) {
+      const { data: supRows } = await adminClient
+        .schema("documentation")
+        .from("apartado_supervisors_v")
+        .select("client_apartado_id")
+        .in("client_apartado_id", clientApartadoIds);
+
+      const supervisedClientApartadoIds = new Set(
+        (supRows ?? []).map((r) => r.client_apartado_id as string)
+      );
+
+      const catalogIdsToLookUp = new Set<string>();
+      for (const caId of supervisedClientApartadoIds) {
+        const cat = clientApartadoToCatalog.get(caId);
+        if (cat) catalogIdsToLookUp.add(cat);
       }
 
-      // Depts via supervisores: para cada client_apartado supervisado, traemos
-      // los depts del apartado del catálogo y los añadimos al equipo del cliente.
-      const clientApartadoIds = Array.from(clientApartadoToCompany.keys());
-      if (clientApartadoIds.length > 0) {
-        const { data: supRows } = await adminClient
+      if (catalogIdsToLookUp.size > 0) {
+        const { data: apartadoDepts } = await adminClient
           .schema("documentation")
-          .from("apartado_supervisors_v")
-          .select("client_apartado_id")
-          .in("client_apartado_id", clientApartadoIds);
+          .from("apartado_departments")
+          .select("apartado_id, department_id")
+          .in("apartado_id", Array.from(catalogIdsToLookUp));
 
-        const supervisedClientApartadoIds = new Set(
-          (supRows ?? []).map((r) => r.client_apartado_id as string)
-        );
-
-        const catalogIdsToLookUp = new Set<string>();
-        for (const caId of supervisedClientApartadoIds) {
-          const cat = clientApartadoToCatalog.get(caId);
-          if (cat) catalogIdsToLookUp.add(cat);
+        const catalogToDepts = new Map<string, string[]>();
+        for (const link of apartadoDepts ?? []) {
+          const aid = link.apartado_id as string;
+          const did = link.department_id as string;
+          const list = catalogToDepts.get(aid) ?? [];
+          if (!list.includes(did)) list.push(did);
+          catalogToDepts.set(aid, list);
         }
 
-        if (catalogIdsToLookUp.size > 0) {
-          const { data: apartadoDepts } = await adminClient
-            .schema("documentation")
-            .from("apartado_departments")
-            .select("apartado_id, department_id")
-            .in("apartado_id", Array.from(catalogIdsToLookUp));
-
-          const catalogToDepts = new Map<string, string[]>();
-          for (const link of apartadoDepts ?? []) {
-            const aid = link.apartado_id as string;
-            const did = link.department_id as string;
-            const list = catalogToDepts.get(aid) ?? [];
-            if (!list.includes(did)) list.push(did);
-            catalogToDepts.set(aid, list);
-          }
-
-          for (const caId of supervisedClientApartadoIds) {
-            const companyId = clientApartadoToCompany.get(caId);
-            const catalogId = clientApartadoToCatalog.get(caId);
-            if (!companyId || !catalogId) continue;
-            const depts = catalogToDepts.get(catalogId) ?? [];
-            if (depts.length === 0) continue;
-            if (!teamDeptsMap.has(companyId)) teamDeptsMap.set(companyId, new Set());
-            const set = teamDeptsMap.get(companyId)!;
-            for (const did of depts) set.add(did);
-          }
+        for (const caId of supervisedClientApartadoIds) {
+          const companyId = clientApartadoToCompany.get(caId);
+          const catalogId = clientApartadoToCatalog.get(caId);
+          if (!companyId || !catalogId) continue;
+          const depts = catalogToDepts.get(catalogId) ?? [];
+          if (depts.length === 0) continue;
+          if (!teamDeptsMap.has(companyId)) teamDeptsMap.set(companyId, new Set());
+          const set = teamDeptsMap.get(companyId)!;
+          for (const did of depts) set.add(did);
         }
       }
     }
@@ -465,6 +520,11 @@ export interface CompanyContextForDetail {
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  /** Lista ordenada de dpts (id+name) para el selector agrupado de técnicos. */
+  departments: { id: string; name: string }[];
+  /** Lista de admins disponibles como candidatos a técnico para servicios sin
+   *  departamento. Para servicios con dpto usar `deptMembers[deptId]`. */
+  allAdminCandidates: DeptMemberSlim[];
   chiefAvailableServices: {
     service_id: string;
     service_name: string;
@@ -504,7 +564,14 @@ export async function getCompanyContextForDetail(
       .select("id, service_id")
       .eq("company_id", companyId)
       .eq("is_active", true),
-    supabase.from("services").select("id, name, slug"),
+    // Cargamos TODOS los servicios (activos y archivados). Los activos nutren
+    // `chiefAvailableServices` (lo contratable); los archivados se siguen
+    // mostrando en `company.services` si la empresa ya los tenía contratados.
+    supabase
+      .from("services")
+      .select("id, name, slug, display_order, is_active")
+      .order("display_order")
+      .order("name"),
     supabase
       .from("department_services")
       .select("department_id, service_id")
@@ -522,29 +589,52 @@ export async function getCompanyContextForDetail(
   const serviceMap = new Map(
     (allServices ?? []).map((s) => [
       s.id as string,
-      s as { id: string; name: string; slug: string },
+      s as { id: string; name: string; slug: string; display_order: number },
     ])
   );
   const deptMap = new Map<string, string>(
     (allDepts ?? []).map((d) => [d.id as string, d.name as string])
   );
-  const serviceToDeptId = new Map<string, string>();
+  // Modelo M:N: un servicio puede tener 0, 1 o varios dpts.
+  const deptIdsByService = new Map<string, string[]>();
   for (const ds of deptSvcLinks ?? []) {
-    if (!serviceToDeptId.has(ds.service_id as string)) {
-      serviceToDeptId.set(ds.service_id as string, ds.department_id as string);
-    }
+    const sid = ds.service_id as string;
+    const list = deptIdsByService.get(sid) ?? [];
+    list.push(ds.department_id as string);
+    deptIdsByService.set(sid, list);
+  }
+  // Helper para flujos legacy que esperan 1 dpto por servicio (técnicos, etc.).
+  const serviceToDeptId = new Map<string, string>();
+  for (const [sid, dids] of deptIdsByService) {
+    if (dids.length > 0) serviceToDeptId.set(sid, dids[0]);
   }
 
   const serviceIdsForThisCompany = (companyServicesRows ?? []).map(
     (cs) => cs.service_id as string
   );
 
-  const techRows =
+  // Paralelizamos las 3 queries auxiliares que NO dependen de techRows:
+  // - memberRoles (dept members del actor para asignar técnicos)
+  // - allAdmins (candidatos para servicios transversales)
+  // - techRows (sí dependen de serviceIds — pero los lanzamos en paralelo con
+  //   las otras dos en lugar de seriarlos como antes).
+  const [techRowsRaw, memberRolesRes, allAdminsRes] = await Promise.all([
     serviceIdsForThisCompany.length > 0
-      ? (await fetchTechniciansByServiceIds(supabase, serviceIdsForThisCompany)).filter(
-          (t) => t.company_id === companyId
-        )
-      : [];
+      ? fetchTechniciansByServiceIds(supabase, serviceIdsForThisCompany)
+      : Promise.resolve([] as Array<{ company_id: string; service_id: string; technician_id: string }>),
+    userChiefDeptIds.length > 0
+      ? supabase
+          .from("profile_roles")
+          .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
+          .eq("scope_type", "department")
+          .in("scope_id", userChiefDeptIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("role", "admin"),
+  ]);
+  const techRows = techRowsRaw.filter((t) => t.company_id === companyId);
 
   const techProfileIds = [...new Set(techRows.map((t) => t.technician_id))];
   const techNameMap = new Map<string, string | null>();
@@ -558,13 +648,15 @@ export async function getCompanyContextForDetail(
     }
   }
 
-  // Construir servicios contratados con sus técnicos
+  // Construir servicios contratados con sus técnicos. Soporta servicios sin
+  // dpto (transversales) — se muestran con dept_name="Sin departamento". Para
+  // servicios con varios dpts (M:N raro), se elige el primero para mantener
+  // compat con el tipo ClienteService.
   const services: ClienteService[] = [];
   for (const cs of companyServicesRows ?? []) {
     const svc = serviceMap.get(cs.service_id as string);
     if (!svc) continue;
-    const deptId = serviceToDeptId.get(cs.service_id as string);
-    if (!deptId) continue;
+    const deptId = serviceToDeptId.get(cs.service_id as string) ?? "";
     const technicians = techRows
       .filter((t) => t.service_id === cs.service_id)
       .map((t) => ({
@@ -576,7 +668,7 @@ export async function getCompanyContextForDetail(
       service_name: svc.name,
       service_slug: svc.slug,
       department_id: deptId,
-      department_name: deptMap.get(deptId) ?? "",
+      department_name: deptId ? (deptMap.get(deptId) ?? "") : "Sin departamento",
       technicians,
     });
   }
@@ -589,7 +681,14 @@ export async function getCompanyContextForDetail(
     if (deptId) responsibleTeamDepts.add(deptId);
   }
 
-  // Dept members + chief available services (solo si el usuario es chief).
+  // Dept members + servicios disponibles para añadir.
+  //
+  // Servicios contratables:
+  //  - Servicios SIN dpto (transversales): cualquier admin puede contratarlos.
+  //  - Servicios CON dpto(s): el actor necesita write_dept_service en al menos
+  //    uno de los dpts del servicio.
+  // Deduplicado por service_id (un servicio en N dpts aparece una sola vez).
+  // Se ordena por display_order, name (heredado de la query).
   const deptMembers: { [deptId: string]: DeptMemberSlim[] } = {};
   const chiefAvailableServices: {
     service_id: string;
@@ -598,15 +697,14 @@ export async function getCompanyContextForDetail(
     department_id: string;
   }[] = [];
 
+  const userChiefDeptSet = new Set(userChiefDeptIds);
+
   if (userChiefDeptIds.length > 0) {
-    const { data: memberRoles } = await supabase
-      .from("profile_roles")
-      .select("scope_id, profile_id, role:roles(name), profile:profiles(id, full_name)")
-      .eq("scope_type", "department")
-      .in("scope_id", userChiefDeptIds);
+    // memberRoles ya viene cargado del Promise.all paralelo de arriba.
+    const memberRoles = memberRolesRes.data ?? [];
 
     const seen = new Set<string>();
-    for (const link of memberRoles ?? []) {
+    for (const link of memberRoles) {
       const role = link.role as unknown as { name: string } | null;
       if (!role || (role.name !== "Miembro de departamento" && role.name !== "Chief"))
         continue;
@@ -621,20 +719,47 @@ export async function getCompanyContextForDetail(
         deptMembers[link.scope_id as string] = [];
       deptMembers[link.scope_id as string].push({ id: p.id, name: p.full_name });
     }
+  }
 
-    for (const ds of deptSvcLinks ?? []) {
-      if (!userChiefDeptIds.includes(ds.department_id as string)) continue;
-      const svc = serviceMap.get(ds.service_id as string);
-      if (svc) {
-        chiefAvailableServices.push({
-          service_id: svc.id,
-          service_name: svc.name,
-          service_slug: svc.slug,
-          department_id: ds.department_id as string,
-        });
+  for (const svc of allServices ?? []) {
+    // Los servicios archivados nunca son contratables (aunque pueden seguir
+    // apareciendo en company.services si ya estaban contratados).
+    if (svc.is_active === false) continue;
+    const dids = deptIdsByService.get(svc.id as string) ?? [];
+    let canOffer = false;
+    let pickDeptId = "";
+    if (dids.length === 0) {
+      // Servicio transversal: el actor debe poder gestionar servicios en
+      // algún dpto (mismo criterio que apartados globales de doc).
+      canOffer = userChiefDeptIds.length > 0;
+    } else {
+      // Servicio con dpto(s): debe haber al menos un match con los dpts del actor.
+      const match = dids.find((d) => userChiefDeptSet.has(d));
+      if (match) {
+        canOffer = true;
+        pickDeptId = match;
       }
     }
+    if (canOffer) {
+      chiefAvailableServices.push({
+        service_id: svc.id as string,
+        service_name: svc.name as string,
+        service_slug: svc.slug as string,
+        department_id: pickDeptId,
+      });
+    }
   }
+
+  // Candidatos para técnicos de servicios sin dpto: cualquier admin activo.
+  // Ya cargado en paralelo en el Promise.all de arriba (junto a techRows y
+  // memberRoles).
+  const allAdmins = allAdminsRes.data;
+  const allAdminCandidates: DeptMemberSlim[] = (allAdmins ?? [])
+    .map((p) => ({
+      id: p.id as string,
+      name: (p.full_name as string | null) ?? (p.email as string),
+    }))
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "es"));
 
   const company: ClienteCompany = {
     id: companyRow.id as string,
@@ -651,10 +776,17 @@ export async function getCompanyContextForDetail(
     documentation_progress: null,
   };
 
+  const departments = (allDepts ?? []).map((d) => ({
+    id: d.id as string,
+    name: d.name as string,
+  }));
+
   return {
     company,
     userChiefDeptIds,
     deptMembers,
+    departments,
+    allAdminCandidates,
     chiefAvailableServices,
     canCreateCompany,
     canDeleteCompany,
@@ -749,16 +881,159 @@ export async function addServiceToCompany(
   serviceId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
-  const { error } = await supabase.from("company_services").upsert(
-    { company_id: companyId, service_id: serviceId, is_active: true },
-    { onConflict: "company_id,service_id" }
-  );
+  // Autorización: si el servicio pertenece a uno o varios dpts, requerir
+  // permiso en TODOS (conservador). Si es transversal (0 dpts), el actor debe
+  // tener `write_dept_service` en al menos un dpto (= debe poder gestionar
+  // servicios en algún sitio); no basta con ser admin.
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
+  }
 
-  if (error) throw new Error("Error al añadir el servicio.");
+  const { data: upserted, error } = await supabase
+    .from("company_services")
+    .upsert(
+      { company_id: companyId, service_id: serviceId, is_active: true },
+      { onConflict: "company_id,service_id" }
+    )
+    .select("id")
+    .single();
+  if (error || !upserted) throw new Error("Error al añadir el servicio.");
+
+  // Auto-asignación: para cada dpto del servicio, los miembros del equipo de
+  // ese dpto en este cliente (= técnicos de OTROS servicios del dpto o
+  // supervisores de apartados del dpto) se vuelven técnicos del nuevo cs.
+  if (deptIds.length > 0) {
+    const newCsId = upserted.id as string;
+    await autoAssignTechniciansForNewService({
+      companyId,
+      newCsId,
+      deptIds,
+    });
+  }
+
   invalidateResponsibleTeam(companyId);
+}
+
+/**
+ * Recoge los miembros del equipo del cliente que tocan a alguno de los dpts
+ * dados y los inserta como técnicos del company_service recién creado.
+ * Idempotente vía ignoreDuplicates.
+ */
+async function autoAssignTechniciansForNewService(args: {
+  companyId: string;
+  newCsId: string;
+  deptIds: string[];
+}): Promise<void> {
+  const admin = createAdminClient();
+  const memberIds = await getTeamMemberIdsForDepts(admin, args.companyId, args.deptIds);
+  if (memberIds.length === 0) return;
+  const tecnicoRoleId = await lookupRoleId(admin, "Técnico");
+  const rows = memberIds.map((profileId) => ({
+    profile_id: profileId,
+    role_id: tecnicoRoleId,
+    scope_type: "company_service" as const,
+    scope_id: args.newCsId,
+  }));
+  const { error } = await admin
+    .from("profile_roles")
+    .upsert(rows, {
+      onConflict: "profile_id,role_id,scope_type,scope_id",
+      ignoreDuplicates: true,
+    });
+  if (error) {
+    console.error("[addServiceToCompany] error auto-asignando técnicos:", error.message);
+  }
+}
+
+/**
+ * Profile_ids que ya forman parte del equipo del cliente en alguno de los
+ * dpts dados. "Equipo" = técnico en cualquier company_service del cliente cuyo
+ * service pertenece al dpto, o supervisor en cualquier client_apartado del
+ * cliente cuyo apartado-template está vinculado al dpto.
+ */
+async function getTeamMemberIdsForDepts(
+  admin: ReturnType<typeof createAdminClient>,
+  companyId: string,
+  deptIds: string[]
+): Promise<string[]> {
+  if (deptIds.length === 0) return [];
+  const out = new Set<string>();
+
+  // Técnicos: company_services del cliente cuyos services están en deptIds.
+  const { data: deptSvcLinks } = await admin
+    .from("department_services")
+    .select("service_id")
+    .in("department_id", deptIds)
+    .eq("is_active", true);
+  const dptoSvcIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+  if (dptoSvcIds.length > 0) {
+    const { data: csRows } = await admin
+      .from("company_services")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .in("service_id", dptoSvcIds);
+    const csIds = (csRows ?? []).map((r) => r.id as string);
+    if (csIds.length > 0) {
+      const tecnicoRoleId = await lookupRoleId(admin, "Técnico");
+      const { data: techRoles } = await admin
+        .from("profile_roles")
+        .select("profile_id")
+        .eq("role_id", tecnicoRoleId)
+        .eq("scope_type", "company_service")
+        .in("scope_id", csIds);
+      for (const r of techRoles ?? []) out.add(r.profile_id as string);
+    }
+  }
+
+  // Supervisores: client_apartados del cliente cuyo apartado-template está
+  // vinculado a alguno de los dpts.
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, apartado_id")
+      .in("client_block_id", blockIds);
+    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
+    if (allCatalogIds.length > 0) {
+      const { data: aptDeptLinks } = await admin
+        .schema("documentation")
+        .from("apartado_departments")
+        .select("apartado_id")
+        .in("apartado_id", allCatalogIds)
+        .in("department_id", deptIds);
+      const catalogIdsInDept = new Set(
+        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
+      );
+      const caIds = (cas ?? [])
+        .filter((ca) => catalogIdsInDept.has(ca.apartado_id as string))
+        .map((ca) => ca.id as string);
+      if (caIds.length > 0) {
+        const supervisorRoleId = await lookupRoleId(admin, "Supervisor de apartado");
+        const { data: supRoles } = await admin
+          .from("profile_roles")
+          .select("profile_id")
+          .eq("role_id", supervisorRoleId)
+          .eq("scope_type", "client_apartado")
+          .in("scope_id", caIds);
+        for (const r of supRoles ?? []) out.add(r.profile_id as string);
+      }
+    }
+  }
+
+  return [...out];
 }
 
 export async function removeServiceFromCompany(
@@ -766,8 +1041,16 @@ export async function removeServiceFromCompany(
   serviceId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
+
+  // Autorización equivalente a addServiceToCompany.
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
+  }
 
   const { error } = await supabase
     .from("company_services")
@@ -784,7 +1067,7 @@ export async function removeServiceFromCompany(
     .select("slug")
     .eq("id", serviceId)
     .maybeSingle();
-  if (svc?.slug === "dashboard") {
+  if (svc?.slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE) {
     await supabase
       .schema("dashboard")
       .from("client_dashboards")
@@ -825,18 +1108,34 @@ export async function assignTechnicianAdmin(
   technicianId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
 
-  // Asegurar Miembro del dept (idempotente)
-  const miembroRoleId = await lookupRoleId(supabase, "Miembro de departamento");
-  const { error: mErr } = await supabase.from("profile_roles").insert({
-    profile_id: technicianId,
-    role_id: miembroRoleId,
-    scope_type: "department",
-    scope_id: deptId,
-  });
-  if (mErr && mErr.code !== "23505") throw new Error("No se pudo añadir al departamento.");
+  // Autorización: si el servicio tiene dpts, requerir permiso en TODOS.
+  // Si es transversal (sin dpto), el actor debe tener write_dept_service en
+  // al menos un dpto (mismo gate que para contratar el servicio).
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
+  }
+
+  // Solo aseguramos membresía al dpto si el servicio tiene dpto(s).
+  if (deptIds.length > 0) {
+    const miembroRoleId = await lookupRoleId(supabase, "Miembro de departamento");
+    for (const did of deptIds) {
+      const { error: mErr } = await supabase.from("profile_roles").insert({
+        profile_id: technicianId,
+        role_id: miembroRoleId,
+        scope_type: "department",
+        scope_id: did,
+      });
+      if (mErr && mErr.code !== "23505") {
+        throw new Error("No se pudo añadir al departamento.");
+      }
+    }
+  }
 
   const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
   if (!csId) throw new Error("Servicio no contratado por esta empresa.");
@@ -858,8 +1157,14 @@ export async function removeTechnicianAdmin(
   technicianId: string
 ): Promise<void> {
   const { supabase } = await requireAdmin();
-  const deptId = await resolveServiceDepartment(supabase, serviceId);
-  await requirePermission("write_dept_service", { type: "department", id: deptId });
+  const deptIds = await resolveServiceDepartments(supabase, serviceId);
+  if (deptIds.length === 0) {
+    await requireWriteDeptServiceInAny();
+  } else {
+    for (const did of deptIds) {
+      await requirePermission("write_dept_service", { type: "department", id: did });
+    }
+  }
 
   const csId = await lookupCompanyServiceId(supabase, companyId, serviceId);
   if (!csId) return;
@@ -1156,7 +1461,7 @@ async function resolveDashboardServiceDeptId(
   const { data } = await supabase
     .from("services")
     .select("id, department_services!inner(department_id)")
-    .eq("slug", "dashboard")
+    .eq("slug", SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)
     .eq("department_services.is_active", true)
     .maybeSingle<{ id: string; department_services: { department_id: string }[] }>();
   const deptId = data?.department_services?.[0]?.department_id;
@@ -1436,4 +1741,412 @@ function firstName(fullName: string | null, email: string): string {
   const local = (email ?? "").split("@")[0] ?? "";
   if (!local) return "";
   return local.charAt(0).toUpperCase() + local.slice(1);
+}
+
+// ─── Equipo responsable: alta/baja masiva ────────────────────────────────
+//
+// addTeamMemberToCompany: añade un empleado al equipo del cliente. Lo asigna
+// automáticamente como técnico de todos los servicios contratados cuyo dpto
+// pertenezca al empleado, y como supervisor de todos los apartados del cliente
+// vinculados a esos dpts.
+//
+// removeTeamMemberFromCompany: revierte (elimina todas las filas relevantes).
+//
+// Autorización: el actor debe tener `assign_technician` con scope=dpto del
+// empleado, en AL MENOS uno de sus dpts. La operación se ejecuta solo en los
+// dpts donde el actor tiene permiso; los demás se ignoran (sin error global).
+// Eso significa que un chief de Fiscal puede gestionar empleados de Fiscal
+// pero no de Laboral, aunque el empleado pertenezca a ambos.
+
+export interface TeamMemberCandidate {
+  profile_id: string;
+  full_name: string | null;
+  email: string;
+  department_ids: string[];
+  department_names: string[];
+}
+
+/**
+ * Empleados disponibles para añadir al equipo de un cliente: cualquier admin
+ * con rol Miembro/Chief en alguno de los dpts donde el actor tiene
+ * `write_dept_service`. Excluye a los que ya son miembros del equipo (técnicos
+ * o supervisores activos en este cliente). Devuelve también los dpts donde el
+ * actor puede gestionar (para que la UI sepa en qué miembros mostrar X).
+ */
+async function fetchTeamCandidatesForDepts(
+  companyId: string,
+  allowedDeptIds: string[]
+): Promise<{ candidates: TeamMemberCandidate[]; manageableDeptIds: string[] }> {
+  const admin = createAdminClient();
+  const [miembroRoleId, chiefRoleId] = await Promise.all([
+    lookupRoleId(admin, "Miembro de departamento"),
+    lookupRoleId(admin, "Chief"),
+  ]);
+
+  const { data: deptRoleRows } = await admin
+    .from("profile_roles")
+    .select("profile_id, scope_id")
+    .eq("scope_type", "department")
+    .in("scope_id", allowedDeptIds)
+    .in("role_id", [miembroRoleId, chiefRoleId]);
+
+  const deptIdsByProfile = new Map<string, Set<string>>();
+  for (const row of deptRoleRows ?? []) {
+    const pid = row.profile_id as string;
+    const did = row.scope_id as string;
+    let set = deptIdsByProfile.get(pid);
+    if (!set) {
+      set = new Set();
+      deptIdsByProfile.set(pid, set);
+    }
+    set.add(did);
+  }
+
+  const profileIds = [...deptIdsByProfile.keys()];
+  if (profileIds.length === 0) {
+    return { candidates: [], manageableDeptIds: allowedDeptIds };
+  }
+
+  // Excluir los que ya están en el equipo del cliente.
+  const existingTeam = await getTeamMemberIdsForDepts(admin, companyId, allowedDeptIds);
+  const existingSet = new Set(existingTeam);
+
+  const [{ data: profiles }, { data: depts }] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", profileIds)
+      .eq("role", "admin"),
+    admin.from("departments").select("id, name").in("id", allowedDeptIds),
+  ]);
+
+  const deptNameById = new Map<string, string>();
+  for (const d of depts ?? []) deptNameById.set(d.id as string, d.name as string);
+
+  const candidates = (profiles ?? [])
+    .filter((p) => !existingSet.has(p.id as string))
+    .map((p) => {
+      const dids = [...(deptIdsByProfile.get(p.id as string) ?? [])];
+      return {
+        profile_id: p.id as string,
+        full_name: (p.full_name as string | null) ?? null,
+        email: p.email as string,
+        department_ids: dids,
+        department_names: dids
+          .map((d) => deptNameById.get(d) ?? "")
+          .filter((n) => n.length > 0),
+      };
+    })
+    .sort((a, b) =>
+      (a.full_name ?? a.email).localeCompare(b.full_name ?? b.email, "es")
+    );
+  return { candidates, manageableDeptIds: allowedDeptIds };
+}
+
+export async function listTeamMemberCandidates(
+  companyId: string
+): Promise<{ candidates: TeamMemberCandidate[]; manageableDeptIds: string[] }> {
+  await requireAdmin();
+  const allowedDeptIds = await userScopeIds("write_dept_service", "department");
+  if (allowedDeptIds.length === 0) return { candidates: [], manageableDeptIds: [] };
+
+  // Cacheamos el resultado por (companyId, allowedDeptIds ordenados): la
+  // función ejecuta ~12 queries entre profile_roles, profiles, departments,
+  // department_services, company_services y client_blocks/apartados (vía
+  // getTeamMemberIdsForDepts), lo que hacía que el tab tardara visiblemente.
+  // El cache se invalida desde `invalidateResponsibleTeam(companyId)` en las
+  // mutaciones que afectan al equipo del cliente.
+  const sortedDepts = [...allowedDeptIds].sort();
+  return unstable_cache(
+    async () => fetchTeamCandidatesForDepts(companyId, sortedDepts),
+    ["team-candidates", companyId, sortedDepts.join(",")],
+    {
+      tags: [`team-candidates:${companyId}`, "team-candidates"],
+      revalidate: 600,
+    }
+  )();
+}
+
+export async function addTeamMemberToCompany(
+  companyId: string,
+  profileId: string
+): Promise<{ added_to_dept_ids: string[]; tech_count: number; supervisor_count: number }> {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+
+  const [miembroRoleId, chiefRoleId, tecnicoRoleId, supervisorRoleId] =
+    await Promise.all([
+      lookupRoleId(admin, "Miembro de departamento"),
+      lookupRoleId(admin, "Chief"),
+      lookupRoleId(admin, "Técnico"),
+      lookupRoleId(admin, "Supervisor de apartado"),
+    ]);
+
+  // 1. Dpts del empleado (Miembro o Chief).
+  const { data: memberRoles } = await admin
+    .from("profile_roles")
+    .select("scope_id")
+    .eq("profile_id", profileId)
+    .eq("scope_type", "department")
+    .in("role_id", [miembroRoleId, chiefRoleId]);
+  const memberDeptIds = [
+    ...new Set((memberRoles ?? []).map((r) => r.scope_id as string)),
+  ];
+  if (memberDeptIds.length === 0) {
+    throw new Error("El empleado no pertenece a ningún departamento.");
+  }
+
+  // 2. Filtrar a los dpts donde el actor tiene assign_technician.
+  const allowedDeptIds: string[] = [];
+  for (const did of memberDeptIds) {
+    if (await hasPermission("write_dept_service", { type: "department", id: did })) {
+      allowedDeptIds.push(did);
+    }
+  }
+  if (allowedDeptIds.length === 0) {
+    throw new Error("No tienes permiso para añadir empleados de este departamento al equipo.");
+  }
+
+  // 3. Resolver company_services del cliente cuyos services están en los
+  //    dpts permitidos. Para cada uno → fila Técnico.
+  const { data: deptSvcLinks } = await admin
+    .from("department_services")
+    .select("service_id")
+    .in("department_id", allowedDeptIds)
+    .eq("is_active", true);
+  const serviceIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+
+  const techRows: { profile_id: string; role_id: string; scope_type: string; scope_id: string }[] = [];
+  if (serviceIds.length > 0) {
+    const { data: csRows } = await admin
+      .from("company_services")
+      .select("id")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .in("service_id", serviceIds);
+    for (const cs of csRows ?? []) {
+      techRows.push({
+        profile_id: profileId,
+        role_id: tecnicoRoleId,
+        scope_type: "company_service",
+        scope_id: cs.id as string,
+      });
+    }
+  }
+
+  // 4. Resolver client_apartados del cliente que tocan al empleado:
+  //    (a) apartados vinculados a alguno de los dpts permitidos, o
+  //    (b) apartados globales (is_global=true) — todo miembro del equipo es
+  //        supervisor de los apartados globales del cliente.
+  const supRows: typeof techRows = [];
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, apartado_id")
+      .in("client_block_id", blockIds);
+    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
+    if (allCatalogIds.length > 0) {
+      const [{ data: aptDeptLinks }, { data: globalApartados }] = await Promise.all([
+        admin
+          .schema("documentation")
+          .from("apartado_departments")
+          .select("apartado_id")
+          .in("apartado_id", allCatalogIds)
+          .in("department_id", allowedDeptIds),
+        admin
+          .schema("documentation")
+          .from("apartados")
+          .select("id")
+          .in("id", allCatalogIds)
+          .eq("is_global", true),
+      ]);
+      const catalogIdsInScope = new Set<string>();
+      for (const l of aptDeptLinks ?? []) {
+        catalogIdsInScope.add(l.apartado_id as string);
+      }
+      for (const a of globalApartados ?? []) {
+        catalogIdsInScope.add(a.id as string);
+      }
+      for (const ca of cas ?? []) {
+        if (catalogIdsInScope.has(ca.apartado_id as string)) {
+          supRows.push({
+            profile_id: profileId,
+            role_id: supervisorRoleId,
+            scope_type: "client_apartado",
+            scope_id: ca.id as string,
+          });
+        }
+      }
+    }
+  }
+
+  // 5. Upsert idempotente.
+  const allRows = [...techRows, ...supRows];
+  if (allRows.length > 0) {
+    const { error } = await admin
+      .from("profile_roles")
+      .upsert(allRows, {
+        onConflict: "profile_id,role_id,scope_type,scope_id",
+        ignoreDuplicates: true,
+      });
+    if (error) {
+      throw new Error(`Error al asignar el equipo: ${error.message}`);
+    }
+  }
+
+  invalidateResponsibleTeam(companyId);
+  // Los supervisores asignados arriba viven en el cache de getClientDocumentation;
+  // sin esta invalidación, router.refresh() devuelve docs viejas.
+  updateTag(`doc:client:${companyId}`);
+  return {
+    added_to_dept_ids: allowedDeptIds,
+    tech_count: techRows.length,
+    supervisor_count: supRows.length,
+  };
+}
+
+export async function removeTeamMemberFromCompany(
+  companyId: string,
+  profileId: string
+): Promise<{ removed_from_dept_ids: string[] }> {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+
+  const [miembroRoleId, chiefRoleId, tecnicoRoleId, supervisorRoleId] =
+    await Promise.all([
+      lookupRoleId(admin, "Miembro de departamento"),
+      lookupRoleId(admin, "Chief"),
+      lookupRoleId(admin, "Técnico"),
+      lookupRoleId(admin, "Supervisor de apartado"),
+    ]);
+
+  // Dpts del empleado.
+  const { data: memberRoles } = await admin
+    .from("profile_roles")
+    .select("scope_id")
+    .eq("profile_id", profileId)
+    .eq("scope_type", "department")
+    .in("role_id", [miembroRoleId, chiefRoleId]);
+  const memberDeptIds = [
+    ...new Set((memberRoles ?? []).map((r) => r.scope_id as string)),
+  ];
+  if (memberDeptIds.length === 0) {
+    throw new Error("El empleado no pertenece a ningún departamento.");
+  }
+
+  // Solo en dpts donde el actor tiene permiso.
+  const allowedDeptIds: string[] = [];
+  for (const did of memberDeptIds) {
+    if (await hasPermission("write_dept_service", { type: "department", id: did })) {
+      allowedDeptIds.push(did);
+    }
+  }
+  if (allowedDeptIds.length === 0) {
+    throw new Error("No tienes permiso para quitar empleados de este departamento del equipo.");
+  }
+
+  // company_services scope IDs a limpiar.
+  const { data: deptSvcLinks } = await admin
+    .from("department_services")
+    .select("service_id")
+    .in("department_id", allowedDeptIds)
+    .eq("is_active", true);
+  const serviceIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+
+  const csIds: string[] = [];
+  if (serviceIds.length > 0) {
+    const { data: csRows } = await admin
+      .from("company_services")
+      .select("id")
+      .eq("company_id", companyId)
+      .in("service_id", serviceIds);
+    for (const r of csRows ?? []) csIds.push(r.id as string);
+  }
+
+  // client_apartados scope IDs a limpiar: los del dpto del empleado +
+  // todos los apartados globales (un miembro del equipo es supervisor de los
+  // globales mientras esté en el equipo).
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  const caIds: string[] = [];
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id, apartado_id")
+      .in("client_block_id", blockIds);
+    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
+    if (allCatalogIds.length > 0) {
+      const [{ data: aptDeptLinks }, { data: globalApartados }] = await Promise.all([
+        admin
+          .schema("documentation")
+          .from("apartado_departments")
+          .select("apartado_id")
+          .in("apartado_id", allCatalogIds)
+          .in("department_id", allowedDeptIds),
+        admin
+          .schema("documentation")
+          .from("apartados")
+          .select("id")
+          .in("id", allCatalogIds)
+          .eq("is_global", true),
+      ]);
+      const catalogIdsInScope = new Set<string>();
+      for (const l of aptDeptLinks ?? []) {
+        catalogIdsInScope.add(l.apartado_id as string);
+      }
+      for (const a of globalApartados ?? []) {
+        catalogIdsInScope.add(a.id as string);
+      }
+      for (const ca of cas ?? []) {
+        if (catalogIdsInScope.has(ca.apartado_id as string)) {
+          caIds.push(ca.id as string);
+        }
+      }
+    }
+  }
+
+  // Borrar técnicos.
+  if (csIds.length > 0) {
+    const { error } = await admin
+      .from("profile_roles")
+      .delete()
+      .eq("profile_id", profileId)
+      .eq("role_id", tecnicoRoleId)
+      .eq("scope_type", "company_service")
+      .in("scope_id", csIds);
+    if (error) {
+      throw new Error(`Error al quitar técnicos: ${error.message}`);
+    }
+  }
+  // Borrar supervisores.
+  if (caIds.length > 0) {
+    const { error } = await admin
+      .from("profile_roles")
+      .delete()
+      .eq("profile_id", profileId)
+      .eq("role_id", supervisorRoleId)
+      .eq("scope_type", "client_apartado")
+      .in("scope_id", caIds);
+    if (error) {
+      throw new Error(`Error al quitar supervisores: ${error.message}`);
+    }
+  }
+
+  invalidateResponsibleTeam(companyId);
+  updateTag(`doc:client:${companyId}`);
+  return { removed_from_dept_ids: allowedDeptIds };
 }

@@ -7,6 +7,7 @@ import {
   getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 export default async function ModelosPage({
   searchParams,
@@ -31,7 +32,7 @@ export default async function ModelosPage({
   if (deptIds.length === 0) redirect(`${prefix}/inicio`);
 
   const slugs = await getCachedDepartmentServiceSlugs(deptIds);
-  if (!slugs.includes("tax-models")) redirect(`${prefix}/inicio`);
+  if (!slugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)) redirect(`${prefix}/inicio`);
 
   return (
     <div className="min-h-full">

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getActiveCompanyId } from "@/lib/active-company";
 import {
@@ -7,6 +8,8 @@ import {
   getCachedUserCompanies,
 } from "@/lib/cached-queries";
 import DashboardFiscalSection from "@/components/dashboard/dashboard-fiscal-section";
+import DashboardFiscalSkeleton from "@/components/dashboard/dashboard-fiscal-skeleton";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -28,6 +31,11 @@ export default async function ClientDashboardPage({ searchParams }: PageProps) {
   const { user } = await getAuthUser();
   if (!user) redirect("/login");
 
+  // Los datos del saludo (profile, companies, activeCompanyId) ya vienen
+  // cacheados desde el layout, así que pintamos el header inmediatamente.
+  // El bloque del dashboard fiscal — que puede esperar varios segundos a
+  // Google Sheets cuando se vacía el caché de 24h — va dentro de <Suspense>
+  // para que el header haga LCP rápido y el resto streamee.
   const [profile, activeCompanyId, companies, params] = await Promise.all([
     getCachedProfile(user.id),
     getActiveCompanyId(),
@@ -45,7 +53,7 @@ export default async function ClientDashboardPage({ searchParams }: PageProps) {
   const serviceSlugs = resolvedCompanyId
     ? await getCachedCompanyServiceSlugs(resolvedCompanyId)
     : [];
-  const hasDashboard = serviceSlugs.includes("dashboard");
+  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
 
   return (
     <div className="px-8 py-12">
@@ -57,13 +65,15 @@ export default async function ClientDashboardPage({ searchParams }: PageProps) {
 
       {hasDashboard && resolvedCompanyId && activeCompany && (
         <div className="mt-10">
-          <DashboardFiscalSection
-            companyId={resolvedCompanyId}
-            companyName={activeCompany.company_name || activeCompany.legal_name}
-            periodId={params.period}
-            bankAccount={params.bank}
-            view={params.view}
-          />
+          <Suspense fallback={<DashboardFiscalSkeleton />}>
+            <DashboardFiscalSection
+              companyId={resolvedCompanyId}
+              companyName={activeCompany.company_name || activeCompany.legal_name}
+              periodId={params.period}
+              bankAccount={params.bank}
+              view={params.view}
+            />
+          </Suspense>
         </div>
       )}
     </div>

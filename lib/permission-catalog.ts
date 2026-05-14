@@ -133,6 +133,15 @@ export const PERMISSION_CATALOG: PermissionMeta[] = [
     isGrantable: true,
   },
   {
+    code: "manage_services_catalog",
+    label: "Gestionar el catálogo de servicios",
+    description:
+      "Crear, editar y archivar servicios del catálogo y sus enlaces a departamentos.",
+    scopeType: "none",
+    scopeLabel: "a nivel global",
+    isGrantable: true,
+  },
+  {
     code: "request_client_documentation",
     label: "Solicitar documentación a clientes",
     description:

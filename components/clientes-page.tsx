@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ClienteCompany, ClientesPageData } from "@/app/admin/clientes/actions";
@@ -152,16 +152,116 @@ function FilterPill({
   );
 }
 
+// ---- Filter dropdown (multi-select con checkboxes) ----
+function FilterDropdown({
+  label,
+  options,
+  selected,
+  onToggle,
+  onClear,
+}: {
+  label: string;
+  options: { id: string; name: string }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const count = selected.length;
+  const active = count > 0;
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all cursor-pointer whitespace-nowrap ${
+          active
+            ? "bg-brand-navy text-white border-brand-navy"
+            : "bg-white text-text-muted border-gray-200 hover:border-gray-300 hover:text-text-body"
+        }`}
+      >
+        <span>{label}</span>
+        {active && (
+          <span
+            className={`inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full text-[10px] font-semibold tabular-nums ${
+              active ? "bg-white/20 text-white" : "bg-gray-100 text-text-muted"
+            }`}
+          >
+            {count}
+          </span>
+        )}
+        <svg
+          className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 mt-2 z-30 w-64 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+          <div className="max-h-72 overflow-y-auto py-1">
+            {options.length === 0 ? (
+              <p className="px-3 py-2 text-xs text-text-muted italic">Sin opciones</p>
+            ) : (
+              options.map((opt) => {
+                const checked = selected.includes(opt.id);
+                return (
+                  <label
+                    key={opt.id}
+                    className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggle(opt.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-brand-teal focus:ring-brand-teal/30 cursor-pointer"
+                    />
+                    <span className="text-sm text-text-body truncate">{opt.name}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+          {active && (
+            <div className="border-t border-gray-100 px-3 py-2">
+              <button
+                onClick={onClear}
+                className="text-xs text-text-muted hover:text-text-body cursor-pointer underline underline-offset-2"
+              >
+                Limpiar selección
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- Main Component ----
 export default function ClientesPage({
   data,
   linkPrefix,
-  canViewDashboard,
   canViewTaxModels,
 }: {
   data: ClientesPageData;
   linkPrefix: string;
-  canViewDashboard: boolean;
   canViewTaxModels: boolean;
 }) {
   const router = useRouter();
@@ -251,49 +351,43 @@ export default function ClientesPage({
   return (
     <div className="min-h-full px-8">
       <div className="max-w-screen-2xl">
-        <div className="sticky top-0 bg-surface-gray z-20 pt-12 pb-4 border-b border-gray-200 space-y-4">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4">
+        <div className="sticky top-0 bg-surface-gray z-20 pt-6 pb-3 border-b border-gray-200 space-y-3">
+          {/* Header compacto: subtítulo + título + acciones a la derecha en línea */}
+          <div className="flex items-end justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
-              <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">Clientes</h1>
+              <p className="text-brand-teal text-xs font-medium leading-none mb-1">Portal de empleados</p>
+              <h1 className="text-2xl font-bold font-heading text-brand-navy tracking-tight leading-none">
+                Clientes
+              </h1>
             </div>
-            {(data.canCreateCompany ||
-              (data.canCreateCompany &&
-                data.canManageClientAccounts &&
-                data.canRequestDocumentation)) && (
-              <div className="mt-2 flex flex-col items-stretch gap-1.5 w-44">
-                {data.canCreateCompany && (
-                  <button
-                    onClick={() => setCreatingCompany(true)}
-                    className="inline-flex items-center justify-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
+            {data.canCreateCompany && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCreatingCompany(true)}
+                  className="inline-flex items-center justify-center gap-1.5 bg-brand-teal text-white text-sm font-medium px-3.5 py-1.5 rounded-lg hover:bg-brand-teal/90 transition-colors cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Nuevo cliente
+                </button>
+                {data.canManageClientAccounts && data.canRequestDocumentation && (
+                  <Link
+                    href={`${linkPrefix}/clientes/onboarding`}
+                    className="inline-flex items-center justify-center gap-1.5 bg-amber-300 text-brand-navy text-sm font-medium px-3.5 py-1.5 rounded-lg ring-1 ring-amber-400/40 shadow-sm hover:bg-amber-200 hover:shadow transition-all cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    Nuevo cliente
-                  </button>
+                    Nuevo onboarding
+                  </Link>
                 )}
-                {data.canCreateCompany &&
-                  data.canManageClientAccounts &&
-                  data.canRequestDocumentation && (
-                    <Link
-                      href={`${linkPrefix}/clientes/onboarding`}
-                      className="inline-flex items-center justify-center gap-1.5 bg-amber-300 text-brand-navy text-sm font-medium px-4 py-2 rounded-lg ring-1 ring-amber-400/40 shadow-sm hover:bg-amber-200 hover:shadow transition-all cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      Nuevo onboarding
-                    </Link>
-                  )}
               </div>
             )}
           </div>
 
-          {/* Search + filters */}
-          <div className="space-y-3">
-          <div className="flex items-center gap-3 flex-wrap">
+          {/* Search + filters en una sola fila */}
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Search */}
             <div className="relative flex-1 min-w-[240px] max-w-sm">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -305,7 +399,7 @@ export default function ClientesPage({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar empresa o CIF..."
-                className="w-full text-sm border border-gray-200 rounded-lg pl-9 pr-8 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal bg-white"
+                className="w-full text-sm border border-gray-200 rounded-lg pl-9 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal bg-white"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
@@ -314,69 +408,56 @@ export default function ClientesPage({
               )}
             </div>
 
-            {/* Result count: solo cuenta empresas activas */}
-            <p className="text-sm text-text-muted">
-              {search.trim() || hasFilters
-                ? `${filtered.filter((c) => !c.deleted_at).length} de ${activeCount}`
-                : `${activeCount} ${activeCount === 1 ? "cliente" : "clientes"}`}
-            </p>
-
-            {/* Clear filters */}
-            {(hasFilters || search) && (
-              <button
-                onClick={() => { setSearch(""); setSelectedDepts([]); setSelectedServices([]); setAssignedOnly(false); }}
-                className="text-xs text-text-muted hover:text-text-body cursor-pointer underline underline-offset-2"
-              >
-                Limpiar filtros
-              </button>
-            )}
-          </div>
-
-          {/* Filter pills */}
-          <div className="space-y-2">
-            {hasAssignedCompanies && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <FilterPill
-                  label="Mis clientes"
-                  active={assignedOnly}
-                  onClick={() => setAssignedOnly((v) => !v)}
-                />
-              </div>
-            )}
-
+            {/* Filtros como dropdown */}
             {data.departments.length > 1 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-text-muted font-medium w-24 shrink-0">Departamentos</span>
-                {data.departments.map((d) => (
-                  <FilterPill
-                    key={d.id}
-                    label={d.name}
-                    active={selectedDepts.includes(d.id)}
-                    onClick={() => toggleDept(d.id)}
-                  />
-                ))}
-              </div>
+              <FilterDropdown
+                label="Departamentos"
+                options={data.departments.map((d) => ({ id: d.id, name: d.name }))}
+                selected={selectedDepts}
+                onToggle={toggleDept}
+                onClear={() => setSelectedDepts([])}
+              />
             )}
 
             {allServices.length > 1 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-text-muted font-medium w-24 shrink-0">Servicios</span>
-                {allServices.map((s) => (
-                  <FilterPill
-                    key={s.id}
-                    label={s.name}
-                    active={selectedServices.includes(s.id)}
-                    onClick={() => toggleService(s.id)}
-                  />
-                ))}
-              </div>
+              <FilterDropdown
+                label="Servicios"
+                options={allServices}
+                selected={selectedServices}
+                onToggle={toggleService}
+                onClear={() => setSelectedServices([])}
+              />
             )}
+
+            {hasAssignedCompanies && (
+              <FilterPill
+                label="Mis clientes"
+                active={assignedOnly}
+                onClick={() => setAssignedOnly((v) => !v)}
+              />
+            )}
+
+            {/* Result count + clear: empujados a la derecha */}
+            <div className="ml-auto flex items-center gap-3">
+              <p className="text-sm text-text-muted">
+                {search.trim() || hasFilters
+                  ? `${filtered.filter((c) => !c.deleted_at).length} de ${activeCount}`
+                  : `${activeCount} ${activeCount === 1 ? "cliente" : "clientes"}`}
+              </p>
+              {(hasFilters || search) && (
+                <button
+                  onClick={() => { setSearch(""); setSelectedDepts([]); setSelectedServices([]); setAssignedOnly(false); }}
+                  className="text-xs text-text-muted hover:text-text-body cursor-pointer underline underline-offset-2"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Grid */}
-        <div className="pt-6 pb-12">
+        <div className="pt-4 pb-12">
           {companies.length === 0 ? (
             <p className="text-sm text-text-muted italic">Sin clientes</p>
           ) : filtered.length === 0 ? (
@@ -409,7 +490,6 @@ export default function ClientesPage({
         <ClientDetailPanel
           company={selectedCompany}
           linkPrefix={linkPrefix}
-          canViewDashboard={canViewDashboard}
           canViewTaxModels={canViewTaxModels}
           onClose={() => setSelectedCompany(null)}
         />

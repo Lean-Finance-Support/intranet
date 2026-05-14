@@ -49,7 +49,24 @@ export interface DepartmentServiceWithDetails extends DepartmentService {
 }
 
 export const SERVICE_SLUGS = {
-  TAX_MODELS: "tax-models",
+  /**
+   * Servicio padre que desbloquea las secciones "Modelos fiscales" y
+   * "Dashboard fiscal" para el cliente.
+   */
+  TAX_ACCOUNTING_ADVICE: "asesoramiento-fiscal-y-contable",
 } as const;
 
 export type ServiceSlug = (typeof SERVICE_SLUGS)[keyof typeof SERVICE_SLUGS];
+
+// Slugs referenciados desde código (gates de sidebar, OAuth dashboard, etc.).
+// La UI del catálogo bloquea editar el slug de estos servicios.
+export const LOAD_BEARING_SERVICE_SLUGS: ReadonlySet<string> = new Set([
+  SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE,
+]);
+
+export interface ServiceCatalogItem extends Service {
+  department_ids: string[];
+  department_names: string[];
+  company_count: number;
+  is_load_bearing: boolean;
+}

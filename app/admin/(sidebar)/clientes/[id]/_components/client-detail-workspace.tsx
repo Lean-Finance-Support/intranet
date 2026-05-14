@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type {
   ClienteCompany,
@@ -26,7 +25,12 @@ import {
   createClientAccount,
   updateClientAccount,
   unlinkClientFromCompany,
+  listTeamMemberCandidates,
+  addTeamMemberToCompany,
+  removeTeamMemberFromCompany,
+  type TeamMemberCandidate,
 } from "@/app/admin/clientes/actions";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 import type {
   BlockTemplate,
   ClientDocumentation,
@@ -62,8 +66,6 @@ import {
   AddClientAccountForm,
 } from "@/components/client-detail-panel";
 import DocumentationMasterDetail from "@/components/documentation/documentation-master-detail";
-import ResponsibleTeamSection from "@/components/clients/responsible-team-section";
-import ServiceDetailSection from "@/components/clients/service-detail-section";
 import ConfirmDialog from "@/components/confirm-dialog";
 import dynamic from "next/dynamic";
 
@@ -76,11 +78,27 @@ const DeleteCompanyModal = dynamic(
 const AddBlockModal = dynamic(() => import("./add-block-modal"), { ssr: false });
 const AddApartadoModal = dynamic(() => import("./add-apartado-modal"), { ssr: false });
 
+// Secciones de tabs distintas a la default ("documentacion"). El usuario solo
+// las ve al hacer clic en la pestaña correspondiente; postergamos su JS para
+// recortar el bundle inicial del workspace (1.3k líneas de host + estas
+// secciones suman ~900 líneas extra).
+const ResponsibleTeamSection = dynamic(
+  () => import("@/components/clients/responsible-team-section"),
+);
+const ServiceDetailSection = dynamic(
+  () => import("@/components/clients/service-detail-section"),
+);
+const DashboardSheetPanel = dynamic(
+  () => import("@/components/clients/dashboard-sheet-panel"),
+);
+
 interface Props {
   detail: CompanyDetailInfo;
   company: ClienteCompany;
   userChiefDeptIds: string[];
   deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  departments: { id: string; name: string }[];
+  allAdminCandidates: DeptMemberSlim[];
   chiefAvailableServices: {
     service_id: string;
     service_name: string;
@@ -110,12 +128,20 @@ interface Props {
   canViewClientTaxModels: boolean;
 }
 
-type TabKey = "documentacion" | "equipo" | "servicios" | "datos";
+type TabKey =
+  | "documentacion"
+  | "equipo"
+  | "servicios"
+  | "aplicaciones"
+  | "informes"
+  | "datos";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "documentacion", label: "Documentación" },
   { key: "equipo", label: "Equipo responsable" },
   { key: "servicios", label: "Servicios contratados" },
+  { key: "aplicaciones", label: "Aplicaciones" },
+  { key: "informes", label: "Informes / Formularios" },
   { key: "datos", label: "Datos" },
 ];
 
@@ -127,6 +153,55 @@ function resolveInitialTab(raw: string): TabKey {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+/**
+ * Construye los grupos de candidatos a técnico que renderiza el selector
+ * agrupado por departamento de `ServiceDetailSection`.
+ *
+ * - Servicio con dpto: 1 grupo (los miembros del dpto del servicio).
+ * - Servicio transversal: N grupos (todos los dpts con miembros + grupo "Sin
+ *   departamento" para admins que no pertenecen a ningún dpto).
+ */
+function buildMemberGroups(args: {
+  isTransversal: boolean;
+  svcDeptId: string;
+  deptMembers: { [deptId: string]: DeptMemberSlim[] };
+  departments: { id: string; name: string }[];
+  allAdminCandidates: DeptMemberSlim[];
+}): { dept_id: string; dept_name: string; members: DeptMemberSlim[] }[] {
+  if (!args.isTransversal) {
+    const dept = args.departments.find((d) => d.id === args.svcDeptId);
+    return [
+      {
+        dept_id: args.svcDeptId,
+        dept_name: dept?.name ?? "Departamento",
+        members: args.deptMembers[args.svcDeptId] ?? [],
+      },
+    ];
+  }
+  const groups = args.departments
+    .map((d) => ({
+      dept_id: d.id,
+      dept_name: d.name,
+      members: args.deptMembers[d.id] ?? [],
+    }))
+    .filter((g) => g.members.length > 0);
+  // Admins que no pertenecen a ningún dpto → grupo "Sin departamento".
+  const deptMembersFlat = new Set(
+    Object.values(args.deptMembers).flat().map((m) => m.id)
+  );
+  const noDeptAdmins = args.allAdminCandidates.filter(
+    (m) => !deptMembersFlat.has(m.id)
+  );
+  if (noDeptAdmins.length > 0) {
+    groups.push({
+      dept_id: "__no_dept__",
+      dept_name: "Sin departamento",
+      members: noDeptAdmins,
+    });
+  }
+  return groups;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -147,6 +222,8 @@ export default function ClientDetailWorkspace({
   company: initialCompany,
   userChiefDeptIds,
   deptMembers,
+  departments,
+  allAdminCandidates,
   chiefAvailableServices,
   canCreateCompany,
   canDeleteCompany,
@@ -168,6 +245,10 @@ export default function ClientDetailWorkspace({
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(resolveInitialTab(initialTab));
   const [company, setCompany] = useState(initialCompany);
+  // Sincroniza el estado local con los nuevos datos del server tras
+  // router.refresh(). Esto refleja, p.ej., los técnicos auto-asignados a un
+  // servicio recién contratado sin necesidad de recargar manualmente.
+  useEffect(() => setCompany(initialCompany), [initialCompany]);
   const [addingBlock, setAddingBlock] = useState(false);
   const [addingApartado, setAddingApartado] = useState<{
     clientBlockId: string;
@@ -178,6 +259,166 @@ export default function ClientDetailWorkspace({
   const [addingService, setAddingService] = useState(false);
   const [savingService, setSavingService] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
+
+  // Equipo responsable — candidatos para añadir (cargados on-demand cuando se
+  // abre el tab equipo). Además recibimos los dpts donde el actor puede
+  // gestionar (write_dept_service), que la UI usa para mostrar/ocultar la X
+  // en cada miembro según su dpto.
+  const [teamData, setTeamData] = useState<{
+    candidates: TeamMemberCandidate[];
+    manageableDeptIds: string[];
+  } | null>(null);
+  const [teamCandidatesLoading, setTeamCandidatesLoading] = useState(false);
+  useEffect(() => {
+    if (tab !== "equipo") return;
+    if (teamData !== null) return;
+    let cancelled = false;
+    setTeamCandidatesLoading(true);
+    listTeamMemberCandidates(company.id)
+      .then((rows) => {
+        if (!cancelled) setTeamData(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setTeamData({ candidates: [], manageableDeptIds: [] });
+      })
+      .finally(() => {
+        if (!cancelled) setTeamCandidatesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, teamData, company.id]);
+  async function refreshTeamCandidates() {
+    try {
+      const rows = await listTeamMemberCandidates(company.id);
+      setTeamData(rows);
+    } catch {
+      setTeamData({ candidates: [], manageableDeptIds: [] });
+    }
+  }
+
+  // State local del equipo para reflejar los add/remove al instante. Se
+  // re-sincroniza con la prop tras router.refresh().
+  const [localTeam, setLocalTeam] = useState<ResponsibleTeam>(responsibleTeam);
+  useEffect(() => setLocalTeam(responsibleTeam), [responsibleTeam]);
+
+  async function handleAddTeamMember(profileId: string) {
+    const candidate = teamData?.candidates.find((c) => c.profile_id === profileId);
+    const manageable = teamData?.manageableDeptIds ?? [];
+    if (!candidate) {
+      // Fallback: sin candidato local, vamos por el camino lento.
+      await addTeamMemberToCompany(company.id, profileId);
+      router.refresh();
+      await refreshTeamCandidates();
+      return;
+    }
+
+    const targetDeptIds = candidate.department_ids.filter((d) =>
+      manageable.includes(d)
+    );
+    if (targetDeptIds.length === 0) {
+      throw new Error("No tienes permiso para añadir empleados de este departamento.");
+    }
+
+    const teamSnapshot = localTeam;
+    const candidatesSnapshot = teamData;
+
+    // Optimistic: insertar el miembro en cada dpt afectado. Si el dpt no
+    // estaba en `byDepartment` (porque no había nadie en él), lo creamos —
+    // con tal de que la empresa tenga al menos un servicio en ese dpt
+    // (de lo contrario el empleado no será técnico y no entra al equipo;
+    // los supervisores por sí solos no cuentan).
+    setLocalTeam((prev) => {
+      const existingDeptIds = new Set(prev.byDepartment.map((d) => d.department_id));
+      const buildMember = (deptId: string) => {
+        const techServices = company.services.filter((s) => s.department_id === deptId);
+        const willBeSupervisor = docState.blocks.some((b) =>
+          b.apartados.some(
+            (a) => a.is_global || a.department_ids.includes(deptId)
+          )
+        );
+        return {
+          profile_id: profileId,
+          full_name: candidate.full_name,
+          email: candidate.email,
+          is_chief: false,
+          is_technician: techServices.length > 0,
+          is_supervisor: willBeSupervisor,
+          technician_services: techServices.map((s) => ({
+            service_id: s.service_id,
+            service_name: s.service_name,
+          })),
+        };
+      };
+
+      const updated = prev.byDepartment.map((dept) => {
+        if (!targetDeptIds.includes(dept.department_id)) return dept;
+        if (dept.members.some((m) => m.profile_id === profileId)) return dept;
+        return { ...dept, members: [...dept.members, buildMember(dept.department_id)] };
+      });
+
+      // Crear dpts que no existían pero tienen al menos un servicio contratado.
+      for (const did of targetDeptIds) {
+        if (existingDeptIds.has(did)) continue;
+        const svcInDept = company.services.find((s) => s.department_id === did);
+        if (!svcInDept) continue;
+        updated.push({
+          department_id: did,
+          department_name: svcInDept.department_name,
+          members: [buildMember(did)],
+        });
+      }
+
+      return { byDepartment: updated };
+    });
+    setTeamData((prev) =>
+      prev
+        ? { ...prev, candidates: prev.candidates.filter((c) => c.profile_id !== profileId) }
+        : prev
+    );
+
+    try {
+      await addTeamMemberToCompany(company.id, profileId);
+      router.refresh();
+    } catch (e) {
+      setLocalTeam(teamSnapshot);
+      setTeamData(candidatesSnapshot);
+      throw e;
+    }
+  }
+
+  async function handleRemoveTeamMember(profileId: string) {
+    const manageable = teamData?.manageableDeptIds ?? [];
+    if (manageable.length === 0) return;
+
+    const teamSnapshot = localTeam;
+
+    // Optimistic: quitar el miembro de los dpts donde el actor tiene permiso.
+    // Si un dpt se queda vacío tras el filtrado, lo descartamos (igual que la
+    // query del server, que solo devuelve dpts con al menos un técnico).
+    setLocalTeam((prev) => ({
+      byDepartment: prev.byDepartment
+        .map((dept) =>
+          manageable.includes(dept.department_id)
+            ? {
+                ...dept,
+                members: dept.members.filter((m) => m.profile_id !== profileId),
+              }
+            : dept
+        )
+        .filter((dept) => dept.members.length > 0),
+    }));
+
+    try {
+      await removeTeamMemberFromCompany(company.id, profileId);
+      router.refresh();
+      // Repuebla los candidatos en background (el quitado vuelve a ser elegible).
+      void refreshTeamCandidates();
+    } catch (e) {
+      setLocalTeam(teamSnapshot);
+      throw e;
+    }
+  }
 
   // Danger zone state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -208,6 +449,17 @@ export default function ClientDetailWorkspace({
   const availableToAdd = chiefAvailableServices.filter(
     (s) => !existingServiceIds.has(s.service_id)
   );
+
+  // Features desbloqueadas por el servicio padre "Asesoramiento fiscal y contable":
+  // Modelos fiscales y Dashboard fiscal.
+  const taxAdviceService = company.services.find(
+    (s) => s.service_slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE
+  );
+  const hasTaxAccountingAdvice = !!taxAdviceService;
+  const canEditDashboardSheet =
+    canEditCompany &&
+    !!taxAdviceService?.department_id &&
+    userChiefDeptIds.includes(taxAdviceService.department_id);
 
   const supervisorApartadoSet = new Set(supervisorClientApartadoIds);
   function resolveCanValidate(apartado: ClientApartado): boolean {
@@ -402,7 +654,12 @@ export default function ClientDetailWorkspace({
   async function handleAssignTech(serviceId: string, techId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
-    const member = deptMembers[svc.department_id]?.find((m) => m.id === techId);
+    // Buscar nombre en cualquier dpto o en allAdminCandidates.
+    const member =
+      Object.values(deptMembers)
+        .flat()
+        .find((m) => m.id === techId) ??
+      allAdminCandidates.find((m) => m.id === techId);
     setCompany((prev) => ({
       ...prev,
       services: prev.services.map((s) =>
@@ -429,6 +686,9 @@ export default function ClientDetailWorkspace({
   async function handleAssignAll(serviceId: string) {
     const svc = company.services.find((s) => s.service_id === serviceId);
     if (!svc) return;
+    // Para servicios transversales no hay "asignar todos" — la pool sería
+    // todos los admins, raramente deseable. Ignoramos el caso.
+    if (!svc.department_id) return;
     const members = deptMembers[svc.department_id] ?? [];
     const existingIds = new Set(svc.technicians.map((t) => t.id));
     const toAdd = members.filter((m) => !existingIds.has(m.id));
@@ -457,37 +717,12 @@ export default function ClientDetailWorkspace({
 
   return (
     <div className="animate-fade-in-up">
-      {/* Sticky header + tabs */}
-      <div className="sticky top-0 z-20 bg-surface-gray pt-4 pb-0 -mt-4">
-        {/* Breadcrumb */}
-        <nav className="text-xs text-text-muted mb-3 flex items-center gap-1.5">
-          <Link href={`${linkPrefix}/clientes`} className="hover:text-text-body cursor-pointer">
-            Clientes
-          </Link>
-          <span>/</span>
-          <span className="text-text-body font-medium truncate">{detail.legal_name}</span>
-        </nav>
-
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
-            {detail.legal_name}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-text-muted">
-            {company.company_name && (
-              <span className="text-text-body">{company.company_name}</span>
-            )}
-            {detail.nif && <span className="font-mono">{detail.nif}</span>}
-            {isDeleted && (
-              <span className="inline-flex items-center gap-1 text-[11px] bg-gray-200 text-text-muted px-2 py-0.5 rounded-full font-medium">
-                Empresa eliminada
-              </span>
-            )}
-          </div>
-        </div>
-
+      {/* Sticky tabs. La cabecera (breadcrumb + h1 + NIF) la pinta la page
+          como shell instantáneo (ClientHeaderShell) — no la repetimos aquí
+          para evitar el doble header al llegar el workspace via streaming. */}
+      <div className="sticky top-0 z-20 bg-surface-gray pt-2 pb-0">
         {/* Tabs */}
-        <div className="mt-4 border-b border-gray-200 flex items-center gap-4 flex-wrap">
+        <div className="border-b border-gray-200 flex items-center gap-4 flex-wrap">
           {TABS.map((t) => {
             const active = t.key === tab;
             return (
@@ -596,7 +831,18 @@ export default function ClientDetailWorkspace({
 
       {/* ── Equipo responsable ── */}
       {tab === "equipo" && (
-        <ResponsibleTeamSection team={responsibleTeam} variant="expanded" />
+        <ResponsibleTeamSection
+          team={localTeam}
+          variant="expanded"
+          loading={teamCandidatesLoading && teamData === null}
+          manage={{
+            canManage: (teamData?.manageableDeptIds.length ?? 0) > 0,
+            candidates: teamData?.candidates ?? [],
+            manageableDeptIds: teamData?.manageableDeptIds ?? [],
+            onAdd: handleAddTeamMember,
+            onRemove: handleRemoveTeamMember,
+          }}
+        />
       )}
 
       {/* ── Datos (incluye cuentas asociadas y cuentas bancarias) ── */}
@@ -871,7 +1117,7 @@ export default function ClientDetailWorkspace({
             <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
               Servicios contratados
             </p>
-            {canEditCompany && isChiefOfAny && availableToAdd.length > 0 && !addingService && (
+            {canEditCompany && availableToAdd.length > 0 && !addingService && (
               <button
                 onClick={() => setAddingService(true)}
                 className="text-xs text-brand-teal hover:text-brand-teal/80 font-medium flex items-center gap-1 cursor-pointer"
@@ -909,29 +1155,128 @@ export default function ClientDetailWorkspace({
             <p className="text-sm text-text-muted italic">Sin servicios contratados</p>
           ) : (
             <div className="space-y-2">
-              {company.services.map((svc) => {
-                const isChiefOfDept = canEditCompany && userChiefDeptIds.includes(svc.department_id);
-                const members = deptMembers[svc.department_id] ?? [];
+              {company.services.map((svc): React.ReactNode => {
+                const isTransversal = !svc.department_id;
+                // Para servicios transversales, basta con tener
+                // write_dept_service en algún dpto (= ser chief de algo).
+                const isChiefOfDept = canEditCompany && (
+                  isTransversal
+                    ? userChiefDeptIds.length > 0
+                    : userChiefDeptIds.includes(svc.department_id)
+                );
+                const memberGroups = buildMemberGroups({
+                  isTransversal,
+                  svcDeptId: svc.department_id,
+                  deptMembers,
+                  departments,
+                  allAdminCandidates,
+                });
                 return (
                   <ServiceDetailSection
                     key={svc.service_id}
                     service={svc}
                     isChiefOfDept={isChiefOfDept}
-                    members={members}
-                    linkPrefix={linkPrefix}
+                    memberGroups={memberGroups}
+                    hideAssignAll={isTransversal}
                     companyId={company.id}
                     onAssign={handleAssignTech}
                     onRemove={handleRemoveTech}
                     onRemoveService={handleRemoveService}
                     onAssignAll={handleAssignAll}
-                    dashboardConfig={svc.service_slug === "dashboard" ? dashboardConfig : null}
-                    dashboardAuthorizedEmail={dashboardAuthorizedEmail}
-                    canViewClientDashboard={canViewClientDashboard}
-                    canViewClientTaxModels={canViewClientTaxModels}
                   />
                 );
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Aplicaciones ── */}
+      {tab === "aplicaciones" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Aplicaciones disponibles
+          </p>
+          <p className="text-xs text-text-muted">
+            Donde cliente y equipo trabajan juntos.
+          </p>
+
+          {hasTaxAccountingAdvice && canViewClientTaxModels ? (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              title="Modelos fiscales"
+              description="Tramitación trimestral de modelos."
+              unlockedBy="Asesoramiento fiscal y contable"
+              href={`${linkPrefix}/modelos?company=${company.id}`}
+              ctaLabel="Abrir modelos"
+            />
+          ) : hasTaxAccountingAdvice ? (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              title="Modelos fiscales"
+              description="Tramitación trimestral de modelos."
+              unlockedBy="Asesoramiento fiscal y contable"
+              noAccessHint="Sin permiso para acceder."
+            />
+          ) : (
+            <EmptyFeaturesState
+              message="Esta empresa todavía no tiene aplicaciones desbloqueadas."
+              hint="Contrata 'Asesoramiento fiscal y contable' para habilitar Modelos fiscales."
+            />
+          )}
+        </div>
+      )}
+
+      {/* ── Informes / Formularios ── */}
+      {tab === "informes" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Informes y formularios
+          </p>
+          <p className="text-xs text-text-muted">
+            Para consultar o rellenar una vez.
+          </p>
+
+          {hasTaxAccountingAdvice ? (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5V21a.5.5 0 00.5.5h6V13.5H3zM10.5 21.5h10a.5.5 0 00.5-.5v-7.5h-10.5V21.5zM3 12h18V3.5a.5.5 0 00-.5-.5h-17a.5.5 0 00-.5.5V12z" />
+                </svg>
+              }
+              title="Dashboard fiscal"
+              description="Ventas, compras y bancos al día."
+              unlockedBy="Asesoramiento fiscal y contable"
+              href={canViewClientDashboard ? `${linkPrefix}/clientes/${company.id}/dashboard` : undefined}
+              ctaLabel={canViewClientDashboard ? "Abrir dashboard" : undefined}
+              noAccessHint={!canViewClientDashboard ? "Sin permiso para acceder a esta vista del cliente." : undefined}
+              extra={
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-2">
+                    Configuración del Sheet
+                  </p>
+                  <DashboardSheetPanel
+                    companyId={company.id}
+                    initialConfig={dashboardConfig}
+                    authorizedEmail={dashboardAuthorizedEmail}
+                    canEdit={canEditDashboardSheet}
+                  />
+                </div>
+              }
+            />
+          ) : (
+            <EmptyFeaturesState
+              message="Esta empresa todavía no tiene informes desbloqueados."
+              hint="Contrata 'Asesoramiento fiscal y contable' para habilitar el Dashboard fiscal."
+            />
           )}
         </div>
       )}
@@ -1018,6 +1363,78 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
     <div>
       <p className="text-xs text-text-muted">{label}</p>
       <p className={`text-sm font-medium text-text-body mt-0.5 ${mono ? "font-mono" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+  unlockedBy,
+  href,
+  ctaLabel,
+  noAccessHint,
+  extra,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  unlockedBy: string;
+  href?: string;
+  ctaLabel?: string;
+  /** Texto que reemplaza al CTA cuando el actor no tiene permiso. */
+  noAccessHint?: string;
+  /** Contenido extra que se renderiza dentro del mismo box, debajo del header. */
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-100 p-4 hover:border-brand-teal/40 transition-colors">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center">
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-brand-navy">{title}</h4>
+          <p className="text-xs text-text-muted mt-0.5">{description}</p>
+          <p className="text-[11px] text-text-muted/80 mt-1.5">
+            Desbloqueada por{" "}
+            <span className="font-medium text-text-muted">{unlockedBy}</span>
+          </p>
+          {noAccessHint && (
+            <p className="text-[11px] text-text-muted/80 italic mt-1">
+              {noAccessHint}
+            </p>
+          )}
+        </div>
+        {href && ctaLabel && (
+          <a
+            href={href}
+            className="flex-shrink-0 self-center inline-flex items-center gap-1.5 text-xs font-medium bg-brand-teal text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            {ctaLabel}
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        )}
+      </div>
+      {extra}
+    </div>
+  );
+}
+
+function EmptyFeaturesState({
+  message,
+  hint,
+}: {
+  message: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center">
+      <p className="text-sm text-text-muted">{message}</p>
+      <p className="text-xs text-text-muted/80 mt-1">{hint}</p>
     </div>
   );
 }

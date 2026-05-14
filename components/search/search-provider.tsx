@@ -1,8 +1,13 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import type { SearchContext as SearchCtx } from "@/lib/search/types";
-import SearchPalette from "./search-palette";
+
+// SearchPalette se carga solo cuando el usuario abre la paleta (Cmd/Ctrl+K
+// o botón). Antes su JS se bundleaba aunque nunca se usara, en todos los
+// layouts (admin + app).
+const SearchPalette = dynamic(() => import("./search-palette"), { ssr: false });
 
 interface SearchControl {
   open: boolean;

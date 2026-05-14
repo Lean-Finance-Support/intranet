@@ -12,6 +12,7 @@ import {
   getCachedUserServiceDepts,
   getCachedDepartmentServiceSlugs,
 } from "@/lib/cached-queries";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 export default async function AdminSidebarLayout({
   children,
 }: {
@@ -44,7 +45,7 @@ export default async function AdminSidebarLayout({
 
   const deptIds = departments.map((d) => d.id);
   const slugs = deptIds.length > 0 ? await getCachedDepartmentServiceSlugs(deptIds) : [];
-  const hasTaxModels = slugs.includes("tax-models");
+  const hasTaxModels = slugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
   // Onboarding requiere los 3 permisos globales (ver CLAUDE.md sección "Onboarding").
   const canCreateOnboarding =
     canCreateCompany && canManageClientAccounts && canRequestDocumentation;

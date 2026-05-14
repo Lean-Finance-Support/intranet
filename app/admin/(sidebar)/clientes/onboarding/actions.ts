@@ -32,8 +32,18 @@ export interface OnboardingDepartment {
   chief_id: string | null;
 }
 
+export interface OnboardingServiceItem {
+  id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+  department_ids: string[];
+  department_names: string[];
+}
+
 export interface OnboardingPageData {
   departments: OnboardingDepartment[];
+  services: OnboardingServiceItem[];
   blocks: BlockTemplate[];
   tags: DocumentationTag[];
   canCreate: boolean;
@@ -67,8 +77,13 @@ export interface OnboardingFinalizeInput {
   nif: string;
   bank_accounts: OnboardingBankAccount[];
   client_accounts: OnboardingClientAccount[];
-  // Paso 2
-  department_ids: string[];
+  // Paso 2 — Equipo responsable
+  // Servicios contratados (resuelven los departamentos derivados vía department_services).
+  service_ids: string[];
+  // Equipo responsable agrupado por dpto derivado.
+  // El miembro se persiste como Técnico de todos los servicios del dpto contratados
+  // y como Supervisor de los apartados del cliente vinculados al dpto.
+  team_by_dept: Record<string, string[]>;
   // Paso 3 (resumen final tras edición)
   apartados: OnboardingApartadoPlan[];
 }
@@ -102,6 +117,8 @@ export async function getOnboardingData(): Promise<OnboardingPageData> {
     { data: tagRows },
     { data: apartadoTagLinks },
     { data: rolesCatalog },
+    { data: servicesRows },
+    { data: deptServicesLinks },
     canCreate,
     canManageBankAccounts,
     canManageClientAccounts,
@@ -134,6 +151,16 @@ export async function getOnboardingData(): Promise<OnboardingPageData> {
       .order("name"),
     admin.schema("documentation").from("apartado_tags").select("apartado_id, tag_id"),
     admin.from("roles").select("id, name"),
+    admin
+      .from("services")
+      .select("id, name, slug, display_order")
+      .eq("is_active", true)
+      .order("display_order")
+      .order("name"),
+    admin
+      .from("department_services")
+      .select("service_id, department_id")
+      .eq("is_active", true),
     hasPermission("create_company"),
     hasPermission("manage_bank_accounts"),
     hasPermission("manage_client_accounts"),
@@ -186,6 +213,29 @@ export async function getOnboardingData(): Promise<OnboardingPageData> {
     ),
     chief_id: chiefByDept.get(d.id as string) ?? null,
   }));
+
+  // Servicios + sus dpts derivados (M:N).
+  const deptNameById = new Map<string, string>();
+  for (const d of depts ?? []) deptNameById.set(d.id as string, d.name as string);
+  const deptIdsByService = new Map<string, string[]>();
+  for (const link of deptServicesLinks ?? []) {
+    const sid = link.service_id as string;
+    const list = deptIdsByService.get(sid) ?? [];
+    list.push(link.department_id as string);
+    deptIdsByService.set(sid, list);
+  }
+  const services: OnboardingServiceItem[] = (servicesRows ?? []).map((s) => {
+    const sid = s.id as string;
+    const dids = deptIdsByService.get(sid) ?? [];
+    return {
+      id: sid,
+      name: s.name as string,
+      slug: s.slug as string,
+      display_order: s.display_order as number,
+      department_ids: dids,
+      department_names: dids.map((d) => deptNameById.get(d) ?? "").filter((n) => n),
+    };
+  });
 
   // Blocks + apartados con sus deptos (con is_optional) y tags
   const apartadoDeptMap = new Map<string, ApartadoDepartmentLink[]>();
@@ -245,6 +295,7 @@ export async function getOnboardingData(): Promise<OnboardingPageData> {
 
   return {
     departments,
+    services,
     blocks,
     tags,
     canCreate,
@@ -329,8 +380,8 @@ export async function finalizeOnboarding(
   if (input.client_accounts.length === 0) {
     throw new Error("Debes añadir al menos una cuenta asociada.");
   }
-  if (input.department_ids.length === 0) {
-    throw new Error("Debes seleccionar al menos un departamento.");
+  if (input.service_ids.length === 0) {
+    throw new Error("Debes seleccionar al menos un servicio contratado.");
   }
   for (const ca of input.client_accounts) {
     if (!ca.email.trim()) throw new Error("Hay una cuenta asociada sin email.");
@@ -338,11 +389,11 @@ export async function finalizeOnboarding(
   for (const ba of input.bank_accounts) {
     if (!ba.iban.trim()) throw new Error("Hay una cuenta bancaria sin IBAN.");
   }
-  if (input.apartados.length === 0) {
-    throw new Error("La documentación inicial está vacía.");
-  }
-  // Cada apartado requiere ≥1 supervisor (excepto si la asignación se hace
-  // sin departamento; aquí siempre la requerimos).
+  // Si todos los servicios son transversales (sin dpto), apartados puede salir
+  // vacío — eso es válido (cliente solo recibe documentación global, que se
+  // computa fuera del bucle de dpts). Solo bloqueamos si hay deptos derivados
+  // y aun así no se ha asignado nada.
+  // Cada apartado requiere ≥1 supervisor.
   for (const a of input.apartados) {
     if (a.supervisor_ids.length === 0) {
       throw new Error(
@@ -367,6 +418,87 @@ export async function finalizeOnboarding(
     throw new Error(`No se pudo crear la empresa: ${companyErr?.message ?? "desconocido"}`);
   }
   const companyId = createdCompany.id as string;
+
+  // 1.5. Servicios contratados + asignación de técnicos derivada del equipo
+  //      responsable. Se ejecuta antes de cuentas bancarias para que cualquier
+  //      fallo aquí deje la empresa con servicios ya configurados (recuperable
+  //      desde la ficha si fuera necesario continuar manualmente).
+  const { data: insertedCs, error: csErr } = await admin
+    .from("company_services")
+    .upsert(
+      input.service_ids.map((sid) => ({
+        company_id: companyId,
+        service_id: sid,
+        is_active: true,
+      })),
+      { onConflict: "company_id,service_id" }
+    )
+    .select("id, service_id");
+  if (csErr || !insertedCs) {
+    throw new Error(
+      `Empresa creada (id=${companyId}). Error al añadir servicios: ${csErr?.message ?? "?"}`
+    );
+  }
+  const csIdByServiceId = new Map<string, string>();
+  for (const row of insertedCs) {
+    csIdByServiceId.set(row.service_id as string, row.id as string);
+  }
+
+  // Resolver dpts derivados (active department_services para los services elegidos)
+  // y construir csIds por dpto para asignar técnicos.
+  const { data: derivedLinks } = await admin
+    .from("department_services")
+    .select("service_id, department_id")
+    .in("service_id", input.service_ids)
+    .eq("is_active", true);
+  const derivedDeptIdsSet = new Set<string>();
+  const csIdsByDept = new Map<string, string[]>();
+  for (const link of derivedLinks ?? []) {
+    const did = link.department_id as string;
+    const sid = link.service_id as string;
+    derivedDeptIdsSet.add(did);
+    const csId = csIdByServiceId.get(sid);
+    if (csId) {
+      const list = csIdsByDept.get(did) ?? [];
+      if (!list.includes(csId)) list.push(csId);
+      csIdsByDept.set(did, list);
+    }
+  }
+  const derivedDeptIds = [...derivedDeptIdsSet];
+
+  // Insertar técnicos para cada (miembro del equipo del dpto, company_service.id).
+  // Idempotente — si alguien repite el wizard, no se duplica nada.
+  const tecnicoRoleId = await lookupRoleIdByName(admin, "Técnico");
+  const techRows: {
+    profile_id: string;
+    role_id: string;
+    scope_type: string;
+    scope_id: string;
+  }[] = [];
+  for (const [deptId, memberIds] of Object.entries(input.team_by_dept)) {
+    if (!derivedDeptIdsSet.has(deptId)) continue; // dpto no derivado de servicios contratados → ignorar
+    const csIds = csIdsByDept.get(deptId) ?? [];
+    for (const memberId of memberIds) {
+      for (const csId of csIds) {
+        techRows.push({
+          profile_id: memberId,
+          role_id: tecnicoRoleId,
+          scope_type: "company_service",
+          scope_id: csId,
+        });
+      }
+    }
+  }
+  if (techRows.length > 0) {
+    const { error: techErr } = await admin
+      .from("profile_roles")
+      .upsert(techRows, { onConflict: "profile_id,role_id,scope_type,scope_id", ignoreDuplicates: true });
+    if (techErr) {
+      throw new Error(
+        `Empresa creada (id=${companyId}). Error al asignar técnicos: ${techErr.message}`
+      );
+    }
+  }
 
   // 2. Cuentas bancarias (idempotente; la primera marcada is_default)
   if (input.bank_accounts.length > 0) {
@@ -544,7 +676,7 @@ export async function finalizeOnboarding(
             sent_by_id: user.id,
             to_profile_ids: resolvedClients.map((c) => c.profile_id),
             cc_supervisor_ids: supervisorIds,
-            cc_department_ids: input.department_ids,
+            cc_department_ids: derivedDeptIds,
           },
           headers: { "x-webhook-secret": webhookSecret },
         }
@@ -608,4 +740,22 @@ async function lookupSupervisorRoleId(
   if (error || !data) throw new Error("Rol 'Supervisor de apartado' no encontrado");
   _supervisorRoleId = data.id as string;
   return _supervisorRoleId;
+}
+
+const _roleIdByName = new Map<string, string>();
+async function lookupRoleIdByName(
+  admin: ReturnType<typeof createAdminClient>,
+  name: string
+): Promise<string> {
+  const cached = _roleIdByName.get(name);
+  if (cached) return cached;
+  const { data, error } = await admin
+    .from("roles")
+    .select("id")
+    .eq("name", name)
+    .single();
+  if (error || !data) throw new Error(`Rol '${name}' no encontrado`);
+  const id = data.id as string;
+  _roleIdByName.set(name, id);
+  return id;
 }

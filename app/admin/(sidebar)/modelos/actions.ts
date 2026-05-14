@@ -45,7 +45,7 @@ async function requireServiceAdmin(
 
 async function requireFiscalAdmin() {
   return requireServiceAdmin(
-    SERVICE_SLUGS.TAX_MODELS,
+    SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE,
     "read_dept_service",
     "write_dept_service"
   );
@@ -54,16 +54,16 @@ async function requireFiscalAdmin() {
 export async function getAllCompanies(): Promise<Company[]> {
   const { supabase, user, isChief } = await requireFiscalAdmin();
 
-  // Get the service id for tax-models
+  // Get the service id
   const { data: svc } = await supabase
     .from("services")
     .select("id")
-    .eq("slug", SERVICE_SLUGS.TAX_MODELS)
+    .eq("slug", SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)
     .single();
 
   if (!svc) return [];
 
-  // Get ALL companies with the tax-models service active
+  // Get ALL companies with the service active
   const { data: companyServices } = await supabase
     .from("company_services")
     .select("company_id")

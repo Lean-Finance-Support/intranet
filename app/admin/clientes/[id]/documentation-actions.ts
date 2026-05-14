@@ -66,6 +66,66 @@ async function getApartadoMeta(apartadoId: string): Promise<{
   };
 }
 
+/**
+ * Profile_ids del equipo responsable que deberían supervisar este apartado:
+ *  - Apartado no-global: técnicos del cliente cuyos servicios pertenecen a
+ *    alguno de los dpts del apartado.
+ *  - Apartado global: todos los técnicos del cliente.
+ * El equipo se computa exclusivamente desde técnicos (rol Técnico scope
+ * company_service) — los servicios sin dpto también entran en el cómputo
+ * para apartados globales.
+ */
+async function getTeamSupervisorsForApartado(
+  companyId: string,
+  meta: { is_global: boolean; department_ids: string[] }
+): Promise<string[]> {
+  const admin = createAdminClient();
+  const { data: tecnicoRoleRow } = await admin
+    .from("roles")
+    .select("id")
+    .eq("name", "Técnico")
+    .maybeSingle();
+  const tecnicoRoleId = tecnicoRoleRow?.id as string | undefined;
+  if (!tecnicoRoleId) return [];
+
+  const { data: csRows } = await admin
+    .from("company_services")
+    .select("id, service_id")
+    .eq("company_id", companyId)
+    .eq("is_active", true);
+  if (!csRows || csRows.length === 0) return [];
+
+  let scopeCsIds: string[];
+  if (meta.is_global) {
+    scopeCsIds = csRows.map((cs) => cs.id as string);
+  } else {
+    if (meta.department_ids.length === 0) return [];
+    const serviceIds = csRows.map((cs) => cs.service_id as string);
+    const { data: deptSvcLinks } = await admin
+      .from("department_services")
+      .select("service_id")
+      .in("service_id", serviceIds)
+      .eq("is_active", true)
+      .in("department_id", meta.department_ids);
+    const matching = new Set(
+      (deptSvcLinks ?? []).map((l) => l.service_id as string)
+    );
+    scopeCsIds = csRows
+      .filter((cs) => matching.has(cs.service_id as string))
+      .map((cs) => cs.id as string);
+  }
+  if (scopeCsIds.length === 0) return [];
+
+  const { data: techRoles } = await admin
+    .from("profile_roles")
+    .select("profile_id")
+    .eq("role_id", tecnicoRoleId)
+    .eq("scope_type", "company_service")
+    .in("scope_id", scopeCsIds);
+
+  return [...new Set((techRoles ?? []).map((r) => r.profile_id as string))];
+}
+
 async function logStatusChange(
   clientApartadoId: string,
   fromStatus: ApartadoStatus | null,
@@ -720,14 +780,21 @@ export async function addBlockToClient(input: {
   const { user } = await getAuthUser();
   if (!user) throw new Error("No autenticado");
 
-  // Validar supervisores propuestos: deben pertenecer a algún depto del apartado
+  // Validar supervisores manuales y resolver auto-asignaciones desde el
+  // equipo responsable. La lista final por apartado = union(manuales, team).
   const metaById = new Map<string, { is_global: boolean; department_ids: string[] }>();
+  const finalSupervisorsById = new Map<string, string[]>();
   for (const a of input.apartados) {
     const meta = await getApartadoMeta(a.apartadoId);
     metaById.set(a.apartadoId, meta);
     for (const sid of a.supervisorIds) {
       await ensureProfileInApartadoDept(sid, meta);
     }
+    const teamSupervisors = await getTeamSupervisorsForApartado(input.companyId, meta);
+    finalSupervisorsById.set(
+      a.apartadoId,
+      [...new Set([...a.supervisorIds, ...teamSupervisors])]
+    );
   }
 
   const admin = createAdminClient();
@@ -763,9 +830,9 @@ export async function addBlockToClient(input: {
     const supRows: { profile_id: string; role_id: string; scope_type: string; scope_id: string }[] = [];
     const supervisorRoleId = await getSupervisorRoleId();
     for (const ca of cas ?? []) {
-      const match = input.apartados.find((a) => a.apartadoId === (ca.apartado_id as string));
-      if (!match) continue;
-      for (const sid of match.supervisorIds) {
+      const apartadoId = ca.apartado_id as string;
+      const sids = finalSupervisorsById.get(apartadoId) ?? [];
+      for (const sid of sids) {
         supRows.push({
           profile_id: sid,
           role_id: supervisorRoleId,
@@ -775,7 +842,12 @@ export async function addBlockToClient(input: {
       }
     }
     if (supRows.length > 0) {
-      const { error: supErr } = await admin.from("profile_roles").insert(supRows);
+      const { error: supErr } = await admin
+        .from("profile_roles")
+        .upsert(supRows, {
+          onConflict: "profile_id,role_id,scope_type,scope_id",
+          ignoreDuplicates: true,
+        });
       if (supErr) throw new Error(supErr.message);
     }
   }
@@ -813,6 +885,10 @@ export async function addApartadoToClient(input: {
   for (const sid of input.supervisorIds) {
     await ensureProfileInApartadoDept(sid, meta);
   }
+  // Supervisores finales = union(manuales del input, miembros del equipo
+  // correspondientes al apartado). Global → todos los técnicos del cliente.
+  const teamSupervisors = await getTeamSupervisorsForApartado(input.companyId, meta);
+  const finalSupervisorIds = [...new Set([...input.supervisorIds, ...teamSupervisors])];
 
   const admin = createAdminClient();
   const { data: ca, error } = await admin
@@ -828,15 +904,16 @@ export async function addApartadoToClient(input: {
     .single();
   if (error) throw new Error(error.message);
 
-  if (input.supervisorIds.length > 0) {
+  if (finalSupervisorIds.length > 0) {
     const supervisorRoleId = await getSupervisorRoleId();
-    const { error: supErr } = await admin.from("profile_roles").insert(
-      input.supervisorIds.map((sid) => ({
+    const { error: supErr } = await admin.from("profile_roles").upsert(
+      finalSupervisorIds.map((sid) => ({
         profile_id: sid,
         role_id: supervisorRoleId,
         scope_type: "client_apartado" as const,
         scope_id: ca!.id as string,
-      }))
+      })),
+      { onConflict: "profile_id,role_id,scope_type,scope_id", ignoreDuplicates: true }
     );
     if (supErr) throw new Error(supErr.message);
   }
