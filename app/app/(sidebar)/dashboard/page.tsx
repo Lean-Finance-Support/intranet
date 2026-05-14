@@ -53,7 +53,7 @@ export default async function ClientDashboardPage({ searchParams }: PageProps) {
   const serviceSlugs = resolvedCompanyId
     ? await getCachedCompanyServiceSlugs(resolvedCompanyId)
     : [];
-  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.EXTERNALIZED_ADMIN);
+  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
 
   return (
     <div className="px-8 py-12">

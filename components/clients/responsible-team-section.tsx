@@ -68,7 +68,11 @@ function MemberRow({
   busy?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5 min-w-0">
+    <div
+      className={`flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2.5 min-w-0 transition-opacity ${
+        busy ? "opacity-60" : ""
+      }`}
+    >
       <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold bg-brand-teal/10 text-brand-teal">
         {initials(member)}
       </div>
@@ -78,27 +82,53 @@ function MemberRow({
         </p>
         <p className="text-xs text-text-muted truncate">{member.email}</p>
       </div>
-      {onRemove && (
-        <button
-          onClick={onRemove}
-          disabled={busy}
-          title="Quitar del equipo"
-          className="text-text-muted hover:text-red-500 hover:bg-red-50 cursor-pointer w-7 h-7 inline-flex items-center justify-center rounded-md disabled:opacity-50 flex-shrink-0"
+      {busy ? (
+        <span
+          title="Guardando…"
+          className="w-7 h-7 inline-flex items-center justify-center flex-shrink-0"
         >
           <svg
-            className="w-3.5 h-3.5"
+            className="w-4 h-4 animate-spin text-brand-teal"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
           >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             />
           </svg>
-        </button>
+        </span>
+      ) : (
+        onRemove && (
+          <button
+            onClick={onRemove}
+            title="Quitar del equipo"
+            className="text-text-muted hover:text-red-500 hover:bg-red-50 cursor-pointer w-7 h-7 inline-flex items-center justify-center rounded-md flex-shrink-0"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )
       )}
     </div>
   );
@@ -121,11 +151,15 @@ export default function ResponsibleTeamSection({
 
   async function performAdd(profileId: string) {
     if (!manage) return;
+    // Cerramos el picker antes del await para que la siguiente acción del
+    // usuario no provoque un doble alta. El update optimista del padre ya
+    // refleja el cambio al instante; si falla, el error se muestra en el
+    // bloque inferior.
+    setShowPicker(false);
     setBusyProfileId(profileId);
     setError(null);
     try {
       await manage.onAdd(profileId);
-      setShowPicker(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error inesperado");
     } finally {

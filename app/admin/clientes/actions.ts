@@ -25,7 +25,7 @@ import {
  * Devuelve el department_id o lanza si el servicio no está activo en ninguno.
  * Nota: con el modelo M:N (0..N dpts por servicio) este helper asume que el
  * servicio tiene exactamente 1 dpto — solo se sigue usando para flujos donde
- * esa garantía existe (asesoramiento-fiscal-y-contable, gestion-administrativa-externalizada).
+ * esa garantía existe (asesoramiento-fiscal-y-contable).
  * Para servicios nuevos con 0 o >1 dpts usa `resolveServiceDepartments`.
  */
 async function resolveServiceDepartment(
@@ -1067,7 +1067,7 @@ export async function removeServiceFromCompany(
     .select("slug")
     .eq("id", serviceId)
     .maybeSingle();
-  if (svc?.slug === SERVICE_SLUGS.EXTERNALIZED_ADMIN) {
+  if (svc?.slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE) {
     await supabase
       .schema("dashboard")
       .from("client_dashboards")
@@ -1461,7 +1461,7 @@ async function resolveDashboardServiceDeptId(
   const { data } = await supabase
     .from("services")
     .select("id, department_services!inner(department_id)")
-    .eq("slug", SERVICE_SLUGS.EXTERNALIZED_ADMIN)
+    .eq("slug", SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE)
     .eq("department_services.is_active", true)
     .maybeSingle<{ id: string; department_services: { department_id: string }[] }>();
   const deptId = data?.department_services?.[0]?.department_id;
@@ -2003,6 +2003,9 @@ export async function addTeamMemberToCompany(
   }
 
   invalidateResponsibleTeam(companyId);
+  // Los supervisores asignados arriba viven en el cache de getClientDocumentation;
+  // sin esta invalidación, router.refresh() devuelve docs viejas.
+  updateTag(`doc:client:${companyId}`);
   return {
     added_to_dept_ids: allowedDeptIds,
     tech_count: techRows.length,
@@ -2144,5 +2147,6 @@ export async function removeTeamMemberFromCompany(
   }
 
   invalidateResponsibleTeam(companyId);
+  updateTag(`doc:client:${companyId}`);
   return { removed_from_dept_ids: allowedDeptIds };
 }

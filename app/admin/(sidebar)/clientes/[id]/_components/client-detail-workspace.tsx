@@ -296,15 +296,128 @@ export default function ClientDetailWorkspace({
       setTeamData({ candidates: [], manageableDeptIds: [] });
     }
   }
+
+  // State local del equipo para reflejar los add/remove al instante. Se
+  // re-sincroniza con la prop tras router.refresh().
+  const [localTeam, setLocalTeam] = useState<ResponsibleTeam>(responsibleTeam);
+  useEffect(() => setLocalTeam(responsibleTeam), [responsibleTeam]);
+
   async function handleAddTeamMember(profileId: string) {
-    await addTeamMemberToCompany(company.id, profileId);
-    router.refresh();
-    await refreshTeamCandidates();
+    const candidate = teamData?.candidates.find((c) => c.profile_id === profileId);
+    const manageable = teamData?.manageableDeptIds ?? [];
+    if (!candidate) {
+      // Fallback: sin candidato local, vamos por el camino lento.
+      await addTeamMemberToCompany(company.id, profileId);
+      router.refresh();
+      await refreshTeamCandidates();
+      return;
+    }
+
+    const targetDeptIds = candidate.department_ids.filter((d) =>
+      manageable.includes(d)
+    );
+    if (targetDeptIds.length === 0) {
+      throw new Error("No tienes permiso para añadir empleados de este departamento.");
+    }
+
+    const teamSnapshot = localTeam;
+    const candidatesSnapshot = teamData;
+
+    // Optimistic: insertar el miembro en cada dpt afectado. Si el dpt no
+    // estaba en `byDepartment` (porque no había nadie en él), lo creamos —
+    // con tal de que la empresa tenga al menos un servicio en ese dpt
+    // (de lo contrario el empleado no será técnico y no entra al equipo;
+    // los supervisores por sí solos no cuentan).
+    setLocalTeam((prev) => {
+      const existingDeptIds = new Set(prev.byDepartment.map((d) => d.department_id));
+      const buildMember = (deptId: string) => {
+        const techServices = company.services.filter((s) => s.department_id === deptId);
+        const willBeSupervisor = docState.blocks.some((b) =>
+          b.apartados.some(
+            (a) => a.is_global || a.department_ids.includes(deptId)
+          )
+        );
+        return {
+          profile_id: profileId,
+          full_name: candidate.full_name,
+          email: candidate.email,
+          is_chief: false,
+          is_technician: techServices.length > 0,
+          is_supervisor: willBeSupervisor,
+          technician_services: techServices.map((s) => ({
+            service_id: s.service_id,
+            service_name: s.service_name,
+          })),
+        };
+      };
+
+      const updated = prev.byDepartment.map((dept) => {
+        if (!targetDeptIds.includes(dept.department_id)) return dept;
+        if (dept.members.some((m) => m.profile_id === profileId)) return dept;
+        return { ...dept, members: [...dept.members, buildMember(dept.department_id)] };
+      });
+
+      // Crear dpts que no existían pero tienen al menos un servicio contratado.
+      for (const did of targetDeptIds) {
+        if (existingDeptIds.has(did)) continue;
+        const svcInDept = company.services.find((s) => s.department_id === did);
+        if (!svcInDept) continue;
+        updated.push({
+          department_id: did,
+          department_name: svcInDept.department_name,
+          members: [buildMember(did)],
+        });
+      }
+
+      return { byDepartment: updated };
+    });
+    setTeamData((prev) =>
+      prev
+        ? { ...prev, candidates: prev.candidates.filter((c) => c.profile_id !== profileId) }
+        : prev
+    );
+
+    try {
+      await addTeamMemberToCompany(company.id, profileId);
+      router.refresh();
+    } catch (e) {
+      setLocalTeam(teamSnapshot);
+      setTeamData(candidatesSnapshot);
+      throw e;
+    }
   }
+
   async function handleRemoveTeamMember(profileId: string) {
-    await removeTeamMemberFromCompany(company.id, profileId);
-    router.refresh();
-    await refreshTeamCandidates();
+    const manageable = teamData?.manageableDeptIds ?? [];
+    if (manageable.length === 0) return;
+
+    const teamSnapshot = localTeam;
+
+    // Optimistic: quitar el miembro de los dpts donde el actor tiene permiso.
+    // Si un dpt se queda vacío tras el filtrado, lo descartamos (igual que la
+    // query del server, que solo devuelve dpts con al menos un técnico).
+    setLocalTeam((prev) => ({
+      byDepartment: prev.byDepartment
+        .map((dept) =>
+          manageable.includes(dept.department_id)
+            ? {
+                ...dept,
+                members: dept.members.filter((m) => m.profile_id !== profileId),
+              }
+            : dept
+        )
+        .filter((dept) => dept.members.length > 0),
+    }));
+
+    try {
+      await removeTeamMemberFromCompany(company.id, profileId);
+      router.refresh();
+      // Repuebla los candidatos en background (el quitado vuelve a ser elegible).
+      void refreshTeamCandidates();
+    } catch (e) {
+      setLocalTeam(teamSnapshot);
+      throw e;
+    }
   }
 
   // Danger zone state
@@ -337,23 +450,16 @@ export default function ClientDetailWorkspace({
     (s) => !existingServiceIds.has(s.service_id)
   );
 
-  // Features desbloqueadas por servicios padre. Modelos fiscales = Asesoramiento
-  // fiscal y contable; Dashboard fiscal = Gestión administrativa externalizada.
-  const hasTaxAccountingAdvice = company.services.some(
+  // Features desbloqueadas por el servicio padre "Asesoramiento fiscal y contable":
+  // Modelos fiscales y Dashboard fiscal.
+  const taxAdviceService = company.services.find(
     (s) => s.service_slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE
   );
-  const hasExternalizedAdmin = company.services.some(
-    (s) => s.service_slug === SERVICE_SLUGS.EXTERNALIZED_ADMIN
-  );
-  // Para editar la config del Sheet del Dashboard hace falta ser chief del dpto
-  // Asesoría Fiscal y Contable (servicio padre vive ahí).
-  const externalizedAdminDeptId = company.services.find(
-    (s) => s.service_slug === SERVICE_SLUGS.EXTERNALIZED_ADMIN
-  )?.department_id;
+  const hasTaxAccountingAdvice = !!taxAdviceService;
   const canEditDashboardSheet =
     canEditCompany &&
-    !!externalizedAdminDeptId &&
-    userChiefDeptIds.includes(externalizedAdminDeptId);
+    !!taxAdviceService?.department_id &&
+    userChiefDeptIds.includes(taxAdviceService.department_id);
 
   const supervisorApartadoSet = new Set(supervisorClientApartadoIds);
   function resolveCanValidate(apartado: ClientApartado): boolean {
@@ -726,7 +832,7 @@ export default function ClientDetailWorkspace({
       {/* ── Equipo responsable ── */}
       {tab === "equipo" && (
         <ResponsibleTeamSection
-          team={responsibleTeam}
+          team={localTeam}
           variant="expanded"
           loading={teamCandidatesLoading && teamData === null}
           manage={{
@@ -1139,7 +1245,7 @@ export default function ClientDetailWorkspace({
             Para consultar o rellenar una vez.
           </p>
 
-          {hasExternalizedAdmin ? (
+          {hasTaxAccountingAdvice ? (
             <FeatureCard
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
@@ -1148,7 +1254,7 @@ export default function ClientDetailWorkspace({
               }
               title="Dashboard fiscal"
               description="Ventas, compras y bancos al día."
-              unlockedBy="Gestión administrativa externalizada"
+              unlockedBy="Asesoramiento fiscal y contable"
               href={canViewClientDashboard ? `${linkPrefix}/clientes/${company.id}/dashboard` : undefined}
               ctaLabel={canViewClientDashboard ? "Abrir dashboard" : undefined}
               noAccessHint={!canViewClientDashboard ? "Sin permiso para acceder a esta vista del cliente." : undefined}
@@ -1169,7 +1275,7 @@ export default function ClientDetailWorkspace({
           ) : (
             <EmptyFeaturesState
               message="Esta empresa todavía no tiene informes desbloqueados."
-              hint="Contrata 'Gestión administrativa externalizada' para habilitar el Dashboard fiscal."
+              hint="Contrata 'Asesoramiento fiscal y contable' para habilitar el Dashboard fiscal."
             />
           )}
         </div>

@@ -28,7 +28,7 @@ async function fetchSearchableCompanies(): Promise<SearchableCompany[]> {
       id: row.id as string,
       legal_name: row.legal_name as string,
       company_name: (row.company_name as string | null) ?? null,
-      has_dashboard_service: activeSlugs.includes(SERVICE_SLUGS.EXTERNALIZED_ADMIN),
+      has_dashboard_service: activeSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE),
       has_tax_models_service: activeSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE),
     };
   });

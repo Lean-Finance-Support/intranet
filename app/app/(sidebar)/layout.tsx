@@ -47,7 +47,7 @@ export default async function AppSidebarLayout({
     : [];
 
   const hasTaxModels = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
-  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.EXTERNALIZED_ADMIN);
+  const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
   const activeCompany = companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
 
