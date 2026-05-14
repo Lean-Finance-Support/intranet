@@ -1,0 +1,829 @@
+[
+  {
+    "id": "clm-nacimiento-adopcion-hijos",
+    "ccaa_code": "ES-CM",
+    "title": "Por nacimiento o adopción de hijos",
+    "summary": "100 € por parto/adopción de un hijo, 500 € si son dos hijos, 900 € si son tres o más. Requiere base imponible (suma BI general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+    "legal_reference": "Arts. 1 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en el ejercicio (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "kids_per_birth", "label": "Número de hijos por parto/adopción", "kind": "select", "required": true, "options": [
+        { "value": "1", "label": "1 hijo (100 €)" },
+        { "value": "2", "label": "2 hijos (500 €)" },
+        { "value": "3+", "label": "3 o más hijos (900 €)" }
+      ]}
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "clm-familia-numerosa",
+    "ccaa_code": "ES-CM",
+    "title": "Por familia numerosa",
+    "summary": "200 € (general) / 400 € (especial). Si algún cónyuge o descendiente con derecho a mínimo por discapacidad tiene grado ≥ 65%: 300 € (general) / 900 € (especial). Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con deducción autonómica por arrendamiento de vivienda habitual por familias numerosas.",
+    "legal_reference": "Arts. 2 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "large_family_category", "label": "Categoría de la familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]},
+      { "key": "has_disability_65", "label": "¿Algún cónyuge o descendiente con derecho al mínimo por discapacidad tiene grado ≥ 65%?", "kind": "boolean", "required": false },
+      { "key": "large_family_certificate", "label": "Número del título de familia numerosa", "kind": "text", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "clm-familia-monoparental",
+    "ccaa_code": "ES-CM",
+    "title": "Por familia monoparental",
+    "summary": "200 € anuales para el padre o madre que integre una familia monoparental. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con la deducción autonómica por arrendamiento de vivienda habitual por familias monoparentales.",
+    "legal_reference": "Arts. 2 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "monoparental", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_monoparental", "label": "Hijos que integran la familia monoparental (nombre y edad)", "kind": "textarea", "required": true }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "clm-gastos-libros-idiomas-educacion",
+    "ccaa_code": "ES-CM",
+    "title": "Por gastos en la adquisición de libros de texto, enseñanza de idiomas y otros gastos relacionados con la educación",
+    "summary": "100% libros de texto + 15% enseñanza idiomas extraescolares, actividades de refuerzo, acceso a nuevas tecnologías y estudios fuera del municipio. Límites por hijo según base imponible (declaración individual o conjunta y condición de familia numerosa). Se minoran becas/ayudas recibidas.",
+    "legal_reference": "Arts. 3 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "textbook_expenses_eur", "label": "Gastos en libros de texto (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "language_expenses_eur", "label": "Gastos en enseñanza de idiomas extraescolar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "reinforcement_expenses_eur", "label": "Gastos en actividades de refuerzo/apoyo (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "tech_access_expenses_eur", "label": "Gastos de acceso a nuevas tecnologías - alta+1ª cuota internet (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "study_residence_expenses_eur", "label": "Gastos de estudio y residencia fuera del municipio (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_detail", "label": "Hijos por los que se aplica (nombre y nivel educativo)", "kind": "textarea", "required": true },
+      { "key": "received_grants_eur", "label": "Becas/ayudas recibidas que minoran la deducción (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "clm-gastos-guarderia",
+    "ccaa_code": "ES-CM",
+    "title": "Por gastos de guardería",
+    "summary": "30% de las cantidades satisfechas por custodia de hijos menores de 3 años en guarderías o centros de educación infantil. Límite 500 € por hijo (250 € en el ejercicio en que cumple 3 años). Base imponible ≤ 27.000 € individual / 36.000 € conjunta.",
+    "legal_reference": "Arts. 3 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "any_kid_age_lt", "value": 4 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "daycare_expenses_eur", "label": "Gastos de custodia satisfechos (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_in_daycare", "label": "Hijos menores de 3 años en guardería (nombre, fecha de nacimiento)", "kind": "textarea", "required": true },
+      { "key": "daycare_nif", "label": "NIF del centro de educación infantil/guardería", "kind": "text", "required": true },
+      { "key": "received_grants_eur", "label": "Becas/ayudas recibidas que minoran la deducción (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "clm-discapacidad-contribuyente",
+    "ccaa_code": "ES-CM",
+    "title": "Por discapacidad del contribuyente",
+    "summary": "300 € por cada contribuyente con discapacidad acreditada ≥ 65% y derecho al mínimo por discapacidad. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con la deducción 'Por discapacidad de ascendientes o descendientes', 'Para contribuyentes mayores de 75 años' y 'Por arrendamiento de vivienda habitual por personas con discapacidad' (sobre la misma persona).",
+    "legal_reference": "Arts. 4 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "gte", "path": "disability_pct", "value": 65 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disability_pct", "label": "Grado de discapacidad acreditado (%)", "kind": "number", "required": true, "min": 65 },
+      { "key": "disability_certificate", "label": "Número del certificado de discapacidad", "kind": "text", "required": false }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "clm-discapacidad-ascendientes-descendientes",
+    "ccaa_code": "ES-CM",
+    "title": "Por discapacidad de ascendientes o descendientes",
+    "summary": "300 € por cada ascendiente o descendiente con discapacidad acreditada ≥ 65% que genere derecho al mínimo por discapacidad. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con 'Por discapacidad del contribuyente' (misma persona) y con 'Por el cuidado de ascendientes mayores de 75 años' cuando el ascendiente tenga ≥ 65% (en ese caso se aplica esta).",
+    "legal_reference": "Arts. 5 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "relatives_with_disability_count", "label": "Número de ascendientes/descendientes con discapacidad ≥ 65%", "kind": "number", "required": true, "min": 1 },
+      { "key": "relatives_detail", "label": "Detalle (relación, nombre, grado de discapacidad)", "kind": "textarea", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "clm-contribuyentes-mayores-75",
+    "ccaa_code": "ES-CM",
+    "title": "Para contribuyentes mayores de 75 años",
+    "summary": "150 € para los contribuyentes mayores de 75 años. No aplica si reside más de 30 días en Centros Residenciales de Mayores subvencionados. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con 'Por discapacidad del contribuyente' (si el grado es ≥ 65%, se aplica la de discapacidad).",
+    "legal_reference": "Arts. 6.1 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "age_gte", "path": "birth_date", "value": 75 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "no_residential_stay", "label": "Confirmo que no se ha residido más de 30 días en Centros Residenciales de Mayores subvencionados", "kind": "boolean", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "clm-cuidado-ascendientes-mayores-75",
+    "ccaa_code": "ES-CM",
+    "title": "Por el cuidado de ascendientes mayores de 75 años",
+    "summary": "150 € por el cuidado de cada ascendiente mayor de 75 años que cause derecho al mínimo por ascendientes. No aplica si reside más de 30 días en Centros Residenciales de Mayores subvencionados. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con 'Por discapacidad de ascendiente' si el grado es ≥ 65% (se aplica la de discapacidad).",
+    "legal_reference": "Arts. 6.2 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "elderly_ascendants_count", "label": "Número de ascendientes mayores de 75 años cuidados", "kind": "number", "required": true, "min": 1 },
+      { "key": "ascendants_detail", "label": "Detalle (nombre, edad, parentesco)", "kind": "textarea", "required": true },
+      { "key": "no_residential_stay", "label": "Confirmo que el ascendiente no ha residido más de 30 días en Centros Residenciales de Mayores subvencionados", "kind": "boolean", "required": true }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "clm-acogimiento-familiar-menores",
+    "ccaa_code": "ES-CM",
+    "title": "Por acogimiento familiar no remunerado de menores",
+    "summary": "500 € por el primer menor, 600 € por el segundo y sucesivos, en acogimiento familiar no remunerado o por delegación de guarda para convivencia preadoptiva, con convivencia superior a 183 días. Base imponible ≤ 12.500 € individual / 25.000 € conjunta.",
+    "legal_reference": "Art. 7 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número de menores en acogimiento", "kind": "number", "required": true, "min": 1 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" },
+        { "value": "guarda_preadoptiva", "label": "Delegación de guarda para convivencia preadoptiva" }
+      ]},
+      { "key": "cohabit_days", "label": "Días de convivencia en el ejercicio (mínimo 184)", "kind": "number", "required": true, "min": 184 },
+      { "key": "no_aids_received", "label": "Confirmo que no se han recibido ayudas de la Junta vinculadas al acogimiento", "kind": "boolean", "required": true }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "clm-acogimiento-mayores-65-discapacidad",
+    "ccaa_code": "ES-CM",
+    "title": "Por acogimiento no remunerado de mayores de 65 años o con discapacidad",
+    "summary": "600 € por cada persona mayor de 65 años o con discapacidad ≥ 33% que conviva con el contribuyente más de 183 días en régimen de acogimiento sin contraprestación. Base imponible ≤ 12.500 € individual / 25.000 € conjunta. No aplica si hay vínculo de parentesco hasta el 4º grado.",
+    "legal_reference": "Art. 8 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "fostered_persons_count", "label": "Número de personas en acogimiento", "kind": "number", "required": true, "min": 1 },
+      { "key": "fostered_age_or_disability", "label": "Edad y/o grado de discapacidad de las personas acogidas", "kind": "textarea", "required": true },
+      { "key": "cohabit_days", "label": "Días de convivencia en el ejercicio (mínimo 184)", "kind": "number", "required": true, "min": 184 },
+      { "key": "no_family_link", "label": "Confirmo que no existe vínculo de parentesco hasta el 4º grado con la persona acogida", "kind": "boolean", "required": true },
+      { "key": "no_aids_received", "label": "Confirmo que no se han recibido ayudas de la Junta vinculadas al acogimiento", "kind": "boolean", "required": true }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "clm-arrendamiento-vivienda-menores-36",
+    "ccaa_code": "ES-CM",
+    "title": "Por arrendamiento de vivienda habitual por menores de 36 años",
+    "summary": "15% de las cantidades pagadas por alquiler (máx. 500 €). Sube al 20% (máx. 612 €) si la vivienda está en municipio de ≤ 2.500 habitantes o en uno de 2.501-10.000 a más de 30 km de un municipio mayor de 50.000. Contribuyente < 36 años. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+    "legal_reference": "Arts. 9 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "small_municipality", "label": "¿La vivienda está en un municipio pequeño que da derecho al 20% (≤ 2.500 hab. o 2.501-10.000 a > 30 km de municipio > 50.000)?", "kind": "boolean", "required": false },
+      { "key": "municipality", "label": "Municipio de la vivienda en Castilla-La Mancha", "kind": "text", "required": true }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "clm-arrendamiento-vivienda-dacion-pago",
+    "ccaa_code": "ES-CM",
+    "title": "Por arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
+    "summary": "15% de las cantidades satisfechas por el arrendamiento de la vivienda habitual cuando el contrato esté vinculado a una operación de adjudicación en pago de la totalidad de la deuda hipotecaria. Máximo 500 €. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+    "legal_reference": "Arts. 9 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "dacion_pago_date", "label": "Fecha de la operación de dación en pago", "kind": "date", "required": false }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "clm-arrendamiento-vivienda-familias-numerosas",
+    "ccaa_code": "ES-CM",
+    "title": "Por arrendamiento de vivienda habitual por familias numerosas",
+    "summary": "15% de las cantidades satisfechas por arrendamiento de vivienda habitual (máximo 500 €). Familia numerosa con título vigente. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta. Incompatible con la deducción autonómica 'Por familia numerosa'.",
+    "legal_reference": "Arts. 9 ter y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "large_family_category", "label": "Categoría de la familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]}
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "clm-arrendamiento-vivienda-familias-monoparentales",
+    "ccaa_code": "ES-CM",
+    "title": "Por arrendamiento de vivienda habitual por familias monoparentales",
+    "summary": "15% de las cantidades satisfechas por arrendamiento de vivienda habitual (máximo 500 €). Padre o madre que integre una familia monoparental. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta. Incompatible con la deducción autonómica 'Por familia monoparental'.",
+    "legal_reference": "Arts. 9 quater y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "eq", "path": "monoparental", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "clm-arrendamiento-vivienda-discapacidad",
+    "ccaa_code": "ES-CM",
+    "title": "Por arrendamiento de vivienda habitual por personas con discapacidad",
+    "summary": "15% de las cantidades satisfechas por arrendamiento de vivienda habitual (máximo 500 €). Contribuyente con grado de discapacidad acreditado ≥ 65% y derecho al mínimo por discapacidad. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta. Incompatible con 'Por discapacidad del contribuyente'.",
+    "legal_reference": "Arts. 9 quinquies y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "gte", "path": "disability_pct", "value": 65 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "disability_pct", "label": "Grado de discapacidad acreditado (%)", "kind": "number", "required": true, "min": 65 }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "clm-donativos-cooperacion-internacional",
+    "ccaa_code": "ES-CM",
+    "title": "Por cantidades donadas para la cooperación internacional al desarrollo y a las entidades para la lucha contra la pobreza, la exclusión social y la ayuda a personas con discapacidad",
+    "summary": "15% de las donaciones dinerarias a ONG, fundaciones y asociaciones de ayuda a personas con discapacidad inscritas en los registros de Castilla-La Mancha. Base de la deducción ≤ 10% de la base liquidable.",
+    "legal_reference": "Art. 10 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_purpose", "label": "Finalidad de la entidad", "kind": "select", "required": true, "options": [
+        { "value": "cooperacion", "label": "Cooperación internacional al desarrollo" },
+        { "value": "pobreza", "label": "Lucha contra la pobreza y exclusión social" },
+        { "value": "discapacidad", "label": "Ayuda a personas con discapacidad" }
+      ]}
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "clm-donaciones-investigacion-innovacion",
+    "ccaa_code": "ES-CM",
+    "title": "Por donaciones con finalidad en investigación y desarrollo científico e innovación empresarial",
+    "summary": "15% de donaciones dinerarias a la Junta de Comunidades de Castilla-La Mancha y entidades públicas dependientes, y a entidades sin fines lucrativos inscritas en CLM cuya finalidad sea I+D+i. Límite: 10% de la cuota íntegra autonómica.",
+    "legal_reference": "Art. 11 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de receptor", "kind": "select", "required": true, "options": [
+        { "value": "junta_publica", "label": "Junta de Comunidades de CLM / entidades públicas dependientes" },
+        { "value": "sin_lucro", "label": "Entidad sin fines lucrativos inscrita en CLM" }
+      ]}
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "clm-donaciones-patrimonio-cultural",
+    "ccaa_code": "ES-CM",
+    "title": "Por donaciones de bienes culturales y contribuciones para la conservación, reparación y restauración del patrimonio cultural de Castilla-La Mancha y para fines culturales (Plan de Mecenazgo Cultural)",
+    "summary": "15% de donaciones puras y simples de bienes inscritos en el Inventario del Patrimonio Cultural de CLM a la Junta, universidades, centros de investigación y entidades sin fines lucrativos culturales inscritas en CLM. 15% de cantidades para conservación/restauración del patrimonio. 15% para fines culturales del Plan de Mecenazgo Cultural (Ley 9/2019). Suma máxima: 10% de la base liquidable.",
+    "legal_reference": "Arts. 11 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado o valor de los bienes (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_type", "label": "Tipo de donación", "kind": "select", "required": true, "options": [
+        { "value": "bienes_culturales", "label": "Donación de bienes inscritos en el Inventario del Patrimonio Cultural" },
+        { "value": "conservacion", "label": "Conservación/reparación/restauración del patrimonio cultural" },
+        { "value": "mecenazgo", "label": "Fines culturales del Plan de Mecenazgo Cultural (Ley 9/2019)" }
+      ]},
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "clm-intereses-financiacion-primera-vivienda-menores-40",
+    "ccaa_code": "ES-CM",
+    "title": "Por los gastos en intereses por la financiación ajena de la adquisición de primera vivienda habitual por menores de 40 años",
+    "summary": "100% de los intereses satisfechos por financiación ajena para la adquisición de la primera vivienda habitual. Contribuyente < 40 años, préstamo a interés variable, base imponible ≤ 27.000 € individual / 36.000 € conjunta. Límite 100-150 € por contribuyente según tramos de BI.",
+    "legal_reference": "Art. 12 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "age_lt", "path": "birth_date", "value": 40 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "mortgage_interest_eur", "label": "Intereses satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "mortgage_lender", "label": "Entidad financiera prestamista", "kind": "text", "required": true },
+      { "key": "loan_variable_rate", "label": "Confirmo que el préstamo es a interés variable", "kind": "boolean", "required": true },
+      { "key": "first_home", "label": "Confirmo que es la primera vivienda habitual", "kind": "boolean", "required": true }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "clm-residencia-zonas-rurales",
+    "ccaa_code": "ES-CM",
+    "title": "Por residencia habitual en zonas rurales",
+    "summary": "Porcentaje de la cuota íntegra autonómica (10%-25%) según el tipo de zona rural (intensa/extrema/riesgo de despoblación o intermedia agrícola) y la población del municipio (<2.000 o 2.000-5.000 hab.). Requiere residencia habitual y estancia efectiva en municipio de CLM incluido en las zonas reguladas por la Ley 2/2021.",
+    "legal_reference": "Art. 12 bis y D.A. segunda Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "municipality", "label": "Municipio de residencia habitual", "kind": "text", "required": true },
+      { "key": "zone_type", "label": "Tipo de zona rural", "kind": "select", "required": true, "options": [
+        { "value": "intensa", "label": "Intensa despoblación" },
+        { "value": "extrema", "label": "Extrema despoblación" },
+        { "value": "riesgo", "label": "Riesgo de despoblación" },
+        { "value": "intermedia_agricola", "label": "Rural intermedia con predominio agrícola (< 2.000 hab. con pérdida de población 2016-2021)" }
+      ]},
+      { "key": "municipality_population", "label": "Población del municipio (habitantes)", "kind": "number", "required": true, "min": 0 },
+      { "key": "effective_stay_certificate", "label": "Confirmo que cuento con la certificación de estancia efectiva (tarjeta sanitaria o matrícula escolar) en el municipio", "kind": "boolean", "required": true }
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "clm-adquisicion-rehabilitacion-vivienda-zonas-rurales",
+    "ccaa_code": "ES-CM",
+    "title": "Por adquisición o rehabilitación de la vivienda habitual en zonas rurales",
+    "summary": "15% de las cantidades satisfechas por adquisición o rehabilitación de la vivienda habitual en municipios de zonas escasamente pobladas (Ley 2/2021) con población < 5.000 hab. Adquisición/rehabilitación a partir del 1 de enero de 2021. Base máxima total: 180.000 € (por todos los ejercicios); base máxima anual: 12.000 €. Requiere incremento patrimonial equivalente.",
+    "legal_reference": "Art. 12 ter y D.A. segunda Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "acquisition_or_rehab", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" },
+        { "value": "construccion", "label": "Construcción o ampliación" }
+      ]},
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€, máx. 12.000)", "kind": "number", "required": true, "min": 0, "max": 12000 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición / inicio de obras (a partir 01/01/2021)", "kind": "date", "required": true },
+      { "key": "municipality", "label": "Municipio (zona escasamente poblada, < 5.000 hab.)", "kind": "text", "required": true },
+      { "key": "subsidies_received_eur", "label": "Subvenciones recibidas de la Junta para la adquisición/rehabilitación (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "clm-traslado-vivienda-habitual",
+    "ccaa_code": "ES-CM",
+    "title": "Por traslado de vivienda habitual",
+    "summary": "500 € en el período del traslado y en el siguiente, por trasladar la residencia habitual a un municipio de Castilla-La Mancha incluido en zonas escasamente pobladas (Ley 2/2021). Traslado por motivos laborales. Base liquidable < 22.946 € individual / 31.485 € conjunta. Permanencia 3 años posteriores.",
+    "legal_reference": "Art. 12 quater y D.A. segunda Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 22946 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 31485 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "new_municipality", "label": "Municipio de Castilla-La Mancha al que se traslada (zona escasamente poblada)", "kind": "text", "required": true },
+      { "key": "move_date", "label": "Fecha del cambio de residencia habitual", "kind": "date", "required": true },
+      { "key": "work_related", "label": "Confirmo que el traslado se produce por motivos laborales", "kind": "boolean", "required": true },
+      { "key": "stay_commitment", "label": "Confirmo el compromiso de permanecer en la nueva residencia los 3 años siguientes", "kind": "boolean", "required": true }
+    ],
+    "display_order": 230,
+    "is_active": true
+  },
+  {
+    "id": "clm-inversion-acciones-sociedades-mercantiles",
+    "ccaa_code": "ES-CM",
+    "title": "Por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en las sociedades mercantiles",
+    "summary": "20% de las cantidades invertidas en la adquisición de acciones/participaciones en SA, SL, SAL, SLL o cooperativa con domicilio en CLM y actividad económica. Límite 4.000 €/año. Participación ≤ 40% (con entorno familiar), mantenimiento 3 años, sin funciones ejecutivas. Requisitos adicionales para constitución (plantilla ≥ 1) y ampliación (incremento plantilla).",
+    "legal_reference": "Art. 12 sexies Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de entidad", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl", "label": "SA / SL" },
+        { "value": "sal_sll", "label": "SAL / SLL" },
+        { "value": "cooperativa", "label": "Sociedad Cooperativa" }
+      ]},
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "constitucion", "label": "Constitución" },
+        { "value": "ampliacion", "label": "Ampliación de capital" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (incluido entorno familiar)", "kind": "number", "required": true, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 240,
+    "is_active": true
+  },
+  {
+    "id": "clm-inversion-economia-social",
+    "ccaa_code": "ES-CM",
+    "title": "Por inversión en entidades de la economía social",
+    "summary": "20% de las cantidades invertidas para ser socio de entidades de la economía social (Ley 5/2011) con domicilio en CLM. Límite 4.000 €/año. Participación ≤ 40% (con entorno familiar), mantenimiento 5 años, entidad con al menos un empleado a jornada completa. Incompatible con la deducción 'Por inversión en sociedades mercantiles'.",
+    "legal_reference": "Art. 12 septies Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad de economía social", "kind": "text", "required": true },
+      { "key": "entity_name", "label": "Denominación de la entidad", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (incluido entorno familiar)", "kind": "number", "required": true, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la aportación", "kind": "date", "required": true }
+    ],
+    "display_order": 250,
+    "is_active": true
+  },
+  {
+    "id": "clm-ahorro-inversion-primera-vivienda",
+    "ccaa_code": "ES-CM",
+    "title": "Por ahorro-inversión en la adquisición o construcción de la primera vivienda habitual",
+    "summary": "15% de las cantidades depositadas en cuentas de entidades de crédito destinadas a la adquisición o construcción de la primera vivienda habitual en CLM, dentro de los 6 años desde la apertura. Deducción máxima total 3.000 € (anual 750 €). Contribuyente < 36 años. Base imponible ≤ 27.000 € individual / 36.000 € conjunta.",
+    "legal_reference": "Art. 12 octies Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "deposit_amount_eur", "label": "Cantidades depositadas en el ejercicio (€, máx. 750 €/año)", "kind": "number", "required": true, "min": 0, "max": 5000 },
+      { "key": "account_opening_date", "label": "Fecha de apertura de la cuenta vivienda", "kind": "date", "required": true },
+      { "key": "account_entity", "label": "Entidad de crédito", "kind": "text", "required": true },
+      { "key": "first_home", "label": "Confirmo que se destinará a la primera vivienda habitual en CLM", "kind": "boolean", "required": true }
+    ],
+    "display_order": 260,
+    "is_active": true
+  },
+  {
+    "id": "clm-perros-asistencia",
+    "ccaa_code": "ES-CM",
+    "title": "Por gastos derivados de controles veterinarios y vacunación por la tenencia de perros de asistencia",
+    "summary": "30% de las cantidades satisfechas por gastos veterinarios y vacunación (vacunaciones, desparasitación, esterilización y demás tratamientos obligatorios) de perros de asistencia oficialmente reconocidos. Límite 100 € anuales por contribuyente. Base imponible ≤ 27.000 € individual / 36.000 € conjunta.",
+    "legal_reference": "Arts. 12 nonies y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CM" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 27000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 36000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "vet_expenses_eur", "label": "Gastos veterinarios y vacunación satisfechos (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "assistance_dog_type", "label": "Tipo de perro de asistencia", "kind": "select", "required": true, "options": [
+        { "value": "guia", "label": "Perro guía (discapacidad visual)" },
+        { "value": "senalizacion", "label": "Perro de señalización de sonidos (discapacidad auditiva)" },
+        { "value": "servicio", "label": "Perro de servicio (discapacidad física)" },
+        { "value": "aviso", "label": "Perro de aviso médico (epilepsia, diabetes, etc.)" },
+        { "value": "tea", "label": "Perro para personas con TEA" }
+      ]},
+      { "key": "recognition_certificate", "label": "Confirmo el reconocimiento de la unidad de vinculación por la Consejería competente (Ley 5/2018)", "kind": "boolean", "required": true },
+      { "key": "no_subsidies", "label": "Confirmo que los gastos no han sido subvencionados", "kind": "boolean", "required": true }
+    ],
+    "display_order": 270,
+    "is_active": true
+  }
+]

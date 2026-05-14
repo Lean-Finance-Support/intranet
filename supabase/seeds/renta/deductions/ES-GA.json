@@ -1,0 +1,598 @@
+[
+  {
+    "id": "gal-nacimiento-adopcion-hijos",
+    "ccaa_code": "ES-GA",
+    "title": "Por nacimiento o adopción de hijos",
+    "summary": "Por cada hijo nacido o adoptado conviviente: si base imponible total menos mínimo personal y familiar ≤ 22.000 €, 360 € (1º hijo), 1.200 € (2º), 2.400 € (3º y siguientes); si > 22.000 €, 300 €/hijo (360 € en parto múltiple). Incremento del 20% si reside en municipio < 5.000 habitantes. Aplica también en los dos ejercicios siguientes al nacimiento/adopción. Cuantías duplicadas si el hijo tiene discapacidad ≥ 33%.",
+    "legal_reference": "Art. 5.Dos Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en 2023-2025 (uno por línea: nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "multiple_birth", "label": "¿Parto o adopción múltiple?", "kind": "boolean", "required": false },
+      { "key": "child_disability_33", "label": "¿Algún hijo con discapacidad ≥ 33%?", "kind": "boolean", "required": false },
+      { "key": "small_municipality_lt_5000", "label": "¿Residencia habitual en municipio < 5.000 habitantes o resultante de fusión/incorporación?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "gal-familias-dos-hijos",
+    "ccaa_code": "ES-GA",
+    "title": "Para familias con dos hijos e hijas",
+    "summary": "250 € para contribuyentes con dos hijos que generen derecho al mínimo por descendientes (500 € si el contribuyente o algún hijo tiene discapacidad ≥ 65%). Incompatible con la deducción por familia numerosa.",
+    "legal_reference": "Art. 5.Tres.1 Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "eq", "path": "kids.length", "value": 2 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disability_65_present", "label": "¿El contribuyente o alguno de los hijos tiene discapacidad ≥ 65%?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "gal-familia-numerosa",
+    "ccaa_code": "ES-GA",
+    "title": "Por familia numerosa",
+    "summary": "250 € (general, hasta 2 hijos) o 400 € (categoría especial, hasta 2 hijos); +250 € adicional por cada hijo en el resto de los casos. Cuantías duplicadas (500/800 € y +500 €/hijo) si el contribuyente o algún descendiente tiene discapacidad ≥ 65%.",
+    "legal_reference": "Art. 5.Tres.2 Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] }
+      ]
+    },
+    "extra_fields": [
+      { "key": "large_family_category", "label": "Categoría de la familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]},
+      { "key": "kids_count", "label": "Número de hijos en la familia numerosa", "kind": "number", "required": true, "min": 2 },
+      { "key": "disability_65_present", "label": "¿El contribuyente o algún descendiente tiene discapacidad ≥ 65%?", "kind": "boolean", "required": false },
+      { "key": "large_family_certificate", "label": "Número del título de familia numerosa", "kind": "text", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "gal-acogimiento-menores",
+    "ccaa_code": "ES-GA",
+    "title": "Por acogimiento de menores",
+    "summary": "300 € por cada menor en régimen de acogimiento familiar simple, permanente, provisional o preadoptivo, administrativo o judicial. Requiere formalización por el órgano competente de la Xunta de Galicia.",
+    "legal_reference": "Art. 5.Cuatro Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número de menores en acogimiento familiar", "kind": "number", "required": true, "min": 1 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "urgencia", "label": "Urgencia" },
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" },
+        { "value": "guarda_preadoptiva", "label": "Delegación de guarda para convivencia preadoptiva" }
+      ]},
+      { "key": "foster_certificate", "label": "Resolución del órgano competente de la Xunta de Galicia", "kind": "text", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "gal-cuidado-hijos-menores",
+    "ccaa_code": "ES-GA",
+    "title": "Por cuidado de hijos menores",
+    "summary": "30% de las cantidades satisfechas a una persona empleada del hogar o escuela infantil 0-3 años, por contribuyentes que por motivos de trabajo (cuenta propia o ajena) dejen a sus hijos ≤ 3 años al cuidado. Límite: 400 € (600 € con dos o más hijos ≤ 3 años). Suma de bases ≤ 22.000 € individual / 31.000 € conjunta.",
+    "legal_reference": "Art. 5.Cinco Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "any_kid_age_lt", "value": 4 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 22000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "childcare_expenses_eur", "label": "Cantidades satisfechas en el año (empleada del hogar o escuela 0-3) (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "care_type", "label": "Tipo de cuidado", "kind": "select", "required": true, "options": [
+        { "value": "empleada_hogar", "label": "Persona empleada del hogar (Sistema Especial Empleados Hogar SS)" },
+        { "value": "escuela_infantil", "label": "Escuela infantil de 0-3 años" }
+      ]},
+      { "key": "kids_under_3_count", "label": "Número de hijos ≤ 3 años en el devengo", "kind": "number", "required": true, "min": 1 },
+      { "key": "both_parents_working", "label": "¿Ambos progenitores con actividad por cuenta propia o ajena con alta en SS/mutualidad?", "kind": "boolean", "required": true }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "gal-discapacidad-65-ayuda-terceros",
+    "ccaa_code": "ES-GA",
+    "title": "Por contribuyentes con discapacidad, de edad igual o superior a 65 años, que precisen ayuda de terceras personas",
+    "summary": "10% de las cantidades satisfechas a terceros por contribuyentes ≥ 65 años con discapacidad ≥ 65% que precisen ayuda de terceras personas. Límite 600 €. Suma de bases ≤ 22.000 € individual / 31.000 € conjunta. No aplicable a usuarios de residencias públicas o concertadas de Galicia.",
+    "legal_reference": "Art. 5.Seis Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "age_gte", "path": "birth_date", "value": 65 },
+        { "op": "gte", "path": "disability_pct", "value": 65 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 22000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "third_party_help_eur", "label": "Cantidades satisfechas a terceros por ayuda (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "needs_third_party_help_certified", "label": "¿Acredita la necesidad de ayuda de terceras personas?", "kind": "boolean", "required": true },
+      { "key": "public_residence_user", "label": "¿Es usuario de residencia pública o concertada de la Xunta de Galicia?", "kind": "boolean", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "gal-alquiler-vivienda-habitual",
+    "ccaa_code": "ES-GA",
+    "title": "Por alquiler de la vivienda habitual",
+    "summary": "10% de las cantidades pagadas por alquiler, con límite 300 €/contrato/año (20% y 600 € con dos o más hijos menores; cuantías duplicadas si el arrendatario tiene discapacidad ≥ 33%). Contribuyente ≤ 35 años, contrato posterior a 01/01/2003, fianza depositada en IGVS y suma de bases ≤ 22.000 €.",
+    "legal_reference": "Art. 5.Siete Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "lte", "path": "income_base", "value": 22000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "contract_date", "label": "Fecha del contrato (posterior a 01/01/2003)", "kind": "date", "required": true },
+      { "key": "deposit_igvs", "label": "Resguardo del depósito de fianza en el Instituto Gallego de la Vivienda y Suelo", "kind": "text", "required": false },
+      { "key": "minor_kids_count", "label": "Hijos menores de edad", "kind": "number", "required": false, "min": 0 },
+      { "key": "tenant_disability_33", "label": "¿Arrendatario con discapacidad ≥ 33%?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "gal-nuevas-tecnologias-hogares-gallegos",
+    "ccaa_code": "ES-GA",
+    "title": "Por gastos dirigidos al uso de nuevas tecnologías en los hogares gallegos",
+    "summary": "30% de las cantidades satisfechas en el ejercicio por cuotas de alta y mensualidades para acceso a Internet por líneas de alta velocidad. Límite 100 €. Solo en el ejercicio en que se celebre el contrato; uso exclusivo del hogar (no vinculado a actividad empresarial).",
+    "legal_reference": "Art. 5.Ocho Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "internet_costs_eur", "label": "Cuotas de alta y mensualidades pagadas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "contract_date", "label": "Fecha del contrato de alta velocidad", "kind": "date", "required": true },
+      { "key": "provider_name", "label": "Compañía prestadora del servicio", "kind": "text", "required": true },
+      { "key": "exclusive_household_use", "label": "Confirmo uso exclusivo del hogar (no vinculado a actividad económica)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "gal-inversion-acciones-nuevas-entidades",
+    "ccaa_code": "ES-GA",
+    "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
+    "summary": "30% de las cantidades invertidas en SA, SL, sociedades laborales y cooperativas (45% si la entidad es PYME innovadora, IEBT o participada por universidades/centros de investigación). Límite 6.000 € (9.000 € en incremento). Domicilio social y fiscal en Galicia, actividad económica y al menos un empleado a jornada completa con residencia en Galicia.",
+    "legal_reference": "Art. 5.Nueve Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de entidad", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl", "label": "Sociedad Anónima / Sociedad Limitada" },
+        { "value": "sal_sll_coop", "label": "Sociedad Laboral / Cooperativa" }
+      ]},
+      { "key": "increment_circumstance", "label": "¿Aplica incremento del 15%?", "kind": "select", "required": false, "options": [
+        { "value": "none", "label": "No aplica" },
+        { "value": "pyme_innovadora", "label": "PYME innovadora (Orden ECC/1087/2015)" },
+        { "value": "iebt", "label": "Iniciativa Empleo Base Tecnológica (IEBT)" },
+        { "value": "universidad", "label": "Participada por universidades u organismos de investigación" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (1%-40%, incluido entorno familiar)", "kind": "number", "required": true, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión / escritura pública", "kind": "date", "required": true }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "gal-inversion-acciones-nuevas-entidades-financiacion",
+    "ccaa_code": "ES-GA",
+    "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación y su financiación",
+    "summary": "30% de las cantidades invertidas, prestadas o garantizadas (45% si la entidad es PYME innovadora, IEBT o participada por universidades/centros de investigación). Límite conjunto 20.000 € (35.000 € en incremento). Domicilio social y fiscal en Galicia, actividad económica y un empleado a jornada completa con residencia en Galicia.",
+    "legal_reference": "Art. 5.Diez Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido/prestado/garantizado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición de acciones/participaciones" },
+        { "value": "prestamo", "label": "Préstamo a la sociedad" },
+        { "value": "garantia", "label": "Garantía personal" }
+      ]},
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": true },
+      { "key": "increment_circumstance", "label": "¿Aplica incremento del 15%?", "kind": "select", "required": false, "options": [
+        { "value": "none", "label": "No aplica" },
+        { "value": "pyme_innovadora", "label": "PYME innovadora" },
+        { "value": "iebt", "label": "IEBT" },
+        { "value": "universidad", "label": "Participada por universidades / centros de investigación" }
+      ]},
+      { "key": "investment_date", "label": "Fecha de la operación", "kind": "date", "required": true }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "gal-inversion-mab-empresas-expansion",
+    "ccaa_code": "ES-GA",
+    "title": "Por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del mercado alternativo bursátil",
+    "summary": "15% de las cantidades invertidas en ampliaciones de capital suscritas en el segmento de empresas en expansión del MAB. Límite 4.000 € prorrateado en el ejercicio y los tres siguientes. Participación ≤ 10%, mantenimiento ≥ 3 años, entidad con domicilio social y fiscal en Galicia.",
+    "legal_reference": "Art. 5.Once Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_name", "label": "Entidad objeto de inversión (segmento expansión MAB)", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 10%)", "kind": "number", "required": true, "min": 0, "max": 10 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "gal-donaciones-investigacion-desarrollo",
+    "ccaa_code": "ES-GA",
+    "title": "Por donaciones con finalidad en investigación y desarrollo científico e innovación tecnológica",
+    "summary": "25% de donativos monetarios a centros de investigación adscritos a universidades gallegas o promovidos/participados por la Comunidad Autónoma con objeto de I+D+i, y a entidades sin ánimo de lucro acogidas a la Ley 49/2002 con consideración de organismo de investigación. Límite: 10% de la cuota íntegra autonómica.",
+    "legal_reference": "Art. 5.Doce Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de receptor", "kind": "select", "required": true, "options": [
+        { "value": "centro_investigacion_uni", "label": "Centro de investigación adscrito a universidad gallega" },
+        { "value": "centro_xunta", "label": "Centro promovido/participado por la Comunidad Autónoma de Galicia" },
+        { "value": "esfl_ley_49_2002", "label": "Entidad sin ánimo de lucro (Ley 49/2002) - organismo de investigación" }
+      ]}
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "gal-climatizacion-acs-renovables-autoconsumo",
+    "ccaa_code": "ES-GA",
+    "title": "Por inversión en instalaciones de climatización y/o agua caliente sanitaria que empleen energías renovables en la vivienda habitual y destinadas exclusivamente al autoconsumo",
+    "summary": "5% de las cantidades satisfechas por la instalación en la vivienda habitual de sistemas de climatización y/o ACS que utilicen energías renovables. Límite 280 €/contribuyente. Pago no en efectivo; instalación registrada en la OVI.",
+    "legal_reference": "Art. 5.Trece Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "installation_cost_eur", "label": "Cantidades satisfechas por la instalación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "installation_type", "label": "Tipo de instalación", "kind": "select", "required": true, "options": [
+        { "value": "climatizacion", "label": "Climatización" },
+        { "value": "acs", "label": "Agua caliente sanitaria" },
+        { "value": "ambas", "label": "Climatización + ACS" }
+      ]},
+      { "key": "ovi_code", "label": "Código de verificación OVI de la instalación", "kind": "text", "required": true },
+      { "key": "installation_date", "label": "Fecha de la instalación", "kind": "date", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "gal-rehabilitacion-centros-historicos",
+    "ccaa_code": "ES-GA",
+    "title": "Por rehabilitación de bienes inmuebles situados en centros históricos",
+    "summary": "15% de las cantidades invertidas en la rehabilitación de inmuebles propiedad del contribuyente situados en los centros históricos delimitados por la Orden de 1 de marzo de 2018. Límite 9.000 € (mismo en tributación individual y conjunta). Obras con permisos administrativos.",
+    "legal_reference": "Art. 5.Catorce Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "rehabilitation_amount_eur", "label": "Cantidades invertidas en rehabilitación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "property_address", "label": "Dirección del inmueble (centro histórico delimitado por Orden 1/3/2018)", "kind": "text", "required": true },
+      { "key": "property_reference", "label": "Referencia catastral", "kind": "text", "required": false },
+      { "key": "municipal_certificate", "label": "Certificado del ayuntamiento de pertenencia al centro histórico", "kind": "text", "required": false },
+      { "key": "ownership_percentage", "label": "% de titularidad en el inmueble", "kind": "number", "required": false, "min": 0, "max": 100 }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "gal-inversion-empresas-actividades-agrarias",
+    "ccaa_code": "ES-GA",
+    "title": "Por inversión en empresas que desarrollen actividades agrarias",
+    "summary": "20% de las cantidades invertidas en sociedades de fomento forestal (Ley 7/2012), entidades agrarias, cooperativas agrarias o entidades de recuperación de tierras agrarias (Ley 11/2021): adquisición/ampliación de capital, préstamos, garantías o aportaciones en cuentas en participación. Límite conjunto 20.000 €. Escritura pública, mantenimiento 5 años.",
+    "legal_reference": "Art. 5.Quince Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "investment_type", "label": "Tipo de aportación", "kind": "select", "required": true, "options": [
+        { "value": "capital", "label": "Adquisición/ampliación de capital social o aportación a reservas" },
+        { "value": "prestamo_garantia", "label": "Préstamo o garantía" },
+        { "value": "cuentas_participacion", "label": "Aportación a cuentas en participación" }
+      ]},
+      { "key": "entity_type", "label": "Tipo de entidad agraria", "kind": "select", "required": true, "options": [
+        { "value": "fomento_forestal", "label": "Sociedad de fomento forestal (Ley 7/2012)" },
+        { "value": "agraria_cooperativa", "label": "Entidad agraria / cooperativa agraria / explotación comunitaria" },
+        { "value": "recuperacion_tierras", "label": "Entidad de movilización/recuperación de tierras agrarias (Ley 11/2021)" }
+      ]},
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": true },
+      { "key": "investment_date", "label": "Fecha de la operación / escritura pública", "kind": "date", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "gal-incendios-peifoga-2025",
+    "ccaa_code": "ES-GA",
+    "title": "Por las subvenciones y/o ayudas obtenidas como consecuencia de los daños causados por los incendios forestales que provocaron la activación del PEIFOGA en Situación 2 ocurridos en Galicia en 2025",
+    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la subvención o ayuda que se integre en la base liquidable. Aplica a ayudas del Decreto 76/2025 por daños de incendios de 2025 obtenidas de la Administración general autonómica.",
+    "legal_reference": "Art. 5.Dieciséis Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "subsidy_amount_eur", "label": "Importe de la subvención/ayuda integrada en la base liquidable (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "subsidy_resolution", "label": "Resolución/expediente de la ayuda (Decreto 76/2025)", "kind": "text", "required": false }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "gal-eficiencia-energetica-viviendas",
+    "ccaa_code": "ES-GA",
+    "title": "Por obras de mejora de eficiencia energética en edificios de viviendas o en viviendas unifamiliares",
+    "summary": "15% de las cantidades invertidas en obras de mejora de eficiencia energética en edificios de viviendas o viviendas unifamiliares (base máxima 9.000 €/contribuyente) + 100% del coste de honorarios del certificado y tasas de inscripción (límite único 150 €). Requiere subir una letra en la calificación energética y pago no en efectivo.",
+    "legal_reference": "Art. 5.Dieciocho Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "renovation_amount_eur", "label": "Cantidades invertidas en obras de eficiencia energética (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "certificate_fees_eur", "label": "Honorarios certificado + tasas de inscripción (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "energy_certificate_number", "label": "Número de inscripción del certificado de eficiencia energética (post-reforma)", "kind": "text", "required": true },
+      { "key": "letter_jump_certified", "label": "Confirmo que las obras suben al menos una letra en la calificación energética", "kind": "boolean", "required": true },
+      { "key": "property_type", "label": "Tipo de inmueble", "kind": "select", "required": true, "options": [
+        { "value": "unifamiliar", "label": "Vivienda unifamiliar" },
+        { "value": "edificio", "label": "Edificio de viviendas (propiedad horizontal)" }
+      ]},
+      { "key": "ownership_percentage", "label": "% de titularidad", "kind": "number", "required": false, "min": 0, "max": 100 }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "gal-deportistas-alto-nivel",
+    "ccaa_code": "ES-GA",
+    "title": "Por las ayudas y subvenciones recibidas por los deportistas de alto nivel de Galicia",
+    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la subvención o ayuda pública en la base liquidable. Contribuyente reconocido como deportista de alto nivel por la Administración general autonómica con competencias en deporte. La actividad deportiva no debe generar rendimientos de actividades económicas.",
+    "legal_reference": "Art. 5.Diecinueve Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "subsidy_amount_eur", "label": "Importe de la subvención/ayuda integrada en la base liquidable (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "athlete_resolution", "label": "Resolución que reconoce la condición de deportista de alto nivel", "kind": "text", "required": true },
+      { "key": "no_economic_activity", "label": "Confirmo que la actividad deportiva no genera rendimientos de actividades económicas", "kind": "boolean", "required": true }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "gal-aldeas-modelo-vivienda",
+    "ccaa_code": "ES-GA",
+    "title": "Por adquisición y rehabilitación de viviendas en los proyectos de aldeas modelo",
+    "summary": "15% de las cantidades satisfechas en el ejercicio para adquisición (viviendas adquiridas desde 01/01/2021) o rehabilitación (obras iniciadas desde 01/01/2021) de viviendas en proyectos de aldeas modelo (Ley 11/2021). Base máxima: 9.000 €/año vivienda habitual / 4.500 €/año otros casos.",
+    "legal_reference": "Art. 5.Veinte Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición (a partir 01/01/2021)" },
+        { "value": "rehabilitacion", "label": "Rehabilitación (obras iniciadas a partir 01/01/2021)" }
+      ]},
+      { "key": "operation_date", "label": "Fecha de adquisición o inicio de obras", "kind": "date", "required": true },
+      { "key": "habitual_residence", "label": "¿Vivienda habitual? (de lo contrario, residencia esporádica)", "kind": "boolean", "required": true },
+      { "key": "aldea_modelo_project", "label": "Proyecto de aldea modelo (Ley 11/2021)", "kind": "text", "required": true }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "gal-inversion-proyectos-interes-publico",
+    "ccaa_code": "ES-GA",
+    "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades que realicen determinados proyectos declarados de especial interés público, social o económico",
+    "summary": "20% de las cantidades invertidas en adquisición de acciones/participaciones por constitución o ampliación en entidades con objeto social exclusivo proyectos declarados de especial interés (Ley 2/2024). Base máxima 10.000 € por entidad. Incompatible con cualquier otra deducción autonómica por la misma inversión.",
+    "legal_reference": "Art. 5.Veintiuno Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": true },
+      { "key": "project_type", "label": "Tipo de proyecto declarado de especial interés", "kind": "select", "required": true, "options": [
+        { "value": "renovables_compraventa", "label": "Renovables - contratos de compraventa de energía a precio competitivo" },
+        { "value": "renovables_inversion_territorio", "label": "Renovables - inversiones en el territorio o proyectos empresariales" },
+        { "value": "renovables_autoconsumo", "label": "Renovables - autoconsumo eléctrico" },
+        { "value": "repotenciacion_eolicos", "label": "Repotenciación / actualización de parques eólicos existentes" }
+      ]},
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true },
+      { "key": "official_declaration", "label": "Resolución de declaración del proyecto como de especial interés (Consello de la Xunta)", "kind": "text", "required": false }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "gal-adecuacion-inmueble-vacio-alquiler",
+    "ccaa_code": "ES-GA",
+    "title": "Por gastos derivados de la adecuación de un inmueble vacío con destino al arrendamiento como vivienda",
+    "summary": "15% de las cantidades satisfechas por obras de reparación/conservación y gastos necesarios para arrendar el inmueble como vivienda (incluido certificado energético y formalización del contrato). Base máxima 9.000 € por vivienda. Inmueble en Galicia, vacío al menos 1 año, valor ≤ 250.000 €. Máximo 3 viviendas/contribuyente. Base máxima anual 3.000 €/vivienda (6.000 € si 2-3 viviendas conviven).",
+    "legal_reference": "Art. 5.Veintidós Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "adaptation_amount_eur", "label": "Cantidades satisfechas por obras y gastos de adecuación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "property_address", "label": "Dirección del inmueble (Galicia)", "kind": "text", "required": true },
+      { "key": "property_value_eur", "label": "Valor del inmueble (≤ 250.000 €)", "kind": "number", "required": true, "min": 0, "max": 250000 },
+      { "key": "vacant_since_date", "label": "Fecha desde la que el inmueble lleva vacío (≥ 1 año antes del inicio de obras)", "kind": "date", "required": true },
+      { "key": "rental_contract_date", "label": "Fecha de formalización del contrato de arrendamiento", "kind": "date", "required": false },
+      { "key": "tenant_nif", "label": "NIF del/la arrendatario/a (no cónyuge ni pariente hasta 3er grado)", "kind": "text", "required": false },
+      { "key": "owned_rental_homes", "label": "Número de viviendas en propiedad destinables a arrendamiento (máx. 3, excluida la habitual)", "kind": "number", "required": true, "min": 1, "max": 3 }
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "gal-arrendamiento-viviendas-vacias",
+    "ccaa_code": "ES-GA",
+    "title": "Por el arrendamiento de viviendas vacías",
+    "summary": "500 € por cada bien inmueble destinado al arrendamiento de vivienda. Aplica en el primer período impositivo en que se ponga la vivienda en arrendamiento. Inmueble en Galicia, vacío ≥ 1 año, contrato LAU de al menos 3 años, alquiler ≤ 700 €/mes, máximo 3 viviendas.",
+    "legal_reference": "Art. 5.Veintitrés Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "rental_count", "label": "Número de viviendas vacías arrendadas en el ejercicio (máx. 3)", "kind": "number", "required": true, "min": 1, "max": 3 },
+      { "key": "monthly_rent_eur", "label": "Precio mensual del alquiler (€, ≤ 700)", "kind": "number", "required": true, "min": 0, "max": 700 },
+      { "key": "contract_date", "label": "Fecha de formalización del contrato de arrendamiento", "kind": "date", "required": true },
+      { "key": "vacant_since_date", "label": "Fecha desde la que el inmueble llevaba vacío (≥ 1 año antes de formalizar el contrato)", "kind": "date", "required": true },
+      { "key": "tenant_nif", "label": "NIF del/la arrendatario/a (no cónyuge ni pariente hasta 3er grado)", "kind": "text", "required": false },
+      { "key": "ownership_percentage", "label": "% de participación en plena propiedad o usufructo", "kind": "number", "required": false, "min": 0, "max": 100 }
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "gal-ela-fenotipos",
+    "ccaa_code": "ES-GA",
+    "title": "Por las ayudas y subvenciones recibidas por personas con diagnóstico de esclerosis lateral amiotrófica o con sus fenotipos",
+    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la subvención o ayuda pública integrada en la base liquidable. Aplica a contribuyentes que integren en la base imponible general una ayuda destinada a personas con diagnóstico de ELA o sus fenotipos.",
+    "legal_reference": "Art. 5.Veinticuatro Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "subsidy_amount_eur", "label": "Importe de la ayuda integrada en la base liquidable (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "diagnosis_certificate", "label": "Certificado diagnóstico de ELA o fenotipo", "kind": "text", "required": false }
+    ],
+    "display_order": 230,
+    "is_active": true
+  },
+  {
+    "id": "gal-libros-texto-material-escolar",
+    "ccaa_code": "ES-GA",
+    "title": "Por la adquisición de libros de texto y material escolar",
+    "summary": "15% de las cantidades satisfechas por libros de texto (Primaria, ESO, Educación Especial) y material escolar para descendientes en centros sostenidos con fondos públicos. Límite 105 €/descendiente matriculado. Renta per cápita de la unidad familiar ≤ 30.000 €. Solo facturas emitidas entre 01/07/2025 y 31/12/2025. Material escolar limitado a 300 € (150 € deportivo).",
+    "legal_reference": "Art. 5.Veinticinco Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "textbook_expenses_eur", "label": "Gastos en libros de texto (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "material_expenses_eur", "label": "Gastos en material escolar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_enrolled", "label": "Descendientes matriculados (nombre y nivel educativo - Primaria/ESO/Educación Especial)", "kind": "textarea", "required": true },
+      { "key": "family_per_capita_income_eur", "label": "Renta per cápita de la unidad familiar (€, ≤ 30.000)", "kind": "number", "required": true, "min": 0, "max": 30000 },
+      { "key": "public_school", "label": "¿Centro docente sostenido con fondos públicos?", "kind": "boolean", "required": true },
+      { "key": "received_grants", "label": "¿Beneficiario del fondo solidario de libros o ayudas de la Consejería?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 240,
+    "is_active": true
+  },
+  {
+    "id": "gal-talidomida-1950-1985",
+    "ccaa_code": "ES-GA",
+    "title": "Por las ayudas recibidas por las personas afectadas por la talidomida en España durante el período 1950-1985",
+    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la ayuda pública integrada en la base liquidable. Aplica a ayudas públicas percibidas e integradas en las bases imponibles generales de 2023 y siguientes (puede rectificarse autoliquidaciones 2023/2024).",
+    "legal_reference": "Art. 5.Veintiséis Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-GA" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "subsidy_amount_eur", "label": "Importe de la ayuda integrada en la base liquidable (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "thalidomide_certificate", "label": "Resolución/certificado de condición de afectado por talidomida", "kind": "text", "required": false }
+    ],
+    "display_order": 250,
+    "is_active": true
+  }
+]

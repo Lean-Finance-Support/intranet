@@ -1,0 +1,511 @@
+[
+  {
+    "id": "cyl-familia-numerosa",
+    "ccaa_code": "ES-CL",
+    "title": "Por familia numerosa",
+    "summary": "600 € con carácter general por la condición de familia numerosa; 1.500 € con cuatro descendientes y 2.500 € con cinco (incremento de 1.000 € por cada descendiente a partir del sexto). Incremento adicional de 600 € si algún cónyuge o descendiente tiene discapacidad ≥ 65%.",
+    "legal_reference": "Arts. 3 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] }
+      ]
+    },
+    "extra_fields": [
+      { "key": "large_family_category", "label": "Categoría de la familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]},
+      { "key": "descendants_count", "label": "Número de descendientes con derecho al mínimo", "kind": "number", "required": true, "min": 3 },
+      { "key": "has_disabled_member_65", "label": "¿Algún cónyuge o descendiente con grado de discapacidad ≥ 65%?", "kind": "boolean", "required": false },
+      { "key": "large_family_certificate", "label": "Número del título de familia numerosa expedido por la Comunidad", "kind": "text", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "cyl-nacimiento-adopcion-hijos",
+    "ccaa_code": "ES-CL",
+    "title": "Por nacimiento o adopción de hijos",
+    "summary": "1.010 € (1er hijo), 1.475 € (2º) o 2.351 € (3º o sucesivos) por cada hijo nacido o adoptado en el período. En municipios o entidades locales menores con población ≤ 5.000 habitantes: 1.420 €, 2.070 € y 3.300 € respectivamente. Las cuantías se duplican si el menor tiene discapacidad ≥ 33%. Incompatible con la percepción del Bono Nacimiento de la Junta.",
+    "legal_reference": "Arts. 4.1 a 3 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en 2025 (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "birth_order", "label": "Orden del hijo (1º, 2º, 3º o sucesivos)", "kind": "select", "required": true, "options": [
+        { "value": "primero", "label": "Primer hijo" },
+        { "value": "segundo", "label": "Segundo hijo" },
+        { "value": "tercero_sucesivos", "label": "Tercer hijo o sucesivos" }
+      ]},
+      { "key": "rural_municipality", "label": "¿Municipio o entidad local menor con población ≤ 5.000 habitantes?", "kind": "boolean", "required": false },
+      { "key": "municipality", "label": "Municipio de residencia", "kind": "text", "required": false },
+      { "key": "kid_disability_33", "label": "¿El nacido o adoptado tiene reconocido un grado de discapacidad ≥ 33%?", "kind": "boolean", "required": false },
+      { "key": "no_bono_nacimiento", "label": "Confirmo que NO se ha solicitado/percibido el Bono Nacimiento por este hijo", "kind": "boolean", "required": true }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "cyl-partos-adopciones-multiples",
+    "ccaa_code": "ES-CL",
+    "title": "Por partos o adopciones múltiples",
+    "summary": "50% de la deducción por nacimiento/adopción si el parto/adopción simultánea es de 2 hijos; 100% si es de 3 o más. También aplica a nacimientos/adopciones independientes en un período de 12 meses. Deducción adicional de 901 € durante los dos años siguientes para partos múltiples o adopciones simultáneas producidos en 2023 y/o 2024.",
+    "legal_reference": "Arts. 4.4 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "gte", "path": "kids.length", "value": 2 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "multiple_birth_type", "label": "Tipo de parto/adopción", "kind": "select", "required": true, "options": [
+        { "value": "doble", "label": "Parto/adopción de 2 hijos" },
+        { "value": "triple_o_mas", "label": "Parto/adopción de 3 o más hijos" },
+        { "value": "sucesivos_12m", "label": "Nacimientos/adopciones independientes en 12 meses" }
+      ]},
+      { "key": "multiple_birth_date", "label": "Fecha del parto múltiple o adopción simultánea", "kind": "date", "required": true },
+      { "key": "additional_2023_2024", "label": "¿Aplica deducción adicional de 901 € por parto múltiple/adopción simultánea de 2023 o 2024?", "kind": "boolean", "required": false },
+      { "key": "no_bono_nacimiento", "label": "Confirmo que NO se ha percibido el Bono Nacimiento por estos hijos", "kind": "boolean", "required": true }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "cyl-gastos-adopcion",
+    "ccaa_code": "ES-CL",
+    "title": "Por gastos de adopción",
+    "summary": "784 € por cada adopción realizada en el período impositivo de hijos que generen derecho al mínimo por descendientes; 3.625 € en adopción internacional. Aplica en el período de la inscripción en el Registro Civil. Incompatible con el Bono Nacimiento.",
+    "legal_reference": "Arts. 4.5 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "adoption_count", "label": "Número de adopciones en el ejercicio", "kind": "number", "required": true, "min": 1 },
+      { "key": "international_adoption", "label": "¿Adopción internacional?", "kind": "boolean", "required": false },
+      { "key": "registry_date", "label": "Fecha de inscripción en el Registro Civil", "kind": "date", "required": true },
+      { "key": "adoption_detail", "label": "Detalle de la(s) adopción/es (nombre, fecha)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "cyl-cuidado-hijos-menores",
+    "ccaa_code": "ES-CL",
+    "title": "Por cuidado de hijos menores",
+    "summary": "30% de las cantidades pagadas a persona empleada del hogar (límite 322 €) o 100% de los gastos de preinscripción, matrícula, asistencia y alimentación en escuelas/guarderías de Castilla y León inscritas en el Registro de Centros (límite 1.320 €). Hijos < 4 años y ambos padres con actividad por cuenta propia/ajena. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta).",
+    "legal_reference": "Arts. 5.1 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "any_kid_age_lt", "value": 4 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "modality", "label": "Modalidad de la deducción", "kind": "select", "required": true, "options": [
+        { "value": "empleado_hogar", "label": "Persona empleada del hogar (30%, límite 322 €)" },
+        { "value": "guarderia", "label": "Escuelas / guarderías inscritas en el Registro de la Junta (100%, límite 1.320 €)" }
+      ]},
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "subsidies_received_eur", "label": "Subvenciones/ayudas públicas recibidas por este concepto (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "caregiver_nif", "label": "NIF de la persona empleada del hogar / centro / guardería", "kind": "text", "required": true },
+      { "key": "both_parents_working", "label": "Confirmo que ambos padres realizan actividad por cuenta propia o ajena", "kind": "boolean", "required": true },
+      { "key": "kids_under_4", "label": "Hijos menores de 4 años (nombre y fecha de nacimiento)", "kind": "textarea", "required": true }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "cyl-cuotas-seguridad-social-empleados-hogar",
+    "ccaa_code": "ES-CL",
+    "title": "Por cuotas a la Seguridad Social de empleados del hogar",
+    "summary": "15% de las cuotas a la Seguridad Social de un trabajador incluido en el Sistema Especial de Empleados del Hogar, con límite de 300 €. Requiere hijo menor de 4 años con derecho al mínimo por descendientes y base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) / 31.500 € (conjunta).",
+    "legal_reference": "Arts. 5.2 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "any_kid_age_lt", "value": 4 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_security_contributions_eur", "label": "Cuotas Seguridad Social Empleados del Hogar pagadas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "employee_nif", "label": "NIF de la persona empleada", "kind": "text", "required": true },
+      { "key": "is_employer", "label": "¿El contribuyente figura como empleador?", "kind": "boolean", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "cyl-contribuyentes-discapacidad",
+    "ccaa_code": "ES-CL",
+    "title": "Por contribuyentes con discapacidad",
+    "summary": "300 € si el contribuyente ≥ 65 años tiene discapacidad ≥ 33%; 656 € si ≥ 65 años con discapacidad ≥ 65%; 300 € si < 65 años con discapacidad ≥ 65%. Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) / 31.500 € (conjunta). No ser usuario de residencias públicas/concertadas de Castilla y León.",
+    "legal_reference": "Arts. 6 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "gte", "path": "disability_pct", "value": 33 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disability_pct", "label": "Grado de discapacidad reconocido (%)", "kind": "number", "required": true, "min": 33 },
+      { "key": "contributor_age", "label": "Edad del contribuyente", "kind": "number", "required": true, "min": 0 },
+      { "key": "not_in_public_residence", "label": "Confirmo que NO soy usuario de residencias públicas o concertadas de Castilla y León", "kind": "boolean", "required": true },
+      { "key": "judicial_incapacity", "label": "¿Incapacidad declarada judicialmente (se considera ≥ 65%)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "cyl-vivienda-jovenes-medio-rural",
+    "ccaa_code": "ES-CL",
+    "title": "Por adquisición o rehabilitación de vivienda habitual por jóvenes en el medio rural",
+    "summary": "15% de las cantidades satisfechas por adquisición o rehabilitación (también construcción si finaliza en 4 años) de la primera vivienda habitual en municipio o entidad local menor de Castilla y León con ≤ 10.000 habitantes (o ≤ 3.000 si dista menos de 30 km de la capital de provincia). Contribuyente < 36 años, valor de la vivienda < 150.000 €, adquisición desde 01/01/2023. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta). Base máxima 10.000 €.",
+    "legal_reference": "Arts. 7.1 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_invested_eur", "label": "Cantidades satisfechas en el ejercicio (€, base máxima 10.000)", "kind": "number", "required": true, "min": 0, "max": 10000 },
+      { "key": "acquisition_or_rehab", "label": "Tipo de inversión", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición (nueva construcción)" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" },
+        { "value": "construccion", "label": "Construcción (obras en ≤ 4 años)" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición/rehabilitación (a partir 01/01/2023)", "kind": "date", "required": true },
+      { "key": "property_value_eur", "label": "Valor de la vivienda a efectos del impuesto (€, < 150.000)", "kind": "number", "required": true, "min": 0, "max": 150000 },
+      { "key": "municipality", "label": "Municipio o entidad local menor de Castilla y León", "kind": "text", "required": true },
+      { "key": "municipality_population", "label": "Población del municipio (≤ 10.000 / ≤ 3.000 si dista < 30 km de capital)", "kind": "number", "required": true, "min": 0, "max": 10000 },
+      { "key": "first_home", "label": "Confirmo que es mi primera vivienda habitual (sin propiedad anterior ≥ 50%)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "cyl-rehabilitacion-eficiencia-energetica",
+    "ccaa_code": "ES-CL",
+    "title": "Por actuaciones de rehabilitación subvencionadas (planes estatales/autonómicos de vivienda) — eficiencia energética, sostenibilidad y accesibilidad",
+    "summary": "15% de las inversiones en actuaciones de rehabilitación de la vivienda habitual subvencionadas en el marco de planes estatales o autonómicos de vivienda gestionados por la Dirección General de Vivienda de la Junta de Castilla y León: paneles solares, mejora de instalaciones térmicas, ahorro de agua/aguas grises, obras de accesibilidad para personas con discapacidad. Base máxima 20.000 €.",
+    "legal_reference": "Arts. 7.2 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Cantidades satisfechas en el ejercicio (€, base máxima 20.000)", "kind": "number", "required": true, "min": 0, "max": 20000 },
+      { "key": "subsidy_call_year", "label": "Convocatoria de la subvención (Orden)", "kind": "select", "required": true, "options": [
+        { "value": "2021", "label": "Convocatoria 2021 (Orden 27/10/2021)" },
+        { "value": "2022", "label": "Convocatoria 2022 (Orden 14/10/2022)" },
+        { "value": "2023", "label": "Convocatoria 2023 (Orden 17/10/2023)" },
+        { "value": "2024", "label": "Convocatoria 2024 (Orden 22/10/2024)" }
+      ]},
+      { "key": "action_types", "label": "Tipos de actuación realizadas", "kind": "textarea", "required": true },
+      { "key": "subsidy_payment_date", "label": "Fecha de cobro de la subvención", "kind": "date", "required": true },
+      { "key": "bank_transfer_receipt", "label": "Referencia del justificante de transferencia bancaria de la Junta", "kind": "text", "required": false }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "cyl-rehabilitacion-vivienda-rural-alquiler",
+    "ccaa_code": "ES-CL",
+    "title": "Por rehabilitación de viviendas en el medio rural destinadas a su alquiler",
+    "summary": "15% de las cantidades invertidas en la rehabilitación de viviendas situadas en municipios o entidades locales menores de Castilla y León con ≤ 10.000 habitantes (o ≤ 3.000 si distan < 30 km de la capital de provincia), valor < 150.000 €, que durante los 5 años siguientes se alquilen a terceros (no familiares) con renta mensual ≤ 300 €. Base máxima 20.000 €.",
+    "legal_reference": "Arts. 7.3 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "rehab_amount_eur", "label": "Cantidades invertidas en rehabilitación (€, base máxima 20.000)", "kind": "number", "required": true, "min": 0, "max": 20000 },
+      { "key": "property_value_eur", "label": "Valor de la vivienda a efectos del impuesto (€, < 150.000)", "kind": "number", "required": true, "min": 0, "max": 150000 },
+      { "key": "municipality", "label": "Municipio o entidad local menor", "kind": "text", "required": true },
+      { "key": "municipality_population", "label": "Población del municipio (≤ 10.000 / ≤ 3.000 si < 30 km de capital)", "kind": "number", "required": true, "min": 0, "max": 10000 },
+      { "key": "monthly_rent_eur", "label": "Importe mensual del alquiler (€, ≤ 300)", "kind": "number", "required": true, "min": 0, "max": 300 },
+      { "key": "deposit_resguardo", "label": "Justificante de depósito de la fianza", "kind": "text", "required": false },
+      { "key": "non_family_tenant", "label": "Confirmo que el inquilino no es cónyuge, ascendiente, descendiente ni familiar hasta 3er grado", "kind": "boolean", "required": true }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "cyl-arrendamiento-vivienda-jovenes",
+    "ccaa_code": "ES-CL",
+    "title": "Por arrendamiento de vivienda habitual por jóvenes",
+    "summary": "20% (límite 459 €) de las cantidades satisfechas por alquiler de la vivienda habitual en Castilla y León; 25% (límite 612 €) si la vivienda está en municipio o entidad local menor con ≤ 10.000 habitantes (o ≤ 3.000 si dista < 30 km de la capital de provincia). Contribuyente < 36 años. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta). El importe deducible se minora en las ayudas públicas (bono alquiler joven) recibidas.",
+    "legal_reference": "Arts. 7.4, 7.5 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "in_small_municipality", "label": "¿Vivienda en municipio ≤ 10.000 hab (o ≤ 3.000 si < 30 km de capital)?", "kind": "boolean", "required": false },
+      { "key": "municipality", "label": "Municipio de la vivienda", "kind": "text", "required": false },
+      { "key": "public_aid_received_eur", "label": "Ayudas públicas recibidas por el alquiler en 2025 (bono alquiler joven, €)", "kind": "number", "required": false, "min": 0 },
+      { "key": "tenant_in_contract", "label": "Confirmo ser titular del contrato de arrendamiento", "kind": "boolean", "required": true }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "cyl-fomento-emprendimiento",
+    "ccaa_code": "ES-CL",
+    "title": "Para el fomento de emprendimiento",
+    "summary": "20% (límite 10.000 €) de las cantidades invertidas en la adquisición de acciones/participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas o laborales con domicilio social y fiscal en Castilla y León (o sociedades-vehículo que canalicen la inversión a éstas). Participación mínima 0,5% y máxima 45%, mantener 3 años. La sociedad debe crear empleo (incrementar plantilla, autónomos económicamente dependientes o familiares colaboradores).",
+    "legal_reference": "Arts. 8 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_name", "label": "Denominación social de la entidad", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de sociedad", "kind": "select", "required": true, "options": [
+        { "value": "sa", "label": "Sociedad Anónima" },
+        { "value": "sl", "label": "Sociedad Limitada" },
+        { "value": "sa_laboral", "label": "Sociedad Anónima Laboral" },
+        { "value": "sl_laboral", "label": "Sociedad Limitada Laboral" },
+        { "value": "sociedad_vehiculo", "label": "Sociedad vehículo (que aporta capital a una SA/SL/laboral de CyL)" }
+      ]},
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "constitucion", "label": "Constitución de la sociedad" },
+        { "value": "ampliacion", "label": "Ampliación de capital" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirido (mín. 0,5% — máx. 45%)", "kind": "number", "required": true, "min": 0.5, "max": 45 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true },
+      { "key": "certification_obtained", "label": "Confirmo disponer de certificación de la entidad acreditando los requisitos", "kind": "boolean", "required": true }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "cyl-patrimonio-historico-cultural-natural",
+    "ccaa_code": "ES-CL",
+    "title": "Por cantidades invertidas en la recuperación del patrimonio histórico, cultural y natural de Castilla y León",
+    "summary": "15% de las cantidades invertidas por titulares de bienes inmuebles ubicados en Castilla y León en restauración, rehabilitación o reparación de bienes inscritos como BIC o inventariados conforme a la Ley de Patrimonio Cultural; o de bienes naturales en Espacios Naturales o Red Natura 2000, siempre que las actuaciones estén autorizadas. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta). Límite conjunto con las otras deducciones por donativos: 10% de la base liquidable.",
+    "legal_reference": "Arts. 9.a) y b) y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Cantidades invertidas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "asset_type", "label": "Tipo de bien", "kind": "select", "required": true, "options": [
+        { "value": "bic_inmueble", "label": "Inmueble inscrito como BIC o inventariado (Patrimonio Cultural)" },
+        { "value": "espacio_natural", "label": "Bien natural en Espacio Natural / Red Natura 2000" }
+      ]},
+      { "key": "action_description", "label": "Descripción de la actuación (restauración / rehabilitación / reparación)", "kind": "textarea", "required": true },
+      { "key": "authorization_reference", "label": "Referencia de la autorización del órgano competente", "kind": "text", "required": false },
+      { "key": "property_address", "label": "Ubicación del bien", "kind": "text", "required": false }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "cyl-donaciones-fundaciones-patrimonio",
+    "ccaa_code": "ES-CL",
+    "title": "Por cantidades donadas a fundaciones de Castilla y León y para la recuperación del patrimonio histórico, cultural y natural",
+    "summary": "15% de las cantidades donadas a Administraciones Públicas, Iglesia Católica y otras confesiones con acuerdo de cooperación, fundaciones o asociaciones del Título II Ley 49/2002 con fines de patrimonio histórico, recuperación de espacios Red Natura 2000 en Castilla y León, o Fundaciones inscritas en el Registro de Fundaciones de Castilla y León con fines culturales/asistenciales/ecológicos. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta).",
+    "legal_reference": "Arts. 9.c), d) y e) y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18900 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 31500 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de entidad receptora", "kind": "select", "required": true, "options": [
+        { "value": "admin_publica", "label": "Administración Pública o entidad dependiente" },
+        { "value": "iglesia_confesiones", "label": "Iglesia Católica / confesiones con acuerdo con el Estado" },
+        { "value": "fundacion_patrimonio", "label": "Fundación/asociación Ley 49/2002 con fines de patrimonio" },
+        { "value": "red_natura_2000", "label": "Donación para conservación de Red Natura 2000 en CyL" },
+        { "value": "fundacion_registro_cyl", "label": "Fundación inscrita en el Registro de Fundaciones de CyL (fines culturales/asistenciales/ecológicos)" }
+      ]},
+      { "key": "documentary_proof", "label": "Confirmo disponer del justificante documental (art. 24 Ley 49/2002)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "cyl-donaciones-investigacion-desarrollo-innovacion",
+    "ccaa_code": "ES-CL",
+    "title": "Por cantidades donadas para el fomento de la investigación, el desarrollo y la innovación",
+    "summary": "15% de las cantidades donadas a universidades públicas de Castilla y León y a fundaciones u otras instituciones cuya actividad principal sea la I+D+i empresarial para proyectos desarrollados en Castilla y León. Límite conjunto con las otras dos deducciones afines: 10% de la base liquidable.",
+    "legal_reference": "Art. 9.f) Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de entidad receptora", "kind": "select", "required": true, "options": [
+        { "value": "universidad_publica_cyl", "label": "Universidad pública de Castilla y León" },
+        { "value": "fundacion_idi", "label": "Fundación o institución dedicada a I+D+i empresarial en CyL" }
+      ]},
+      { "key": "documentary_proof", "label": "Confirmo disponer del justificante documental de la donación", "kind": "boolean", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "cyl-movilidad-sostenible",
+    "ccaa_code": "ES-CL",
+    "title": "Para el fomento de la movilidad sostenible",
+    "summary": "15% de las cantidades destinadas a la adquisición de un vehículo turismo nuevo (eléctrico puro, eléctrico con autonomía extendida o híbrido enchufable con > 40 km en modo eléctrico). Límite 4.000 € por vehículo. Valor de adquisición ≤ 40.000 € (impuestos incluidos), no afecto a actividad económica, mantener 4 años. Solo en el ejercicio de matriculación.",
+    "legal_reference": "Arts. 9.g) y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "vehicle_purchase_amount_eur", "label": "Importe satisfecho por el vehículo (€, ≤ 40.000 impuestos incluidos)", "kind": "number", "required": true, "min": 0, "max": 40000 },
+      { "key": "vehicle_type", "label": "Tipo de vehículo", "kind": "select", "required": true, "options": [
+        { "value": "electrico_puro", "label": "Vehículo eléctrico puro" },
+        { "value": "electrico_autonomia_extendida", "label": "Vehículo eléctrico con autonomía extendida" },
+        { "value": "hibrido_enchufable", "label": "Vehículo híbrido enchufable (> 40 km en modo eléctrico)" }
+      ]},
+      { "key": "registration_date", "label": "Fecha de matriculación", "kind": "date", "required": true },
+      { "key": "license_plate", "label": "Matrícula del vehículo", "kind": "text", "required": true },
+      { "key": "state_deduction_amount_eur", "label": "Importe deducción estatal por vehículo eléctrico aplicada en su caso (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "not_for_business", "label": "Confirmo que el vehículo no está afecto a actividad económica/profesional", "kind": "boolean", "required": true },
+      { "key": "buyer_on_invoice", "label": "Confirmo que la factura se emite a mi nombre", "kind": "boolean", "required": true }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "cyl-vivienda-nueva-construccion-residencia-habitual",
+    "ccaa_code": "ES-CL",
+    "title": "Por adquisición de vivienda de nueva construcción para residencia habitual",
+    "summary": "7,5% de las cantidades satisfechas por la adquisición de la primera vivienda habitual nueva en Castilla y León cuyo visado de proyecto se obtuvo entre 01/09/2011 y 31/12/2012. Base máxima 9.040 €/año. Aplicable en el ejercicio en que se satisface la primera cantidad y los 4 siguientes (régimen transitorio para inversiones de 2011-2012).",
+    "legal_reference": "Disposición transitoria quinta Texto Refundido Decreto Legislativo 1/2008 de Castilla y León",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CL" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€, base máxima 9.040)", "kind": "number", "required": true, "min": 0, "max": 9040 },
+      { "key": "project_visado_date", "label": "Fecha del visado del proyecto (debe estar entre 01/09/2011 y 31/12/2012)", "kind": "date", "required": true },
+      { "key": "first_payment_date", "label": "Fecha de la primera cantidad satisfecha (para computar los 5 ejercicios)", "kind": "date", "required": true },
+      { "key": "first_home", "label": "Confirmo que es mi primera vivienda habitual", "kind": "boolean", "required": true },
+      { "key": "property_in_cyl", "label": "Confirmo que la vivienda se encuentra en Castilla y León", "kind": "boolean", "required": true }
+    ],
+    "display_order": 170,
+    "is_active": true
+  }
+]

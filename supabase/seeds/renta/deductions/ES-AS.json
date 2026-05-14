@@ -1,0 +1,752 @@
+[
+  {
+    "id": "ast-acogimiento-mayores-65",
+    "ccaa_code": "ES-AS",
+    "title": "Por acogimiento no remunerado de mayores de 65 años",
+    "summary": "500 € por cada persona mayor de 65 años que conviva con el contribuyente más de 183 días al año en régimen de acogimiento sin contraprestación. Sin parentesco hasta 3er grado. Base imponible ≤ 26.000 € (individual) / 37.000 € (conjunta).",
+    "legal_reference": "Art. 3 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 26000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 37000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "fostered_count", "label": "Número de personas mayores de 65 años acogidas", "kind": "number", "required": true, "min": 1 },
+      { "key": "cohabit_days", "label": "Días de convivencia en el año (mínimo 184)", "kind": "number", "required": true, "min": 184 },
+      { "key": "no_aids_received", "label": "Confirmo que ni acogedor ni acogido perciben ayudas del Principado por el acogimiento", "kind": "boolean", "required": true },
+      { "key": "no_kinship", "label": "Confirmo que no existe vínculo de parentesco hasta el 3er grado", "kind": "boolean", "required": true },
+      { "key": "social_services_certificate", "label": "Documento acreditativo expedido por la Consejería de asuntos sociales", "kind": "text", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "ast-vivienda-habitual-discapacidad",
+    "ccaa_code": "ES-AS",
+    "title": "Por adquisición o adecuación de la vivienda habitual para contribuyentes con discapacidad",
+    "summary": "3% de las cantidades satisfechas para adquisición o adecuación de la vivienda habitual cuando el contribuyente, cónyuge, ascendientes o descendientes tengan discapacidad ≥ 65%. Base máxima 15.000 €.",
+    "legal_reference": "Art. 4 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Cantidades satisfechas en el ejercicio por adquisición/adecuación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "beneficiary", "label": "Persona con discapacidad ≥ 65% por la que se aplica", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente", "label": "El propio contribuyente" },
+        { "value": "conyuge", "label": "Cónyuge" },
+        { "value": "ascendiente", "label": "Ascendiente conviviente" },
+        { "value": "descendiente", "label": "Descendiente conviviente" }
+      ]},
+      { "key": "disability_pct", "label": "Grado de discapacidad reconocido (%, ≥ 65)", "kind": "number", "required": true, "min": 65 },
+      { "key": "disability_certificate", "label": "Certificado de discapacidad emitido por la Consejería competente", "kind": "text", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "ast-vivienda-habitual-protegida",
+    "ccaa_code": "ES-AS",
+    "title": "Por inversión en vivienda habitual que tenga la consideración de protegida",
+    "summary": "100% del gasto en adquisición o rehabilitación de vivienda habitual calificada como protegida. Límite 5.000 € el año del gasto y 1.000 € en ejercicios sucesivos.",
+    "legal_reference": "Art. 6 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Cantidades invertidas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]},
+      { "key": "first_year", "label": "¿Es el ejercicio en que se realiza la adquisición/rehabilitación?", "kind": "boolean", "required": true },
+      { "key": "protected_classification", "label": "Calificación de vivienda protegida (referencia o expediente)", "kind": "text", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "ast-arrendamiento-vivienda-habitual",
+    "ccaa_code": "ES-AS",
+    "title": "Por arrendamiento de vivienda habitual",
+    "summary": "10% de las cantidades pagadas (máx. 500 €). Tipo elevado al 30% (máx. 1.500 €) para jóvenes hasta 35 años, familias numerosas, monoparentales o mujeres víctimas de violencia de género; o por residencia en concejo en riesgo de despoblamiento. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta).",
+    "legal_reference": "Art. 7 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "enhanced_rate_reason", "label": "Motivo del tipo incrementado (30%/1.500 €), si aplica", "kind": "select", "required": false, "options": [
+        { "value": "joven_35", "label": "Joven hasta 35 años" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "monoparental", "label": "Familia monoparental" },
+        { "value": "violencia_genero", "label": "Mujer víctima de violencia de género" },
+        { "value": "concejo_despoblacion", "label": "Concejo en riesgo de despoblamiento o crisis demográfica" },
+        { "value": "no_aplica", "label": "No aplica (tipo general 10%)" }
+      ]},
+      { "key": "municipality", "label": "Concejo donde se ubica la vivienda", "kind": "text", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "ast-adopcion-internacional",
+    "ccaa_code": "ES-AS",
+    "title": "Por adopción internacional de menores",
+    "summary": "1.500 € por cada hijo adoptado en adopción internacional siempre que el menor conviva con el declarante.",
+    "legal_reference": "Art. 9 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "international_adoption_kids", "label": "Hijos adoptados internacionalmente (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "registration_date", "label": "Fecha de inscripción en el Registro Civil español", "kind": "date", "required": false }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "ast-partos-multiples",
+    "ccaa_code": "ES-AS",
+    "title": "Por partos múltiples o por dos o más adopciones constituidas en la misma fecha",
+    "summary": "1.000 € por cada hijo nacido o adoptado siempre que se trate de parto múltiple o de dos o más adopciones constituidas en la misma fecha, y el menor conviva con el progenitor a 31 de diciembre.",
+    "legal_reference": "Art. 10 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "gte", "path": "kids.length", "value": 2 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_count", "label": "Número de hijos del parto múltiple o adopciones simultáneas", "kind": "number", "required": true, "min": 2 },
+      { "key": "event_date", "label": "Fecha del parto o adopciones", "kind": "date", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "ast-familias-numerosas",
+    "ccaa_code": "ES-AS",
+    "title": "Para familias numerosas",
+    "summary": "1.000 € en categoría general, 2.000 € en categoría especial. También se equipara a familia numerosa general la familia con dos hijos. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta).",
+    "legal_reference": "Art. 11 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        {
+          "any_of": [
+            { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+            { "op": "gte", "path": "kids.length", "value": 2 }
+          ]
+        },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "large_family_category", "label": "Categoría", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" },
+        { "value": "dos_hijos", "label": "Dos hijos (equiparada a general)" }
+      ]},
+      { "key": "large_family_certificate", "label": "Número del título de familia numerosa (si aplica)", "kind": "text", "required": false }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "ast-familias-monoparentales",
+    "ccaa_code": "ES-AS",
+    "title": "Para familias monoparentales",
+    "summary": "500 € para el contribuyente que tenga a su cargo descendientes, siempre que no conviva con otra persona ajena (salvo ascendiente con derecho al mínimo). Base imponible ≤ 45.000 € (suma con anualidades).",
+    "legal_reference": "Art. 12 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "monoparental", "value": true },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        { "op": "lte", "path": "income_base", "value": 45000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "dependents_detail", "label": "Descendientes a cargo (nombre, fecha de nacimiento, discapacidad si aplica)", "kind": "textarea", "required": true },
+      { "key": "shared_custody", "label": "¿Existe custodia compartida? (incompatible con la deducción)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "ast-acogimiento-familiar-menores",
+    "ccaa_code": "ES-AS",
+    "title": "Por acogimiento familiar de menores",
+    "summary": "500 € por cada menor en acogimiento familiar (urgencia, temporal o permanente) si la convivencia supera 183 días; 250 € si la convivencia es entre 90 y 183 días. No aplica al acogimiento con finalidad preadoptiva.",
+    "legal_reference": "Art. 13 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número de menores en régimen de acogimiento familiar", "kind": "number", "required": true, "min": 1 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "urgencia", "label": "Urgencia" },
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" }
+      ]},
+      { "key": "cohabit_days", "label": "Días de convivencia en el año (mínimo 91)", "kind": "number", "required": true, "min": 91 }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "ast-certificacion-gestion-forestal",
+    "ccaa_code": "ES-AS",
+    "title": "Por certificación de la gestión forestal sostenible",
+    "summary": "30% de las cantidades invertidas en el ejercicio para obtener la certificación de gestión forestal sostenible expedida por la Entidad Solicitante de la Certificación Forestal Regional del Principado de Asturias. Límite 1.000 €.",
+    "legal_reference": "Art. 14 Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Cantidades invertidas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "certification_date", "label": "Fecha de obtención de la certificación", "kind": "date", "required": true },
+      { "key": "forest_reference", "label": "Referencia catastral / identificación del monte", "kind": "text", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "ast-centros-cero-tres",
+    "ccaa_code": "ES-AS",
+    "title": "Por gastos de descendientes en centros de cero a tres años",
+    "summary": "15% de gastos en centros 0-3 (máx. 500 €/descendiente). 30% (máx. 1.000 €) en concejos en riesgo de despoblamiento. Base imponible ≤ 26.000 € (individual) / 37.000 € (conjunta); 35.000/45.000 € en el caso despoblamiento. Incompatible con la deducción por cuidado de descendientes hasta 25 años.",
+    "legal_reference": "Art. 14 bis Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "any_kid_age_lt", "value": 4 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "daycare_expenses_eur", "label": "Gastos de centros 0-3 en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_detail", "label": "Descendientes <3 años (nombre y fecha de nacimiento)", "kind": "textarea", "required": true },
+      { "key": "depopulation_municipality", "label": "¿Residencia en concejo en riesgo de despoblamiento o crisis demográfica?", "kind": "boolean", "required": false },
+      { "key": "received_aids_eur", "label": "Ayudas del Principado para conciliación recibidas (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "ast-libros-texto-material-escolar",
+    "ccaa_code": "ES-AS",
+    "title": "Por adquisición de libros de texto y material escolar",
+    "summary": "100% del gasto en libros de texto y material escolar de Primaria y ESO, con límites por descendiente que varían por tramo de base imponible (25-150 €). Base imponible ≤ 26.000 € (individual) / 37.000 € (conjunta).",
+    "legal_reference": "Art. 14 ter Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 26000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 37000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "books_expenses_eur", "label": "Gastos en libros de texto (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "school_material_expenses_eur", "label": "Gastos en material escolar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_in_primary_or_eso", "label": "Descendientes en Primaria/ESO (nombre y curso)", "kind": "textarea", "required": true },
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false },
+      { "key": "received_grants_eur", "label": "Becas/ayudas que minoran la base (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "ast-nacimiento-segundo-despoblacion",
+    "ccaa_code": "ES-AS",
+    "title": "Por nacimiento o adopción de segundo y sucesivos hijos en concejos en riesgo de despoblamiento o en crisis demográfica",
+    "summary": "300 € por cada segundo y sucesivo hijo nacido o adoptado en el ejercicio cuando el declarante reside en un concejo en riesgo de despoblamiento o crisis demográfica. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta).",
+    "legal_reference": "Art. 14 quater Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "gte", "path": "kids.length", "value": 2 },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "new_kids_detail", "label": "Hijos nacidos o adoptados en el ejercicio (orden y fecha)", "kind": "textarea", "required": true },
+      { "key": "depopulation_municipality_name", "label": "Concejo en riesgo de despoblamiento de residencia", "kind": "text", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "ast-autonomos-despoblacion",
+    "ccaa_code": "ES-AS",
+    "title": "Para contribuyentes que se establezcan como autónomos en concejos en riesgo de despoblamiento o en crisis demográfica",
+    "summary": "1.000 € por contribuyente que inicie actividad como autónomo en un concejo en riesgo de despoblamiento, manteniendo el alta al menos un año. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta). Excluye autónomos colaboradores y socios de sociedades de capital.",
+    "legal_reference": "Art. 14 quinquies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "registration_date", "label": "Fecha de alta como autónomo en RETA / mutualidad", "kind": "date", "required": true },
+      { "key": "activity_description", "label": "Actividad económica desarrollada", "kind": "textarea", "required": true },
+      { "key": "municipality_name", "label": "Concejo en riesgo de despoblamiento", "kind": "text", "required": true },
+      { "key": "no_cease_6m_before", "label": "Confirmo no haber cesado en la misma actividad en los 6 meses anteriores", "kind": "boolean", "required": true }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "ast-transporte-publico-despoblacion",
+    "ccaa_code": "ES-AS",
+    "title": "Por gastos de transporte público para residentes en concejos en riesgo de despoblamiento o en crisis demográfica",
+    "summary": "100% del coste de abonos de transporte público unipersonal y nominal (máx. 100 € por contribuyente) más un 10% adicional por descendiente que estudie bachillerato/FP/universidad fuera del concejo (máx. 300 €/descendiente). Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta).",
+    "legal_reference": "Art. 14 sexies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "transport_expenses_eur", "label": "Gasto en abonos de transporte público del contribuyente (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_transport_expenses_eur", "label": "Gasto en abonos de descendientes que estudian fuera del concejo (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_detail", "label": "Descendientes con derecho al incremento (nombre, estudios y centro)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "ast-formacion-trabajadores-cualificados",
+    "ccaa_code": "ES-AS",
+    "title": "Por gastos de formación de contribuyentes con trabajos especialmente cualificados en I+D, científicos o técnicos",
+    "summary": "100% de los gastos de formación incurridos por trabajadores con categoría Grupo Cotización 1 dedicados a I+D, innovación tecnológica o trabajos científicos/técnicos. Límite 2.000 €. Se aplica una sola vez en el ejercicio de incorporación al mercado laboral, hasta 3 años tras finalizar la formación académica.",
+    "legal_reference": "Art. 14 septies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "training_expenses_eur", "label": "Gastos de formación satisfechos (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "academic_end_date", "label": "Fecha de finalización de la formación académica", "kind": "date", "required": true },
+      { "key": "job_start_date", "label": "Fecha de incorporación al mercado laboral", "kind": "date", "required": true },
+      { "key": "activity_type", "label": "Tipo de actividad", "kind": "select", "required": true, "options": [
+        { "value": "i_d", "label": "Investigación y desarrollo" },
+        { "value": "innovacion_tecnologica", "label": "Innovación tecnológica" },
+        { "value": "cientifica_tecnica", "label": "Científica/Técnica (sostenibilidad, empresa innovadora, pyme)" }
+      ]},
+      { "key": "employment_type", "label": "Modalidad de trabajo", "kind": "select", "required": true, "options": [
+        { "value": "cuenta_ajena", "label": "Por cuenta ajena (contrato)" },
+        { "value": "cuenta_propia", "label": "Por cuenta propia (alta RETA/mutualidad)" }
+      ]}
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "ast-traslado-domicilio-laboral",
+    "ccaa_code": "ES-AS",
+    "title": "Para contribuyentes que trasladen su domicilio fiscal al Principado de Asturias por motivos laborales",
+    "summary": "15% de los gastos del traslado (viaje, mudanza, escolarización, adquisición/arrendamiento de vivienda). Límite 1.000 €; 2.000 € si el contribuyente desarrolla trabajos especialmente cualificados de I+D/científicos/técnicos. Requiere no haber sido residente en Asturias en los 4 años anteriores y mantener residencia 3 años. Aplicable el ejercicio del traslado y los 3 siguientes.",
+    "legal_reference": "Art. 14 octies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "relocation_expenses_eur", "label": "Gastos del traslado (viaje, mudanza, escolarización, vivienda) (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "move_date", "label": "Fecha del traslado de domicilio fiscal a Asturias", "kind": "date", "required": true },
+      { "key": "previous_non_resident_4y", "label": "Confirmo no haber sido residente en Asturias en los 4 años anteriores", "kind": "boolean", "required": true },
+      { "key": "qualified_work", "label": "¿El contribuyente desarrolla trabajos especialmente cualificados de I+D/científicos/técnicos?", "kind": "boolean", "required": false },
+      { "key": "employment_type", "label": "Modalidad", "kind": "select", "required": true, "options": [
+        { "value": "cuenta_ajena", "label": "Por cuenta ajena (contrato)" },
+        { "value": "cuenta_propia", "label": "Por cuenta propia (alta RETA/mutualidad)" }
+      ]}
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "ast-vivienda-habitual-colectivos",
+    "ccaa_code": "ES-AS",
+    "title": "Por adquisición o rehabilitación de vivienda habitual para determinados colectivos",
+    "summary": "A) 5% (10% si <35 años, familia numerosa o monoparental) en concejos en riesgo de despoblamiento. B) 5% en el resto de concejos si <35 años y valor de vivienda ≤ 250.000 €. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta). Base máxima 10.000 €.",
+    "legal_reference": "Art. 14 decies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "scenario", "label": "Supuesto aplicable", "kind": "select", "required": true, "options": [
+        { "value": "a_despoblacion", "label": "A — Vivienda en concejo en riesgo de despoblamiento" },
+        { "value": "b_resto", "label": "B — Vivienda en resto de concejos (requiere <35 años y valor ≤ 250.000 €)" }
+      ]},
+      { "key": "investment_amount_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]},
+      { "key": "property_value_eur", "label": "Valor de la vivienda (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "qualifier", "label": "Circunstancia (para supuesto A, tipo elevado)", "kind": "select", "required": false, "options": [
+        { "value": "joven_35", "label": "Edad ≤ 35 años" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "monoparental", "label": "Familia monoparental" },
+        { "value": "ninguno", "label": "Ninguno (tipo general 5%)" }
+      ]},
+      { "key": "municipality_name", "label": "Concejo donde se ubica la vivienda", "kind": "text", "required": true }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "ast-vehiculos-electricos",
+    "ccaa_code": "ES-AS",
+    "title": "Por adquisición de vehículos eléctricos",
+    "summary": "15% del precio de adquisición de un vehículo eléctrico nuevo o kilómetro cero (turismos M1, furgonetas N1, cuadriciclos L6e/L7e o motocicletas L3e/L4e/L5e). Base máxima 50.000 €. Un único vehículo por contribuyente; no afecto a actividades económicas.",
+    "legal_reference": "Art. 14 undecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "vehicle_price_eur", "label": "Precio de adquisición del vehículo (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "public_aid_eur", "label": "Ayudas públicas percibidas para la compra (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "vehicle_category", "label": "Categoría del vehículo", "kind": "select", "required": true, "options": [
+        { "value": "m1", "label": "Turismo M1" },
+        { "value": "n1", "label": "Furgoneta/camión ligero N1" },
+        { "value": "l6e", "label": "Cuadriciclo ligero L6e" },
+        { "value": "l7e", "label": "Cuadriciclo pesado L7e" },
+        { "value": "l3e_l4e_l5e", "label": "Motocicleta L3e/L4e/L5e" }
+      ]},
+      { "key": "purchase_date", "label": "Fecha del contrato de compraventa", "kind": "date", "required": true },
+      { "key": "not_business_use", "label": "Confirmo que el vehículo no está afecto a actividad económica del adquirente", "kind": "boolean", "required": true }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "ast-cuidado-descendientes-25",
+    "ccaa_code": "ES-AS",
+    "title": "Por el cuidado de descendientes o adoptados de hasta 25 años de edad",
+    "summary": "600 € por cada descendiente de hasta 25 años con derecho al mínimo por descendientes. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta). Incompatible con la deducción por descendientes en centros 0-3 respecto del mismo descendiente.",
+    "legal_reference": "Art. 14 duodecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "descendants_count", "label": "Descendientes hasta 25 años con derecho al mínimo", "kind": "number", "required": true, "min": 1 },
+      { "key": "descendants_detail", "label": "Detalle de los descendientes (nombre y fecha de nacimiento)", "kind": "textarea", "required": true }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "ast-emancipacion-jovenes-35",
+    "ccaa_code": "ES-AS",
+    "title": "Por emancipación de jóvenes de hasta 35 años de edad",
+    "summary": "100% de los gastos directamente vinculados a la emancipación (mobiliario, transporte, arrendamiento o adquisición de vivienda). Límite 1.000 € por contribuyente. Contribuyente <36 años, ocupar la nueva vivienda en Asturias y mantenerla 3 años. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta).",
+    "legal_reference": "Art. 14 terdecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "emancipation_expenses_eur", "label": "Gastos vinculados a la emancipación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "emancipation_date", "label": "Fecha de la emancipación (deja de convivir con ascendientes)", "kind": "date", "required": true },
+      { "key": "housing_type", "label": "Régimen de la nueva vivienda", "kind": "select", "required": true, "options": [
+        { "value": "propiedad", "label": "Propiedad" },
+        { "value": "alquiler", "label": "Arrendamiento" }
+      ]},
+      { "key": "expense_breakdown", "label": "Desglose de gastos (mobiliario, transporte, vivienda, etc.)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "ast-ayudas-esclerosis-lateral",
+    "ccaa_code": "ES-AS",
+    "title": "Por la obtención de ayudas o subvenciones otorgadas por el Principado de Asturias a enfermos de Esclerosis Lateral Amiotrófica",
+    "summary": "Importe resultante de aplicar el tipo medio de gravamen al importe de la subvención o ayuda pública integrada en la base imponible general que el Principado de Asturias haya otorgado a enfermos de Esclerosis Lateral Amiotrófica.",
+    "legal_reference": "Art. 14 quaterdecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "subsidy_amount_eur", "label": "Importe de la subvención/ayuda integrada en la base imponible general (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "subsidy_resolution", "label": "Resolución / referencia de la ayuda otorgada por el Principado", "kind": "text", "required": false }
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "ast-gastos-arrendamiento-arrendador",
+    "ccaa_code": "ES-AS",
+    "title": "Por gastos derivados del arrendamiento de viviendas",
+    "summary": "Importe de los gastos en reparación, conservación, formalización de contratos, primas de seguros por daños/impagos y certificados de eficiencia energética asociados al arrendamiento. Límite 500 € anuales globales. Requiere obtener rendimientos del capital inmobiliario de viviendas habituales arrendadas a precios con sostenibilidad social.",
+    "legal_reference": "Art. 14 quindecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "deductible_expenses_eur", "label": "Gastos deducibles del ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "expense_types", "label": "Tipo de gasto", "kind": "textarea", "required": false },
+      { "key": "rented_property_count", "label": "Número de inmuebles arrendados", "kind": "number", "required": false, "min": 1 },
+      { "key": "rent_within_reference", "label": "Confirmo que la renta mensual no excede el valor superior del Sistema Estatal de Referencia (SERPAVI) o normativa autonómica equivalente", "kind": "boolean", "required": true }
+    ],
+    "display_order": 230,
+    "is_active": true
+  },
+  {
+    "id": "ast-gastos-vitales-jovenes-35",
+    "ccaa_code": "ES-AS",
+    "title": "Por los gastos vitales en que incurran los contribuyentes de hasta 35 años",
+    "summary": "Importe de gastos vitales (vivienda y suministros, educativos, transporte, tecnología, deportivos, culturales). Límite por edad: 2.000 € hasta 25 años; 1.500 € entre 26 y 30; 1.000 € entre 31 y 35. Base imponible ≤ 28.000 €.",
+    "legal_reference": "Art. 14 sexdecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "lte", "path": "income_base", "value": 28000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "vital_expenses_eur", "label": "Total de gastos vitales del ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "expense_breakdown", "label": "Desglose por concepto (vivienda, suministros, educación, transporte, tecnología, deporte, cultura)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 240,
+    "is_active": true
+  },
+  {
+    "id": "ast-descendientes-fallecimiento-progenitor",
+    "ccaa_code": "ES-AS",
+    "title": "Por descendientes en caso de fallecimiento de progenitor como consecuencia de accidentes laborales",
+    "summary": "1.000 € anuales por cada descendiente que genere derecho al mínimo por descendientes cuando se haya producido el fallecimiento del otro progenitor como consecuencia de un accidente laboral. Aplicable hasta que el descendiente deje de generar el derecho al mínimo.",
+    "legal_reference": "Art. 14 septendecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "descendants_count", "label": "Descendientes con derecho al mínimo por descendientes", "kind": "number", "required": true, "min": 1 },
+      { "key": "deceased_parent_date", "label": "Fecha de fallecimiento del otro progenitor", "kind": "date", "required": true },
+      { "key": "work_accident_evidence", "label": "Documento que acredita que el fallecimiento fue por accidente laboral", "kind": "text", "required": false }
+    ],
+    "display_order": 250,
+    "is_active": true
+  },
+  {
+    "id": "ast-inversion-nuevas-entidades",
+    "ccaa_code": "ES-AS",
+    "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+    "summary": "30% de las cantidades invertidas en constitución o ampliación de capital de SA, SL o cooperativas (incluidas laborales). Límite 6.000 €. Participación familiar ≤ 40%, mantener 3 años, entidad con domicilio social y fiscal en Asturias, pyme, actividad económica real. Para ampliaciones, la entidad debe haberse constituido en los 3 años anteriores y aumentar plantilla.",
+    "legal_reference": "Art. 14 octodecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Cantidades invertidas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Forma jurídica", "kind": "select", "required": true, "options": [
+        { "value": "sa", "label": "Sociedad Anónima" },
+        { "value": "sl", "label": "Sociedad Limitada" },
+        { "value": "cooperativa", "label": "Cooperativa" },
+        { "value": "laboral", "label": "Sociedad Laboral" }
+      ]},
+      { "key": "operation_type", "label": "Operación", "kind": "select", "required": true, "options": [
+        { "value": "constitucion", "label": "Constitución" },
+        { "value": "ampliacion", "label": "Ampliación de capital" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 40% incluido entorno familiar)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 260,
+    "is_active": true
+  },
+  {
+    "id": "ast-enfermedad-celiaca",
+    "ccaa_code": "ES-AS",
+    "title": "Por gastos derivados de la enfermedad celíaca diagnosticada",
+    "summary": "100 € por cada miembro del núcleo familiar (contribuyente, cónyuge, ascendientes o descendientes con derecho al mínimo familiar) diagnosticado de enfermedad celíaca. Base imponible ≤ 35.000 € (individual) / 45.000 € (conjunta). Requiere informe médico oficial de SNS o aseguramiento sanitario privado.",
+    "legal_reference": "Art. 14 novodecies Texto Refundido del Decreto Legislativo 2/2014, de 22 de octubre, del Principado de Asturias",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AS" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "celiac_members_count", "label": "Miembros del núcleo familiar diagnosticados de celiaquía", "kind": "number", "required": true, "min": 1 },
+      { "key": "celiac_members_detail", "label": "Detalle (parentesco y fecha del diagnóstico)", "kind": "textarea", "required": true },
+      { "key": "medical_report", "label": "Informe médico oficial (Servicio de Salud o aseguramiento privado)", "kind": "text", "required": false }
+    ],
+    "display_order": 270,
+    "is_active": true
+  }
+]

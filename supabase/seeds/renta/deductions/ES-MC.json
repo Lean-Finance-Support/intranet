@@ -1,0 +1,775 @@
+[
+  {
+    "id": "mur-inversion-vivienda-jovenes-40",
+    "ccaa_code": "ES-MC",
+    "title": "Por inversión en vivienda habitual por jóvenes de edad igual o inferior a 40 años",
+    "summary": "5% de las cantidades satisfechas por adquisición, construcción, ampliación o rehabilitación de la vivienda habitual (incluidos gastos de financiación ajena). Contribuyente ≤40 años, base imponible <40.000 € (con base del ahorro ≤1.800 €). Límite máximo 300 €/año. Base máxima 9.040 € menos lo aplicado en la deducción estatal.",
+    "legal_reference": "Art. 1.Uno Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "age_lt", "path": "birth_date", "value": 41 },
+        { "op": "lt", "path": "income_base", "value": 40000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "construccion", "label": "Construcción" },
+        { "value": "ampliacion", "label": "Ampliación" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición o inicio de la inversión", "kind": "date", "required": false },
+      { "key": "new_construction", "label": "¿Vivienda de nueva construcción (en adquisición/ampliación)?", "kind": "boolean", "required": false },
+      { "key": "state_deduction_base_eur", "label": "Cantidades aplicadas a la base de la deducción estatal (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "mur-donativos-patrimonio-cultural",
+    "ccaa_code": "ES-MC",
+    "title": "Por donativos para la protección del patrimonio cultural de la Región de Murcia o la promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales",
+    "summary": "50% de las donaciones dinerarias puras y simples destinadas a la protección del patrimonio cultural de Murcia o a la promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales, a favor de los titulares de proyectos de la Ley 4/2022 de mecenazgo.",
+    "legal_reference": "Art. 1.Dos.1 Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidad/persona receptora y NIF", "kind": "textarea", "required": true },
+      { "key": "donation_purpose", "label": "Finalidad de la donación", "kind": "select", "required": true, "options": [
+        { "value": "patrimonio_cultural", "label": "Protección del patrimonio cultural de Murcia" },
+        { "value": "actividades_culturales", "label": "Promoción de actividades culturales/artísticas" },
+        { "value": "actividades_sociales", "label": "Actividades sociales" },
+        { "value": "cientifico_tecnologicas", "label": "Actividades científico-tecnológicas" },
+        { "value": "medioambientales", "label": "Actividades medioambientales" }
+      ]},
+      { "key": "certification_received", "label": "Dispongo de certificación de la entidad beneficiaria con todos los datos requeridos", "kind": "boolean", "required": true }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "mur-donativos-investigacion-biosanitaria",
+    "ccaa_code": "ES-MC",
+    "title": "Por donativos para la investigación biosanitaria",
+    "summary": "50% de las donaciones dinerarias puras y simples destinadas a la investigación biosanitaria a la que se refiere la Ley 4/1994 de Salud de Murcia, a favor de la CCAA, entidades públicas autonómicas, universidades públicas o entidades sin fines lucrativos inscritas en la Región.",
+    "legal_reference": "Art. 1.Dos.2 Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidad receptora y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de entidad receptora", "kind": "select", "required": true, "options": [
+        { "value": "ccaa_murcia", "label": "Comunidad Autónoma de la Región de Murcia o sus entidades del sector público" },
+        { "value": "universidad_publica", "label": "Universidad pública de la Región de Murcia" },
+        { "value": "entidad_sin_fines_lucrativos", "label": "Entidad sin fines lucrativos (Ley 49/2002) con fin de investigación biosanitaria" }
+      ]},
+      { "key": "certification_received", "label": "Dispongo de certificación de la entidad beneficiaria", "kind": "boolean", "required": true }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "mur-donaciones-bienes-inventario-patrimonio",
+    "ccaa_code": "ES-MC",
+    "title": "Por donaciones de bienes inscritos en el Inventario del Patrimonio Cultural de la Comunidad Autónoma de la Región de Murcia",
+    "summary": "15% de las donaciones puras y simples de bienes que, formando parte del patrimonio cultural de Murcia, estén inscritos en el Inventario del Patrimonio Cultural. La base es el valor contable del bien (o valor según el Impuesto sobre el Patrimonio), con tope en el valor de mercado.",
+    "legal_reference": "Art. 1.Dos.3 Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donated_asset_description", "label": "Descripción del bien donado", "kind": "textarea", "required": true },
+      { "key": "asset_book_value_eur", "label": "Valor contable / valor según Impuesto sobre el Patrimonio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "asset_market_value_eur", "label": "Valor de mercado del bien en el momento de la transmisión (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "donation_recipient", "label": "Entidad receptora (CCAA, corporaciones locales, universidades, entidades sin fines lucrativos)", "kind": "text", "required": true },
+      { "key": "inventory_registration", "label": "Inscripción del bien en el Inventario del Patrimonio Cultural (referencia)", "kind": "text", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "mur-gastos-guarderia",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos de guardería",
+    "summary": "20% de los gastos satisfechos en guarderías y centros de educación infantil por hijos o descendientes en Primer Ciclo de Educación Infantil. Límite 1.000 €/hijo. Suma de bases ≤30.000 € (individual) o 50.000 € (conjunta). La base incluye custodia, alimentación y vestuario escolar, minorada por becas.",
+    "legal_reference": "Art. 1.Tres Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "any_kid_age_lt", "value": 4 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 50000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "nursery_fees_eur", "label": "Gastos de guardería / centro de educación infantil (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "food_uniform_eur", "label": "Gastos de alimentación y vestuario escolar exclusivo (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "received_grants_eur", "label": "Becas/ayudas públicas recibidas que minoran la base (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_in_nursery", "label": "Hijos por los que se aplica (nombre y edad)", "kind": "textarea", "required": true },
+      { "key": "shared_custody", "label": "¿Guarda y custodia compartida?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "mur-dispositivos-ahorro-agua",
+    "ccaa_code": "ES-MC",
+    "title": "Por inversiones en dispositivos domésticos de ahorro de agua",
+    "summary": "20% de las inversiones realizadas en dispositivos domésticos de ahorro de agua en la vivienda habitual (Ley 6/2006). Límite máximo de deducción 60 €/año. Base máxima 300 €. Requiere reconocimiento previo de la Administración regional.",
+    "legal_reference": "Art. 1.Cuatro Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "water_saving_investment_eur", "label": "Importe satisfecho por adquisición e instalación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "device_description", "label": "Descripción de los dispositivos instalados", "kind": "textarea", "required": false },
+      { "key": "regional_recognition", "label": "Confirmo que existe reconocimiento previo de la Administración regional sobre la procedencia de la deducción", "kind": "boolean", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "mur-inversion-energias-renovables",
+    "ccaa_code": "ES-MC",
+    "title": "Por inversión en instalaciones de recursos energéticos renovables",
+    "summary": "Inversión en sistemas de aprovechamiento de energías renovables en la vivienda habitual o destinada a arrendamiento. Porcentaje variable según base imponible (50% hasta 34.999,99 €; 37,5% entre 35.000-44.999,99 €; 25% entre 45.000-59.999,99 €; sin derecho desde 60.000 € — tramos superiores en conjunta). Límite 7.000 €.",
+    "legal_reference": "Art. 1.Cinco Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 60000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 95000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "renewable_investment_eur", "label": "Importe satisfecho por la instalación, excluidas ayudas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "installation_type", "label": "Tipo de sistema instalado", "kind": "select", "required": true, "options": [
+        { "value": "fotovoltaica", "label": "Solar fotovoltaica (autoconsumo, no excedentes no compensables)" },
+        { "value": "solar_termica", "label": "Solar térmica" },
+        { "value": "biomasa", "label": "Biomasa" },
+        { "value": "geotermica", "label": "Geotérmica" },
+        { "value": "aerotermica", "label": "Aerotérmica" },
+        { "value": "eolica", "label": "Eólica" },
+        { "value": "otra", "label": "Otra fuente renovable" }
+      ]},
+      { "key": "property_use", "label": "Uso de la vivienda", "kind": "select", "required": true, "options": [
+        { "value": "habitual", "label": "Vivienda habitual" },
+        { "value": "alquiler", "label": "Vivienda destinada al arrendamiento (sin actividad económica)" }
+      ]},
+      { "key": "installer_invoice", "label": "Dispongo de factura del instalador habilitado", "kind": "boolean", "required": true },
+      { "key": "payment_traceable", "label": "El pago se realizó mediante tarjeta, transferencia, cheque o ingreso bancario (no efectivo)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "mur-inversion-entidades-nuevas",
+    "ccaa_code": "ES-MC",
+    "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
+    "summary": "20% de las cantidades invertidas en la constitución o ampliación de capital de SA, SL, SAL, SLL o cooperativas con domicilio en Murcia. Límite 4.000 €. Participación máxima 40% (con familia), mantener 3 años, requisitos de plantilla y actividad económica.",
+    "legal_reference": "Art. 1.Seis Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de entidad participada", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl", "label": "Sociedad Anónima / Sociedad Limitada" },
+        { "value": "sal_sll", "label": "Sociedad Anónima Laboral / Sociedad Limitada Laboral" },
+        { "value": "cooperativa", "label": "Cooperativa" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 40% incluido entorno familiar)", "kind": "number", "required": true, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true },
+      { "key": "public_deed", "label": "La inversión está formalizada en escritura pública", "kind": "boolean", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "mur-inversion-mercado-alternativo-bursatil",
+    "ccaa_code": "ES-MC",
+    "title": "Por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del mercado alternativo bursátil",
+    "summary": "20% de las cantidades invertidas en ampliaciones de capital en el segmento de empresas en expansión del MAB. Límite 10.000 €. Participación máxima 10%, mantener 2 años, entidad con domicilio en Murcia y actividad económica.",
+    "legal_reference": "Art. 1.Siete Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_name", "label": "Entidad objeto de inversión (segmento MAB expansión)", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 10%)", "kind": "number", "required": true, "min": 0, "max": 10 },
+      { "key": "investment_date", "label": "Fecha de adquisición de la participación", "kind": "date", "required": true },
+      { "key": "public_deed", "label": "La inversión está formalizada en escritura pública", "kind": "boolean", "required": true }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "mur-material-escolar-libros-texto",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos en la adquisición de material escolar y libros de texto",
+    "summary": "120 € por cada descendiente por adquisición de material escolar y libros de texto en 2º ciclo de Educación Infantil, Primaria y ESO. Suma de bases: ≤20.000 € (individual) o 40.000 € (conjunta); 33.000/53.000 € en familias numerosas. Se minora por becas recibidas.",
+    "legal_reference": "Art. 1.Ocho Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 20000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 53000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "school_supplies_kids_count", "label": "Número de descendientes por los que se aplica", "kind": "number", "required": true, "min": 1 },
+      { "key": "kids_with_expenses", "label": "Hijos y nivel educativo cursado (Infantil 2º ciclo, Primaria, ESO)", "kind": "textarea", "required": true },
+      { "key": "received_grants_eur", "label": "Becas/ayudas recibidas para libros o material (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "mur-nacimiento-adopcion",
+    "ccaa_code": "ES-MC",
+    "title": "Por nacimiento o adopción",
+    "summary": "100 € por el primer hijo nacido o adoptado, 200 € por el segundo y 300 € por el tercero o sucesivos. Suma de bases ≤30.000 € (individual) o 50.000 € (conjunta). Se prorratea entre los progenitores en tributación individual.",
+    "legal_reference": "Art. 1.Nueve Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 50000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en el período impositivo (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "previous_kids_count", "label": "Número de hijos previos a este nacimiento/adopción", "kind": "number", "required": true, "min": 0 },
+      { "key": "shared_with_other_parent", "label": "¿Convive el hijo con ambos progenitores que tributan individualmente?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "mur-contribuyentes-discapacidad",
+    "ccaa_code": "ES-MC",
+    "title": "Para contribuyentes con discapacidad",
+    "summary": "150 € por cada contribuyente con grado de discapacidad acreditado ≥ 33%. Suma de bases imponibles general y del ahorro ≤ 40.000 € en tributación individual o conjunta.",
+    "legal_reference": "Art. 1.Diez Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "gte", "path": "disability_pct", "value": 33 },
+        { "op": "lte", "path": "income_base", "value": 40000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disability_certificate", "label": "Resolución/certificado acreditativo del grado de discapacidad", "kind": "text", "required": false },
+      { "key": "disability_pct_value", "label": "Grado de discapacidad reconocido (%)", "kind": "number", "required": true, "min": 33 }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "mur-conciliacion-cuidado-descendientes-ascendientes",
+    "ccaa_code": "ES-MC",
+    "title": "Por conciliación (cuidado de descendientes y ascendientes)",
+    "summary": "20% de las cuotas al Sistema Especial de Empleados de Hogar por personas contratadas para cuidar descendientes <12 años o ascendientes >65 años. Límite 400 € por modalidad (800 € si se aplican ambas con personas distintas). Suma de bases de la unidad familiar ≤ 34.000 €.",
+    "legal_reference": "Art. 1.Once Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "lte", "path": "income_base", "value": 34000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_security_contributions_eur", "label": "Cuotas Seguridad Social Empleados Hogar pagadas en el año (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "modality", "label": "Modalidad aplicada", "kind": "select", "required": true, "options": [
+        { "value": "descendientes", "label": "A. Cuidado de descendientes (<12 años)" },
+        { "value": "ascendientes", "label": "B. Cuidado de ascendientes (>65 años)" },
+        { "value": "ambas", "label": "Ambas, con personas contratadas distintas" }
+      ]},
+      { "key": "employer_high", "label": "Confirmo el alta como empleador titular de hogar familiar en la Seguridad Social", "kind": "boolean", "required": true },
+      { "key": "earned_income_required", "label": "Confirmo que percibo rendimientos del trabajo o de actividades económicas", "kind": "boolean", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "mur-acogimiento-no-remunerado-mayores-discapacidad",
+    "ccaa_code": "ES-MC",
+    "title": "Por acogimiento no remunerado de mayores de sesenta y cinco años y/o personas con discapacidad",
+    "summary": "600 € por cada persona >65 años o con grado de discapacidad ≥33% en acogimiento sin contraprestación que conviva con el contribuyente más de 183 días al año. No procede si hay parentesco hasta 4º grado o se reciben ayudas autonómicas vinculadas.",
+    "legal_reference": "Art. 1.Doce Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "fostered_person_age", "label": "Edad de la persona acogida", "kind": "number", "required": true, "min": 0 },
+      { "key": "fostered_person_disability_pct", "label": "Grado de discapacidad reconocido de la persona acogida (%)", "kind": "number", "required": false, "min": 0 },
+      { "key": "cohabit_days", "label": "Días de convivencia en el año (>183)", "kind": "number", "required": true, "min": 184 },
+      { "key": "no_kinship_4th_degree", "label": "Confirmo que no existe parentesco hasta el 4º grado de consanguinidad o afinidad", "kind": "boolean", "required": true },
+      { "key": "no_aids_received", "label": "Confirmo que no se reciben ayudas/subvenciones de la CCAA de Murcia vinculadas al acogimiento", "kind": "boolean", "required": true },
+      { "key": "regional_certificate", "label": "Dispongo de certificado expedido por el órgano competente regional", "kind": "boolean", "required": false }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "mur-arrendamiento-vivienda-habitual",
+    "ccaa_code": "ES-MC",
+    "title": "Por arrendamiento de vivienda habitual",
+    "summary": "10% de las cantidades no subvencionadas pagadas por alquiler de la vivienda habitual en Murcia. Límite máximo 300 €/año por contrato. Requiere edad ≤40, ser familia numerosa o tener discapacidad ≥65%. Base imponible general menos mínimo personal/familiar <40.000 € (con base del ahorro ≤1.800 €).",
+    "legal_reference": "Art. 1.Trece Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "op": "age_lt", "path": "birth_date", "value": 41 },
+            { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+            { "op": "gte", "path": "disability_pct", "value": 65 }
+          ]
+        },
+        { "op": "lt", "path": "income_base", "value": 40000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada no subvencionada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "qualifying_circumstance", "label": "Circunstancia que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "edad_40", "label": "≤40 años a fecha de devengo" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "discapacidad_65", "label": "Discapacidad ≥65%" }
+      ]},
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "itp_filed", "label": "Confirmo presentación del modelo de ITP-AJD por el arrendamiento (o exención del art. 45.1.B.26)", "kind": "boolean", "required": true },
+      { "key": "no_other_housing_owned", "label": "Confirmo que ni yo ni mi unidad familiar somos titulares de >50% de otra vivienda", "kind": "boolean", "required": true },
+      { "key": "no_investment_deduction", "label": "Confirmo que no aplico la deducción por inversión en vivienda habitual en el mismo período", "kind": "boolean", "required": true },
+      { "key": "payment_traceable", "label": "El pago se realizó por tarjeta, transferencia, cheque o ingreso bancario (no efectivo)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "mur-mujeres-trabajadoras",
+    "ccaa_code": "ES-MC",
+    "title": "Para mujeres trabajadoras",
+    "summary": "300 € por el primer hijo, 350 € por el segundo, 400 € por el tercero o sucesivos, y 400 € por persona dependiente a cargo. Solo mujeres trabajadoras dadas de alta en la Seguridad Social/mutualidad. Suma de bases ≤20.000 € (individual) o 40.000 € (conjunta). Se calcula proporcional a los días trabajados.",
+    "legal_reference": "Art. 1.Catorce Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 20000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "working_woman_confirm", "label": "Confirmo que soy mujer y realizo actividad por cuenta propia o ajena dada de alta en Seguridad Social/mutualidad", "kind": "boolean", "required": true },
+      { "key": "kids_under_18_count", "label": "Número de hijos menores de 18 años (incluidos todos para determinar orden)", "kind": "number", "required": true, "min": 0 },
+      { "key": "dependent_persons_count", "label": "Personas dependientes a cargo (ascendientes >75 años o descendientes con discapacidad ≥65%)", "kind": "number", "required": false, "min": 0 },
+      { "key": "worked_days", "label": "Días trabajados en el período impositivo", "kind": "number", "required": true, "min": 1, "max": 366 }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "mur-vivienda-familias-numerosas",
+    "ccaa_code": "ES-MC",
+    "title": "Por adquisición de nueva vivienda habitual o ampliación de la vivienda habitual actual por familias numerosas",
+    "summary": "10% (general) o 15% (especial) de las cantidades destinadas a adquirir nueva vivienda habitual o ampliar la actual, para familias numerosas. Base máxima 5.000 €/año. Aplicable durante 15 años; nueva vivienda debe tener >10% más superficie útil y adquirirse dentro de 5 años desde la consideración de familia numerosa.",
+    "legal_reference": "Art. 1.Quince Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "large_family_category", "label": "Categoría de familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]},
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "nueva_adquisicion", "label": "Adquisición de nueva vivienda habitual" },
+        { "value": "ampliacion", "label": "Ampliación de la vivienda habitual actual" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición / ampliación", "kind": "date", "required": true },
+      { "key": "large_family_recognition_date", "label": "Fecha de reconocimiento de familia numerosa", "kind": "date", "required": true },
+      { "key": "previous_home_sale", "label": "¿Se ha vendido la vivienda anterior o se prevé hacerlo dentro de 5 años?", "kind": "boolean", "required": true },
+      { "key": "surface_increase_over_10", "label": "Confirmo que la nueva vivienda supera en más del 10% la superficie útil de la anterior", "kind": "boolean", "required": false }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "mur-familia-monoparental",
+    "ccaa_code": "ES-MC",
+    "title": "Por familia monoparental",
+    "summary": "303 € para contribuyentes con descendientes a cargo, sin convivir con otra persona ajena (salvo ascendientes que generen mínimo). Suma de bases imponibles + anualidades por alimentos exentas ≤ 35.240 €. Los descendientes deben tener rentas anuales ≤ 8.000 €.",
+    "legal_reference": "Art. 1.Dieciséis Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "eq", "path": "monoparental", "value": true },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        { "op": "lte", "path": "income_base", "value": 35240 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "monoparental_confirm", "label": "Confirmo que soy familia monoparental (sin convivencia con otra persona ajena, salvo ascendientes)", "kind": "boolean", "required": true },
+      { "key": "descendants_detail", "label": "Descendientes a cargo (nombre, edad, situación de discapacidad si aplica)", "kind": "textarea", "required": true },
+      { "key": "descendants_under_age", "label": "¿Los descendientes son menores de edad, mayores con discapacidad o dependientes internados?", "kind": "boolean", "required": true },
+      { "key": "descendants_income_under_8000", "label": "Confirmo que las rentas anuales de los descendientes (excluidas exentas) son ≤ 8.000 €", "kind": "boolean", "required": true }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "mur-ensenanza-idiomas",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos de enseñanza de idiomas",
+    "summary": "15% de los gastos en aprendizaje extraescolar de idiomas extranjeros por hijos en 2º ciclo de Infantil, Primaria, ESO, Bachillerato o FP. Límite 300 €/hijo. Suma de bases <25.000 € (individual) o <40.000 € (conjunta). Solo hijos que den derecho al mínimo por descendientes.",
+    "legal_reference": "Art. 1.Diecisiete Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "language_fees_eur", "label": "Gastos satisfechos por aprendizaje de idiomas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Hijos por los que se aplica (nombre y nivel educativo)", "kind": "textarea", "required": true },
+      { "key": "language_invoices", "label": "Dispongo de justificantes/facturas acreditativos del pago", "kind": "boolean", "required": true }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "mur-acceso-internet",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos de acceso a Internet",
+    "summary": "30% de las cantidades satisfechas (cuota de alta y mensualidades) por contratación de líneas de alta velocidad. Límite 300 €. Residencia habitual en municipio de Murcia <15.000 habitantes. Solo en el ejercicio del contrato; uso exclusivo en vivienda habitual.",
+    "legal_reference": "Art. 1.Dieciocho Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "internet_amount_eur", "label": "Cuota de alta y mensualidades pagadas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "municipality", "label": "Municipio de Murcia (<15.000 habitantes)", "kind": "text", "required": true },
+      { "key": "contract_signed_in_year", "label": "Confirmo que el contrato de conexión se celebró en el ejercicio", "kind": "boolean", "required": true },
+      { "key": "exclusive_home_use", "label": "Confirmo que la línea es de uso exclusivo en la vivienda habitual (no actividad profesional)", "kind": "boolean", "required": true },
+      { "key": "not_company_change", "label": "Confirmo que no se trata de un mero cambio de compañía con contrato anterior en otro ejercicio", "kind": "boolean", "required": true }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "mur-adquisicion-vehiculos-electricos",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos en la adquisición de vehículos eléctricos",
+    "summary": "30%/22,5%/15% del valor de adquisición de vehículos eléctricos (BEV, EREV, PHEV, FCV, FCHV) según base imponible. Bases máximas por vehículo: 45.000/53.000 € turismos, 10.000 € motocicletas, 3.000 € ciclomotores. Límite máximo 7.000 €/vehículo. Un único vehículo por período y contribuyente. Mantener 5 años (2 en renting).",
+    "legal_reference": "Art. 1.Diecinueve Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 60000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 95000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "vehicle_purchase_amount_eur", "label": "Valor de adquisición del vehículo, menos subvenciones (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "vehicle_category", "label": "Categoría del vehículo", "kind": "select", "required": true, "options": [
+        { "value": "turismo_m1", "label": "Turismo M1" },
+        { "value": "turismo_bev_8_9_plazas", "label": "Turismo BEV de 8 o 9 plazas" },
+        { "value": "motocicleta", "label": "Motocicleta L3e/L4e/L5e (≥3 kW, autonomía ≥70 km)" },
+        { "value": "ciclomotor", "label": "Ciclomotor L1e" }
+      ]},
+      { "key": "vehicle_type", "label": "Tipo de vehículo eléctrico", "kind": "select", "required": true, "options": [
+        { "value": "bev", "label": "BEV (puro)" },
+        { "value": "erev", "label": "EREV (autonomía extendida)" },
+        { "value": "phev", "label": "PHEV (híbrido enchufable)" },
+        { "value": "fcv", "label": "FCV (célula de combustible)" },
+        { "value": "fchv", "label": "FCHV (híbrido célula de combustible)" }
+      ]},
+      { "key": "acquisition_mode", "label": "Modalidad de adquisición", "kind": "select", "required": true, "options": [
+        { "value": "compraventa", "label": "Compraventa" },
+        { "value": "leasing", "label": "Leasing" },
+        { "value": "renting", "label": "Renting" }
+      ]},
+      { "key": "registration_date", "label": "Fecha de matriculación / formalización del contrato", "kind": "date", "required": true },
+      { "key": "no_economic_activity", "label": "Confirmo que el vehículo no está afecto a actividad económica", "kind": "boolean", "required": true },
+      { "key": "first_registration_in_spain", "label": "Confirmo que se trata de vehículo nuevo, de importación o demostración (≤18 meses), matriculado por primera vez en España", "kind": "boolean", "required": true }
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "mur-infraestructura-recarga-electrica",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos en la instalación de infraestructuras de recarga de vehículos eléctricos",
+    "summary": "100% de las cantidades satisfechas por la instalación de infraestructura de recarga de vehículos eléctricos (Programa MOVES III, RD 266/2021), minoradas con subvenciones públicas. Límite máximo 4.000 €/infraestructura y contribuyente. Una sola infraestructura por período. Mantenimiento 2 años. Finca propia o garaje comunitario.",
+    "legal_reference": "Art. 1.Veinte Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "charging_install_amount_eur", "label": "Importe satisfecho por la instalación, menos subvenciones (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "installation_location", "label": "Ubicación de la infraestructura", "kind": "select", "required": true, "options": [
+        { "value": "finca_propia", "label": "Finca de mi propiedad" },
+        { "value": "garaje_comunitario", "label": "Garaje comunitario" }
+      ]},
+      { "key": "installation_completion_date", "label": "Fecha de finalización de la instalación", "kind": "date", "required": true },
+      { "key": "invoice_available", "label": "Dispongo de la factura acreditativa de la inversión", "kind": "boolean", "required": true },
+      { "key": "private_use_confirm", "label": "Confirmo que la infraestructura está destinada al uso particular del vehículo", "kind": "boolean", "required": true }
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "mur-cristales-graduados-lentes-contacto",
+    "ccaa_code": "ES-MC",
+    "title": "Por cristales graduados, lentes de contacto y soluciones de limpieza",
+    "summary": "30% de las cantidades satisfechas en cristales graduados, lentes de contacto y soluciones de limpieza para menores de 12 años por los que se aplique el mínimo por descendientes. Límite máximo 100 €/declaración.",
+    "legal_reference": "Art. 1.Veintiuno Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        { "op": "any_kid_age_lt", "value": 13 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "lenses_amount_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_under_12_count", "label": "Número de hijos <12 años por los que se aplica", "kind": "number", "required": true, "min": 1 },
+      { "key": "kids_detail", "label": "Hijos por los que se aplica (nombre y edad en el momento del gasto)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 230,
+    "is_active": true
+  },
+  {
+    "id": "mur-deporte-actividades-saludables",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos asociados a la práctica del deporte y actividades saludables",
+    "summary": "30% de los gastos en gimnasios, federaciones deportivas, técnicos y entrenadores, pilates y yoga, para el contribuyente, cónyuge y familiares que den derecho al mínimo familiar (100% si los paga un mayor de 65 años). Límite 150 €/año. Suma de bases ≤25.000 € (individual) o 40.000 € (conjunta).",
+    "legal_reference": "Art. 1.Veintidós Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "sport_expenses_eur", "label": "Gastos satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "service_type", "label": "Tipo de servicio", "kind": "select", "required": true, "options": [
+        { "value": "gimnasio", "label": "Gimnasios y centros deportivos" },
+        { "value": "federacion", "label": "Cuotas de federaciones deportivas" },
+        { "value": "entrenador", "label": "Servicios de entrenadores y técnicos deportivos" },
+        { "value": "pilates_yoga", "label": "Práctica de pilates y yoga" }
+      ]},
+      { "key": "elderly_payer", "label": "¿El que paga es mayor de 65 años (deducción 100%)?", "kind": "boolean", "required": false },
+      { "key": "invoice_available", "label": "Dispongo de factura conforme al RD 1619/2012", "kind": "boolean", "required": true }
+    ],
+    "display_order": 240,
+    "is_active": true
+  },
+  {
+    "id": "mur-enfermedades-raras",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos asociados a las Enfermedades Raras",
+    "summary": "100% de las cantidades satisfechas con destino al tratamiento y cuidado de personas afectadas por enfermedades raras. Límite máximo 300 €/declaración. Aplica a gastos del contribuyente, su cónyuge y personas que den derecho a los mínimos familiares.",
+    "legal_reference": "Art. 1.Veintitrés Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "rare_disease_expenses_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "affected_person", "label": "Persona afectada y relación con el contribuyente", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente", "label": "El propio contribuyente" },
+        { "value": "conyuge", "label": "Cónyuge" },
+        { "value": "descendiente", "label": "Descendiente con derecho al mínimo" },
+        { "value": "ascendiente", "label": "Ascendiente con derecho al mínimo" }
+      ]},
+      { "key": "rare_disease_name", "label": "Enfermedad rara diagnosticada (opcional)", "kind": "text", "required": false },
+      { "key": "invoice_available", "label": "Dispongo de factura acreditativa del gasto", "kind": "boolean", "required": true }
+    ],
+    "display_order": 250,
+    "is_active": true
+  },
+  {
+    "id": "mur-inversion-economia-social",
+    "ccaa_code": "ES-MC",
+    "title": "Por inversión en entidades de economía social",
+    "summary": "20% de las cantidades invertidas como aportaciones para ser socio en entidades de economía social (Ley 5/2011). Límite máximo 4.000 €. Participación máxima 40% (con familia), entidad con domicilio en Murcia, al menos un trabajador a jornada completa, mantenimiento 5 años.",
+    "legal_reference": "Art. 1.Veinticuatro Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_economy_investment_eur", "label": "Cantidades invertidas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 40% incluido entorno familiar)", "kind": "number", "required": true, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true },
+      { "key": "public_deed", "label": "Confirmo que la operación está formalizada en escritura pública", "kind": "boolean", "required": true }
+    ],
+    "display_order": 260,
+    "is_active": true
+  },
+  {
+    "id": "mur-gastos-veterinarios",
+    "ccaa_code": "ES-MC",
+    "title": "Por gastos veterinarios",
+    "summary": "30% de los gastos en servicios veterinarios prestados a animales domésticos. Límite máximo 100 €/año por declaración. Suma de la base imponible general y del ahorro ≤ 25.000 € (individual) o 40.000 € (conjunta). Justificación mediante factura.",
+    "legal_reference": "Art. 1.Veinticinco Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MC" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "vet_expenses_eur", "label": "Gastos veterinarios satisfechos (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "pets_detail", "label": "Animales domésticos atendidos (especie/identificación)", "kind": "textarea", "required": false },
+      { "key": "invoice_available", "label": "Dispongo de factura acreditativa del gasto", "kind": "boolean", "required": true }
+    ],
+    "display_order": 270,
+    "is_active": true
+  }
+]

@@ -1,0 +1,710 @@
+[
+  {
+    "id": "rio-nacimiento-adopcion-hijos",
+    "ccaa_code": "ES-RI",
+    "title": "Por nacimiento y adopción de hijos",
+    "summary": "600 € (1º hijo), 750 € (2º), 900 € (3º y sucesivos). +60 € adicionales por hijo en nacimientos/adopciones múltiples. Hijo nacido o adoptado en el período impositivo y conviviente.",
+    "legal_reference": "Art. 32.1 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en el ejercicio (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "birth_order", "label": "Orden del hijo (computando todos los hijos del contribuyente)", "kind": "select", "required": true, "options": [
+        { "value": "primero", "label": "Primer hijo (600 €)" },
+        { "value": "segundo", "label": "Segundo hijo (750 €)" },
+        { "value": "tercero_o_sucesivo", "label": "Tercer hijo o sucesivos (900 €)" }
+      ]},
+      { "key": "multiple_birth", "label": "¿Parto o adopción múltiple? (+60 € adicionales por hijo)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "rio-vivienda-pequenos-municipios",
+    "ccaa_code": "ES-RI",
+    "title": "Por la adquisición, construcción o rehabilitación de vivienda habitual en pequeños municipios de La Rioja",
+    "summary": "5% de las cantidades satisfechas en adquisición, rehabilitación o construcción de vivienda habitual en pequeños municipios de La Rioja. Límite 452 €/declaración. Base máxima anual 9.040 €. Vivienda adquirida desde 01/01/2017.",
+    "legal_reference": "Art. 32.2 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición/inicio rehabilitación (a partir 01/01/2017)", "kind": "date", "required": true },
+      { "key": "municipality_code", "label": "Código de municipio (casilla [1067] del anexo B.7)", "kind": "text", "required": true },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" },
+        { "value": "construccion", "label": "Construcción" }
+      ]}
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "rio-escuelas-infantiles-pequenos-municipios",
+    "ccaa_code": "ES-RI",
+    "title": "Por gastos en escuelas infantiles, centros de educación infantil o personal contratado para el cuidado de hijos de 0 a 3 años para contribuyentes que fijen su residencia habitual en pequeños municipios de La Rioja",
+    "summary": "30% de gastos en escuelas infantiles, centros de educación infantil o personal para cuidado de hijos de 0 a 3 años en pequeños municipios. Límite 600 €/menor. Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta) y base del ahorro ≤ 1.800 €.",
+    "legal_reference": "Art. 32.3 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        { "op": "any_kid_age_lt", "value": 3 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18030 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30050 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "childcare_expenses_eur", "label": "Gastos satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_under_3", "label": "Hijos de 0 a 3 años (nombre y fecha de nacimiento)", "kind": "textarea", "required": true },
+      { "key": "municipality_code", "label": "Código de municipio (casilla [1071] del anexo B.7)", "kind": "text", "required": true },
+      { "key": "employee_nif", "label": "NIF de la persona empleada/escuela/centro (casilla [1070])", "kind": "text", "required": true },
+      { "key": "expense_type", "label": "Tipo de gasto", "kind": "select", "required": true, "options": [
+        { "value": "escuela_infantil", "label": "Escuela infantil / centro de educación infantil" },
+        { "value": "personal_contratado", "label": "Personal contratado para cuidado" }
+      ]}
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "rio-acogimiento-familiar-menores",
+    "ccaa_code": "ES-RI",
+    "title": "Por cada menor en régimen de acogimiento familiar de urgencia, temporal o permanente o guarda con fines de adopción",
+    "summary": "300 € por menor en acogimiento ≥183 días en el ejercicio, o 150 € si la convivencia es >90 y <183 días. Formalizado por el órgano competente de La Rioja. No procede si se ha producido la adopción del menor.",
+    "legal_reference": "Art. 32.4 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número de menores en régimen de acogimiento", "kind": "number", "required": true, "min": 1 },
+      { "key": "cohabit_days", "label": "Días totales de convivencia en el año (mínimo 91)", "kind": "number", "required": true, "min": 91 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "urgencia", "label": "Urgencia" },
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" },
+        { "value": "guarda_preadoptiva", "label": "Guarda con fines de adopción" }
+      ]},
+      { "key": "no_adoption_in_year", "label": "Confirmo que no se ha producido la adopción del menor durante el período impositivo", "kind": "boolean", "required": true }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "rio-hijos-0-3-pequenos-municipios",
+    "ccaa_code": "ES-RI",
+    "title": "Por cada hijo de 0 a 3 años de contribuyentes que tengan su residencia o trasladen la misma a pequeños municipios de La Rioja",
+    "summary": "100 € mensuales por cada hijo de 0 a 3 años. Residir o trasladar la residencia a un pequeño municipio de La Rioja y mantenerla durante al menos 3 años consecutivos. El hijo debe dar derecho al mínimo por descendientes.",
+    "legal_reference": "Art. 32.5 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        { "op": "any_kid_age_lt", "value": 4 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_under_3", "label": "Hijos de 0 a 3 años con derecho al mínimo (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "months_eligible", "label": "Meses completos del año cumpliendo los requisitos", "kind": "number", "required": true, "min": 1, "max": 12 },
+      { "key": "municipality_code", "label": "Código de municipio (casilla [1162] del anexo B.7)", "kind": "text", "required": true },
+      { "key": "residence_start_date", "label": "Fecha de inicio de la residencia en el pequeño municipio", "kind": "date", "required": true }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "rio-escolarizacion-0-3-cualquier-municipio",
+    "ccaa_code": "ES-RI",
+    "title": "Por cada hijo de 0 a 3 años en escuelas infantiles o centros de educación infantil de cualquier municipio de La Rioja",
+    "summary": "20% de los gastos de escolarización no subvencionados por cada hijo de 0 a 3 años en escuela/centro infantil de cualquier municipio de La Rioja. Límite 600 €/año por hijo. Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta) y base del ahorro ≤ 1.800 €.",
+    "legal_reference": "Art. 32.6 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "any_kid_age_lt", "value": 3 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18030 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30050 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "schooling_expenses_eur", "label": "Gastos de escolarización no subvencionados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Hijos por los que se aplica (nombre y centro)", "kind": "textarea", "required": true },
+      { "key": "school_nif", "label": "NIF de la escuela/centro/guardería (casilla [1076])", "kind": "text", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "rio-vehiculos-electricos",
+    "ccaa_code": "ES-RI",
+    "title": "Por adquisición de vehículos eléctricos nuevos",
+    "summary": "15% del importe pagado por la adquisición de vehículos eléctricos nuevos no afectos a actividad. Límite 300 € (vehículos a motor) o 225 € (bicicletas pedaleo asistido). Importe máximo del vehículo 50.000 €. Una sola vez por persona y ejercicio de matriculación.",
+    "legal_reference": "Art. 32.7 y Disp. adicional tercera Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "purchase_amount_eur", "label": "Importe de adquisición del vehículo (€, máx. 50.000)", "kind": "number", "required": true, "min": 0, "max": 50000 },
+      { "key": "vehicle_category", "label": "Categoría del vehículo", "kind": "select", "required": true, "options": [
+        { "value": "n1", "label": "N1 — Furgonetas/camiones ligeros (≤ 3,5 t)" },
+        { "value": "l1e", "label": "L1e — Ciclomotores (≤ 45 km/h, ≤ 4 kW)" },
+        { "value": "l2e", "label": "L2e — Triciclos (≤ 45 km/h, ≤ 4 kW)" },
+        { "value": "bicicleta_pedaleo", "label": "Bicicleta de pedaleo asistido por motor eléctrico" }
+      ]},
+      { "key": "registration_date", "label": "Fecha de matriculación", "kind": "date", "required": true },
+      { "key": "not_business_use", "label": "Confirmo que el vehículo no está afecto a actividad profesional/empresarial", "kind": "boolean", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "rio-poblacion-rural",
+    "ccaa_code": "ES-RI",
+    "title": "Para fomentar la fijación de población ocupada en el medio rural",
+    "summary": "1.000 € por contribuyente que inicie actividad agraria como autónomo a partir del 01/01/2025 con residencia habitual en un municipio de La Rioja. No aplica a autónomos colaboradores ni socios de mercantiles. Aplicable en el ejercicio de inicio y los 2 siguientes.",
+    "legal_reference": "Art. 32.8 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "activity_start_date", "label": "Fecha de alta en Seguridad Social (a partir 01/01/2025)", "kind": "date", "required": true },
+      { "key": "activity_description", "label": "Descripción de la actividad agraria", "kind": "textarea", "required": true },
+      { "key": "self_employed_status", "label": "Tipo de alta", "kind": "select", "required": true, "options": [
+        { "value": "autonomo_titular", "label": "Trabajador por cuenta propia titular" },
+        { "value": "autonomo_colaborador", "label": "Autónomo colaborador (NO aplica)" },
+        { "value": "socio_mercantil", "label": "Socio de sociedad mercantil (NO aplica)" }
+      ]},
+      { "key": "no_previous_cease_2y", "label": "Confirmo que no he cesado como autónomo agrario en los 2 años anteriores", "kind": "boolean", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "rio-internet-jovenes-emancipados",
+    "ccaa_code": "ES-RI",
+    "title": "Por acceso a Internet para los jóvenes emancipados",
+    "summary": "30% del importe de gastos anuales de contrato de Internet para vivienda habitual de joven emancipado <36 años. 40% si unidad familiar monoparental o residencia en pequeño municipio. Contrato suscrito con ≥6 meses de antelación. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Una sola vez por vivienda y contribuyente.",
+    "legal_reference": "Art. 32.9 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18030 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30050 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "internet_expenses_eur", "label": "Gastos anuales de Internet facturados y pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "supplier_name", "label": "Empresa suministradora", "kind": "text", "required": true },
+      { "key": "contract_start_date", "label": "Fecha de alta del contrato (≥6 meses antes del devengo)", "kind": "date", "required": true },
+      { "key": "monoparental_or_small_municipality", "label": "¿Unidad familiar monoparental o residencia en pequeño municipio?", "kind": "select", "required": false, "options": [
+        { "value": "no", "label": "No (se aplica 30%)" },
+        { "value": "monoparental", "label": "Unidad familiar monoparental (40%)" },
+        { "value": "pequeno_municipio", "label": "Residencia en pequeño municipio (40%)" }
+      ]},
+      { "key": "municipality_code", "label": "Código de pequeño municipio si aplica (casilla [1204])", "kind": "text", "required": false }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "rio-luz-gas-jovenes-emancipados",
+    "ccaa_code": "ES-RI",
+    "title": "Por suministro de luz y gas de uso doméstico para los jóvenes emancipados",
+    "summary": "15% del importe de gastos anuales de luz/gas en vivienda habitual de joven emancipado <36 años. 20% si residencia en pequeño municipio. 25% si unidad familiar monoparental. Contratos con ≥6 meses de antelación. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Una sola vez por vivienda y contribuyente.",
+    "legal_reference": "Art. 32.10 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18030 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30050 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "utilities_expenses_eur", "label": "Gastos anuales de luz/gas facturados y pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "supplier_name", "label": "Empresa(s) suministradora(s)", "kind": "textarea", "required": true },
+      { "key": "contract_start_date", "label": "Fecha de alta del/los contrato(s) (≥6 meses antes del devengo)", "kind": "date", "required": true },
+      { "key": "monoparental_or_small_municipality", "label": "Circunstancia que da derecho a mayor porcentaje", "kind": "select", "required": false, "options": [
+        { "value": "no", "label": "No (15%)" },
+        { "value": "pequeno_municipio", "label": "Residencia en pequeño municipio (20%)" },
+        { "value": "monoparental", "label": "Unidad familiar monoparental (25%)" }
+      ]},
+      { "key": "municipality_code", "label": "Código de pequeño municipio si aplica (casilla [1205])", "kind": "text", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "rio-inversion-vivienda-jovenes-36",
+    "ccaa_code": "ES-RI",
+    "title": "Por inversión en vivienda habitual de jóvenes menores de 36 años",
+    "summary": "15% de las cantidades satisfechas por adquisición, construcción, ampliación o rehabilitación de vivienda habitual en La Rioja. Contribuyente <36 años. Vivienda adquirida desde 01/01/2013. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Base máxima anual 9.000 €.",
+    "legal_reference": "Art. 32.11 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18030 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30050 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición/inicio rehabilitación (≥01/01/2013)", "kind": "date", "required": true },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "construccion", "label": "Construcción" },
+        { "value": "ampliacion", "label": "Ampliación" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]}
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "rio-arrendamiento-vivienda-jovenes-36",
+    "ccaa_code": "ES-RI",
+    "title": "Por arrendamiento de vivienda habitual para contribuyentes menores de 36 años",
+    "summary": "10% de las cantidades no subvencionadas (límite 300 €/contrato) o 20% si vivienda en pequeño municipio (límite 400 €). Contribuyente <36 años, vivienda en La Rioja, contrato con modelo de ITP/AJD presentado. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Incompatible con deducción por inversión en vivienda.",
+    "legal_reference": "Art. 32.12 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 18030 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30050 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada no subvencionada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false },
+      { "key": "small_municipality", "label": "¿Vivienda situada en pequeño municipio? (aplica 20% / 400 €)", "kind": "boolean", "required": false },
+      { "key": "municipality_code", "label": "Código de pequeño municipio si aplica (casilla [1164])", "kind": "text", "required": false },
+      { "key": "itp_ajd_filed", "label": "Confirmo que se ha presentado el modelo de ITP y AJD por el contrato", "kind": "boolean", "required": true }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "rio-bicicletas-pedaleo-no-asistido",
+    "ccaa_code": "ES-RI",
+    "title": "Por adquisición de bicicletas de pedaleo no asistido",
+    "summary": "15% del importe de adquisición de bicicletas de pedaleo no asistido. Límites: 50 €/vehículo y máximo 2 vehículos por unidad familiar. Justificación mediante factura.",
+    "legal_reference": "Art. 32.13 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "bikes_count", "label": "Número de bicicletas adquiridas (máx. 2 por unidad familiar)", "kind": "number", "required": true, "min": 1, "max": 2 },
+      { "key": "purchase_amount_eur", "label": "Importe total de adquisición (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "invoice_holder", "label": "Titular de la factura", "kind": "text", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "rio-rehabilitacion-vivienda-habitual-transitoria",
+    "ccaa_code": "ES-RI",
+    "title": "Por las cantidades invertidas en obras de rehabilitación de la vivienda habitual",
+    "summary": "Régimen transitorio: 5% (jóvenes <36 años con vivienda habitual), 7% (jóvenes con base liquidable ≤18.030 €/30.050 €) o 2% (resto). Solo para quienes practicaran la deducción antes de 01/01/2013 con obras finalizadas antes de 01/01/2017. Base máxima conjunta con adecuación por discapacidad 9.040 €.",
+    "legal_reference": "Disp. transitoria primera.a) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "previously_deducted_pre_2013", "label": "Confirmo que practiqué la deducción en ejercicio anterior a 01/01/2013", "kind": "boolean", "required": true },
+      { "key": "works_finished_before_2017", "label": "Confirmo que las obras estaban terminadas antes del 01/01/2017", "kind": "boolean", "required": true },
+      { "key": "is_young_under_36", "label": "¿Contribuyente joven menor de 36 años?", "kind": "boolean", "required": true }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "rio-adquisicion-vivienda-jovenes-transitoria",
+    "ccaa_code": "ES-RI",
+    "title": "Por cantidades invertidas en adquisición o construcción de vivienda habitual para jóvenes",
+    "summary": "Régimen transitorio: 3% (general jóvenes <36 años) o 5% (jóvenes con base liquidable ≤18.030 €/30.050 €). Solo para quienes adquirieran la vivienda antes de 01/01/2013 o pagaran cantidades para construcción antes de esa fecha. Base máxima 9.040 € (menos cantidades de la deducción estatal).",
+    "legal_reference": "Disp. transitoria primera.b) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquired_before_2013", "label": "Confirmo que la vivienda se adquirió antes del 01/01/2013 (o pagué cantidades para construcción antes de esa fecha)", "kind": "boolean", "required": true },
+      { "key": "previously_deducted_pre_2013", "label": "Confirmo que practiqué la deducción por inversión en vivienda en ejercicio anterior a 01/01/2013", "kind": "boolean", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "rio-segunda-vivienda-medio-rural",
+    "ccaa_code": "ES-RI",
+    "title": "Por adquisición o rehabilitación de segunda vivienda en el medio rural",
+    "summary": "Régimen transitorio: 8% de cantidades invertidas en adquisición, construcción, ampliación o rehabilitación de una única segunda vivienda en el medio rural (municipio distinto al de la vivienda habitual). Límite 450,76 €/año. Solo si la segunda vivienda se adquirió antes de 01/01/2013 o se pagaron cantidades para rehabilitación con obras terminadas antes de 01/01/2017.",
+    "legal_reference": "Disp. transitoria primera.c) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_invested_eur", "label": "Cantidades invertidas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "rural_municipality_code", "label": "Código del municipio rural (casilla [1064] del anexo B.7)", "kind": "text", "required": true },
+      { "key": "acquired_before_2013", "label": "Confirmo que la segunda vivienda se adquirió antes del 01/01/2013 o las obras pagadas antes de esa fecha terminaron antes del 01/01/2017", "kind": "boolean", "required": true },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "construccion", "label": "Construcción" },
+        { "value": "ampliacion", "label": "Ampliación" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]}
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "rio-adecuacion-vivienda-discapacidad",
+    "ccaa_code": "ES-RI",
+    "title": "Por obras de adecuación de vivienda habitual en La Rioja para personas con discapacidad",
+    "summary": "Régimen transitorio: 15% de cantidades satisfechas en obras de adecuación de la vivienda habitual en La Rioja para personas con discapacidad. Solo aplica a quienes pagaran cantidades antes de 01/01/2013 con obras finalizadas antes de 01/01/2017. Base máxima conjunta con rehabilitación 9.040 €.",
+    "legal_reference": "Disp. transitoria primera.d) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "gte", "path": "disability_pct", "value": 33 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "works_started_before_2013", "label": "Confirmo que se pagaron cantidades antes de 01/01/2013 y las obras finalizaron antes de 01/01/2017", "kind": "boolean", "required": true },
+      { "key": "technical_report", "label": "Informe técnico que acredita la necesidad de las obras para accesibilidad/comunicación", "kind": "text", "required": false }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "rio-mecenazgo-fomento-actividades",
+    "ccaa_code": "ES-RI",
+    "title": "Por donaciones para la promoción y estímulo de las actividades de fomento de mecenazgo",
+    "summary": "15% de las cantidades donadas para actividades culturales, científicas, deportivas y otros fines de interés general previstos en la Ley 3/2021 de Mecenazgo de La Rioja. Límite conjunto con otra deducción de mecenazgo de Patrimonio Histórico: 500 €/año. Límite agregado del art. 32.14: 30% de la cuota íntegra autonómica.",
+    "legal_reference": "Art. 32.14.a) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "activity_type", "label": "Tipo de actividad receptora", "kind": "select", "required": true, "options": [
+        { "value": "cultural", "label": "Cultural" },
+        { "value": "investigacion", "label": "Investigación / I+D / innovación" },
+        { "value": "deporte", "label": "Deporte" },
+        { "value": "social", "label": "Social, derechos humanos, integración" },
+        { "value": "lengua_castellana", "label": "Investigación sobre lengua castellana (Fund. San Millán, CILE, Dialnet)" },
+        { "value": "ucrania", "label": "Crisis humanitaria de Ucrania" }
+      ]}
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "rio-mecenazgo-patrimonio-historico",
+    "ccaa_code": "ES-RI",
+    "title": "Por donaciones para la investigación, conservación, restauración, rehabilitación, consolidación, difusión, exposición y adquisición de bienes de interés cultural del Patrimonio Histórico de La Rioja",
+    "summary": "15% de las cantidades donadas para investigación, conservación, restauración, etc. de bienes ubicados en La Rioja cuya titularidad sea de la Administración riojana o declarados BIC inscritos en el Inventario de Patrimonio Histórico de La Rioja. Límite conjunto con fomento de mecenazgo: 500 €/año. Límite agregado del art. 32.14: 30% cuota íntegra autonómica.",
+    "legal_reference": "Art. 32.14.b) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "asset_description", "label": "Descripción del bien cultural / BIC objeto de la donación", "kind": "textarea", "required": false }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "rio-mecenazgo-empresas-culturales",
+    "ccaa_code": "ES-RI",
+    "title": "Por donaciones a empresas culturales",
+    "summary": "20% de las cantidades donadas a empresas culturales con fondos propios <300.000 € y domicilio fiscal en La Rioja, para cinematografía, artes escénicas, plásticas, libro, patrimonio cultural, folclore, artes aplicadas. Límite individual 500 €/año. Límite agregado del art. 32.14: 30% cuota íntegra autonómica.",
+    "legal_reference": "Art. 32.14.d) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "recipient_company", "label": "Empresa cultural receptora (nombre y NIF)", "kind": "text", "required": true },
+      { "key": "cultural_activity", "label": "Actividad cultural desarrollada", "kind": "select", "required": true, "options": [
+        { "value": "cinematografia", "label": "Cinematografía / artes audiovisuales / multimedia" },
+        { "value": "artes_escenicas", "label": "Artes escénicas, música, danza, teatro, circo" },
+        { "value": "artes_plasticas", "label": "Artes plásticas, fotografía, diseño" },
+        { "value": "libro", "label": "Libro, lectura, ediciones" },
+        { "value": "patrimonio_cultural", "label": "Patrimonio cultural material e inmaterial" },
+        { "value": "folclore", "label": "Folclore y tradiciones populares" },
+        { "value": "artes_aplicadas", "label": "Joyería, cerámica artesanal y otras artes aplicadas" }
+      ]}
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "rio-donacion-bienes-culturales-autores",
+    "ccaa_code": "ES-RI",
+    "title": "Por donación de bienes culturales por sus autores o creadores y sus herederos",
+    "summary": "20% de la valoración de bienes culturales de calidad garantizada donados (o cedidos en usufructo o depósito sin contraprestación) por sus autores/creadores y herederos a instituciones culturales de La Rioja. Límite individual 500 €/año. Aceptación por la Consejería competente. Límite agregado art. 32.14: 30% cuota íntegra autonómica.",
+    "legal_reference": "Art. 32.14.e) Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_value_eur", "label": "Valoración del bien donado/cedido (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "recipient_institution", "label": "Institución cultural receptora", "kind": "text", "required": true },
+      { "key": "asset_description", "label": "Descripción del bien cultural", "kind": "textarea", "required": true },
+      { "key": "donor_role", "label": "Vínculo del donante con el bien", "kind": "select", "required": true, "options": [
+        { "value": "autor", "label": "Autor / creador" },
+        { "value": "heredero", "label": "Heredero del autor / creador" }
+      ]},
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "donacion", "label": "Donación" },
+        { "value": "usufructo", "label": "Usufructo" },
+        { "value": "deposito_temporal", "label": "Depósito temporal sin contraprestación" }
+      ]}
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "rio-patrimonio-historico-conservacion",
+    "ccaa_code": "ES-RI",
+    "title": "Por cantidades destinadas a investigación, conservación, restauración, rehabilitación o consolidación de bienes que formen parte del patrimonio histórico de La Rioja",
+    "summary": "15% de las cantidades destinadas a investigación, conservación, restauración, rehabilitación o consolidación de bienes de su titularidad (en propiedad o usufructo) que formen parte del patrimonio histórico de La Rioja e inscritos en el Registro General correspondiente. Límite 500 €/año. No aplica a inversiones empresariales.",
+    "legal_reference": "Art. 32.15 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades destinadas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "asset_description", "label": "Bien del patrimonio histórico (descripción y nº de inscripción en el Registro)", "kind": "textarea", "required": true },
+      { "key": "ownership_type", "label": "Régimen de titularidad", "kind": "select", "required": true, "options": [
+        { "value": "propiedad", "label": "Propiedad" },
+        { "value": "usufructo", "label": "Usufructo" }
+      ]},
+      { "key": "not_business_investment", "label": "Confirmo que no se trata de inversiones empresariales", "kind": "boolean", "required": true }
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "rio-ejercicio-fisico-deporte",
+    "ccaa_code": "ES-RI",
+    "title": "Para fomentar el ejercicio físico y la práctica deportiva",
+    "summary": "30% de los gastos en servicios deportivos (gimnasios, entidades del Registro del Deporte de La Rioja, clases, licencias federativas riojanas) del contribuyente, cónyuge y personas con derecho al mínimo. 100% para mayores de 65 años y personas con discapacidad ≥33%. Límite 300 €/año. Servicios en territorio de La Rioja.",
+    "legal_reference": "Art. 32.17 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "sport_expenses_eur", "label": "Gastos en servicios deportivos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "service_type", "label": "Tipo de servicio", "kind": "select", "required": true, "options": [
+        { "value": "gimnasio", "label": "Gimnasio o instalación deportiva" },
+        { "value": "entidad_registro", "label": "Entidad inscrita en el Registro del Deporte de La Rioja" },
+        { "value": "clases_deporte", "label": "Clases para práctica deportiva o educación física" },
+        { "value": "licencia_federativa", "label": "Licencia federativa riojana" }
+      ]},
+      { "key": "beneficiary_over_65_or_disabled", "label": "¿Algún beneficiario es mayor de 65 años o tiene discapacidad ≥33%? (aplica 100%)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 230,
+    "is_active": true
+  },
+  {
+    "id": "rio-enfermos-ela",
+    "ccaa_code": "ES-RI",
+    "title": "Destinada a los enfermos de ELA",
+    "summary": "50% de los gastos del contribuyente, cónyuge o personas con derecho al mínimo personal/familiar relacionados con el diagnóstico y tratamiento de la esclerosis lateral amiotrófica (ELA). Límite 2.000 €/año. Justificación con factura completa u ordinaria.",
+    "legal_reference": "Art. 32.18 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "ela_expenses_eur", "label": "Gastos relacionados con diagnóstico/tratamiento de ELA (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "expense_breakdown", "label": "Detalle de los gastos (servicios sanitarios, tratamientos, paliativos)", "kind": "textarea", "required": true },
+      { "key": "patient_relation", "label": "Persona afectada", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente", "label": "El propio contribuyente" },
+        { "value": "conyuge", "label": "Cónyuge" },
+        { "value": "minimo_familiar", "label": "Persona con derecho al mínimo personal/familiar" }
+      ]}
+    ],
+    "display_order": 240,
+    "is_active": true
+  },
+  {
+    "id": "rio-cuotas-organizaciones-agrarias",
+    "ccaa_code": "ES-RI",
+    "title": "De cuotas satisfechas a organizaciones profesionales agrarias",
+    "summary": "100% de las cuotas abonadas (inscripción, periódicas o extraordinarias) a una organización profesional agraria constituida al amparo de la Ley 19/1977. Límite 100 €/año por contribuyente. Justificación documental mediante certificación de la organización.",
+    "legal_reference": "Art. 32.19 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "membership_fees_eur", "label": "Cuotas abonadas en el ejercicio (€)", "kind": "number", "required": true, "min": 0, "max": 100 },
+      { "key": "organization_name", "label": "Organización profesional agraria", "kind": "text", "required": true },
+      { "key": "organization_nif", "label": "NIF de la organización", "kind": "text", "required": false },
+      { "key": "certificate_issued", "label": "Confirmo que dispongo del certificado anual emitido por la organización", "kind": "boolean", "required": true }
+    ],
+    "display_order": 250,
+    "is_active": true
+  },
+  {
+    "id": "rio-enfermedad-celiaca",
+    "ccaa_code": "ES-RI",
+    "title": "Por enfermedad celíaca diagnosticada",
+    "summary": "250 € por cada persona integrante del núcleo familiar (contribuyente, cónyuge, ascendientes y descendientes con derecho al mínimo) con enfermedad celíaca diagnosticada. Acreditación mediante certificado médico con diagnóstico definitivo. Si varios contribuyentes tienen derecho por la misma persona, se prorratea.",
+    "legal_reference": "Art. 32.20 Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "celiac_family_members", "label": "Número de personas del núcleo familiar con celiaquía diagnosticada", "kind": "number", "required": true, "min": 1 },
+      { "key": "celiac_persons_detail", "label": "Detalle (nombre, relación familiar y fecha de diagnóstico)", "kind": "textarea", "required": true },
+      { "key": "medical_certificate", "label": "Certificado médico emitido por facultativo en activo (nº de colegiado)", "kind": "text", "required": false }
+    ],
+    "display_order": 260,
+    "is_active": true
+  },
+  {
+    "id": "rio-intereses-hipotecarios-vivienda",
+    "ccaa_code": "ES-RI",
+    "title": "Para paliar la subida de los intereses de los préstamos hipotecarios destinados a la adquisición de vivienda habitual",
+    "summary": "15% de los intereses satisfechos en el ejercicio por préstamos/créditos hipotecarios destinados a la adquisición de vivienda habitual en La Rioja (adquirida desde 01/01/2013). Base máxima 5.000 €/vivienda habitual. Aplicable en 2023, 2024 y 2025. Incompatible con pequeños municipios, jóvenes <36 y deducción estatal por inversión en vivienda.",
+    "legal_reference": "Disp. adicional segunda Ley 10/2017 de La Rioja",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-RI" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "mortgage_interest_eur", "label": "Intereses satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "mortgage_lender", "label": "Entidad financiera prestamista", "kind": "text", "required": true },
+      { "key": "acquisition_date", "label": "Fecha de adquisición de la vivienda (≥01/01/2013)", "kind": "date", "required": true },
+      { "key": "hedging_amount_eur", "label": "Cantidades obtenidas por instrumentos de cobertura del tipo variable (€, se minoran)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 270,
+    "is_active": true
+  }
+]

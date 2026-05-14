@@ -1,0 +1,546 @@
+[
+  {
+    "id": "mad-nacimiento-adopcion-hijos",
+    "ccaa_code": "ES-MD",
+    "title": "Por nacimiento o adopción de hijos",
+    "summary": "721,70 € por cada hijo nacido o adoptado a partir del 1 de enero de 2023 (600 € para anteriores). Aplica en el ejercicio del nacimiento/adopción y los dos siguientes.",
+    "legal_reference": "Arts. 4 y 18.1 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en 2023-2025 (uno por línea: nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "multiple_birth", "label": "¿Parto o adopción múltiple?", "kind": "boolean", "required": false },
+      { "key": "shared_custody", "label": "¿Convivencia con ambos progenitores que tributan individualmente?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "mad-adopcion-internacional",
+    "ccaa_code": "ES-MD",
+    "title": "Por adopción internacional de niños",
+    "summary": "721,70 € por cada hijo adoptado en adopción internacional. Compatible con la deducción por nacimiento/adopción.",
+    "legal_reference": "Art. 5 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "international_adoption_kids", "label": "Hijos adoptados internacionalmente (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "international_adoption_certificate", "label": "Resolución/certificado de adopción internacional", "kind": "text", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "mad-acogimiento-familiar-menores",
+    "ccaa_code": "ES-MD",
+    "title": "Por acogimiento familiar de menores",
+    "summary": "618,60 € / 773,25 € / 927,90 € por el primer, segundo y tercer/sucesivo menor en acogimiento familiar. Requiere base imponible ≤ 26.414,22 € (individual) o 37.322,20 € (conjunta).",
+    "legal_reference": "Arts. 6 y 18.1 y 4.a) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 26414.22 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 37322.20 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número de menores en régimen de acogimiento familiar", "kind": "number", "required": true, "min": 1 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "urgencia", "label": "Urgencia" },
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" },
+        { "value": "guarda_preadoptiva", "label": "Delegación de guarda para convivencia preadoptiva" }
+      ]},
+      { "key": "foster_certificate", "label": "Certificado de la Consejería competente de la Comunidad de Madrid", "kind": "text", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "mad-acogimiento-mayores-65-discapacidad",
+    "ccaa_code": "ES-MD",
+    "title": "Por acogimiento no remunerado de mayores de 65 años y/o con discapacidad",
+    "summary": "1.546,50 € por cada persona mayor de 65 años o con discapacidad ≥ 33% en acogimiento sin contraprestación durante más de 183 días al año.",
+    "legal_reference": "Arts. 7 y 18.1 y 4.b) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 26414.22 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 37322.20 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "fostered_person_age", "label": "Edad de la persona acogida", "kind": "number", "required": true, "min": 0 },
+      { "key": "fostered_person_disability_pct", "label": "Grado de discapacidad reconocido (%)", "kind": "number", "required": false, "min": 0 },
+      { "key": "cohabit_days", "label": "Días de convivencia en el año", "kind": "number", "required": true, "min": 184 },
+      { "key": "no_aids_received", "label": "Confirmo que no se reciben ayudas/subvenciones de la Comunidad de Madrid vinculadas al acogimiento", "kind": "boolean", "required": true }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "mad-cuidado-ascendientes",
+    "ccaa_code": "ES-MD",
+    "title": "Por cuidado de ascendientes",
+    "summary": "515,50 € por cada ascendiente mayor de 65 años o con discapacidad ≥ 33% por el que pueda aplicarse el mínimo por ascendientes.",
+    "legal_reference": "Art. 7 bis Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "ascendants_count", "label": "Número de ascendientes que generan derecho al mínimo", "kind": "number", "required": true, "min": 1 },
+      { "key": "ascendants_detail", "label": "Detalle (nombre, edad, grado de discapacidad si aplica)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "mad-alquiler-vivienda-habitual",
+    "ccaa_code": "ES-MD",
+    "title": "Por arrendamiento de la vivienda habitual",
+    "summary": "30% de las cantidades pagadas por alquiler, hasta 1.237,20 €. Inquilino menor de 40 años con base ≤ 26.414,22 € (individual) o 37.322,20 € (conjunta) y el alquiler ha de superar el 20% de la base.",
+    "legal_reference": "Arts. 8 y 18.1 y 4.c) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "age_lt", "path": "birth_date", "value": 40 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 26414.22 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 37322.20 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false },
+      { "key": "deposit_resguardo", "label": "Resguardo del depósito de fianza (IVIMA / Agencia de Vivienda Social)", "kind": "text", "required": false }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "mad-gastos-arrendamiento-arrendador",
+    "ccaa_code": "ES-MD",
+    "title": "Por gastos derivados del arrendamiento de viviendas (arrendador)",
+    "summary": "10% de gastos de reparación, formalización del contrato, primas de seguros o certificados de eficiencia energética en inmuebles arrendados como vivienda. Límite 154,65 €.",
+    "legal_reference": "Arts. 8 bis y 18.4.c) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "deductible_expenses_eur", "label": "Gastos deducibles del año (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "expense_types", "label": "Tipo de gasto", "kind": "textarea", "required": false },
+      { "key": "rented_property_count", "label": "Número de inmuebles arrendados", "kind": "number", "required": false, "min": 1 }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "mad-arrendamiento-viviendas-vacias",
+    "ccaa_code": "ES-MD",
+    "title": "Por arrendamiento de viviendas vacías",
+    "summary": "1.000 € por cada vivienda vacía que pase a arrendarse como vivienda habitual mediante contrato LAU de al menos 3 años, hasta un máximo de 5 inmuebles.",
+    "legal_reference": "Arts. 8 ter y 18.4.c) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "new_rental_count", "label": "Viviendas vacías arrendadas en el ejercicio", "kind": "number", "required": true, "min": 1, "max": 5 },
+      { "key": "contract_duration_years", "label": "Duración pactada del contrato (años)", "kind": "number", "required": true, "min": 3 },
+      { "key": "ownership_percentage", "label": "% de participación en la propiedad", "kind": "number", "required": false, "min": 0, "max": 100 },
+      { "key": "deposit_resguardo", "label": "Resguardo del depósito de fianza (Agencia de Vivienda Social)", "kind": "text", "required": false }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "mad-donativos-fundaciones-clubes-deportivos",
+    "ccaa_code": "ES-MD",
+    "title": "Por donativos a fundaciones y clubes deportivos",
+    "summary": "15% de donativos a fundaciones inscritas en el Registro de Fundaciones de la Comunidad de Madrid o a clubes deportivos elementales/básicos madrileños. Base limitada al 10% de la base liquidable.",
+    "legal_reference": "Arts. 9 y 18.3 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de receptor", "kind": "select", "required": true, "options": [
+        { "value": "fundacion", "label": "Fundación inscrita en el Registro de Fundaciones de Madrid" },
+        { "value": "club_deportivo", "label": "Club deportivo elemental o básico" }
+      ]}
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "mad-financiacion-vivienda-tipos-interes",
+    "ccaa_code": "ES-MD",
+    "title": "Por el incremento de los costes de la financiación ajena para la inversión en vivienda habitual derivado del alza de los tipos de interés",
+    "summary": "25% sobre el exceso de intereses respecto al euríbor de diciembre 2022. Préstamo a tipo variable formalizado antes del ejercicio, vivienda con precio ≤ 390.000 €. Límite 300 €.",
+    "legal_reference": "Arts. 10 y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "interest_excess_eur", "label": "Exceso de intereses satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_price_eur", "label": "Precio de adquisición de la vivienda (€, máx. 390.000)", "kind": "number", "required": true, "min": 0, "max": 390000 },
+      { "key": "loan_start_date", "label": "Fecha de formalización del préstamo", "kind": "date", "required": true },
+      { "key": "loan_variable_rate", "label": "Confirmo que el préstamo es a tipo de interés variable", "kind": "boolean", "required": true }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "mad-cambio-residencia-despoblacion",
+    "ccaa_code": "ES-MD",
+    "title": "Por cambio de residencia a un municipio en riesgo de despoblación",
+    "summary": "1.000 € en el ejercicio del traslado y en el siguiente. Contribuyente <35 años que traslade su residencia habitual a un municipio madrileño con población <2.500 habitantes, manteniéndola 3 ejercicios.",
+    "legal_reference": "Arts. 10 bis y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "age_lt", "path": "birth_date", "value": 35 },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "new_municipality", "label": "Municipio de la Comunidad de Madrid al que se traslada", "kind": "text", "required": true },
+      { "key": "move_date", "label": "Fecha del cambio de residencia habitual", "kind": "date", "required": true },
+      { "key": "acquisition_or_rental", "label": "¿Adquisición o arrendamiento?", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición onerosa" },
+        { "value": "alquiler", "label": "Arrendamiento (LAU)" }
+      ]}
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "mad-vivienda-municipios-despoblacion",
+    "ccaa_code": "ES-MD",
+    "title": "Por adquisición de vivienda habitual en municipios en riesgo de despoblación",
+    "summary": "10% del precio de adquisición de vivienda habitual en municipio madrileño con <2.500 habitantes, prorrateado en 10 ejercicios. Contribuyente <35 años. Límite 1.546,50 €/año.",
+    "legal_reference": "Arts. 10 ter y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "age_lt", "path": "birth_date", "value": 35 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "acquisition_price_eur", "label": "Precio de adquisición de la vivienda (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición (a partir 01/01/2024)", "kind": "date", "required": true },
+      { "key": "municipality", "label": "Municipio (≤ 2.500 habitantes)", "kind": "text", "required": true }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "mad-gastos-educativos",
+    "ccaa_code": "ES-MD",
+    "title": "Por gastos educativos",
+    "summary": "15% gastos de escolaridad, 15% enseñanza de idiomas y 5% vestuario escolar de hijos. Aplica a 2º ciclo de Infantil, EBO y FP Básica. Límites por descendiente: 412,40 € (idiomas+vestuario), 927,90 € o 1.031 € (escolaridad).",
+    "legal_reference": "Arts. 11 y 18.2 y 4.d) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "school_fees_eur", "label": "Gastos de escolaridad (€) — solo centros privados no concertados", "kind": "number", "required": false, "min": 0 },
+      { "key": "language_fees_eur", "label": "Gastos de enseñanza de idiomas (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "uniform_fees_eur", "label": "Gastos de vestuario escolar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Hijos por los que se aplica la deducción (nombre y nivel educativo)", "kind": "textarea", "required": true },
+      { "key": "received_grants_eur", "label": "Becas/ayudas recibidas que minoran la base (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "mad-cuidado-hijos-mayores-dependientes",
+    "ccaa_code": "ES-MD",
+    "title": "Por cuidado de hijos menores de 3 años, mayores dependientes y personas con discapacidad",
+    "summary": "25% (40% si familia numerosa) de las cotizaciones al Sistema Especial de Empleados de Hogar. Límite 463,95 € (618,60 € en familias numerosas).",
+    "legal_reference": "Arts. 11 bis y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        {
+          "any_of": [
+            { "op": "any_kid_age_lt", "value": 3 },
+            { "op": "gte", "path": "disability_pct", "value": 33 },
+            { "op": "in", "path": "large_family", "value": ["general", "especial"] }
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_security_contributions_eur", "label": "Cuotas Seguridad Social Empleados Hogar pagadas en el año (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "circumstance", "label": "Circunstancia que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "hijo_menor_3", "label": "Hijo menor de 3 años" },
+        { "value": "dependencia", "label": "Convivencia con persona en situación de dependencia" },
+        { "value": "discapacidad_33", "label": "Convivencia con persona con discapacidad ≥ 33%" },
+        { "value": "propio_dependiente", "label": "El contribuyente tiene reconocida dependencia o discapacidad" }
+      ]},
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false },
+      { "key": "household_employee_hours", "label": "Horas mensuales contratadas (mínimo 40)", "kind": "number", "required": false, "min": 40 }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "mad-intereses-prestamos-vivienda-jovenes",
+    "ccaa_code": "ES-MD",
+    "title": "Por el pago de intereses de préstamos para la adquisición de vivienda por jóvenes menores de treinta años",
+    "summary": "25% de intereses de préstamos hipotecarios para vivienda habitual. Contribuyente <30 años. Límite 1.031 €.",
+    "legal_reference": "Art. 12 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "age_lt", "path": "birth_date", "value": 30 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "mortgage_interest_eur", "label": "Intereses satisfechos en el año (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "mortgage_lender", "label": "Entidad financiera prestamista", "kind": "text", "required": true },
+      { "key": "acquisition_date", "label": "Fecha de adquisición de la vivienda habitual", "kind": "date", "required": false }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "mad-intereses-prestamos-estudios",
+    "ccaa_code": "ES-MD",
+    "title": "Por el pago de intereses de préstamos a estudios de Grado, Máster y Doctorado",
+    "summary": "Importe de los intereses satisfechos por préstamos concedidos por entidades de crédito para cursar estudios universitarios (Grado, Máster o Doctorado).",
+    "legal_reference": "Arts. 12 bis y 18.4.e) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "study_loan_interest_eur", "label": "Intereses satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "borrower", "label": "Beneficiario de los estudios", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente", "label": "El propio contribuyente" },
+        { "value": "conyuge", "label": "Cónyuge" },
+        { "value": "descendiente", "label": "Descendiente con derecho al mínimo por descendientes" }
+      ]},
+      { "key": "study_level", "label": "Nivel de estudios", "kind": "select", "required": true, "options": [
+        { "value": "grado", "label": "Grado" },
+        { "value": "master", "label": "Máster Universitario" },
+        { "value": "doctorado", "label": "Doctorado" }
+      ]},
+      { "key": "lender_entity", "label": "Entidad de crédito prestamista", "kind": "text", "required": true }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "mad-vivienda-habitual-nacimiento-adopcion",
+    "ccaa_code": "ES-MD",
+    "title": "Por adquisición de vivienda habitual por nacimiento o adopción de hijos",
+    "summary": "10% del precio de adquisición de la vivienda habitual cuando esta se adquiere por nacimiento o adopción de hijos (desde 1 de enero de 2023). Prorrateo en 10 ejercicios. Límite 1.546,50 €/año.",
+    "legal_reference": "Arts. 13 y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "acquisition_price_eur", "label": "Precio de adquisición de la vivienda (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición (a partir 01/01/2023)", "kind": "date", "required": true },
+      { "key": "trigger_birth_date", "label": "Fecha de nacimiento/adopción que motiva la deducción", "kind": "date", "required": true }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "mad-familia-numerosa",
+    "ccaa_code": "ES-MD",
+    "title": "Por la obtención de la condición de familia numerosa de categoría general o especial",
+    "summary": "50% de la cuota íntegra autonómica (familia numerosa general) o 100% (especial), con límites 6.186 € / 12.372 € (individual) o 12.372 € / 24.744 € (conjunta). Aplica en el período en que surte efectos el reconocimiento y los dos siguientes.",
+    "legal_reference": "Arts. 13 bis y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] }
+      ]
+    },
+    "extra_fields": [
+      { "key": "large_family_category", "label": "Categoría de la familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]},
+      { "key": "recognition_date", "label": "Fecha de efectos del reconocimiento (a partir 01/01/2023)", "kind": "date", "required": true },
+      { "key": "large_family_certificate", "label": "Número del título de familia numerosa", "kind": "text", "required": false }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "mad-familias-dos-descendientes-ingresos-reducidos",
+    "ccaa_code": "ES-MD",
+    "title": "Para familias con dos o más descendientes e ingresos reducidos",
+    "summary": "10% de la cuota íntegra autonómica menos otras deducciones, para contribuyentes con dos o más descendientes y base imponible ≤ 24.744 €.",
+    "legal_reference": "Art. 14 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "gte", "path": "kids.length", "value": 2 },
+        { "op": "lte", "path": "income_base", "value": 24744 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "descendants_count", "label": "Número de descendientes con derecho al mínimo", "kind": "number", "required": true, "min": 2 }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "mad-inversion-nuevas-entidades",
+    "ccaa_code": "ES-MD",
+    "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+    "summary": "40% (límite 9.279 €) en SA/SL de nueva creación; 50% (límite 12.372 €) en SAL/SLL/cooperativas; 50% (límite 12.372 €) en sociedades de universidades/centros de investigación. Entidad con domicilio en Madrid y actividad económica, mantener 3 años.",
+    "legal_reference": "Art. 15 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_type", "label": "Tipo de entidad participada", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl", "label": "Sociedad Anónima / Sociedad Limitada" },
+        { "value": "sal_sll_coop", "label": "SAL / SLL / Cooperativa" },
+        { "value": "universidad", "label": "Sociedad creada/participada por universidades o centros de investigación" }
+      ]},
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 40% incluido entorno familiar)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "mad-autoempleo-jovenes-35",
+    "ccaa_code": "ES-MD",
+    "title": "Para el fomento del autoempleo de jóvenes menores de 35 años",
+    "summary": "1.031 € por el alta como autónomo o partícipe en una entidad en atribución de rentas por primera vez en el Censo. Edad <35 años, actividad principal en Madrid y mantenimiento del alta al menos un año.",
+    "legal_reference": "Art. 16 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" },
+        { "op": "age_lt", "path": "birth_date", "value": 35 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "census_registration_date", "label": "Fecha de alta en el Censo de Empresarios, Profesionales y Retenedores", "kind": "date", "required": true },
+      { "key": "activity_description", "label": "Actividad económica desarrollada", "kind": "textarea", "required": true },
+      { "key": "first_time_registration", "label": "Confirmo que es la primera vez que causo alta en el Censo", "kind": "boolean", "required": true }
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "mad-inversion-mercado-alternativo-bursatil",
+    "ccaa_code": "ES-MD",
+    "title": "Por inversiones realizadas en entidades cotizadas en el mercado alternativo bursátil",
+    "summary": "20% de cantidades invertidas en ampliaciones de capital u OPV en el segmento de empresas en expansión del MAB. Límite 10.310 €. Mantenimiento 2 años, participación ≤ 10%, entidad con domicilio en Madrid 2 años.",
+    "legal_reference": "Art. 17 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_name", "label": "Entidad objeto de inversión (MAB segmento expansión)", "kind": "text", "required": true },
+      { "key": "investment_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "ampliacion", "label": "Ampliación de capital" },
+        { "value": "opv", "label": "Oferta pública de valores" }
+      ]}
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "mad-nuevos-contribuyentes-extranjero",
+    "ccaa_code": "ES-MD",
+    "title": "Por inversiones de nuevos contribuyentes procedentes del extranjero",
+    "summary": "20% del valor de adquisición de valores de cesión a terceros, fondos propios u otros activos. Persona física no residente en España durante los 5 años previos que traslade su residencia a Madrid desde 01/01/2024. Mantenimiento 6 años.",
+    "legal_reference": "Art. 17 bis Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-MD" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Valor de adquisición de los elementos patrimoniales (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "investment_types", "label": "Tipo de elementos patrimoniales adquiridos", "kind": "textarea", "required": true },
+      { "key": "residence_change_date", "label": "Fecha en la que adquirió la residencia fiscal en Madrid", "kind": "date", "required": true },
+      { "key": "previous_non_resident_5y", "label": "Confirmo que no he sido residente en España durante los 5 años previos", "kind": "boolean", "required": true }
+    ],
+    "display_order": 230,
+    "is_active": true
+  }
+]
