@@ -1,0 +1,654 @@
+[
+  {
+    "id": "and-vivienda-protegida-jovenes",
+    "ccaa_code": "ES-AN",
+    "title": "Por inversión en vivienda habitual que tenga la consideración de protegida y por las personas jóvenes",
+    "what_covers": "Cubre las cantidades satisfechas por la adquisición o rehabilitación de la vivienda habitual cuando esta tiene calificación de protegida en Andalucía o cuando el adquirente es menor de 35 años.",
+    "requirements": [
+      "Vivienda habitual en régimen de propiedad situada en Andalucía",
+      "Vivienda con calificación de protegida o adquirente menor de 35 años",
+      "Suma de bases imponibles ≤ 25.000 € (individual) / 30.000 € (conjunta)",
+      "Deducción: 6% de las cantidades satisfechas",
+      "Base máxima de deducción: 9.040 €"
+    ],
+    "legal_reference": "Arts. 9 y 2 y disposición adicional primera Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "acquisition_or_rehab_amount_eur", "label": "Cantidades satisfechas en el ejercicio por adquisición o rehabilitación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "housing_type", "label": "Supuesto que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "protegida", "label": "Vivienda con calificación de protegida" },
+        { "value": "joven_menor_35", "label": "Adquirente menor de 35 años" },
+        { "value": "ambos", "label": "Vivienda protegida y adquirente menor de 35 años" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición o inicio de rehabilitación", "kind": "date", "required": false },
+      { "key": "external_financing", "label": "¿Existe financiación ajena (préstamo hipotecario)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "and-alquiler-vivienda-habitual",
+    "ccaa_code": "ES-AN",
+    "title": "Por cantidades invertidas en el alquiler de la vivienda habitual",
+    "what_covers": "Cubre las cantidades pagadas en concepto de alquiler de la vivienda habitual del contribuyente cuando concurre alguna circunstancia personal (edad, discapacidad, condición de víctima) que da derecho a la deducción.",
+    "requirements": [
+      "Vivienda habitual en régimen de alquiler",
+      "Ser titular del contrato de arrendamiento",
+      "Cumplir alguna circunstancia: menor de 35 años, mayor de 65, víctima de violencia doméstica o de terrorismo",
+      "Suma de bases imponibles ≤ 25.000 € (individual) / 30.000 € (conjunta)",
+      "Aportar NIF del arrendador",
+      "Deducción: 15% de las cantidades pagadas",
+      "Límite: 1.200 €/año (1.500 € si discapacidad ≥33%, o ≥65% si pre-2022)"
+    ],
+    "legal_reference": "Arts. 10 y 2 y disposición adicional primera Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "tenant_circumstance", "label": "Circunstancia que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "menor_35", "label": "Menor de 35 años a fecha de devengo" },
+        { "value": "mayor_65", "label": "Mayor de 65 años a fecha de devengo" },
+        { "value": "victima_violencia_domestica", "label": "Víctima de violencia doméstica" },
+        { "value": "victima_terrorismo", "label": "Víctima del terrorismo o persona afectada" }
+      ]},
+      { "key": "is_disabled", "label": "¿Persona con discapacidad (≥33% o ≥65% si pre-2022)?", "kind": "boolean", "required": false },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": true },
+      { "key": "is_contract_holder", "label": "Confirmo que soy titular del contrato de arrendamiento", "kind": "boolean", "required": true }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "and-nacimiento-adopcion-acogimiento",
+    "ccaa_code": "ES-AN",
+    "title": "Por nacimiento, adopción de hijos o acogimiento familiar de menores",
+    "what_covers": "Cubre situaciones de nacimiento, adopción o acogimiento familiar de menores producidos durante el ejercicio, con incremento si se reside en un municipio con problemas de despoblación o si se trata de un parto/adopción múltiple.",
+    "requirements": [
+      "Haber tenido en el ejercicio un nacimiento, adopción o acogimiento familiar (urgencia, temporal, permanente o guarda con fines de convivencia preadoptiva) de al menos un menor",
+      "En supuestos de acogimiento: convivencia con el menor ≥ 90 días y no haber recibido ayudas de la Junta vinculadas al acogimiento",
+      "Importe: 200 € por cada hijo/menor",
+      "400 € si la residencia está en municipio con problemas de despoblación (<3.000 habitantes)",
+      "Incremento adicional de 200 €/hijo en partos/adopciones múltiples"
+    ],
+    "legal_reference": "Art. 11 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos/adoptados o menores acogidos en el ejercicio (uno por línea: nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "trigger_type", "label": "Supuesto que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "nacimiento", "label": "Nacimiento" },
+        { "value": "adopcion", "label": "Adopción" },
+        { "value": "acogimiento_urgencia", "label": "Acogimiento familiar de urgencia" },
+        { "value": "acogimiento_temporal", "label": "Acogimiento familiar temporal" },
+        { "value": "acogimiento_permanente", "label": "Acogimiento familiar permanente" },
+        { "value": "guarda_preadoptiva", "label": "Delegación de guarda con fines de convivencia preadoptiva" }
+      ]},
+      { "key": "multiple_birth_or_adoption", "label": "¿Parto, adopción o acogimiento múltiple?", "kind": "boolean", "required": false },
+      { "key": "small_municipality", "label": "¿Residencia en municipio con problemas de despoblación (<3.000 hab.)?", "kind": "boolean", "required": false },
+      { "key": "no_aids_received", "label": "(Acogimiento) Confirmo no haber recibido ayudas de la Junta vinculadas al acogimiento", "kind": "boolean", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "and-adopcion-internacional",
+    "ccaa_code": "ES-AN",
+    "title": "Por adopción de hijos en el ámbito internacional",
+    "what_covers": "Cubre las adopciones de hijos formalizadas en el ámbito internacional durante el período impositivo en que se inscribe la adopción en el Registro Civil.",
+    "requirements": [
+      "Haber adoptado a uno o más hijos en el ámbito internacional",
+      "La adopción debe inscribirse en el Registro Civil en el ejercicio",
+      "Suma de bases imponibles ≤ 80.000 € (individual) / 100.000 € (conjunta)",
+      "Incompatible con la deducción por nacimiento/adopción respecto del mismo hijo",
+      "Importe: 600 € por cada hijo adoptado",
+      "Aportar resolución o certificado de adopción internacional"
+    ],
+    "legal_reference": "Art. 12 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 80000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 100000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "international_adoption_kids", "label": "Hijos adoptados internacionalmente (nombre y fecha de inscripción en Registro Civil)", "kind": "textarea", "required": true },
+      { "key": "international_adoption_certificate", "label": "Resolución/certificado de adopción internacional", "kind": "text", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "and-familia-monoparental",
+    "ccaa_code": "ES-AN",
+    "title": "Para el padre o madre de familia monoparental y, en su caso, con ascendientes mayores de 75 años",
+    "what_covers": "Cubre la situación del padre o madre que encabeza una familia monoparental, con incremento adicional cuando convive con ascendientes mayores de 75 años que generan mínimo por ascendientes.",
+    "requirements": [
+      "Ser padre/madre de familia monoparental a fecha de devengo",
+      "Tener al menos un hijo conviviente (menor de edad, incapacitado o con curatela)",
+      "Suma de bases imponibles ≤ 80.000 € (individual) / 100.000 € (conjunta)",
+      "Importe: 100 € (cuota base)",
+      "Incremento de 100 € por cada ascendiente mayor de 75 años que conviva y dé derecho al mínimo por ascendientes"
+    ],
+    "legal_reference": "Arts. 13 y 4 y disposición transitoria segunda Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "eq", "path": "monoparental", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 80000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 100000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "cohabiting_kids_detail", "label": "Hijos que conviven (nombre y situación: menor de edad, incapacitado, con curatela…)", "kind": "textarea", "required": true },
+      { "key": "ascendants_over_75_count", "label": "Ascendientes >75 años que conviven y generan mínimo por ascendientes", "kind": "number", "required": false, "min": 0 },
+      { "key": "ascendants_detail", "label": "Detalle de los ascendientes (nombre y edad)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "and-familia-numerosa",
+    "ccaa_code": "ES-AN",
+    "title": "Para familia numerosa",
+    "what_covers": "Cubre la condición de familia numerosa (general o especial) acreditada por el correspondiente título a fecha de devengo del impuesto.",
+    "requirements": [
+      "Ostentar el título de familia numerosa a fecha de devengo del impuesto",
+      "Suma de bases imponibles ≤ 25.000 € (individual) / 30.000 € (conjunta)",
+      "Incompatible con la deducción por nacimiento, adopción o acogimiento",
+      "Importe: 200 € (categoría general) o 400 € (categoría especial)"
+    ],
+    "legal_reference": "Arts. 14 y 5 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "large_family_category", "label": "Categoría de familia numerosa", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General" },
+        { "value": "especial", "label": "Especial" }
+      ]},
+      { "key": "large_family_certificate", "label": "Número del título de familia numerosa", "kind": "text", "required": false },
+      { "key": "title_issuer", "label": "Administración que expidió el título", "kind": "text", "required": false }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "and-gastos-educativos",
+    "ccaa_code": "ES-AN",
+    "title": "Por gastos educativos",
+    "what_covers": "Cubre los gastos satisfechos por enseñanza escolar o extraescolar de idiomas, informática o ambas, impartida en centros docentes, academias o por profesionales con epígrafe IAE para los descendientes con derecho al mínimo.",
+    "requirements": [
+      "Tener al menos un descendiente con derecho al mínimo por descendientes",
+      "Los gastos deben corresponder a enseñanza escolar o extraescolar de idiomas, informática o ambas",
+      "Centro docente, academia o profesional dado de alta en el correspondiente epígrafe IAE",
+      "Suma de bases imponibles ≤ 80.000 € (individual) / 100.000 € (conjunta)",
+      "Deducción: 15% de los gastos satisfechos",
+      "Límite: 150 €/año por cada descendiente con derecho al mínimo"
+    ],
+    "legal_reference": "Arts. 15 y 60 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 80000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 100000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "language_school_fees_eur", "label": "Gastos de enseñanza escolar de idiomas/informática (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "language_extra_school_fees_eur", "label": "Gastos de enseñanza extraescolar de idiomas/informática (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Descendientes con derecho al mínimo a los que corresponden los gastos", "kind": "textarea", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "and-contribuyente-discapacidad",
+    "ccaa_code": "ES-AN",
+    "title": "Para contribuyentes con discapacidad",
+    "what_covers": "Cubre la condición de discapacidad reconocida del propio contribuyente.",
+    "requirements": [
+      "Discapacidad reconocida ≥ 33% (o ≥ 65% si la incapacidad fue declarada judicialmente antes del 01/01/2022)",
+      "Suma de bases imponibles ≤ 25.000 € (individual) / 30.000 € (conjunta)",
+      "Importe: 150 € por contribuyente"
+    ],
+    "legal_reference": "Arts. 16 y 3 y disposición adicional segunda Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        { "op": "gte", "path": "disability_pct", "value": 33 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disability_pct", "label": "Grado de discapacidad reconocido (%)", "kind": "number", "required": true, "min": 33, "max": 100 },
+      { "key": "disability_certificate_date", "label": "Fecha de reconocimiento del grado", "kind": "date", "required": false },
+      { "key": "disability_certificate_authority", "label": "Órgano que reconoció la discapacidad", "kind": "text", "required": false }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "and-conyuge-discapacidad",
+    "ccaa_code": "ES-AN",
+    "title": "Para contribuyentes con cónyuges o parejas de hecho con discapacidad",
+    "what_covers": "Cubre la situación del contribuyente cuyo cónyuge o pareja de hecho inscrita tiene una discapacidad reconocida y no presenta declaración individual del IRPF.",
+    "requirements": [
+      "Cónyuge o pareja de hecho inscrita en el Registro de Parejas de Hecho de Andalucía o análogo",
+      "Cónyuge/pareja con discapacidad ≥ 65%",
+      "El cónyuge/pareja no presenta declaración individual del IRPF",
+      "Suma de bases imponibles ≤ 25.000 € (individual) / 30.000 € (conjunta)",
+      "Incompatible con que el cónyuge/pareja aplique la deducción 'Para contribuyentes con discapacidad'",
+      "Importe: 100 €"
+    ],
+    "legal_reference": "Arts. 17 y 3 y disposición adicional segunda Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "spouse_disability_pct", "label": "Grado de discapacidad del cónyuge/pareja (≥65%)", "kind": "number", "required": true, "min": 65, "max": 100 },
+      { "key": "relationship_type", "label": "Vínculo", "kind": "select", "required": true, "options": [
+        { "value": "conyuge", "label": "Cónyuge" },
+        { "value": "pareja_hecho", "label": "Pareja de hecho inscrita" }
+      ]},
+      { "key": "spouse_no_individual_return", "label": "Confirmo que el cónyuge/pareja no presenta declaración individual del IRPF", "kind": "boolean", "required": true }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "and-asistencia-personas-discapacidad",
+    "ccaa_code": "ES-AN",
+    "title": "Por asistencia a personas con discapacidad",
+    "what_covers": "Cubre la asistencia prestada por el contribuyente a ascendientes o descendientes con discapacidad que generan derecho al mínimo, e incluye un porcentaje adicional sobre cuotas a la Seguridad Social de empleados de hogar cuando precisan ayuda de terceros.",
+    "requirements": [
+      "Tener al menos un ascendiente o descendiente con discapacidad que dé derecho al mínimo por ascendientes/descendientes",
+      "Suma de bases imponibles ≤ 80.000 € (individual) / 100.000 € (conjunta)",
+      "Importe base: 100 € por cada ascendiente/descendiente con discapacidad",
+      "Si precisa ayuda de terceros: deducción adicional del 20% (límite 500 €) sobre cuotas satisfechas a la Seguridad Social del Sistema Especial para Empleados de Hogar"
+    ],
+    "legal_reference": "Arts. 18 y 3 y disposición adicional segunda Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 80000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 100000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disabled_persons_count", "label": "Número de personas con discapacidad que generan derecho al mínimo", "kind": "number", "required": true, "min": 1 },
+      { "key": "disabled_persons_detail", "label": "Detalle (nombre, parentesco, grado)", "kind": "textarea", "required": false },
+      { "key": "needs_third_party_help", "label": "¿La persona con discapacidad precisa ayuda de terceros?", "kind": "boolean", "required": false },
+      { "key": "household_employee_social_security_eur", "label": "Cuota fija satisfecha al Sistema Especial de Empleados de Hogar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "household_employee_cccode", "label": "Código Cuenta de Cotización del Sistema Especial de Empleados de Hogar", "kind": "text", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "and-ayuda-domestica",
+    "ccaa_code": "ES-AN",
+    "title": "Por ayuda doméstica",
+    "what_covers": "Cubre la cotización anual satisfecha por el empleador al Sistema Especial para Empleados de Hogar de la Seguridad Social cuando el contribuyente es progenitor con derecho al mínimo por descendientes (con actividad laboral de ambos cónyuges) o tiene 75 años o más.",
+    "requirements": [
+      "Ser el titular del hogar familiar y haber satisfecho cotizaciones al Sistema Especial para Empleados de Hogar",
+      "Cumplir uno de los dos supuestos: (a) progenitor con derecho al mínimo por descendientes y ambos cónyuges/miembros perciben rendimientos del trabajo o de actividades económicas, o (b) titular del hogar o cónyuge/pareja con ≥ 75 años",
+      "Aportar Código Cuenta de Cotización (casilla [0861] Anexo B.1)",
+      "Deducción: 20% de la cotización anual",
+      "Límite: 500 €"
+    ],
+    "legal_reference": "Arts. 19 y 4 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_security_contributions_eur", "label": "Cotización anual al Sistema Especial de Empleados de Hogar (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "household_employee_cccode", "label": "Código Cuenta de Cotización (casilla [0861] Anexo B.1)", "kind": "text", "required": true },
+      { "key": "qualifying_circumstance", "label": "Supuesto que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "progenitor_trabajo", "label": "Progenitor con derecho al mínimo por descendientes y ambos cónyuges con rendimientos del trabajo/actividad" },
+        { "value": "edad_75", "label": "Titular del hogar o cónyuge/pareja con ≥75 años" }
+      ]}
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "and-inversion-nuevas-sociedades",
+    "ccaa_code": "ES-AN",
+    "title": "Por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en sociedades mercantiles",
+    "what_covers": "Cubre las cantidades invertidas en la adquisición de acciones o participaciones en SA, SAL, SL, SLL o cooperativas, en el marco de su constitución o de una ampliación de capital, con un porcentaje incrementado cuando la sociedad participada está vinculada a universidades o centros de investigación.",
+    "requirements": [
+      "Inversión en SA, SAL, SL, SLL o Cooperativa con domicilio social y fiscal en Andalucía",
+      "La inversión deriva de la constitución de la sociedad o de una ampliación de capital, formalizada en escritura pública",
+      "La entidad debe desarrollar una actividad económica (no mera gestión patrimonial)",
+      "Participación del contribuyente y su entorno familiar ≤ 40% del capital",
+      "Mantenimiento de la inversión durante al menos 3 años",
+      "Deducción general: 20% (límite 4.000 €)",
+      "Deducción incrementada: 50% (límite 12.000 €) si la sociedad está creada o participada por universidades o centros de investigación"
+    ],
+    "legal_reference": "Art. 20 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_type", "label": "Tipo de entidad participada", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "SA / SAL / SL / SLL / Cooperativa" },
+        { "value": "universidad_investigacion", "label": "Sociedad creada/participada por universidades o centros de investigación" }
+      ]},
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_name", "label": "Denominación social", "kind": "text", "required": true },
+      { "key": "investment_date", "label": "Fecha de la inversión (escritura pública)", "kind": "date", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (incluido entorno familiar, ≤40%)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "constitucion", "label": "Constitución de la entidad" },
+        { "value": "ampliacion", "label": "Ampliación de capital" }
+      ]}
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "and-defensa-juridica-laboral",
+    "ccaa_code": "ES-AN",
+    "title": "Para gastos de defensa jurídica de la relación laboral",
+    "what_covers": "Cubre los gastos de defensa jurídica satisfechos por el contribuyente derivados de la relación laboral en procedimientos judiciales de despido, extinción de contrato o reclamación de cantidades.",
+    "requirements": [
+      "Haber satisfecho gastos de defensa jurídica de la relación laboral",
+      "Procedimiento judicial de despido, extinción de contrato o reclamación de cantidades",
+      "Aportar factura del letrado / procurador",
+      "Importe deducible: 200 € (individual o conjunta)"
+    ],
+    "legal_reference": "Arts. 21 y 60 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "legal_defense_amount_eur", "label": "Gastos de defensa jurídica satisfechos (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "procedure_type", "label": "Tipo de procedimiento", "kind": "select", "required": true, "options": [
+        { "value": "despido", "label": "Despido" },
+        { "value": "extincion", "label": "Extinción de contrato" },
+        { "value": "reclamacion", "label": "Reclamación de cantidades" }
+      ]},
+      { "key": "lawyer_invoice_ref", "label": "Referencia de la factura del letrado / procurador", "kind": "text", "required": false }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "and-donativos-ecologicos",
+    "ccaa_code": "ES-AN",
+    "title": "Por donativos con finalidad ecológica",
+    "what_covers": "Cubre las cantidades donadas con finalidad medioambiental a entidades públicas dependientes de la Junta de Andalucía o de corporaciones locales andaluzas, así como a entidades sin fines lucrativos inscritas en Andalucía cuyo fin exclusivo sea la defensa del medio ambiente.",
+    "requirements": [
+      "Donativo a entidad pública dependiente de la Junta de Andalucía o corporación local andaluza con finalidad medioambiental, o a entidad sin fines lucrativos (Ley 49/2002) inscrita en Andalucía con fin exclusivo medioambiental",
+      "Aportar certificación expedida por la entidad beneficiaria",
+      "Deducción: 10% de las cantidades donadas",
+      "Límite: 150 €"
+    ],
+    "legal_reference": "Art. 22 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de receptor", "kind": "select", "required": true, "options": [
+        { "value": "publica_andaluza", "label": "Entidad pública dependiente de la Junta o corporación local andaluza" },
+        { "value": "sin_animo_lucro", "label": "Entidad sin fines lucrativos (Ley 49/2002) con fin medioambiental, inscrita en Andalucía" }
+      ]},
+      { "key": "donation_certificate", "label": "Certificación expedida por la entidad beneficiaria (referencia)", "kind": "text", "required": false }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "and-ejercicio-fisico-deporte",
+    "ccaa_code": "ES-AN",
+    "title": "Para fomentar el ejercicio físico y la práctica deportiva",
+    "what_covers": "Cubre las cuotas de pertenencia o adhesión satisfechas a gimnasios, centros y clubes deportivos, federaciones deportivas o secciones deportivas de otras entidades, ya sean por el propio contribuyente, su cónyuge/pareja o personas con derecho al mínimo.",
+    "requirements": [
+      "Cuotas de pertenencia o adhesión satisfechas a gimnasio, centro o club deportivo, federación deportiva o sección deportiva de otra entidad",
+      "Beneficiario: el propio contribuyente, su cónyuge/pareja de hecho inscrita o ascendientes/descendientes con derecho al mínimo",
+      "Aportar denominación y NIF de la entidad receptora",
+      "Deducción: 15% de las cuotas satisfechas",
+      "Límite: 100 €/año por contribuyente"
+    ],
+    "legal_reference": "Arts. 22 bis y 60 Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "sport_fees_amount_eur", "label": "Cuotas de pertenencia o adhesión satisfechas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "facility_type", "label": "Tipo de entidad", "kind": "select", "required": true, "options": [
+        { "value": "gimnasio", "label": "Gimnasio" },
+        { "value": "centro_deportivo", "label": "Centro deportivo" },
+        { "value": "club_deportivo", "label": "Club deportivo" },
+        { "value": "federacion", "label": "Federación deportiva" },
+        { "value": "seccion_no_deportiva", "label": "Sección deportiva de otra entidad no deportiva" }
+      ]},
+      { "key": "facility_name_nif", "label": "Denominación y NIF de la entidad receptora", "kind": "textarea", "required": false },
+      { "key": "beneficiary", "label": "Persona beneficiaria de la cuota", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente", "label": "El propio contribuyente" },
+        { "value": "conyuge_pareja", "label": "Cónyuge o pareja de hecho inscrita" },
+        { "value": "descendiente", "label": "Descendiente con derecho al mínimo" },
+        { "value": "ascendiente", "label": "Ascendiente con derecho al mínimo" }
+      ]}
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "and-gastos-veterinarios-animales",
+    "ccaa_code": "ES-AN",
+    "title": "Por gastos veterinarios derivados de la adquisición de animales de compañía o de la tenencia de perros de asistencia",
+    "what_covers": "Cubre los gastos veterinarios de vacunación/desparasitación obligatorios y de esterilización del animal de compañía adquirido o del perro de asistencia que conviva con el contribuyente.",
+    "requirements": [
+      "Ser titular del animal de compañía adquirido o del perro de asistencia",
+      "Gastos de vacunación, desparasitación obligatoria o esterilización satisfechos desde el 01/01/2025 (animales de compañía)",
+      "Animal de compañía: solo el año siguiente a la adquisición (3 años en caso de adopción)",
+      "Perro de asistencia: durante todo el período de tenencia",
+      "Suma de bases imponibles ≤ 80.000 € (individual) / 100.000 € (conjunta)",
+      "Aportar factura del profesional o centro veterinario",
+      "Deducción: 30% de los gastos",
+      "Límite: 100 €/año"
+    ],
+    "legal_reference": "Art. 22 ter Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 80000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 100000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "veterinary_expenses_eur", "label": "Gastos veterinarios deducibles satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "animal_type", "label": "Tipo de animal", "kind": "select", "required": true, "options": [
+        { "value": "compania", "label": "Animal de compañía" },
+        { "value": "asistencia", "label": "Perro de asistencia" }
+      ]},
+      { "key": "acquisition_mode", "label": "Forma de adquisición (animal de compañía)", "kind": "select", "required": false, "options": [
+        { "value": "compra", "label": "Compra / venta" },
+        { "value": "cesion", "label": "Cesión" },
+        { "value": "adopcion", "label": "Adopción" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición / inicio de tenencia (debe ser desde 01/01/2025 para compañía)", "kind": "date", "required": true },
+      { "key": "expense_types", "label": "Tipo de gasto", "kind": "select", "required": true, "options": [
+        { "value": "vacunacion_desparasitacion", "label": "Vacunación, desparasitación y tratamientos obligatorios" },
+        { "value": "esterilizacion", "label": "Esterilización" },
+        { "value": "ambos", "label": "Ambos conceptos" }
+      ]},
+      { "key": "vet_invoice_ref", "label": "Factura del profesional o centro veterinario", "kind": "text", "required": false }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "and-enfermedad-celiaca",
+    "ccaa_code": "ES-AN",
+    "title": "Para familias con enfermedad celíaca diagnosticada",
+    "what_covers": "Cubre la situación de personas del núcleo familiar (contribuyente, cónyuge/pareja inscrita, ascendientes o descendientes con derecho al mínimo) con enfermedad celíaca diagnosticada mediante informe médico oficial.",
+    "requirements": [
+      "Al menos una persona del núcleo familiar (contribuyente, cónyuge/pareja inscrita, ascendiente o descendiente con derecho al mínimo) con enfermedad celíaca diagnosticada",
+      "Diagnóstico mediante informe médico oficial (Sistema Sanitario Público de Andalucía, otros servicios del SNS o profesional adscrito a aseguramiento sanitario privado)",
+      "Importe: 100 € por cada persona del núcleo familiar con celiaquía diagnosticada"
+    ],
+    "legal_reference": "Art. 22 quater Ley 5/2021, de 20 de octubre, de Tributos Cedidos de la Comunidad Autónoma de Andalucía",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AN" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "celiac_persons_count", "label": "Número de personas del núcleo familiar con celiaquía diagnosticada", "kind": "number", "required": true, "min": 1 },
+      { "key": "celiac_persons_detail", "label": "Detalle (nombre, parentesco, profesional/CNP que emite el informe)", "kind": "textarea", "required": true },
+      { "key": "medical_report_source", "label": "Origen del informe médico", "kind": "select", "required": true, "options": [
+        { "value": "sspa", "label": "Sistema Sanitario Público de Andalucía (SSPA)" },
+        { "value": "sns", "label": "Otros servicios públicos del SNS" },
+        { "value": "privado", "label": "Profesional adscrito a aseguramiento sanitario privado" }
+      ]}
+    ],
+    "display_order": 170,
+    "is_active": true
+  }
+]

@@ -1,0 +1,642 @@
+[
+  {
+    "id": "ctb-arrendamiento-vivienda-habitual",
+    "ccaa_code": "ES-CB",
+    "title": "Por arrendamiento de vivienda habitual por jóvenes, mayores y personas con discapacidad",
+    "what_covers": "Permite deducir un 10% de las cantidades pagadas por el alquiler de la vivienda habitual a colectivos específicos (jóvenes, personas mayores o con discapacidad).",
+    "requirements": [
+      "Ser menor de 36 años, tener 65 o más, o acreditar una discapacidad ≥ 65%.",
+      "Que la vivienda alquilada constituya la vivienda habitual del contribuyente.",
+      "Que las cantidades pagadas por alquiler superen el 10% de la renta del contribuyente.",
+      "Límite máximo: 300 € en declaración individual / 600 € en conjunta.",
+      "Conservar contrato y justificantes de pago; recomendable disponer del NIF del arrendador y de la referencia catastral."
+    ],
+    "legal_reference": "Art. 2.1 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "op": "age_lt", "path": "birth_date", "value": 36 },
+            { "op": "age_gte", "path": "birth_date", "value": 65 },
+            { "op": "gte", "path": "disability_pct", "value": 65 }
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false },
+      { "key": "tenant_circumstance", "label": "Circunstancia que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "menor_36", "label": "Menor de 36 años" },
+        { "value": "mayor_65", "label": "65 años o más" },
+        { "value": "discapacidad", "label": "Discapacidad ≥ 65%" }
+      ]}
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "ctb-cuidado-familiares",
+    "ccaa_code": "ES-CB",
+    "title": "Por cuidado de familiares",
+    "what_covers": "Deducción de 100 € por cada familiar a cargo (descendiente menor de 3 años, ascendiente mayor de 70 años o pariente con discapacidad ≥ 65%) que conviva con el contribuyente.",
+    "requirements": [
+      "Parentesco por consanguinidad o afinidad: descendiente menor de 3 años, ascendiente mayor de 70 años, o ascendiente/descendiente/cónyuge/hermano con discapacidad ≥ 65%.",
+      "Convivencia con el contribuyente durante más de 183 días al año (excepto descendientes menores de 3 años).",
+      "Importe: 100 € por familiar; si un mismo descendiente es menor de edad y tiene discapacidad ≥ 65%, se acumulan 100 € por descendiente + 100 € por discapacidad.",
+      "Detallar nombre, parentesco, edad y/o porcentaje de discapacidad de cada familiar."
+    ],
+    "legal_reference": "Art. 2.2 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "family_type", "label": "Tipo de familiar a cargo", "kind": "select", "required": true, "options": [
+        { "value": "descendiente_menor_3", "label": "Descendiente menor de 3 años" },
+        { "value": "ascendiente_mayor_70", "label": "Ascendiente mayor de 70 años" },
+        { "value": "discapacidad_65", "label": "Ascendiente/descendiente/cónyuge/hermano con discapacidad ≥ 65%" }
+      ]},
+      { "key": "family_members_count", "label": "Número de familiares que dan derecho", "kind": "number", "required": true, "min": 1 },
+      { "key": "family_detail", "label": "Detalle (nombre, parentesco, edad o % discapacidad)", "kind": "textarea", "required": false },
+      { "key": "cohabit_more_183_days", "label": "Confirmo convivencia > 183 días (excepto menores de 3 años)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "ctb-obras-mejora",
+    "ccaa_code": "ES-CB",
+    "title": "Por obras de mejora en vivienda",
+    "what_covers": "Deducción del 15% de las cantidades invertidas en obras de rehabilitación, eficiencia energética, accesibilidad, energías renovables o telecomunicaciones en una vivienda propia situada en Cantabria.",
+    "requirements": [
+      "La vivienda objeto de las obras debe estar situada en Cantabria y ser propiedad del contribuyente.",
+      "Tipo de obra elegible: rehabilitación calificada por la D.G. de Vivienda, eficiencia energética/higiene/salud/accesibilidad, energías renovables y seguridad, o infraestructuras de telecomunicación/Internet.",
+      "Límite anual: 1.000 € (individual) / 1.500 € (conjunta), incrementado en 500 € adicionales si el contribuyente tiene discapacidad ≥ 65%.",
+      "Conservar facturas y justificantes de pago; recomendable disponer del NIF del contratista."
+    ],
+    "legal_reference": "Art. 2.3 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "works_amount_eur", "label": "Cantidades satisfechas en obras (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "works_type", "label": "Tipo de obra", "kind": "select", "required": true, "options": [
+        { "value": "rehabilitacion", "label": "Rehabilitación calificada por la D.G. de Vivienda de Cantabria" },
+        { "value": "eficiencia_energetica", "label": "Eficiencia energética / higiene / salud / accesibilidad" },
+        { "value": "energias_renovables", "label": "Energías renovables, seguridad o sustitución de instalaciones" },
+        { "value": "telecomunicaciones", "label": "Infraestructuras de telecomunicación / Internet" }
+      ]},
+      { "key": "property_address", "label": "Dirección del inmueble en Cantabria", "kind": "text", "required": true },
+      { "key": "contractor_nif", "label": "NIF de la empresa/persona que realiza las obras", "kind": "text", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "ctb-donativos-fundaciones-cantabria-coopera",
+    "ccaa_code": "ES-CB",
+    "title": "Por donativos a fundaciones, al Fondo Cantabria Coopera o a asociaciones de apoyo a la discapacidad",
+    "what_covers": "Deducción por donativos realizados a fundaciones cántabras de fines culturales, asistenciales o sanitarios, al Fondo Cantabria Coopera o a asociaciones cántabras de apoyo a personas con discapacidad.",
+    "requirements": [
+      "Fundación domiciliada en Cantabria con fines culturales/asistenciales/sanitarios o análogos: 15% del donativo.",
+      "Fondo Cantabria Coopera: 12% del donativo.",
+      "Asociaciones de Cantabria cuyo objeto sea el apoyo a personas con discapacidad: 15% del donativo.",
+      "La base total de la deducción no puede superar el 10% de la base liquidable del contribuyente.",
+      "Aportar identidad y NIF de las entidades receptoras y el importe donado."
+    ],
+    "legal_reference": "Art. 2.4 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipient_type", "label": "Tipo de entidad receptora", "kind": "select", "required": true, "options": [
+        { "value": "fundacion_cantabra", "label": "Fundación domiciliada en Cantabria" },
+        { "value": "fondo_cantabria_coopera", "label": "Fondo Cantabria Coopera" },
+        { "value": "asociacion_discapacidad", "label": "Asociación de apoyo a personas con discapacidad" }
+      ]},
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "ctb-acogimiento-familiar-menores",
+    "ccaa_code": "ES-CB",
+    "title": "Por acogimiento familiar de menores",
+    "what_covers": "Deducción para familias que acogen menores (urgencia, temporal o permanente) o que conviven con un mayor de edad anteriormente acogido.",
+    "requirements": [
+      "Acogimiento formalizado en alguna de las modalidades reconocidas: urgencia, temporal o permanente, o continuar conviviendo como ex-acogedor con un mayor de edad antes acogido.",
+      "Importe: 240 € con carácter general o 240 € multiplicado por el número máximo de menores acogidos simultáneamente.",
+      "Límite total: 1.200 €.",
+      "Recomendable disponer del certificado de la entidad pública de protección de menores."
+    ],
+    "legal_reference": "Art. 2.5 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número máximo de menores en acogimiento simultáneo", "kind": "number", "required": true, "min": 1 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "urgencia", "label": "Urgencia" },
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" },
+        { "value": "ex_acogedor", "label": "Ex-acogedor (mayor de edad anteriormente acogido)" }
+      ]},
+      { "key": "foster_certificate", "label": "Certificado de la entidad pública de protección de menores", "kind": "text", "required": false }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "ctb-inversion-acciones-nuevas-entidades",
+    "ccaa_code": "ES-CB",
+    "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+    "what_covers": "Deducción del 15% por inversión en acciones o participaciones de sociedades cántabras de nueva creación o que amplíen capital, para fomentar el emprendimiento local.",
+    "requirements": [
+      "La sociedad participada debe ser SA, SL, SAL o SLL con la condición de PYME y domicilio social/fiscal en Cantabria.",
+      "La participación del contribuyente (junto con su entorno familiar) no podrá superar el 40% del capital.",
+      "Mantener las participaciones durante al menos 3 años.",
+      "La entidad debe contratar al menos una persona en el ejercicio.",
+      "Límite máximo de deducción: 1.000 €.",
+      "Aportar NIF de la sociedad, tipo de operación (constitución o ampliación) y fecha de la inversión."
+    ],
+    "legal_reference": "Art. 2.6 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de entidad", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl", "label": "Sociedad Anónima / Sociedad Limitada" },
+        { "value": "sal_sll", "label": "Sociedad Anónima Laboral / Sociedad Limitada Laboral" }
+      ]},
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "constitucion", "label": "Constitución" },
+        { "value": "ampliacion", "label": "Ampliación de capital" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 40% con entorno familiar)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "ctb-gastos-enfermedad",
+    "ccaa_code": "ES-CB",
+    "title": "Por gastos de enfermedad",
+    "what_covers": "Deducción del 10% de los gastos sanitarios y honorarios profesionales (enfermedad, salud dental, embarazo, accidente o invalidez) del contribuyente y de personas incluidas en el mínimo familiar, no cubiertos por la Seguridad Social.",
+    "requirements": [
+      "Gastos por servicios sanitarios prestados al contribuyente o a personas en su mínimo familiar.",
+      "Que los gastos no estén cubiertos por la Seguridad Social u otro sistema obligatorio.",
+      "Base liquidable inferior a 22.946 € (individual) o 31.485 € (conjunta).",
+      "Límite anual: 500 € (individual) / 700 € (conjunta), incrementado en 100 € si el contribuyente tiene discapacidad ≥ 65%.",
+      "Conservar facturas y, en su caso, prescripción médica."
+    ],
+    "legal_reference": "Art. 2.7 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 22946 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 31485 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "health_expenses_eur", "label": "Gastos y honorarios sanitarios pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "expense_concept", "label": "Concepto", "kind": "textarea", "required": false },
+      { "key": "disability_65", "label": "¿Contribuyente con discapacidad ≥ 65%?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "ctb-gastos-guarderia",
+    "ccaa_code": "ES-CB",
+    "title": "Por gastos de guardería",
+    "what_covers": "Deducción del 15% de los gastos pagados por la guardería de los hijos biológicos o adoptados menores de 3 años.",
+    "requirements": [
+      "Los hijos (biológicos o adoptados) deben ser menores de 3 años.",
+      "Disponer de factura/justificante del centro o persona que presta el servicio.",
+      "Límite máximo: 300 € anuales por hijo.",
+      "Incompatible con la deducción equivalente para municipios afectados por riesgo de despoblamiento."
+    ],
+    "legal_reference": "Art. 2.8 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "any_kid_age_lt", "value": 3 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "daycare_expenses_eur", "label": "Gastos de guardería pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_under_3_count", "label": "Número de hijos menores de 3 años en guardería", "kind": "number", "required": true, "min": 1 },
+      { "key": "daycare_provider", "label": "Centro o persona que presta el servicio", "kind": "text", "required": false }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "ctb-familia-monoparental",
+    "ccaa_code": "ES-CB",
+    "title": "Para familias monoparentales",
+    "what_covers": "Deducción de cuantía fija para el titular de una familia monoparental con rentas moderadas.",
+    "requirements": [
+      "Tener la condición de titular de una familia monoparental.",
+      "Convivencia con hijos menores de edad, o mayores incapacitados judicialmente / con patria potestad prorrogada o curatela representativa.",
+      "Base liquidable (general + ahorro – mínimo personal y familiar) inferior a 31.485 €.",
+      "Importe: 200 € anuales."
+    ],
+    "legal_reference": "Art. 2.9 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "eq", "path": "monoparental", "value": true },
+        { "op": "lt", "path": "income_base", "value": 31485 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_in_household", "label": "Hijos que conviven con el contribuyente", "kind": "textarea", "required": true },
+      { "key": "monoparental_circumstance", "label": "Circunstancia de los hijos", "kind": "select", "required": true, "options": [
+        { "value": "menores_edad", "label": "Menores de edad que conviven con el contribuyente" },
+        { "value": "incapacitados", "label": "Mayores de edad incapacitados judicialmente / patria potestad prorrogada" },
+        { "value": "curatela", "label": "Mayores de edad con curatela representativa" }
+      ]}
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "ctb-nacimiento-adopcion-hijos",
+    "ccaa_code": "ES-CB",
+    "title": "Por nacimiento o adopción de hijos",
+    "what_covers": "Deducción de cuantía fija por cada hijo nacido o adoptado desde el 1 de enero de 2024, aplicable en el ejercicio del hecho y los dos siguientes.",
+    "requirements": [
+      "Nacimiento o adopción producidos a partir del 01/01/2024.",
+      "Importe: 1.400 € por hijo.",
+      "Se aplica en el año del nacimiento/adopción y en los dos ejercicios siguientes.",
+      "En declaración individual, el importe se prorratea al 50% entre ambos progenitores.",
+      "Aportar nombre y fecha de nacimiento/adopción de cada hijo."
+    ],
+    "legal_reference": "Art. 2.10 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados desde 01/01/2024 (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "individual_proration", "label": "¿Declaración individual? (se prorrateará al 50%)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "ctb-arrendamiento-despoblamiento-arrendatario",
+    "ccaa_code": "ES-CB",
+    "title": "Por arrendamiento de vivienda en municipios afectados por riesgo de despoblamiento (arrendatario)",
+    "what_covers": "Deducción del 20% del alquiler pagado por la vivienda habitual cuando esta se encuentra en un municipio de Cantabria afectado por riesgo de despoblamiento.",
+    "requirements": [
+      "La vivienda alquilada debe ser la vivienda habitual del contribuyente.",
+      "El municipio donde se ubica la vivienda debe figurar en el listado de la Orden PRE/1/2025 (riesgo de despoblamiento).",
+      "Importe máximo: 600 € (individual) / 1.200 € (conjunta).",
+      "Incompatible con la deducción general por arrendamiento de vivienda habitual.",
+      "Conservar contrato y justificantes; recomendable disponer del NIF del arrendador y referencia catastral."
+    ],
+    "legal_reference": "Art. 2.11.1 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "municipality", "label": "Municipio (en el listado de la Orden PRE/1/2025)", "kind": "text", "required": true },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "ctb-guarderia-despoblamiento",
+    "ccaa_code": "ES-CB",
+    "title": "Por gastos de guardería para contribuyentes con residencia en municipios afectados por riesgo de despoblamiento",
+    "what_covers": "Deducción reforzada del 30% de los gastos de guardería de hijos menores de 3 años cuando el contribuyente reside en un municipio cántabro afectado por riesgo de despoblamiento.",
+    "requirements": [
+      "Hijos biológicos o adoptados menores de 3 años escolarizados en guardería.",
+      "Residencia habitual del contribuyente en un municipio del listado de la Orden PRE/1/2025.",
+      "Límite máximo: 600 € anuales por hijo.",
+      "Conservar facturas/justificantes del centro."
+    ],
+    "legal_reference": "Art. 2.11.2 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        { "op": "any_kid_age_lt", "value": 3 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "daycare_expenses_eur", "label": "Gastos de guardería pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_under_3_count", "label": "Número de hijos menores de 3 años en guardería", "kind": "number", "required": true, "min": 1 },
+      { "key": "municipality", "label": "Municipio de residencia (Orden PRE/1/2025)", "kind": "text", "required": true }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "ctb-traslado-laboral-despoblamiento",
+    "ccaa_code": "ES-CB",
+    "title": "Por los gastos ocasionados al trasladar la residencia habitual a un municipio afectado por riesgo de despoblamiento por motivos laborales",
+    "what_covers": "Deducción de 500 € en el ejercicio del traslado y en el siguiente, para compensar los gastos de mudarse a un municipio cántabro en riesgo de despoblamiento por motivos laborales.",
+    "requirements": [
+      "Que el traslado se produzca por motivos de actividad laboral, ya sea por cuenta ajena o por cuenta propia.",
+      "Que la nueva residencia habitual esté en un municipio del listado de la Orden PRE/1/2025.",
+      "Compromiso de permanencia: mantener la residencia durante el año del traslado y los tres ejercicios siguientes.",
+      "Importe: 500 € en el año del traslado y otros 500 € en el ejercicio siguiente.",
+      "Límite: la parte autonómica de la cuota íntegra derivada de los rendimientos del trabajo y de actividades económicas."
+    ],
+    "legal_reference": "Art. 2.11.3 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "move_date", "label": "Fecha del cambio de residencia habitual", "kind": "date", "required": true },
+      { "key": "new_municipality", "label": "Municipio de destino (Orden PRE/1/2025)", "kind": "text", "required": true },
+      { "key": "previous_residence", "label": "Residencia anterior (CCAA y municipio)", "kind": "text", "required": true },
+      { "key": "work_type", "label": "Motivo del traslado", "kind": "select", "required": true, "options": [
+        { "value": "cuenta_ajena", "label": "Actividad laboral por cuenta ajena" },
+        { "value": "cuenta_propia", "label": "Actividad laboral por cuenta propia" }
+      ]},
+      { "key": "commitment_4_years", "label": "Confirmo el compromiso de permanencia (año del traslado + 3 siguientes)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "ctb-traslado-estudios-despoblamiento",
+    "ccaa_code": "ES-CB",
+    "title": "Por gastos de traslado por razón de estudios en municipios afectados por riesgo de despoblamiento",
+    "what_covers": "Deducción por hijo descendiente que se traslada fuera del municipio para cursar bachillerato, FP o estudios universitarios, cuando la familia reside en un municipio cántabro afectado por riesgo de despoblamiento.",
+    "requirements": [
+      "Hijo descendiente menor de 25 años con rentas anuales ≤ 8.000 €.",
+      "Cursar bachillerato, formación profesional o estudios universitarios.",
+      "Los estudios se realizan fuera del municipio de residencia familiar.",
+      "El contribuyente reside habitualmente en un municipio incluido en la Orden PRE/1/2025.",
+      "Importe: 200 € por cada hijo que cumple los requisitos."
+    ],
+    "legal_reference": "Art. 2.11.4 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        { "op": "any_kid_age_lt", "value": 25 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "students_count", "label": "Número de hijos que generan derecho a la deducción", "kind": "number", "required": true, "min": 1 },
+      { "key": "students_detail", "label": "Detalle (nombre, edad, estudios, lugar)", "kind": "textarea", "required": true },
+      { "key": "study_level", "label": "Nivel de estudios", "kind": "select", "required": true, "options": [
+        { "value": "bachillerato", "label": "Bachillerato" },
+        { "value": "fp", "label": "Formación Profesional" },
+        { "value": "universitarios", "label": "Universitarios" }
+      ]},
+      { "key": "municipality", "label": "Municipio de residencia (Orden PRE/1/2025)", "kind": "text", "required": true }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "ctb-residencia-despoblamiento",
+    "ccaa_code": "ES-CB",
+    "title": "Por residencia habitual en un municipio afectado por riesgo de despoblamiento",
+    "what_covers": "Deducción para contribuyentes jóvenes que residen de forma habitual durante todo el año en un municipio cántabro afectado por riesgo de despoblamiento.",
+    "requirements": [
+      "Tener menos de 40 años a la fecha de devengo del impuesto (31 de diciembre).",
+      "Residencia habitual durante todo el año natural en un municipio incluido en la Orden PRE/1/2025.",
+      "Importe: 20% de la cuota íntegra autonómica.",
+      "Límite máximo: 500 €."
+    ],
+    "legal_reference": "Art. 2.11.5 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "age_lt", "path": "birth_date", "value": 40 },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "municipality", "label": "Municipio de residencia (Orden PRE/1/2025)", "kind": "text", "required": true },
+      { "key": "full_year_resident", "label": "Confirmo residencia habitual durante todo el año natural", "kind": "boolean", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "ctb-inversiones-economia-social",
+    "ccaa_code": "ES-CB",
+    "title": "Por inversiones o donaciones a entidades de la Economía Social establecidas en Cantabria",
+    "what_covers": "Deducción por aportar capital o realizar donaciones a entidades de Economía Social (cooperativas, sociedades laborales, etc.) con domicilio en Cantabria.",
+    "requirements": [
+      "La entidad debe tener domicilio social en Cantabria y formar parte de la Economía Social.",
+      "Modalidades: 20% por inversión para ser socio, 50% por donación irrevocable para actividades económicas, 25% por donación para fomento/difusión de la Economía Social.",
+      "Cuando se accede como socio, la participación (con el entorno familiar) no puede superar el 40%.",
+      "Mantenimiento de la inversión o destino de la donación entre 3 y 5 años, según modalidad.",
+      "Límite conjunto: 3.000 € por contribuyente.",
+      "Aportar NIF y nombre de la entidad, modalidad e importe."
+    ],
+    "legal_reference": "Art. 2.12 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_eur", "label": "Importe invertido o donado en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Modalidad", "kind": "select", "required": true, "options": [
+        { "value": "inversion_socio", "label": "Inversión para ser socio (20%)" },
+        { "value": "donacion_actividad", "label": "Donación para actividades económicas (50%)" },
+        { "value": "donacion_fomento", "label": "Donación para fomento y difusión de la Economía Social (25%)" }
+      ]},
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": true },
+      { "key": "entity_name", "label": "Nombre de la entidad", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación (≤ 40% con entorno familiar)", "kind": "number", "required": false, "min": 0, "max": 40 }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "ctb-gastos-educacion",
+    "ccaa_code": "ES-CB",
+    "title": "Por gastos de educación",
+    "what_covers": "Deducción para compensar los gastos de libros de texto de enseñanzas obligatorias y la enseñanza extraescolar de idiomas de los hijos durante esas etapas.",
+    "requirements": [
+      "Hijos cursando enseñanzas obligatorias (Primaria y ESO).",
+      "Libros de texto: deducción del 100% del importe pagado.",
+      "Enseñanza extraescolar de idiomas durante la etapa obligatoria: deducción del 15% del importe pagado.",
+      "Suma máxima de la deducción: 200 € por unidad familiar.",
+      "Aportar detalle por cada hijo y conservar facturas."
+    ],
+    "legal_reference": "Art. 2.13 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "books_expenses_eur", "label": "Gastos en libros de texto (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "language_expenses_eur", "label": "Gastos en enseñanza de idiomas extraescolar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Hijos por los que se aplica (nombre y nivel educativo)", "kind": "textarea", "required": true }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "ctb-ayuda-domestica",
+    "ccaa_code": "ES-CB",
+    "title": "Por ayuda doméstica",
+    "what_covers": "Deducción del 20% de las cotizaciones anuales abonadas al Sistema Especial para Empleados de Hogar de la Seguridad Social, en supuestos familiares específicos.",
+    "requirements": [
+      "Ser titular del hogar familiar y haber cotizado por un empleado del Sistema Especial de Empleados de Hogar.",
+      "Encontrarse en alguno de estos supuestos: hijos menores con ambos progenitores activos (rentas del trabajo o de actividades económicas), familia monoparental con rentas del trabajo o de actividades económicas, o contribuyente/cónyuge ≥ 75 años.",
+      "Importe: 20% de las cotizaciones, con límite máximo de 300 € anuales.",
+      "Recomendable disponer del NIF del empleado/a de hogar."
+    ],
+    "legal_reference": "Art. 2.14 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_security_contributions_eur", "label": "Cotizaciones Seguridad Social Empleados Hogar (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "circumstance", "label": "Supuesto que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "hijos_progenitores_activos", "label": "Hijos menores y ambos progenitores con rentas del trabajo/actividades económicas" },
+        { "value": "monoparental_activa", "label": "Familia monoparental con rentas del trabajo/actividades económicas" },
+        { "value": "mayor_75", "label": "Contribuyente o cónyuge/pareja ≥ 75 años" }
+      ]},
+      { "key": "household_employee_nif", "label": "NIF del empleado/a de hogar", "kind": "text", "required": false }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "ctb-nuevos-contribuyentes-extranjero",
+    "ccaa_code": "ES-CB",
+    "title": "Por inversiones de nuevos contribuyentes procedentes del extranjero",
+    "what_covers": "Deducción para atraer a Cantabria a personas físicas que vuelven del extranjero, sobre las inversiones realizadas en inmuebles no destinados a vivienda, valores y participaciones.",
+    "requirements": [
+      "Ser persona física que no haya residido en España durante los 5 años anteriores al traslado.",
+      "Adquirir residencia fiscal en Cantabria a partir del 01/01/2025.",
+      "Inversión en inmuebles no destinados a vivienda, valores representativos de cesión a terceros o participaciones en fondos propios.",
+      "Mantener las inversiones durante al menos 6 años.",
+      "Deducción: 20% del valor de adquisición (incluidos gastos y tributos inherentes, excluidos intereses)."
+    ],
+    "legal_reference": "Art. 2.15 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Valor de adquisición (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "investment_types", "label": "Tipo de elementos adquiridos", "kind": "textarea", "required": true },
+      { "key": "residence_change_date", "label": "Fecha en que adquirió la residencia fiscal en Cantabria", "kind": "date", "required": true },
+      { "key": "previous_non_resident_5y", "label": "Confirmo que no he sido residente en España en los 5 años previos", "kind": "boolean", "required": true }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "ctb-desplazamiento-nuevos-residentes",
+    "ccaa_code": "ES-CB",
+    "title": "Para compensar los gastos de desplazamiento y permanencia de nuevos residentes en Cantabria",
+    "what_covers": "Deducción que compensa los gastos de traslado del domicilio fiscal a Cantabria (viaje y mudanza, escolarización de hijos y arrendamiento), reforzada cuando el traslado responde a motivos laborales.",
+    "requirements": [
+      "No haber sido residente en Cantabria durante los 4 años anteriores al traslado.",
+      "Mantener la residencia habitual en Cantabria durante los 3 años posteriores al traslado.",
+      "Importe general: 10% de los gastos, máximo 1.000 €/año.",
+      "Importe por motivos laborales: 25% de los gastos, máximo 1.500 €/año.",
+      "Conceptos elegibles: viaje y mudanza, escolarización de hijos y arrendamiento de vivienda.",
+      "Aportar fecha del cambio de residencia y residencia anterior (CCAA o país)."
+    ],
+    "legal_reference": "Art. 2.16 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "relocation_expenses_eur", "label": "Gastos generados por el traslado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "relocation_type", "label": "Motivo del traslado", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "General (10%, máx. 1.000 €)" },
+        { "value": "laboral", "label": "Motivos laborales (25%, máx. 1.500 €)" }
+      ]},
+      { "key": "residence_change_date", "label": "Fecha del cambio de residencia a Cantabria", "kind": "date", "required": true },
+      { "key": "previous_residence", "label": "Residencia anterior (CCAA o país)", "kind": "text", "required": true },
+      { "key": "expense_categories", "label": "Categorías de gasto (viaje/mudanza, escolarización, arrendamiento)", "kind": "textarea", "required": false }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "ctb-arrendamiento-viviendas-vacias",
+    "ccaa_code": "ES-CB",
+    "title": "Por el arrendamiento de viviendas vacías",
+    "what_covers": "Deducción para propietarios que sacan al mercado de alquiler de vivienda habitual (LAU) inmuebles que llevaban vacíos, con el fin de incentivar la oferta de vivienda.",
+    "requirements": [
+      "La vivienda debe haber estado vacía durante al menos un año anterior a la formalización del contrato.",
+      "El contrato debe formalizarse al amparo de la LAU y destinarse a vivienda habitual del arrendatario, con duración efectiva ≥ 3 años.",
+      "Alquiler mensual ≤ 1.000 € durante el primer año.",
+      "Máximo de 3 viviendas por contribuyente con derecho a deducción.",
+      "El arrendatario no puede tener parentesco hasta 3er grado con el arrendador.",
+      "Importe: 500 € por cada vivienda vacía que se ponga en alquiler cumpliendo los requisitos."
+    ],
+    "legal_reference": "Art. 2.17 Texto Refundido Decreto Legislativo 62/2008 de Cantabria",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "new_rental_count", "label": "Número de viviendas vacías arrendadas en el ejercicio", "kind": "number", "required": true, "min": 1, "max": 3 },
+      { "key": "contract_duration_years", "label": "Duración pactada del contrato (años)", "kind": "number", "required": true, "min": 3 },
+      { "key": "monthly_rent_eur", "label": "Alquiler mensual del primer año (≤ 1.000 €)", "kind": "number", "required": true, "min": 0, "max": 1000 },
+      { "key": "tenant_nif", "label": "NIF del arrendatario", "kind": "text", "required": true },
+      { "key": "ownership_percentage", "label": "% de participación en la propiedad", "kind": "number", "required": false, "min": 0, "max": 100 }
+    ],
+    "display_order": 210,
+    "is_active": true
+  }
+]

@@ -91,6 +91,9 @@ const ServiceDetailSection = dynamic(
 const DashboardSheetPanel = dynamic(
   () => import("@/components/clients/dashboard-sheet-panel"),
 );
+const RentaSummaryCard = dynamic(
+  () => import("@/components/clients/renta-summary-card"),
+);
 
 interface Props {
   detail: CompanyDetailInfo;
@@ -456,6 +459,9 @@ export default function ClientDetailWorkspace({
     (s) => s.service_slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE
   );
   const hasTaxAccountingAdvice = !!taxAdviceService;
+  const hasDeclaracionRenta = company.services.some(
+    (s) => s.service_slug === SERVICE_SLUGS.DECLARACION_RENTA
+  );
   const canEditDashboardSheet =
     canEditCompany &&
     !!taxAdviceService?.department_id &&
@@ -1245,7 +1251,7 @@ export default function ClientDetailWorkspace({
             Para consultar o rellenar una vez.
           </p>
 
-          {hasTaxAccountingAdvice ? (
+          {hasTaxAccountingAdvice && (
             <FeatureCard
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
@@ -1272,10 +1278,16 @@ export default function ClientDetailWorkspace({
                 </div>
               }
             />
-          ) : (
+          )}
+
+          {hasDeclaracionRenta && (
+            <RentaSummaryCard companyId={company.id} linkPrefix={linkPrefix} />
+          )}
+
+          {!hasTaxAccountingAdvice && !hasDeclaracionRenta && (
             <EmptyFeaturesState
               message="Esta empresa todavía no tiene informes desbloqueados."
-              hint="Contrata 'Asesoramiento fiscal y contable' para habilitar el Dashboard fiscal."
+              hint="Contrata 'Asesoramiento fiscal y contable' o 'Declaración de la renta' para habilitar informes."
             />
           )}
         </div>

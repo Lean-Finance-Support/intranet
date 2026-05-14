@@ -62,6 +62,18 @@ export function buildDestinations(ctx: SearchContext): SearchDestination[] {
           keywords: ["modelos", "iva", "303", "fiscal", displayName, alt ?? ""].filter(Boolean),
         });
       }
+
+      if (company.has_declaracion_renta_service) {
+        out.push({
+          id: `company-renta:${company.id}`,
+          group: "client-sections",
+          label: `Declaración de la renta de ${displayName}`,
+          sublabel: "Formulario y envíos",
+          href: `${ctx.linkPrefix}/clientes/${company.id}/renta`,
+          icon: "document",
+          keywords: ["renta", "irpf", "declaración", "deducciones", displayName, alt ?? ""].filter(Boolean),
+        });
+      }
     }
   }
 

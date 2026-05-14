@@ -1,0 +1,716 @@
+[
+  {
+    "id": "arg-nacimiento-adopcion-tercer-hijo",
+    "ccaa_code": "ES-AR",
+    "title": "Por nacimiento o adopción del tercer hijo o sucesivos",
+    "what_covers": "Deducción por el nacimiento o adopción del tercer hijo o sucesivos durante el ejercicio. Cubre tanto hijos biológicos como adoptados.",
+    "requirements": [
+      "Que el hijo nacido o adoptado sea el tercero o posterior (3º, 4º…)",
+      "Cuantía base: 500 € por hijo",
+      "Cuantía incrementada a 600 € si la suma de bases imponibles menos mínimos no supera 21.000 € (individual) / 35.000 € (conjunta)",
+      "En régimen de fiscalidad diferenciada (asentamientos rurales en riesgo de despoblación Rango VIII/IX/X): 600 € / 720 €",
+      "Residencia fiscal en Aragón"
+    ],
+    "legal_reference": "Arts. 110-2, 160-1 y 160-2.1 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 3 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_born_or_adopted", "label": "Hijos nacidos o adoptados en 2025 (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "birth_order", "label": "Orden del hijo (3º, 4º…)", "kind": "number", "required": true, "min": 3 },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "arg-nacimiento-adopcion-hijo-discapacidad",
+    "ccaa_code": "ES-AR",
+    "title": "Por nacimiento o adopción de un hijo con un grado de discapacidad igual o superior al 33 por 100",
+    "what_covers": "Deducción adicional por nacimiento o adopción de un hijo con discapacidad reconocida igual o superior al 33%. Compatible con otras deducciones por hijos.",
+    "requirements": [
+      "Grado de discapacidad del hijo reconocido ≥ 33%",
+      "Cuantía: 200 € por cada hijo con discapacidad",
+      "En régimen de fiscalidad diferenciada (Rango VIII/IX/X): 240 €",
+      "Compatible con la deducción por tercer hijo o sucesivos y con la de adopción internacional",
+      "Residencia fiscal en Aragón"
+    ],
+    "legal_reference": "Arts. 110-3, 160-1 y 160-2.2 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_with_disability", "label": "Hijos nacidos/adoptados con discapacidad ≥ 33% (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "disability_pct", "label": "Grado de discapacidad reconocido (%)", "kind": "number", "required": true, "min": 33 },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "arg-adopcion-internacional",
+    "ccaa_code": "ES-AR",
+    "title": "Por adopción internacional de niños",
+    "what_covers": "Deducción por gastos derivados de adopciones internacionales formalizadas en el ejercicio. Se aplica por cada hijo adoptado en este régimen.",
+    "requirements": [
+      "Adopción internacional formalizada mediante resolución judicial",
+      "Cuantía: 600 € por cada hijo adoptado internacionalmente",
+      "En régimen de fiscalidad diferenciada (Rango VIII/IX/X): 720 €",
+      "Compatible con la deducción por tercer hijo o sucesivos, por hijo con discapacidad ≥ 33% y por nacimiento del primer o segundo hijo en poblaciones <10.000 habitantes",
+      "Residencia fiscal en Aragón"
+    ],
+    "legal_reference": "Arts. 110-4, 160-1 y 160-2.3 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "international_adoption_kids", "label": "Hijos adoptados internacionalmente (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "judicial_resolution_date", "label": "Fecha de resolución judicial constitutiva de la adopción", "kind": "date", "required": true },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "arg-cuidado-personas-dependientes",
+    "ccaa_code": "ES-AR",
+    "title": "Por el cuidado de personas dependientes",
+    "what_covers": "Deducción por el cuidado de ascendientes mayores de 75 años o ascendientes/descendientes con discapacidad ≥ 65% que conviven con el contribuyente.",
+    "requirements": [
+      "Persona dependiente: ascendiente mayor de 75 años o ascendiente/descendiente con discapacidad ≥ 65%",
+      "Convivencia con el contribuyente al menos la mitad del período impositivo",
+      "Rentas anuales de la persona dependiente ≤ 8.000 €",
+      "Bases del contribuyente ≤ 21.000 € (individual) / 35.000 € (conjunta)",
+      "Cuantía: 150 € por persona dependiente",
+      "En régimen de fiscalidad diferenciada (Rango VIII/IX/X): 300 €"
+    ],
+    "legal_reference": "Arts. 110-5, 160-1 y 160-2.4 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 21000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "dependants_count", "label": "Número de personas dependientes a cargo", "kind": "number", "required": true, "min": 1 },
+      { "key": "dependant_type", "label": "Tipo de persona dependiente", "kind": "select", "required": true, "options": [
+        { "value": "ascendiente_75", "label": "Ascendiente mayor de 75 años" },
+        { "value": "ascendiente_discapacidad_65", "label": "Ascendiente con discapacidad ≥ 65%" },
+        { "value": "descendiente_discapacidad_65", "label": "Descendiente con discapacidad ≥ 65%" }
+      ]},
+      { "key": "dependant_annual_income_eur", "label": "Rentas anuales de la persona dependiente (€, máx. 8.000)", "kind": "number", "required": true, "min": 0, "max": 8000 },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "arg-donaciones-ecologicas-id",
+    "ccaa_code": "ES-AR",
+    "title": "Por donaciones con finalidad ecológica y en investigación y desarrollo científico y técnico",
+    "what_covers": "Deducción por donaciones dinerarias destinadas a la defensa del medio ambiente o a la investigación y desarrollo científico y técnico realizadas a entidades aragonesas autorizadas.",
+    "requirements": [
+      "Donaciones dinerarias puras y simples (no en especie)",
+      "Beneficiarios: Comunidad Autónoma de Aragón, sus organismos públicos o entidades sin fines lucrativos inscritas en registros aragoneses",
+      "Finalidad: defensa del medio ambiente o I+D científico y técnico",
+      "Cuantía: 20% del importe donado",
+      "Límite: 10% de la cuota íntegra autonómica",
+      "Justificante de la donación con NIF de la entidad receptora"
+    ],
+    "legal_reference": "Art. 110-6 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "donation_purpose", "label": "Finalidad de la donación", "kind": "select", "required": true, "options": [
+        { "value": "medio_ambiente", "label": "Defensa y conservación del medio ambiente" },
+        { "value": "id_cientifico", "label": "Investigación y desarrollo científico y técnico" }
+      ]}
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "arg-vivienda-victimas-terrorismo",
+    "ccaa_code": "ES-AR",
+    "title": "Por adquisición de vivienda habitual por víctimas del terrorismo",
+    "what_covers": "Deducción por la adquisición de vivienda habitual nueva acogida a protección pública, cuando el contribuyente (o su familia más directa) tiene reconocida la condición de víctima del terrorismo.",
+    "requirements": [
+      "Condición acreditada de víctima del terrorismo del contribuyente (o, en su defecto, cónyuge/pareja o hijos convivientes)",
+      "Vivienda nueva situada en Aragón",
+      "Vivienda acogida a alguna modalidad de protección pública",
+      "Que sea primera residencia habitual del contribuyente",
+      "Cuantía: 3% de las cantidades satisfechas en el ejercicio",
+      "Acreditación documental de la condición de víctima"
+    ],
+    "legal_reference": "Art. 110-7 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "acquisition_amount_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición de la vivienda", "kind": "date", "required": true },
+      { "key": "victim_certificate", "label": "Acreditación de la condición de víctima del terrorismo", "kind": "text", "required": false },
+      { "key": "protected_housing_type", "label": "Modalidad de protección pública", "kind": "text", "required": false }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "arg-inversion-acciones-mab",
+    "ccaa_code": "ES-AR",
+    "title": "Por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del Mercado Alternativo Bursátil",
+    "what_covers": "Deducción por la suscripción de acciones en ampliaciones de capital de empresas que cotizan en el segmento de empresas en expansión del MAB con vinculación territorial a Aragón.",
+    "requirements": [
+      "Inversión mediante suscripción de acciones en ampliación de capital",
+      "Entidad cotizada en el segmento de empresas en expansión del MAB",
+      "Domicilio social y fiscal de la entidad en Aragón",
+      "Participación del contribuyente ≤ 10%",
+      "Mantenimiento de la inversión durante al menos 2 años",
+      "Cuantía: 20% de la cantidad invertida",
+      "Límite: 10.000 €"
+    ],
+    "legal_reference": "Art. 110-8 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_name", "label": "Entidad objeto de inversión (MAB segmento expansión)", "kind": "text", "required": true },
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": false },
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤ 10%)", "kind": "number", "required": false, "min": 0, "max": 10 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "arg-inversion-nuevas-entidades",
+    "ccaa_code": "ES-AR",
+    "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
+    "what_covers": "Deducción autonómica complementaria a la estatal por inversión en empresas nuevas o de reciente creación, aplicable al tramo de inversión que excede la base máxima estatal.",
+    "requirements": [
+      "Inversión que exceda la base máxima de la deducción estatal del art. 68.1 LIRPF",
+      "Forma jurídica de la entidad: SA, SL, SAL o SLL",
+      "Domicilio social y fiscal de la entidad en Aragón",
+      "Cuantía: 20% de la cantidad invertida que supere la base estatal",
+      "Límite: 4.000 €",
+      "Acreditación de la inversión (escritura, certificado de la entidad)"
+    ],
+    "legal_reference": "Art. 110-9 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio que excede la base estatal (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_name", "label": "Entidad participada", "kind": "text", "required": true },
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Forma jurídica", "kind": "select", "required": true, "options": [
+        { "value": "sa", "label": "Sociedad Anónima" },
+        { "value": "sl", "label": "Sociedad Limitada" },
+        { "value": "sal", "label": "Sociedad Anónima Laboral" },
+        { "value": "sll", "label": "Sociedad Limitada Laboral" }
+      ]},
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "arg-vivienda-rural",
+    "ccaa_code": "ES-AR",
+    "title": "Por adquisición o rehabilitación de vivienda habitual en núcleos rurales o análogos",
+    "what_covers": "Deducción para jóvenes que adquieren o rehabilitan su primera vivienda habitual en pequeños municipios aragoneses, con el objetivo de fijar población en zonas rurales.",
+    "requirements": [
+      "Contribuyente menor de 36 años",
+      "Vivienda habitual en propiedad situada en municipio aragonés de menos de 3.000 habitantes (o entidad local menor / singular de población)",
+      "Que sea la primera vivienda del contribuyente",
+      "Operación realizada desde 1/1/2012",
+      "Bases ≤ 21.000 € (individual) / 35.000 € (conjunta)",
+      "Cuantía: 5% de las cantidades satisfechas en el ejercicio",
+      "En régimen de fiscalidad diferenciada (Rango VIII/IX/X): 7,5%"
+    ],
+    "legal_reference": "Arts. 110-10, 160-1 y 160-2.5 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 21000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amount_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]},
+      { "key": "municipality", "label": "Municipio aragonés (<3.000 habitantes)", "kind": "text", "required": true },
+      { "key": "first_home", "label": "Confirmo que es mi primera vivienda", "kind": "boolean", "required": true },
+      { "key": "operation_date", "label": "Fecha de la operación (a partir 01/01/2012)", "kind": "date", "required": true },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "arg-libros-texto-material-escolar",
+    "ccaa_code": "ES-AR",
+    "title": "Por adquisición de libros de texto y material escolar",
+    "what_covers": "Deducción por los gastos en libros de texto y material escolar para hijos descendientes que cursen Educación Primaria o ESO, con cuantías limitadas según renta y condición de familia numerosa.",
+    "requirements": [
+      "Descendientes cursando Educación Primaria o ESO",
+      "Cuantía base: 100% del gasto, con límites entre 25 € y 150 € por descendiente según renta",
+      "Bases ≤ 12.500 € (individual) / 25.000 € (conjunta) en régimen general",
+      "Si familia numerosa: bases ≤ 30.000 € (individual) / 40.000 € (conjunta)",
+      "En régimen de fiscalidad diferenciada (Rango VIII/IX/X): límites incrementados",
+      "Pago bancarizado obligatorio (no efectivo)",
+      "Se minora con becas/ayudas recibidas"
+    ],
+    "legal_reference": "Arts. 110-11, 160-1 y 160-2.6 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "school_books_eur", "label": "Gasto en libros de texto (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "school_supplies_eur", "label": "Gasto en material escolar (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Hijos por los que se aplica (nombre y nivel educativo: Primaria/ESO)", "kind": "textarea", "required": true },
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false },
+      { "key": "received_grants_eur", "label": "Becas/ayudas recibidas que minoran la deducción (€)", "kind": "number", "required": false, "min": 0 },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "arg-arrendamiento-dacion-en-pago",
+    "ccaa_code": "ES-AR",
+    "title": "Por arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
+    "what_covers": "Deducción para contribuyentes que han entregado su vivienda en dación en pago y permanecen en ella como arrendatarios con opción de compra.",
+    "requirements": [
+      "Vivienda habitual en régimen de alquiler",
+      "Arrendamiento vinculado a una operación de dación en pago de la misma vivienda",
+      "Contrato de arrendamiento con opción de compra de la misma vivienda",
+      "Depósito de fianza formalizado en el organismo competente de Aragón",
+      "Bases ≤ 15.000 € (individual) / 25.000 € (conjunta)",
+      "Cuantía: 10% de las cantidades satisfechas",
+      "Base máxima de deducción: 4.800 €/año"
+    ],
+    "legal_reference": "Art. 110-12 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 15000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€, máx. base 4.800)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "dacion_en_pago_date", "label": "Fecha de la operación de dación en pago", "kind": "date", "required": true },
+      { "key": "purchase_option", "label": "Confirmo que el contrato incluye opción de compra de la misma vivienda", "kind": "boolean", "required": true },
+      { "key": "deposit_resguardo", "label": "Resguardo del depósito de fianza (Aragón)", "kind": "text", "required": false }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "arg-arrendamiento-vivienda-social",
+    "ccaa_code": "ES-AR",
+    "title": "Por arrendamiento de vivienda social (deducción del arrendador)",
+    "what_covers": "Deducción para propietarios que ceden viviendas al Plan de Vivienda Social de Aragón, aplicable sobre la cuota correspondiente a esos rendimientos.",
+    "requirements": [
+      "Ser propietario arrendador (no inquilino)",
+      "Vivienda(s) puesta(s) a disposición del Gobierno de Aragón o entidades del Plan de Vivienda Social",
+      "Existencia de convenio o vinculación formal con el Plan de Vivienda Social de Aragón",
+      "Cuantía: 30% de la parte de cuota íntegra autonómica correspondiente a los rendimientos del capital inmobiliario de esas viviendas",
+      "Residencia fiscal en Aragón"
+    ],
+    "legal_reference": "Art. 110-13 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "social_rented_properties_count", "label": "Número de viviendas cedidas al Plan de Vivienda Social de Aragón", "kind": "number", "required": true, "min": 1 },
+      { "key": "rental_income_eur", "label": "Rendimiento neto del capital inmobiliario de esas viviendas (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "agreement_reference", "label": "Referencia del convenio con el Gobierno de Aragón / Plan de Vivienda Social", "kind": "text", "required": false }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "arg-mayores-70",
+    "ccaa_code": "ES-AR",
+    "title": "Para mayores de 70 años",
+    "what_covers": "Deducción para contribuyentes mayores de 70 años que obtienen rentas activas (trabajo o actividades económicas), no solamente rendimientos del capital.",
+    "requirements": [
+      "Tener 70 o más años",
+      "Obtener rendimientos integrables en la base imponible general que no procedan exclusivamente del capital (es decir, rentas del trabajo o de actividades económicas)",
+      "Bases ≤ 23.000 € (individual) / 35.000 € (conjunta)",
+      "Cuantía: 75 € por contribuyente",
+      "Residencia fiscal en Aragón"
+    ],
+    "legal_reference": "Art. 110-14 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "age_gte", "path": "birth_date", "value": 70 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 23000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 35000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "has_work_or_economic_activity_income", "label": "Confirmo que obtengo rendimientos del trabajo y/o actividades económicas (no solo capital)", "kind": "boolean", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "arg-nacimiento-primer-segundo-hijo-pequenos-municipios",
+    "ccaa_code": "ES-AR",
+    "title": "Por nacimiento o adopción del primer y/o segundo hijo en poblaciones de menos de 10.000 habitantes",
+    "what_covers": "Deducción para incentivar la natalidad en pequeños municipios aragoneses, aplicable al primer y/o segundo hijo nacido o adoptado durante el ejercicio.",
+    "requirements": [
+      "Primer o segundo hijo nacido o adoptado en el ejercicio",
+      "Residencia del contribuyente en municipio aragonés de menos de 10.000 habitantes en el año del nacimiento y el anterior",
+      "Cuantía base: 100 € (primer hijo) / 150 € (segundo hijo)",
+      "Cuantía incrementada: 200 € / 300 € si bases ≤ 23.000 € (individual) / 35.000 € (conjunta)",
+      "Incompatible con la deducción por hijo con discapacidad ≥ 33% para el mismo hijo"
+    ],
+    "legal_reference": "Art. 110-16 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "birth_order", "label": "Orden del hijo (1º o 2º)", "kind": "select", "required": true, "options": [
+        { "value": "primero", "label": "Primer hijo" },
+        { "value": "segundo", "label": "Segundo hijo" }
+      ]},
+      { "key": "birth_date", "label": "Fecha de nacimiento o adopción", "kind": "date", "required": true },
+      { "key": "municipality", "label": "Municipio aragonés (<10.000 habitantes)", "kind": "text", "required": true },
+      { "key": "residence_previous_year", "label": "Confirmo que residí en municipio aragonés <10.000 habitantes el año del nacimiento y el anterior", "kind": "boolean", "required": true }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "arg-guarderia-menores-3",
+    "ccaa_code": "ES-AR",
+    "title": "Por gastos de guardería de hijos menores de 3 años",
+    "what_covers": "Deducción por los gastos de guardería o centros de educación infantil autorizados pagados por hijos menores de 3 años (con prorrateo el año en que cumplen 3).",
+    "requirements": [
+      "Hijo menor de 3 años (125 €/150 € de límite el año en que cumple 3)",
+      "Guardería o centro de educación infantil autorizado por el Departamento de Educación",
+      "Pago bancarizado obligatorio (no efectivo)",
+      "Bases liquidables < 35.000 € (individual) / 50.000 € (conjunta)",
+      "Base liquidable del ahorro ≤ 4.000 €",
+      "Cuantía: 15% del gasto",
+      "Límite: 250 €/hijo (régimen general); 300 €/hijo (fiscalidad diferenciada)"
+    ],
+    "legal_reference": "Arts. 110-17, 160-1 y 160-2.7 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "any_kid_age_lt", "value": 4 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 50000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "nursery_expenses_eur", "label": "Gastos de guardería pagados en el año (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_enrolled", "label": "Hijos inscritos (nombre, fecha de nacimiento, guardería)", "kind": "textarea", "required": true },
+      { "key": "nursery_name_and_authorization", "label": "Guardería/centro y autorización del Departamento de Educación", "kind": "text", "required": false },
+      { "key": "differentiated_regime", "label": "¿Aplica régimen de fiscalidad diferenciada (asentamiento rural Rango VIII/IX/X)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "arg-inversion-economia-social",
+    "ccaa_code": "ES-AR",
+    "title": "Por inversión en entidades de la economía social",
+    "what_covers": "Deducción por aportaciones realizadas para incorporarse como socio en entidades de la economía social (cooperativas, sociedades laborales, etc.) con sede en Aragón.",
+    "requirements": [
+      "Aportación realizada para ser socio en entidad de la economía social (Ley 5/2011)",
+      "Entidad con domicilio social y fiscal en Aragón",
+      "Entidad con al menos un trabajador a jornada completa",
+      "Participación del contribuyente (computada con familia) ≤ 40%",
+      "Mantenimiento de la inversión durante 5 años",
+      "Cuantía: 20% de la aportación",
+      "Límite: 4.000 €",
+      "Incompatible con las deducciones de MAB y de inversión en entidades nuevas"
+    ],
+    "legal_reference": "Art. 110-19 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Aportación realizada en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_name", "label": "Entidad de economía social", "kind": "text", "required": true },
+      { "key": "entity_nif", "label": "NIF de la entidad", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación (computado con familia, ≤ 40%)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la aportación", "kind": "date", "required": true }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "arg-clases-apoyo-refuerzo",
+    "ccaa_code": "ES-AR",
+    "title": "Por gastos en clases de apoyo o refuerzo",
+    "what_covers": "Deducción por gastos pagados a centros educativos o profesionales del IAE en clases de apoyo o refuerzo extraescolar para descendientes en niveles obligatorios o FP Básica.",
+    "requirements": [
+      "Descendientes cursando Educación Infantil, Educación Básica Obligatoria o FP Básica",
+      "Clases impartidas por centro educativo propio, centro externo público/privado o persona física dada de alta en el IAE",
+      "Bases ≤ 12.500 € (individual) / 25.000 € (conjunta) en régimen general",
+      "Si familia numerosa: bases ≤ 30.000 € (individual) / 40.000 € (conjunta)",
+      "Cuantía: 25% del gasto pagado",
+      "Límites por descendiente: entre 50 € y 200 € (300 € en familia numerosa)",
+      "Se minora con las ayudas recibidas"
+    ],
+    "legal_reference": "Art. 110-21 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "support_classes_eur", "label": "Gasto pagado en clases de apoyo/refuerzo (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Descendientes por los que se aplica (nombre y nivel: Infantil/EBO/FP Básica)", "kind": "textarea", "required": true },
+      { "key": "provider_type", "label": "Tipo de prestador", "kind": "select", "required": true, "options": [
+        { "value": "centro_propio", "label": "Centro educativo propio" },
+        { "value": "centro_externo", "label": "Centro externo público o privado" },
+        { "value": "persona_fisica_iae", "label": "Persona física dada de alta en el IAE" }
+      ]},
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false },
+      { "key": "received_grants_eur", "label": "Ayudas recibidas que minoran la deducción (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "arg-formacion-autonomia-menores-discapacidad",
+    "ccaa_code": "ES-AR",
+    "title": "Por gastos en formación para la autonomía y la vida independiente de menores con discapacidad",
+    "what_covers": "Deducción por gastos en actividades formativas orientadas a fomentar la autonomía y vida independiente de descendientes menores con discapacidad reconocida ≥ 65%.",
+    "requirements": [
+      "Descendientes menores con grado de discapacidad reconocido ≥ 65%",
+      "Gasto destinado a actividades de formación para la autonomía y vida independiente",
+      "Bases ≤ 12.500 € (individual) / 25.000 € (conjunta) en régimen general",
+      "Si familia numerosa: bases ≤ 30.000 € (individual) / 40.000 € (conjunta)",
+      "Cuantía: 25% del gasto",
+      "Límites por descendiente: entre 50 € y 200 € (300 € en familia numerosa)",
+      "Se minora con ayudas recibidas"
+    ],
+    "legal_reference": "Art. 110-22 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 12500 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 25000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]},
+            { "all_of": [
+              { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 40000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "training_expenses_eur", "label": "Gasto pagado en formación de autonomía y vida independiente (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_with_disability", "label": "Descendientes con discapacidad ≥ 65% beneficiarios (nombre y grado)", "kind": "textarea", "required": true },
+      { "key": "kids_disability_pct", "label": "Grado de discapacidad del descendiente (%) (≥ 65)", "kind": "number", "required": true, "min": 65 },
+      { "key": "is_large_family", "label": "¿Familia numerosa?", "kind": "boolean", "required": false },
+      { "key": "received_grants_eur", "label": "Ayudas recibidas que minoran la deducción (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "arg-residencia-municipios-rango-x",
+    "ccaa_code": "ES-AR",
+    "title": "Por residencia en determinados municipios",
+    "what_covers": "Deducción para residentes habituales en asentamientos rurales aragoneses con riesgo extremo de despoblación (Rango X), con compromiso de permanencia plurianual.",
+    "requirements": [
+      "Residencia habitual en municipio o asentamiento aragonés clasificado como Rango X (riesgo extremo de despoblación)",
+      "Compromiso de mantener la residencia durante el año del ejercicio y los cuatro siguientes",
+      "Bases liquidables < 35.000 € (individual) / 50.000 € (conjunta)",
+      "Base liquidable del ahorro ≤ 4.000 €",
+      "Cuantía: 600 € por contribuyente",
+      "En tributación conjunta, aplicable por cada cónyuge que cumpla los requisitos"
+    ],
+    "legal_reference": "Arts. 160-1 y 160-2.8 Texto Refundido Decreto Legislativo 1/2005 de Aragón",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-AR" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lt", "path": "income_base", "value": 35000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lt", "path": "income_base", "value": 50000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "municipality", "label": "Municipio o asentamiento de residencia (Rango X)", "kind": "text", "required": true },
+      { "key": "residence_start_date", "label": "Fecha en que estableció su residencia habitual en el asentamiento", "kind": "date", "required": true },
+      { "key": "commitment_5_years", "label": "Confirmo el compromiso de mantener la residencia durante el año y los cuatro siguientes", "kind": "boolean", "required": true }
+    ],
+    "display_order": 190,
+    "is_active": true
+  }
+]

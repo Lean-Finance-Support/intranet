@@ -1,0 +1,421 @@
+[
+  {
+    "id": "cat-nacimiento-adopcion-acogimiento",
+    "ccaa_code": "ES-CT",
+    "title": "Por nacimiento o adopción de un hijo o de una hija o por acogimiento familiar",
+    "what_covers": "Compensa el coste del nacimiento, adopción o acogimiento familiar de un hijo o hija en el ejercicio mediante una cantidad fija por progenitor.",
+    "requirements": [
+      "Haber tenido un nacimiento, adopción o acogimiento familiar en el ejercicio.",
+      "Si es acogimiento, debe haberse acordado conforme a la Ley 14/2010 (simple o permanente).",
+      "Importes: 150 € por progenitor en declaración individual; 300 € en declaración conjunta o si es familia monoparental.",
+      "La deducción por adopción es incompatible con la de acogimiento familiar por el mismo hijo o hija.",
+      "Residencia fiscal en Cataluña a la fecha de devengo del impuesto."
+    ],
+    "legal_reference": "Art. 612-1 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "event_type", "label": "Hecho que genera la deducción", "kind": "select", "required": true, "options": [
+        { "value": "nacimiento", "label": "Nacimiento" },
+        { "value": "adopcion", "label": "Adopción" },
+        { "value": "acogimiento", "label": "Acogimiento familiar (simple o permanente)" }
+      ]},
+      { "key": "kids_born_or_adopted", "label": "Hijos/as nacidos, adoptados o acogidos en el ejercicio (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "is_monoparental", "label": "¿Familia monoparental?", "kind": "boolean", "required": false },
+      { "key": "joint_declaration", "label": "¿Declaración conjunta?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "cat-contribuyentes-viudos",
+    "ccaa_code": "ES-CT",
+    "title": "Para contribuyentes que hayan quedado viudos en los ejercicios 2023, 2024 y 2025",
+    "what_covers": "Reconoce una cantidad fija a las personas que han quedado viudas recientemente, ampliada si tienen descendientes a cargo.",
+    "requirements": [
+      "Haber quedado viudo o viuda en 2023, 2024 o 2025.",
+      "Se aplica en el ejercicio de la viudedad y en los dos ejercicios siguientes.",
+      "Importes: 150 € con carácter general; 300 € si la persona viuda tiene a cargo uno o más descendientes que generen derecho al mínimo por descendientes.",
+      "Residencia fiscal en Cataluña a la fecha de devengo del impuesto."
+    ],
+    "legal_reference": "Art. 612-2 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "eq", "path": "civil_status", "value": "viudo" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "widowhood_year", "label": "Año en que quedó viudo/a (2023, 2024 o 2025)", "kind": "select", "required": true, "options": [
+        { "value": "2023", "label": "2023" },
+        { "value": "2024", "label": "2024" },
+        { "value": "2025", "label": "2025" }
+      ]},
+      { "key": "has_dependent_descendants", "label": "¿Tiene descendientes a cargo con derecho al mínimo por descendientes?", "kind": "boolean", "required": true }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "cat-alquiler-vivienda-habitual",
+    "ccaa_code": "ES-CT",
+    "title": "Por alquiler de la vivienda habitual",
+    "what_covers": "Permite deducir un porcentaje del alquiler pagado por la vivienda habitual cuando se cumplen determinadas condiciones personales y de renta.",
+    "requirements": [
+      "Vivienda alquilada que constituya la residencia habitual del contribuyente en Cataluña.",
+      "Cumplir al menos una circunstancia: tener 35 años o menos, haber estado en paro 183 días o más durante el ejercicio, grado de discapacidad ≥ 65%, ser viudo/a con 65 años o más, familia numerosa o familia monoparental.",
+      "Base imponible (general + ahorro menos mínimo personal y familiar) ≤ 30.000 € en individual o ≤ 45.000 € en conjunta.",
+      "Importe: 10% de las cantidades pagadas con límite 500 €/año (1.000 € en conjunta o si pertenece a familia numerosa o monoparental).",
+      "Las cantidades pagadas deben superar el 10% de los rendimientos netos del contribuyente.",
+      "Indicar NIF del arrendador en la declaración."
+    ],
+    "legal_reference": "Art. 612-3 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 30000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        },
+        {
+          "any_of": [
+            { "op": "age_lt", "path": "birth_date", "value": 35 },
+            { "op": "gte", "path": "disability_pct", "value": 65 },
+            { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+            { "op": "eq", "path": "monoparental", "value": true },
+            { "all_of": [
+              { "op": "eq", "path": "civil_status", "value": "viudo" },
+              { "op": "age_gte", "path": "birth_date", "value": 65 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador/a", "kind": "text", "required": true },
+      { "key": "qualifying_circumstance", "label": "Circunstancia que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "menor_35", "label": "Tener 35 años o menos a la fecha de devengo" },
+        { "value": "paro_183", "label": "Haber estado en paro 183 días o más durante el ejercicio" },
+        { "value": "discapacidad_65", "label": "Grado de discapacidad ≥ 65%" },
+        { "value": "viudo_65", "label": "Viudo/a con 65 años o más" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "monoparental", "label": "Familia monoparental" }
+      ]},
+      { "key": "is_large_or_monoparental", "label": "¿Familia numerosa o monoparental? (eleva el límite a 1.000 €)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "cat-rehabilitacion-vivienda-habitual",
+    "ccaa_code": "ES-CT",
+    "title": "Por rehabilitación de la vivienda habitual",
+    "what_covers": "Deduce un porcentaje de las cantidades invertidas en rehabilitar la vivienda que es o será la vivienda habitual del contribuyente.",
+    "requirements": [
+      "La vivienda debe ser propiedad del contribuyente y constituir o ir a constituir su vivienda habitual.",
+      "Las obras deben tener la consideración de rehabilitación a efectos del IRPF (estructura, fachadas o cubiertas, o ayudas/calificación administrativa).",
+      "Importe: 1,5% de las cantidades satisfechas en el ejercicio.",
+      "Base máxima de deducción: 9.040 €/año.",
+      "Residencia fiscal en Cataluña a la fecha de devengo."
+    ],
+    "legal_reference": "Art. 612-4 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "rehabilitation_amount_eur", "label": "Cantidades satisfechas por rehabilitación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false },
+      { "key": "works_description", "label": "Descripción de las obras de rehabilitación", "kind": "textarea", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "cat-intereses-prestamos-master-doctorado",
+    "ccaa_code": "ES-CT",
+    "title": "Por el pago de intereses de préstamos para los estudios de máster y doctorado",
+    "what_covers": "Permite deducir los intereses pagados por préstamos concedidos a través de la AGAUR para financiar estudios de máster o doctorado.",
+    "requirements": [
+      "El préstamo debe haber sido concedido a través de la Agencia de Gestión de Ayudas Universitarias y de Investigación (AGAUR) de la Generalitat.",
+      "El préstamo debe destinarse a financiar estudios oficiales de máster o doctorado.",
+      "Importe deducible: total de los intereses satisfechos en el ejercicio.",
+      "Necesario el número identificador del préstamo (casilla [1928] Anexo B.5).",
+      "Residencia fiscal en Cataluña a la fecha de devengo."
+    ],
+    "legal_reference": "Art. 612-5 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "interest_paid_eur", "label": "Intereses satisfechos en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "loan_identifier", "label": "Número de identificación del préstamo (casilla [1928] Anexo B.5)", "kind": "text", "required": true },
+      { "key": "study_level", "label": "Nivel de estudios financiado", "kind": "select", "required": true, "options": [
+        { "value": "master", "label": "Máster" },
+        { "value": "doctorado", "label": "Doctorado" }
+      ]}
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "cat-donativos-lengua-catalana-occitana",
+    "ccaa_code": "ES-CT",
+    "title": "Por donativos a entidades que fomentan el uso de la lengua catalana o de la occitana",
+    "what_covers": "Bonifica las donaciones realizadas a entidades que fomentan el uso de la lengua catalana o de la lengua occitana (aranés).",
+    "requirements": [
+      "Donar a favor del Institut d'Estudis Catalans, del Institut d'Estudis Aranesos o de fundaciones y asociaciones privadas sin ánimo de lucro cuyo objeto sea fomentar la lengua catalana u occitana.",
+      "Importe deducible: 15% de las cantidades donadas.",
+      "Límite conjunto: 10% de la cuota íntegra autonómica.",
+      "Necesario justificar la donación con certificado de la entidad receptora (NIF e importe).",
+      "Residencia fiscal en Cataluña a la fecha de devengo."
+    ],
+    "legal_reference": "Art. 612-6 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "cat-donativos-investigacion-i-d-i",
+    "ccaa_code": "ES-CT",
+    "title": "Por donativos a entidades que fomentan la investigación científica y el desarrollo y la innovación tecnológicos",
+    "what_covers": "Bonifica las donaciones a universidades catalanas y centros de investigación promovidos o participados por la Generalitat para fomentar la I+D+i.",
+    "requirements": [
+      "Donar a universidades públicas o privadas catalanas, institutos universitarios u otros centros de investigación promovidos o participados por la Generalitat.",
+      "Importe deducible: 30% de las cantidades donadas.",
+      "Límite conjunto: 10% de la cuota íntegra autonómica.",
+      "Necesario justificar la donación con certificado de la entidad receptora (NIF e importe).",
+      "Residencia fiscal en Cataluña a la fecha de devengo."
+    ],
+    "legal_reference": "Art. 612-7 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras (universidades / centros de investigación) y NIF", "kind": "textarea", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "cat-donaciones-medio-ambiente",
+    "ccaa_code": "ES-CT",
+    "title": "Por donaciones a determinadas entidades en beneficio del medio ambiente, la conservación del patrimonio natural y de custodia del territorio",
+    "what_covers": "Bonifica las donaciones a fundaciones y asociaciones ambientales inscritas en el censo de entidades vinculadas a la ecología y la protección del medio ambiente.",
+    "requirements": [
+      "La entidad receptora debe estar inscrita en el censo de entidades ambientales vinculadas a la ecología y protección del medio ambiente.",
+      "Importe deducible: 15% de las cantidades donadas.",
+      "Límite conjunto: 5% de la cuota íntegra autonómica.",
+      "Necesario justificar la donación con certificado de la entidad receptora (NIF e importe).",
+      "Residencia fiscal en Cataluña a la fecha de devengo."
+    ],
+    "legal_reference": "Art. 612-8 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "cat-angel-inversor",
+    "ccaa_code": "ES-CT",
+    "title": "Por inversión por un ángel inversor para la adquisición de acciones o participaciones sociales",
+    "what_covers": "Incentiva la inversión privada en la constitución o ampliación de capital de sociedades catalanas con actividad económica, con tipo reforzado si la sociedad está vinculada a universidades o centros de investigación.",
+    "requirements": [
+      "Invertir en la constitución o ampliación de capital de una SA, SL, SAL o SLL con domicilio social y fiscal en Cataluña.",
+      "La sociedad debe desarrollar una actividad económica (no mera gestión de patrimonio mobiliario o inmobiliario).",
+      "Participación del contribuyente, junto con su cónyuge y parientes hasta 3er grado, no superior al 35% del capital o derechos de voto.",
+      "Mantenimiento de las acciones o participaciones durante al menos 3 años.",
+      "La sociedad debe tener una cifra de negocios anual ≤ 1.000.000 €.",
+      "Formalización de la inversión en escritura pública con identificación del inversor y de la sociedad.",
+      "Importes: 40% (límite 12.000 €) con carácter general; 50% (límite 12.000 €) si la sociedad está creada o participada por universidades o centros de investigación."
+    ],
+    "legal_reference": "Art. 612-9 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la sociedad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de entidad", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl_sal_sll", "label": "SA / SL / SAL / SLL" },
+        { "value": "universidad_centro_investigacion", "label": "Sociedad creada/participada por universidades o centros de investigación" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (incluido entorno familiar, ≤ 35%)", "kind": "number", "required": true, "min": 0, "max": 35 },
+      { "key": "investment_date", "label": "Fecha de la inversión / escritura pública", "kind": "date", "required": true },
+      { "key": "domicile_in_catalonia", "label": "Confirmo que la sociedad tiene domicilio social y fiscal en Cataluña", "kind": "boolean", "required": true }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "cat-obligacion-declarar-varios-pagadores",
+    "ccaa_code": "ES-CT",
+    "title": "Por obligación de presentar la declaración del IRPF por razón de tener más de un pagador",
+    "what_covers": "Compensa la cuota autonómica adicional que asumen los contribuyentes obligados a declarar por percibir rendimientos del trabajo de más de un pagador en un tramo concreto de ingresos.",
+    "requirements": [
+      "Rendimientos íntegros del trabajo entre 15.876 € y 22.000 € en el ejercicio.",
+      "Haber percibido rendimientos del trabajo de más de un pagador.",
+      "Estar obligado a declarar precisamente por esta circunstancia (no por otros motivos).",
+      "No estar acogido al procedimiento especial de retenciones del art. 89 A RIRPF (modelo 146 para pensionistas).",
+      "Importe deducible: diferencia entre la cuota íntegra autonómica y la cuota íntegra estatal, cuando sea positiva.",
+      "Residencia fiscal en Cataluña a la fecha de devengo."
+    ],
+    "legal_reference": "Art. 612-10 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "between", "path": "income_base", "value": [15876, 22000] }
+      ]
+    },
+    "extra_fields": [
+      { "key": "total_work_income_eur", "label": "Rendimientos íntegros del trabajo (€)", "kind": "number", "required": true, "min": 15876, "max": 22000 },
+      { "key": "payers_count", "label": "Número de pagadores", "kind": "number", "required": true, "min": 2 },
+      { "key": "second_payer_amount_eur", "label": "Importe percibido del 2.º y siguientes pagadores (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "is_pensioner_special_procedure", "label": "¿Acogido al procedimiento especial de retenciones del art. 89 A RIRPF (modelo 146)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "cat-alquiler-victimas-violencia-machista",
+    "ccaa_code": "ES-CT",
+    "title": "Por alquiler de la vivienda habitual de víctimas de violencia machista",
+    "what_covers": "Reduce la carga del alquiler de la vivienda habitual para mujeres víctimas de violencia machista, con tipo reforzado si tienen discapacidad alta o hijo menor a cargo.",
+    "requirements": [
+      "Ser víctima de violencia machista y acreditarlo conforme a la Ley 5/2008 (sentencia, orden de protección, informe del Ministerio Fiscal o de los servicios sociales).",
+      "La vivienda alquilada debe constituir la residencia habitual de la víctima en Cataluña.",
+      "Base imponible (general + ahorro menos mínimo personal y familiar) ≤ 30.000 €.",
+      "Indicar el NIF del arrendador/a.",
+      "Importes: 20% de las cantidades pagadas con límite 1.000 €/año; 25% con límite 1.200 € si la contribuyente tiene discapacidad ≥ 65% o un hijo menor a cargo.",
+      "La deducción se puede aplicar como máximo durante 3 ejercicios consecutivos."
+    ],
+    "legal_reference": "Art. 612-11 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        { "op": "lte", "path": "income_base", "value": 30000 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador/a", "kind": "text", "required": true },
+      { "key": "victim_certificate", "label": "Medio de acreditación de la condición de víctima (Ley 5/2008)", "kind": "text", "required": true },
+      { "key": "enhanced_rate", "label": "¿Discapacidad ≥ 65% o hijo menor a cargo? (eleva al 25% / 1.200 €)", "kind": "boolean", "required": false },
+      { "key": "previous_years_applied", "label": "Ejercicios anteriores en los que ya se aplicó la deducción (máx. 3 consecutivos)", "kind": "number", "required": false, "min": 0, "max": 3 }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "cat-cooperativas-agrarias-vivienda",
+    "ccaa_code": "ES-CT",
+    "title": "Por inversión en sociedades cooperativas agrarias y de vivienda",
+    "what_covers": "Incentiva las aportaciones a cooperativas agrarias o de vivienda inscritas en el Registro de Cooperativas de la Generalitat, ya existentes o de nueva creación.",
+    "requirements": [
+      "Aportar (obligatoria o voluntariamente) capital a una cooperativa agraria o de vivienda inscrita en el Registro de Cooperativas de la Generalitat.",
+      "Importe deducible: 20% de las aportaciones desembolsadas en el ejercicio.",
+      "Límite: 3.000 € anuales.",
+      "Mantenimiento de la aportación durante al menos 5 años.",
+      "El derecho de voto del socio en la cooperativa no puede superar el 25% del total.",
+      "No aplica a cooperativas de vivienda destinadas a uso turístico o de corta duración.",
+      "Necesaria certificación de la cooperativa acreditando la aportación y la inscripción en el Registro."
+    ],
+    "legal_reference": "Art. 612-12 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "contribution_amount_eur", "label": "Aportación desembolsada en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "cooperative_nif", "label": "NIF de la cooperativa", "kind": "text", "required": true },
+      { "key": "cooperative_type", "label": "Tipo de cooperativa", "kind": "select", "required": true, "options": [
+        { "value": "agraria", "label": "Cooperativa agraria" },
+        { "value": "vivienda", "label": "Cooperativa de vivienda" }
+      ]},
+      { "key": "voting_share_pct", "label": "% de voto del socio sobre el total (≤ 25%)", "kind": "number", "required": false, "min": 0, "max": 25 },
+      { "key": "cooperative_certificate", "label": "Certificación de la cooperativa (Registro de Cooperativas de la Generalitat)", "kind": "text", "required": false }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "cat-tramo-autonomico-inversion-vivienda",
+    "ccaa_code": "ES-CT",
+    "title": "Tramo autonómico de la deducción por inversión en vivienda habitual",
+    "what_covers": "Tramo autonómico catalán del régimen transitorio (DT 18ª Ley IRPF) por inversión en vivienda habitual adquirida antes de 2013, con tipos diferenciados y modalidad incrementada.",
+    "requirements": [
+      "La vivienda debe ser propiedad del contribuyente y constituir su vivienda habitual.",
+      "Aplicación bajo el régimen transitorio (DT 18ª LIRPF): vivienda adquirida o cantidades satisfechas para su construcción antes de 01/01/2013.",
+      "Tipos: 7,5% general; 15% para obras de adecuación de la vivienda habitual de personas con discapacidad.",
+      "Tipo incrementado del 9% si la vivienda se adquirió antes del 30/07/2011 (o se satisficieron cantidades para construcción antes de esa fecha) y el contribuyente cumple alguna circunstancia: tener 32 años o menos, haber estado en paro 183 días o más, discapacidad ≥ 65%, o unidad familiar con al menos un hijo.",
+      "Para el tipo incrementado del 9%, la base imponible total no puede superar 30.000 € (minorada por el mínimo personal y familiar).",
+      "Base máxima conjunta con el tramo estatal: 9.040 €/año (12.080 € en obras de adecuación por discapacidad)."
+    ],
+    "legal_reference": "Art. 613-1 Decreto Legislativo 1/2024 de Cataluña",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-CT" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio por inversión en vivienda habitual (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "acquisition_date", "label": "Fecha de adquisición de la vivienda habitual", "kind": "date", "required": true },
+      { "key": "deduction_modality", "label": "Modalidad de deducción", "kind": "select", "required": true, "options": [
+        { "value": "general_7_5", "label": "General (7,5%)" },
+        { "value": "adecuacion_discapacidad_15", "label": "Obras de adecuación por discapacidad (15%)" },
+        { "value": "incrementado_9", "label": "Tipo incrementado (9%) — vivienda anterior al 30/07/2011" }
+      ]},
+      { "key": "increased_rate_circumstance", "label": "Circunstancia (solo si modalidad incrementada 9%)", "kind": "select", "required": false, "options": [
+        { "value": "menor_32", "label": "Tener 32 años o menos a la fecha de devengo" },
+        { "value": "paro_183", "label": "Haber estado en paro 183 días o más" },
+        { "value": "discapacidad_65", "label": "Grado de discapacidad ≥ 65%" },
+        { "value": "unidad_familiar_hijo", "label": "Unidad familiar con al menos un hijo" }
+      ]}
+    ],
+    "display_order": 130,
+    "is_active": true
+  }
+]

@@ -18,6 +18,7 @@ export interface SearchableCompany {
   company_name: string | null;
   has_dashboard_service: boolean;
   has_tax_models_service: boolean;
+  has_declaracion_renta_service: boolean;
 }
 
 export interface SearchContext {
@@ -28,6 +29,8 @@ export interface SearchContext {
   hasTaxModels: boolean;
   /** Solo aplica al espacio cliente. */
   hasDashboard: boolean;
+  /** Cliente: empresa activa tiene contratado el servicio Declaración de la renta. */
+  hasDeclaracionRenta: boolean;
   /** Admin: tiene permiso para abrir el dashboard fiscal de un cliente. */
   canViewClientDashboard: boolean;
   /** Admin: tiene los 3 permisos para crear un onboarding nuevo. */

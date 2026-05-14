@@ -60,6 +60,7 @@ export default async function AdminSidebarLayout({
         role: "admin",
         hasTaxModels,
         hasDashboard: false,
+        hasDeclaracionRenta: false,
         canViewClientDashboard: canViewDashboard,
         canCreateOnboarding,
         canRequestDocumentation,

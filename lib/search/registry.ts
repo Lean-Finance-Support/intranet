@@ -69,7 +69,6 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     icon: "briefcase",
     keywords: ["servicios", "catalogo", "catálogo", "oferta", "productos"],
   },
-
   // Cliente
   {
     id: "client:dashboard",
@@ -88,6 +87,22 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     icon: "document",
     keywords: ["impuestos", "iva", "303", "trimestre", "tax", "fiscal"],
     gate: (ctx) => ctx.hasTaxModels,
+  },
+  {
+    id: "client:informes",
+    space: "client",
+    label: "Informes / Formularios",
+    path: "/informes",
+    icon: "document",
+    keywords: [
+      "informes",
+      "formularios",
+      "renta",
+      "irpf",
+      "deducciones",
+      "declaración",
+    ],
+    gate: (ctx) => ctx.hasDeclaracionRenta,
   },
   {
     id: "client:empresa",

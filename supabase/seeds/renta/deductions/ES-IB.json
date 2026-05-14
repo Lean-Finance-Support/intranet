@@ -1,0 +1,1008 @@
+[
+  {
+    "id": "bal-inversiones-sostenibilidad-vivienda",
+    "ccaa_code": "ES-IB",
+    "title": "Por determinadas inversiones de mejora de la sostenibilidad en la vivienda habitual",
+    "what_covers": "Deducción por inversiones realizadas en la vivienda habitual para mejorar su calidad y sostenibilidad (energías renovables, eficiencia energética y ahorro de agua).",
+    "requirements": [
+      "Realizar inversiones en energías renovables, eficiencia energética o ahorro de agua sobre la vivienda habitual",
+      "La deducción es del 50% del importe satisfecho, con base máxima de 10.000 €/año",
+      "Ser propietario de la vivienda habitual o arrendador (si la vivienda es habitual del inquilino)",
+      "Base imponible total ≤ 33.000 € en declaración individual o ≤ 52.800 € en conjunta",
+      "Disponer de certificado de eficiencia energética anterior y posterior a las obras debidamente registrado",
+      "Conservar las facturas y justificantes del pago de las inversiones"
+    ],
+    "legal_reference": "Art. 3 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe satisfecho por las inversiones (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "ownership_role", "label": "Condición del contribuyente", "kind": "select", "required": true, "options": [
+        { "value": "propietario", "label": "Propietario de la vivienda habitual" },
+        { "value": "arrendador", "label": "Arrendador (vivienda habitual del inquilino)" }
+      ]},
+      { "key": "investment_types", "label": "Tipo de inversiones realizadas", "kind": "textarea", "required": true },
+      { "key": "energy_cert_before", "label": "Certificado de eficiencia energética anterior a las obras (registro)", "kind": "text", "required": false },
+      { "key": "energy_cert_after", "label": "Certificado de eficiencia energética posterior a las obras (registro)", "kind": "text", "required": false },
+      { "key": "ownership_percentage", "label": "% de titularidad en la vivienda", "kind": "number", "required": false, "min": 0, "max": 100 }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "bal-arrendamiento-vivienda-habitual",
+    "ccaa_code": "ES-IB",
+    "title": "Por arrendamiento de la vivienda habitual en el territorio de las Illes Balears",
+    "what_covers": "Deducción para el inquilino por las rentas pagadas por el alquiler de su vivienda habitual situada en Illes Balears.",
+    "requirements": [
+      "La vivienda alquilada debe estar en Illes Balears y constituir la vivienda habitual del contribuyente",
+      "Porcentaje del 15% (límite 530 €/año) si el inquilino es menor de 36 años o mayor de 65 sin actividad laboral/profesional",
+      "Porcentaje incrementado al 20% (límite 650 €/año) si concurre alguna circunstancia: menor de 30 años, discapacidad ≥33%, mínimo por discapacidad de ascendientes/descendientes, familia numerosa, familia monoparental con ≥2 hijos o trabajador autónomo con alta ≥183 días",
+      "Depósito de la fianza en el Instituto Balear de la Vivienda (IBAVI)",
+      "El contribuyente no puede ser titular de otra vivienda a menos de 70 km de la arrendada",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Identificar el NIF/NIE del arrendador"
+    ],
+    "legal_reference": "Art. 3 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF/NIE del arrendador", "kind": "text", "required": true },
+      { "key": "tenant_circumstance", "label": "Circunstancia del inquilino", "kind": "select", "required": true, "options": [
+        { "value": "menor_36", "label": "Menor de 36 años" },
+        { "value": "mayor_65", "label": "Mayor de 65 años sin actividad laboral/profesional" },
+        { "value": "menor_30", "label": "Menor de 30 años" },
+        { "value": "discapacidad_33", "label": "Discapacidad ≥ 33%" },
+        { "value": "minimo_discapacidad", "label": "Derecho a mínimo por discapacidad de ascendientes/descendientes" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "monoparental_2_hijos", "label": "Familia monoparental con 2 o más hijos" },
+        { "value": "autonomo", "label": "Trabajador autónomo (mín. 183 días)" }
+      ]},
+      { "key": "deposit_ibavi", "label": "Depósito de fianza en el Instituto Balear de la Vivienda (IBAVI)", "kind": "text", "required": false },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "bal-subvenciones-emergencia-proteccion-civil",
+    "ccaa_code": "ES-IB",
+    "title": "Por determinadas subvenciones y ayudas otorgadas por razón de una declaración de zona afectada gravemente por una emergencia de protección civil",
+    "what_covers": "Deducción que compensa la tributación de las subvenciones o ayudas autonómicas percibidas por daños derivados de emergencias declaradas zona gravemente afectada (Ley 17/2015).",
+    "requirements": [
+      "Haber percibido subvenciones o ayudas de la CCAA de Illes Balears por daños causados por una emergencia declarada zona gravemente afectada por el Consejo de Ministros",
+      "Integrar el importe de la ayuda en la base imponible general del IRPF",
+      "El importe deducible resulta de aplicar el tipo medio de gravamen a la cuantía integrada",
+      "Conservar el acuerdo de concesión y la resolución que declara la zona afectada"
+    ],
+    "legal_reference": "Art. 3 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "subsidy_amount_eur", "label": "Importe de la subvención/ayuda integrado en la base liquidable (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "emergency_event", "label": "Emergencia declarada zona afectada gravemente", "kind": "text", "required": true },
+      { "key": "resolution_reference", "label": "Referencia del acuerdo del Consejo de Ministros", "kind": "text", "required": false }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "bal-libros-texto",
+    "ccaa_code": "ES-IB",
+    "title": "Por gastos de adquisición de libros de texto",
+    "what_covers": "Deducción por los gastos satisfechos en la compra de libros de texto editados para enseñanzas regladas no universitarias por cada hijo escolarizado.",
+    "requirements": [
+      "Tener hijos/descendientes escolarizados en 2º ciclo de educación infantil, primaria, ESO, bachillerato o FP específica",
+      "El 100% del gasto en libros de texto es deducible con los siguientes límites por hijo",
+      "Límite general: 220 € por hijo",
+      "Límite incrementado a 350 €/hijo si concurre: menor de 30 años, discapacidad ≥33%, mínimo por discapacidad de ascendientes/descendientes, familia numerosa, monoparental con ≥2 hijos o autónomo (≥183 días)",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Conservar facturas o justificantes del centro/proveedor"
+    ],
+    "legal_reference": "Art. 4 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "textbook_expenses_eur", "label": "Gastos de libros de texto (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_with_textbooks", "label": "Hijos escolarizados (nombre y nivel educativo)", "kind": "textarea", "required": true },
+      { "key": "increased_limit_circumstance", "label": "Circunstancia que da derecho al límite incrementado (350 €)", "kind": "select", "required": false, "options": [
+        { "value": "none", "label": "Ninguna (límite general 220 €)" },
+        { "value": "menor_30", "label": "Menor de 30 años" },
+        { "value": "discapacidad_33", "label": "Discapacidad ≥ 33%" },
+        { "value": "minimo_discapacidad", "label": "Mínimo por discapacidad de ascendientes/descendientes" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "monoparental_2_hijos", "label": "Familia monoparental con 2 o más hijos" },
+        { "value": "autonomo", "label": "Trabajador autónomo (mín. 183 días)" }
+      ]}
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "bal-aprendizaje-idiomas-extraescolar",
+    "ccaa_code": "ES-IB",
+    "title": "Por gastos de aprendizaje extraescolar de idiomas extranjeros",
+    "what_covers": "Deducción por las cantidades pagadas para el aprendizaje extraescolar de idiomas extranjeros por hijos escolarizados en enseñanzas regladas no universitarias.",
+    "requirements": [
+      "Tener hijos cursando 2º ciclo de educación infantil, primaria, ESO, bachillerato o FP específica",
+      "Pagar clases o cursos de idiomas extranjeros fuera del horario lectivo",
+      "El 15% del gasto es deducible con límite de 110 € por hijo",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Conservar la factura del centro o escuela de idiomas"
+    ],
+    "legal_reference": "Art. 4 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "language_expenses_eur", "label": "Gastos extraescolares de idiomas extranjeros (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "kids_with_expenses", "label": "Hijos beneficiarios (nombre y nivel educativo)", "kind": "textarea", "required": true },
+      { "key": "language_school", "label": "Centro/escuela donde se imparten los idiomas", "kind": "text", "required": false }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "bal-estudios-superiores-fuera-isla",
+    "ccaa_code": "ES-IB",
+    "title": "Para cursar estudios de educación superior fuera de la isla de residencia habitual",
+    "what_covers": "Deducción a tanto alzado por cada descendiente que se desplace para cursar estudios de educación superior fuera de la isla en la que el contribuyente tiene su residencia habitual.",
+    "requirements": [
+      "Tener uno o varios descendientes cursando estudios de educación superior (universitarios, artísticos superiores, FP de grado superior, artes plásticas/diseño superior, deportivos superiores u otros equivalentes)",
+      "Los estudios deben cursarse en una isla distinta a la de la residencia habitual del contribuyente",
+      "1.800 € por cada descendiente, con límite del 50% de la cuota íntegra autonómica",
+      "Renta del descendiente ≤ 8.000 € (no debe presentar declaración por rentas superiores)",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Indicar el curso académico iniciado y conservar la matrícula"
+    ],
+    "legal_reference": "Art. 4 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "students_count", "label": "Número de descendientes que cursan estudios superiores fuera de la isla", "kind": "number", "required": true, "min": 1 },
+      { "key": "students_detail", "label": "Detalle (nombre, estudios cursados e isla de destino)", "kind": "textarea", "required": true },
+      { "key": "study_type", "label": "Tipo de estudios", "kind": "select", "required": true, "options": [
+        { "value": "universitarios", "label": "Estudios universitarios" },
+        { "value": "artisticas_superiores", "label": "Enseñanzas artísticas superiores" },
+        { "value": "fp_superior", "label": "Formación profesional de grado superior" },
+        { "value": "artes_plasticas", "label": "Enseñanzas profesionales de artes plásticas y diseño de grado superior" },
+        { "value": "deportivas_superior", "label": "Enseñanzas deportivas de grado superior" },
+        { "value": "otros", "label": "Otros estudios de educación superior" }
+      ]},
+      { "key": "academic_year", "label": "Curso académico iniciado", "kind": "text", "required": true }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "bal-arrendador-primas-seguros",
+    "ccaa_code": "ES-IB",
+    "title": "Para el arrendador de bienes inmuebles destinados a vivienda permanente. Primas de seguros",
+    "what_covers": "Deducción para arrendadores de viviendas permanentes en Illes Balears por las primas pagadas en seguros que cubren el impago de las rentas del alquiler.",
+    "requirements": [
+      "Ser arrendador de uno o varios inmuebles destinados a vivienda permanente del inquilino",
+      "Haber pagado primas de seguros que cubran específicamente el impago de rentas",
+      "Deducción del 75% de las primas con límite de 440 €/año",
+      "Contrato de arrendamiento con duración mínima de 1 año",
+      "Depósito de la fianza en el Instituto Balear de la Vivienda (IBAVI)",
+      "Declarar los ingresos del alquiler como rendimiento del capital inmobiliario",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta"
+    ],
+    "legal_reference": "Art. 4 quater.1 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 84480 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "insurance_premiums_eur", "label": "Primas de seguro pagadas en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "insurance_company", "label": "Compañía aseguradora", "kind": "text", "required": false },
+      { "key": "rented_property_count", "label": "Número de inmuebles arrendados", "kind": "number", "required": true, "min": 1 },
+      { "key": "deposit_ibavi", "label": "Depósito de fianza en IBAVI", "kind": "text", "required": false }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "bal-arrendador-otros-gastos",
+    "ccaa_code": "ES-IB",
+    "title": "Para el arrendador de bienes inmuebles destinados a vivienda permanente. Otros gastos",
+    "what_covers": "Deducción para arrendadores de viviendas permanentes en Illes Balears por otros gastos asociados al arrendamiento distintos a las primas de seguro de impago.",
+    "requirements": [
+      "Ser arrendador de inmueble destinado a vivienda permanente del inquilino",
+      "Pagar gastos del tipo: primas de seguros de daños, reparación y conservación, comunidad, tributarios, formalización del contrato o certificados de eficiencia energética",
+      "Deducción del 50% de los gastos con límite de 1.500 €/año",
+      "Límite incrementado a 1.800 €/año si la vivienda se arrienda a la Administración de Illes Balears (programa Alquiler Seguro)",
+      "Renta mensual ≤ 15 €/m² de superficie útil",
+      "Aplicable una sola vez por inmueble",
+      "Compatible con la deducción por primas de seguros de impago",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta"
+    ],
+    "legal_reference": "Art. 4 quater.2 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 84480 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "deductible_expenses_eur", "label": "Gastos deducibles del año (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "rented_to_admin", "label": "¿Arrendada a la Administración de Illes Balears (Alquiler Seguro)?", "kind": "boolean", "required": false },
+      { "key": "monthly_rent_per_m2", "label": "Renta mensual por m² (≤ 15 €)", "kind": "number", "required": true, "min": 0, "max": 15 },
+      { "key": "property_useful_area_m2", "label": "Superficie útil de la vivienda (m²)", "kind": "number", "required": false, "min": 0 },
+      { "key": "deposit_ibavi", "label": "Depósito de fianza en IBAVI", "kind": "text", "required": false },
+      { "key": "expense_types", "label": "Tipos de gasto incluidos", "kind": "textarea", "required": false }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "bal-arrendamiento-traslado-laboral-isla",
+    "ccaa_code": "ES-IB",
+    "title": "Por arrendamiento de vivienda en el territorio de las Illes Balears derivado del traslado temporal de residencia por motivos laborales",
+    "what_covers": "Deducción por el alquiler de una vivienda en otra isla de Illes Balears cuando el contribuyente se traslada temporalmente por motivos laborales dentro de la misma relación laboral por cuenta ajena.",
+    "requirements": [
+      "El contribuyente es trabajador por cuenta ajena y, dentro de la misma relación laboral, se traslada temporalmente a otra isla de Illes Balears",
+      "Tener un contrato de alquiler de la vivienda en la isla de destino",
+      "Deducción del 15% de la renta pagada con límite de 440 €/año",
+      "Duración prevista del traslado no superior a 3 años",
+      "Depósito de la fianza en el IBAVI",
+      "Identificar el NIF/NIE del arrendador",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta"
+    ],
+    "legal_reference": "Art. 4 quinquies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF/NIE del arrendador", "kind": "text", "required": true },
+      { "key": "origin_island", "label": "Isla de residencia habitual original", "kind": "select", "required": true, "options": [
+        { "value": "mallorca", "label": "Mallorca" },
+        { "value": "menorca", "label": "Menorca" },
+        { "value": "ibiza", "label": "Ibiza" },
+        { "value": "formentera", "label": "Formentera" }
+      ]},
+      { "key": "destination_island", "label": "Isla de destino", "kind": "select", "required": true, "options": [
+        { "value": "mallorca", "label": "Mallorca" },
+        { "value": "menorca", "label": "Menorca" },
+        { "value": "ibiza", "label": "Ibiza" },
+        { "value": "formentera", "label": "Formentera" }
+      ]},
+      { "key": "move_start_date", "label": "Fecha del traslado", "kind": "date", "required": true },
+      { "key": "transfer_duration_years", "label": "Duración prevista del traslado (años, ≤ 3)", "kind": "number", "required": true, "min": 0, "max": 3 }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "bal-vivienda-ocupada-ilegalmente",
+    "ccaa_code": "ES-IB",
+    "title": "Para compensar los gastos derivados de una vivienda ocupada ilegalmente o por razón de suspensión del lanzamiento",
+    "what_covers": "Deducción para compensar los gastos que el propietario continúa asumiendo cuando su vivienda está ocupada ilegalmente o cuando se ha decretado judicialmente la suspensión del lanzamiento.",
+    "requirements": [
+      "Ser titular de una vivienda ocupada ilegalmente o sobre la que se haya decretado la suspensión del lanzamiento por vulnerabilidad económica",
+      "Haber pagado gastos: IBI, tasa de residuos, suministros, comunidad, conservación y mantenimiento, o gastos judiciales para recuperar la posesión",
+      "Deducción del 40% de los gastos pagados con límite de 500 € por declaración",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "No aplica a contribuyentes fallecidos antes del 25 de julio de 2025",
+      "Conservar justificantes de los gastos y, si procede, referencia del procedimiento judicial"
+    ],
+    "legal_reference": "Art. 4 sexies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "deductible_expenses_eur", "label": "Gastos pagados por la vivienda ocupada/suspendida (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "situation", "label": "Situación del inmueble", "kind": "select", "required": true, "options": [
+        { "value": "ocupada_ilegalmente", "label": "Vivienda ocupada ilegalmente" },
+        { "value": "suspension_lanzamiento", "label": "Suspensión del lanzamiento por vulnerabilidad económica" }
+      ]},
+      { "key": "occupation_period_days", "label": "Días en que el inmueble ha estado ocupado/suspendido", "kind": "number", "required": false, "min": 0 },
+      { "key": "judicial_procedure", "label": "Referencia del procedimiento judicial (si procede)", "kind": "text", "required": false },
+      { "key": "expense_types", "label": "Tipos de gasto incluidos", "kind": "textarea", "required": false }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "bal-donaciones-investigacion-id",
+    "ccaa_code": "ES-IB",
+    "title": "Por donaciones a determinadas entidades destinadas a la investigación, el desarrollo científico o tecnológico, o la innovación",
+    "what_covers": "Deducción por las donaciones dinerarias realizadas a entidades públicas o sin ánimo de lucro de Illes Balears cuyo objeto es la investigación, el desarrollo científico-tecnológico o la innovación.",
+    "requirements": [
+      "Realizar donaciones dinerarias destinadas a I+D+i",
+      "La entidad receptora debe ser: la Administración de Illes Balears (o entidades instrumentales), la UIB, una entidad sin ánimo de lucro inscrita en el Registro de Fundaciones de Baleares con fin de I+D+i, o una entidad parcialmente exenta del IS (Art. 9.3 LIS)",
+      "Deducción del 25% del importe donado",
+      "Límite: 15% de la cuota íntegra autonómica",
+      "Disponer del certificado emitido por la entidad donataria",
+      "Identificar entidades receptoras y su NIF"
+    ],
+    "legal_reference": "Art. 5 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_recipients", "label": "Entidades receptoras y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de entidad receptora", "kind": "select", "required": true, "options": [
+        { "value": "administracion", "label": "Administración CCAA Illes Balears o entidades instrumentales" },
+        { "value": "uib", "label": "Universidad de las Illes Balears" },
+        { "value": "sin_animo_lucro", "label": "Entidad sin ánimo de lucro inscrita en Registro de Fundaciones IB" },
+        { "value": "parcialmente_exenta_is", "label": "Entidad parcialmente exenta del IS (Art. 9.3 LIS)" }
+      ]},
+      { "key": "donation_certificate", "label": "Certificado de la entidad donataria", "kind": "text", "required": false }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "bal-mecenazgo-cultural-cientifico",
+    "ccaa_code": "ES-IB",
+    "title": "Por donaciones, cesiones de uso o contratos de comodato y convenios de colaboración empresarial, relativos al mecenazgo cultural, científico y de desarrollo tecnológico y al consumo cultural",
+    "what_covers": "Deducción por aportaciones (dinerarias, cesiones de uso, comodato o convenios de colaboración) destinadas al mecenazgo cultural, científico, de desarrollo tecnológico y al consumo cultural en Illes Balears (Ley 3/2015).",
+    "requirements": [
+      "Realizar donación, cesión de uso, contrato de comodato o convenio de colaboración empresarial calificado como mecenazgo cultural, científico o de desarrollo tecnológico",
+      "Porcentaje general: 15% con límite de 660 €/año",
+      "Porcentaje incrementado: 25% con límite de 1.200 €/año si el beneficiario es la Administración de Illes Balears u organismos vinculados Y la aportación se destina a un proyecto propio",
+      "Identificar a la entidad beneficiaria y su NIF",
+      "Para el supuesto del 15%: base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta (no aplica al supuesto del 25%)",
+      "Si es cesión/comodato con duración inferior a un año, indicar los días de duración"
+    ],
+    "legal_reference": "Art. 5 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Cuantía donada/cedida (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_type", "label": "Tipo de aportación", "kind": "select", "required": true, "options": [
+        { "value": "dineraria", "label": "Donación dineraria" },
+        { "value": "cesion_uso", "label": "Cesión de uso" },
+        { "value": "comodato", "label": "Contrato de comodato" },
+        { "value": "convenio_colaboracion", "label": "Convenio de colaboración empresarial" }
+      ]},
+      { "key": "beneficiary_is_admin", "label": "¿El beneficiario es la Administración IB u organismos vinculados con proyecto propio? (25%)", "kind": "boolean", "required": false },
+      { "key": "recipient_name", "label": "Entidad beneficiaria y NIF", "kind": "text", "required": true },
+      { "key": "duration_days", "label": "Duración de la cesión/comodato (días, si <365)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "bal-mecenazgo-deportivo",
+    "ccaa_code": "ES-IB",
+    "title": "Por donaciones, cesiones de uso o contratos de comodato y convenios de colaboración, relativos al mecenazgo deportivo",
+    "what_covers": "Deducción por aportaciones (dinerarias, cesiones de uso, comodato o convenios de colaboración) destinadas al mecenazgo deportivo en Illes Balears (Ley 6/2015).",
+    "requirements": [
+      "Realizar donación, cesión de uso, contrato de comodato o convenio de colaboración a favor de entidades que cumplan la Ley 6/2015 de mecenazgo deportivo",
+      "Deducción del 15% del importe aportado con límite de 660 €/año",
+      "Identificar a la entidad beneficiaria y su NIF",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta"
+    ],
+    "legal_reference": "Art. 5 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Cuantía donada/cedida (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "donation_type", "label": "Tipo de aportación", "kind": "select", "required": true, "options": [
+        { "value": "dineraria", "label": "Donación dineraria" },
+        { "value": "cesion_uso", "label": "Cesión de uso" },
+        { "value": "comodato", "label": "Contrato de comodato" },
+        { "value": "convenio_colaboracion", "label": "Convenio de colaboración" }
+      ]},
+      { "key": "recipient_name", "label": "Entidad beneficiaria y NIF", "kind": "text", "required": true }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "bal-donaciones-lengua-catalana",
+    "ccaa_code": "ES-IB",
+    "title": "Por donaciones a determinadas entidades que tengan por objeto el fomento de la lengua catalana",
+    "what_covers": "Deducción por donaciones dinerarias destinadas al fomento de la lengua catalana a través de la Administración, la UIB u otras entidades culturales/educativas de Illes Balears.",
+    "requirements": [
+      "Realizar donación dineraria con el objeto de fomentar la lengua catalana",
+      "La entidad receptora debe ser: la Administración de Illes Balears, la UIB, centros de investigación y enseñanzas artísticas superiores de IB, entidad sin ánimo de lucro inscrita en el Registro de Fundaciones IB, o entidad parcialmente exenta del IS (Art. 9.3 LIS)",
+      "Deducción del 15% del importe donado",
+      "Límite: 10% de la cuota íntegra autonómica",
+      "Identificar a la entidad receptora y su NIF",
+      "Disponer del certificado de la entidad donataria"
+    ],
+    "legal_reference": "Art. 5 quater Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "recipient_type", "label": "Tipo de entidad receptora", "kind": "select", "required": true, "options": [
+        { "value": "administracion", "label": "Administración CCAA Illes Balears" },
+        { "value": "uib", "label": "Universidad de las Illes Balears" },
+        { "value": "centros_artisticos", "label": "Centros de investigación y enseñanzas artísticas superiores de IB" },
+        { "value": "sin_animo_lucro", "label": "Entidad sin ánimo de lucro inscrita en Registro de Fundaciones IB" },
+        { "value": "parcialmente_exenta_is", "label": "Entidad parcialmente exenta del IS (Art. 9.3 LIS)" }
+      ]},
+      { "key": "recipient_name", "label": "Entidad receptora y NIF", "kind": "text", "required": true }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "bal-donaciones-tercer-sector",
+    "ccaa_code": "ES-IB",
+    "title": "Por donaciones a entidades del tercer sector",
+    "what_covers": "Deducción por donaciones dinerarias realizadas a entidades sin ánimo de lucro del tercer sector de acción social inscritas en el registro de la Consejería de Familias y Asuntos Sociales.",
+    "requirements": [
+      "Realizar donación dineraria a entidad sin ánimo de lucro del tercer sector de acción social (Ley 3/2018)",
+      "La entidad debe estar inscrita en el registro de la Consejería de Familias y Asuntos Sociales de Illes Balears",
+      "Deducción del 25% del importe donado, sobre una base máxima de 165 €/año",
+      "Identificar a la entidad receptora y su NIF",
+      "Conservar el certificado emitido por la entidad beneficiaria"
+    ],
+    "legal_reference": "Art. 5 quinquies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe donado (€, base máx. 165)", "kind": "number", "required": true, "min": 0, "max": 165 },
+      { "key": "recipient_name", "label": "Entidad del tercer sector receptora y NIF", "kind": "text", "required": true },
+      { "key": "donation_certificate", "label": "Certificado de la entidad beneficiaria", "kind": "text", "required": false }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "bal-discapacidad",
+    "ccaa_code": "ES-IB",
+    "title": "Para los declarantes con discapacidad física, psíquica o sensorial o con descendientes con esta condición",
+    "what_covers": "Deducción por la condición de discapacidad del propio contribuyente o de miembros de su unidad familiar (descendientes o ascendientes con discapacidad acreditada).",
+    "requirements": [
+      "Que el contribuyente o algún miembro de su unidad familiar tenga reconocida una discapacidad ≥33%",
+      "Importes según tipo y grado: 88 € para discapacidad física o sensorial entre 33% y <65%; 165 € si la discapacidad física o sensorial es ≥65%; 165 € en caso de discapacidad psíquica ≥33%",
+      "La deducción se aplica por cada miembro con discapacidad",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Disponer de certificado oficial de reconocimiento de la discapacidad"
+    ],
+    "legal_reference": "Art. 6 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "gte", "path": "disability_pct", "value": 33 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disability_category", "label": "Tipo y grado de discapacidad del contribuyente/miembro UF", "kind": "select", "required": true, "options": [
+        { "value": "fisica_33_65", "label": "Física o sensorial: 33% – <65% (88 €)" },
+        { "value": "fisica_65", "label": "Física o sensorial: ≥65% (165 €)" },
+        { "value": "psiquica_33", "label": "Psíquica: ≥33% (165 €)" }
+      ]},
+      { "key": "members_with_disability_detail", "label": "Miembros de la unidad familiar con discapacidad (nombre, tipo, grado)", "kind": "textarea", "required": true },
+      { "key": "disability_certificate", "label": "Certificado de reconocimiento de discapacidad", "kind": "text", "required": false }
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "bal-conciliacion-menores-6-anos",
+    "ccaa_code": "ES-IB",
+    "title": "Por gastos relativos a los descendientes o acogidos menores de seis años por motivos de conciliación",
+    "what_covers": "Deducción para facilitar la conciliación familiar por los gastos pagados en escuelas infantiles, guarderías, custodia, comedor, extraescolares o contratación laboral para cuidar a descendientes o acogidos menores de 6 años.",
+    "requirements": [
+      "Tener descendientes o acogidos menores de 6 años",
+      "Pagar gastos en: escuelas infantiles o guarderías (0-3 años); custodia/comedor/extraescolares (3-6 años); o contratación laboral de persona para cuidar al menor",
+      "Porcentaje general: 40% con límite de 660 €/año",
+      "Porcentaje incrementado: 50% con límite de 900 €/año si concurre alguna circunstancia (menor de 36 años, discapacidad ≥33%, mínimo por discapacidad de ascendientes/descendientes, familia numerosa, monoparental con ≥2 hijos o autónomo ≥183 días)",
+      "Los pagos deben realizarse a través de entidad bancaria",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Detallar los menores beneficiarios y conservar facturas"
+    ],
+    "legal_reference": "Art. 6 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "any_kid_age_lt", "value": 6 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "conciliation_expenses_eur", "label": "Gastos pagados (escuelas infantiles, guardería, custodia, contratación) (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "service_type", "label": "Servicio prestado", "kind": "select", "required": true, "options": [
+        { "value": "escuela_infantil_0_3", "label": "Estancias en escuelas infantiles/guarderías (0-3 años)" },
+        { "value": "custodia_3_6", "label": "Custodia/comedor/extraescolares (3-6 años)" },
+        { "value": "contratacion_laboral", "label": "Contratación laboral de persona para cuidar al menor" }
+      ]},
+      { "key": "kids_under_6_detail", "label": "Descendientes/acogidos menores de 6 años (nombre y fecha)", "kind": "textarea", "required": true },
+      { "key": "increased_limit_circumstance", "label": "Circunstancia que da derecho al 50%/900 €", "kind": "select", "required": false, "options": [
+        { "value": "none", "label": "Ninguna (límite general 40%/660 €)" },
+        { "value": "menor_36", "label": "Menor de 36 años" },
+        { "value": "discapacidad_33", "label": "Discapacidad ≥ 33%" },
+        { "value": "minimo_discapacidad", "label": "Mínimo por discapacidad de ascendientes/descendientes" },
+        { "value": "familia_numerosa", "label": "Familia numerosa" },
+        { "value": "monoparental_2_hijos", "label": "Familia monoparental con 2 o más hijos" },
+        { "value": "autonomo", "label": "Trabajador autónomo (mín. 183 días)" }
+      ]}
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "bal-nacimiento",
+    "ccaa_code": "ES-IB",
+    "title": "Por nacimiento",
+    "what_covers": "Deducción a tanto alzado por el nacimiento de cada hijo en el ejercicio, con cuantía creciente según el número de orden del hijo.",
+    "requirements": [
+      "Que se haya producido el nacimiento de un hijo en el ejercicio",
+      "Tener derecho al mínimo por descendientes respecto del recién nacido",
+      "El contribuyente debe haber tenido residencia fiscal en Illes Balears el ejercicio anterior",
+      "Cuantía según orden del hijo: 800 € (1º), 1.000 € (2º), 1.200 € (3º), 1.400 € (4º o siguientes)",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta (régimen general)",
+      "Límites incrementados a 63.360/101.376 € si es familia numerosa o monoparental con ≥2 hijos",
+      "Quienes superen el límite de base pueden aplicar el 50% del importe",
+      "Posibilidad de solicitar el abono anticipado (Orden 37/2024)"
+    ],
+    "legal_reference": "Art. 6 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "newborn_order", "label": "Número de orden del hijo nacido", "kind": "select", "required": true, "options": [
+        { "value": "1", "label": "Primer hijo/a (800 €)" },
+        { "value": "2", "label": "Segundo hijo/a (1.000 €)" },
+        { "value": "3", "label": "Tercer hijo/a (1.200 €)" },
+        { "value": "4_o_mas", "label": "Cuarto o siguiente (1.400 €)" }
+      ]},
+      { "key": "newborn_name_and_date", "label": "Hijo nacido (nombre y fecha de nacimiento)", "kind": "textarea", "required": true },
+      { "key": "is_large_family_or_monoparental", "label": "¿Familia numerosa o monoparental con 2+ hijos? (limites incrementados)", "kind": "boolean", "required": false },
+      { "key": "advance_payment_requested", "label": "¿Se ha solicitado el abono anticipado (Orden 37/2024)?", "kind": "boolean", "required": false },
+      { "key": "received_advance_amount_eur", "label": "Importe abonado anticipadamente (€)", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "bal-adopcion",
+    "ccaa_code": "ES-IB",
+    "title": "Por adopción",
+    "what_covers": "Deducción a tanto alzado por la adopción de un hijo formalizada en el ejercicio, con cuantía creciente según el número de orden del hijo adoptado.",
+    "requirements": [
+      "Haber formalizado la adopción y haberla inscrito en el Registro Civil en el ejercicio",
+      "Tener derecho al mínimo por descendientes respecto del adoptado",
+      "Cuantía según orden del hijo: 800 € (1º), 1.000 € (2º), 1.200 € (3º), 1.400 € (4º o siguientes)",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta (régimen general)",
+      "Límites incrementados a 39.600/63.360 € si es familia numerosa o monoparental con ≥2 hijos",
+      "Solo aplicable en el período en que se inscribe la adopción",
+      "No aplica a la adopción del hijo del cónyuge o pareja de hecho"
+    ],
+    "legal_reference": "Art. 6 quater Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        { "op": "gte", "path": "kids.length", "value": 1 },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 39600 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 63360 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "adopted_order", "label": "Número de orden del hijo adoptado", "kind": "select", "required": true, "options": [
+        { "value": "1", "label": "Primer hijo/a (800 €)" },
+        { "value": "2", "label": "Segundo hijo/a (1.000 €)" },
+        { "value": "3", "label": "Tercer hijo/a (1.200 €)" },
+        { "value": "4_o_mas", "label": "Cuarto o siguiente (1.400 €)" }
+      ]},
+      { "key": "adopted_name_and_date", "label": "Hijo adoptado (nombre, fecha de inscripción en Registro Civil)", "kind": "textarea", "required": true },
+      { "key": "is_large_family_or_monoparental", "label": "¿Familia numerosa o monoparental con 2+ hijos?", "kind": "boolean", "required": false },
+      { "key": "is_spouse_kid_adoption", "label": "¿Adopción del hijo del cónyuge/pareja de hecho? (excluyente)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 190,
+    "is_active": true
+  },
+  {
+    "id": "bal-gastos-mayores-65-discapacidad",
+    "ccaa_code": "ES-IB",
+    "title": "Por determinados gastos relativos a personas mayores de 65 años o a personas con discapacidad",
+    "what_covers": "Deducción por gastos asistenciales (residencias, centros de día, custodia, comedor, actividades o contratación laboral para el cuidado) de personas mayores de 65 años o con discapacidad, ya sea el propio contribuyente o ascendientes/descendientes a cargo.",
+    "requirements": [
+      "Pagar gastos por: estancias en residencias o centros de día; custodia/comedor/actividades en centros de día; o contratación laboral para el cuidado",
+      "La persona beneficiaria del cuidado debe ser una de: contribuyente >65 años; contribuyente <65 con discapacidad ≥33%; ascendiente o descendiente con discapacidad ≥33%; o ascendiente >65 con derecho al mínimo",
+      "Deducción del 40% de los gastos pagados",
+      "Límite de 660 €/año por persona que da derecho a la deducción",
+      "Los pagos deben efectuarse a través de entidad bancaria",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Conservar facturas y, en su caso, certificado de discapacidad"
+    ],
+    "legal_reference": "Art. 6 quinquies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "care_expenses_eur", "label": "Gastos pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "beneficiary_type", "label": "Persona beneficiaria del cuidado", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente_mayor_65", "label": "Contribuyente mayor de 65 años" },
+        { "value": "contribuyente_discapacidad", "label": "Contribuyente <65 con discapacidad ≥33%" },
+        { "value": "asc_desc_discapacidad", "label": "Ascendiente/descendiente con discapacidad ≥33%" },
+        { "value": "ascendiente_mayor_65", "label": "Ascendiente >65 con derecho al mínimo" }
+      ]},
+      { "key": "service_type", "label": "Servicio prestado", "kind": "select", "required": true, "options": [
+        { "value": "residencia_centro_dia", "label": "Estancias en residencias o centros de día" },
+        { "value": "custodia_comedor", "label": "Custodia, comedor y actividades en centros de día" },
+        { "value": "contratacion_laboral", "label": "Contratación laboral para cuidar a la persona" }
+      ]},
+      { "key": "beneficiaries_count", "label": "Número de personas que dan derecho a la deducción", "kind": "number", "required": true, "min": 1 }
+    ],
+    "display_order": 200,
+    "is_active": true
+  },
+  {
+    "id": "bal-ela",
+    "ccaa_code": "ES-IB",
+    "title": "Por gastos derivados de la esclerosis lateral amiotrófica (ELA)",
+    "what_covers": "Deducción por los gastos asistenciales y sanitarios derivados de la esclerosis lateral amiotrófica (ELA) padecida por el propio contribuyente, descendientes o ascendientes a su cargo.",
+    "requirements": [
+      "Que el contribuyente, un descendiente o un ascendiente con derecho al mínimo padezcan ELA acreditada médicamente",
+      "Haber pagado gastos directamente relacionados con la enfermedad",
+      "Deducción del 100% de los gastos con límite conjunto de 3.500 €",
+      "No incluye primas de seguros de salud ni gastos no relacionados con la ELA",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta",
+      "Disponer del certificado médico que acredite el diagnóstico de ELA y conservar facturas"
+    ],
+    "legal_reference": "Art. 6 sexies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 84480 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "ela_expenses_eur", "label": "Gastos derivados de la ELA (€, máx. 3.500)", "kind": "number", "required": true, "min": 0, "max": 3500 },
+      { "key": "ela_patient", "label": "Paciente con ELA", "kind": "select", "required": true, "options": [
+        { "value": "contribuyente", "label": "El propio contribuyente" },
+        { "value": "descendiente", "label": "Descendiente con derecho al mínimo por descendientes" },
+        { "value": "ascendiente", "label": "Ascendiente con derecho al mínimo por ascendientes" }
+      ]},
+      { "key": "ela_diagnosis_certificate", "label": "Certificado médico del diagnóstico de ELA", "kind": "text", "required": false }
+    ],
+    "display_order": 210,
+    "is_active": true
+  },
+  {
+    "id": "bal-inversion-nuevas-entidades",
+    "ccaa_code": "ES-IB",
+    "title": "Por inversión en la adquisición de acciones o de participaciones sociales de nuevas entidades o de reciente creación",
+    "what_covers": "Deducción por la inversión realizada en la suscripción de acciones o participaciones de sociedades de nueva creación o de reciente creación (constitución o ampliación de capital) con domicilio fiscal en Illes Balears.",
+    "requirements": [
+      "Suscribir acciones o participaciones de una SA, SL, SAL, SLL o Cooperativa de nueva creación o en ampliación de capital",
+      "La entidad debe tener domicilio social y fiscal en Illes Balears",
+      "Porcentaje general: 30% con límite de 6.000 €/año",
+      "Porcentaje incrementado: 50% con límite de 12.000 €/año si la sociedad está participada por universidades o centros de investigación",
+      "La sociedad debe contar con al menos 1 persona empleada con contrato laboral a jornada completa en IB",
+      "Cifra anual de negocios de la sociedad ≤ 2.000.000 €",
+      "Participación del contribuyente (incluyendo entorno familiar) no superior al 40% del capital",
+      "Mantener la participación durante un mínimo de 4 años",
+      "La deducción puede aplicarse en el ejercicio de la inversión y en los dos siguientes",
+      "La inversión debe formalizarse en escritura pública"
+    ],
+    "legal_reference": "Art. 7 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_type", "label": "Tipo de entidad participada", "kind": "select", "required": true, "options": [
+        { "value": "general", "label": "SA/SL/SAL/SLL/Cooperativa (30%, límite 6.000 €)" },
+        { "value": "universidad_investigacion", "label": "Sociedad participada por universidades/centros de investigación (50%, límite 12.000 €)" }
+      ]},
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "participation_percentage", "label": "% de participación adquirida (≤40% incl. entorno familiar)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión / escritura pública", "kind": "date", "required": true },
+      { "key": "is_capital_increase", "label": "¿Ampliación de capital (no constitución)?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 220,
+    "is_active": true
+  },
+  {
+    "id": "bal-fomento-autoocupacion",
+    "ccaa_code": "ES-IB",
+    "title": "Para el fomento de la autoocupación",
+    "what_covers": "Deducción por iniciar una actividad económica por cuenta propia mediante el alta por primera vez en el Censo de Empresarios, Profesionales y Retenedores, principalmente desarrollada en Illes Balears.",
+    "requirements": [
+      "Causar alta por primera vez en el Censo de Empresarios, Profesionales y Retenedores (modelo 036/037)",
+      "Importe: 1.000 € por contribuyente",
+      "La actividad económica debe desarrollarse principalmente en Illes Balears",
+      "Mantener el alta en el censo durante al menos 1 año",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Indicar la fecha de alta y descripción de la actividad económica"
+    ],
+    "legal_reference": "Art. 7 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 33000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "census_registration_date", "label": "Fecha de alta en el Censo de Empresarios, Profesionales y Retenedores", "kind": "date", "required": true },
+      { "key": "activity_description", "label": "Actividad económica desarrollada", "kind": "textarea", "required": true },
+      { "key": "first_time_registration", "label": "Confirmo que es la primera vez que causo alta en el Censo", "kind": "boolean", "required": true },
+      { "key": "activity_in_balears", "label": "Confirmo que la actividad se desarrolla principalmente en Illes Balears", "kind": "boolean", "required": true }
+    ],
+    "display_order": 230,
+    "is_active": true
+  },
+  {
+    "id": "bal-plazas-dificil-cobertura",
+    "ccaa_code": "ES-IB",
+    "title": "Por ocupación de plazas declaradas de difícil cobertura en las Illes Balears",
+    "what_covers": "Deducción para empleados públicos con complemento de difícil cobertura y para miembros de Policía Nacional o Guardia Civil destinados en Illes Balears, por gastos de vivienda y transporte interinsular asociados al destino.",
+    "requirements": [
+      "Ostentar una de las categorías profesionales: personal público con complemento de difícil/muy difícil cobertura; o Policía Nacional / Guardia Civil destinado en Illes Balears",
+      "Haber pagado gastos de adquisición, construcción o alquiler de vivienda en Illes Balears, o gastos de transporte aéreo/marítimo interinsular",
+      "Deducción del 40% de los gastos",
+      "Límites por declaración (general personal público): 2.000 € (base ≤33.000/52.800) o 1.000 € (≤52.800/84.480)",
+      "Límites Policía Nacional/Guardia Civil en Mallorca: 1.400 € / 700 € según tramos",
+      "Límites Policía Nacional/Guardia Civil en Formentera: 2.600 € / 1.300 € según tramos",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta",
+      "Indicar los días en el destino durante el ejercicio"
+    ],
+    "legal_reference": "Art. 7 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-IB" },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 52800 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 84480 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "deductible_expenses_eur", "label": "Gastos de vivienda y/o transporte interinsular pagados (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "post_category", "label": "Categoría profesional", "kind": "select", "required": true, "options": [
+        { "value": "personal_publico_dificil_cobertura", "label": "Personal público con complemento de difícil/muy difícil cobertura" },
+        { "value": "pn_gc_mallorca", "label": "Policía Nacional / Guardia Civil destinado en Mallorca" },
+        { "value": "pn_gc_formentera", "label": "Policía Nacional / Guardia Civil destinado en Formentera" },
+        { "value": "pn_gc_otra_isla", "label": "Policía Nacional / Guardia Civil destinado en Menorca/Ibiza" }
+      ]},
+      { "key": "expense_types", "label": "Tipos de gasto (adquisición/construcción/alquiler/transporte)", "kind": "textarea", "required": true },
+      { "key": "service_days", "label": "Días en el destino durante el ejercicio", "kind": "number", "required": false, "min": 0, "max": 366 }
+    ],
+    "display_order": 240,
+    "is_active": true
+  }
+]

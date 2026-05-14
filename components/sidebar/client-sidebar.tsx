@@ -39,6 +39,13 @@ function BuildingIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function ClipboardCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  );
+}
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -166,6 +173,7 @@ interface ClientSidebarProps {
   profile: ClientSidebarProfile;
   hasTaxModels: boolean;
   hasDashboard: boolean;
+  hasDeclaracionRenta: boolean;
   loginPath: string;
   linkPrefix: string;
   userId: string;
@@ -175,7 +183,7 @@ interface ClientSidebarProps {
 }
 
 // ---- Main Component ----
-export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
+export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, hasDeclaracionRenta, loginPath, linkPrefix, userId, unreadCount: initialUnreadCount, companies, activeCompany }: ClientSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -217,6 +225,7 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
 
   const dashHref = `${linkPrefix}/dashboard`;
   const modelosHref = `${linkPrefix}/modelos`;
+  const informesHref = `${linkPrefix}/informes`;
   const empresaHref = `${linkPrefix}/empresa`;
   const contactoHref = `${linkPrefix}/contacto`;
 
@@ -348,6 +357,9 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
       )}
       {(hasDashboard || hasTaxModels) && (
         <div className={`my-2 border-t border-white/10 ${collapsed ? "mx-1" : "mx-2"}`} />
+      )}
+      {hasDeclaracionRenta && (
+        <NavItem icon={<ClipboardCheckIcon className="w-5 h-5" />} label="Informes / Formularios" href={informesHref} active={isActive(informesHref)} collapsed={collapsed} />
       )}
       <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={collapsed} />
       <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Contacto" href={contactoHref} active={isActive(contactoHref)} collapsed={collapsed} />
@@ -505,6 +517,9 @@ export default function ClientSidebar({ profile, hasTaxModels, hasDashboard, log
               )}
               {(hasDashboard || hasTaxModels) && (
                 <div className="my-2 border-t border-white/10 mx-2" />
+              )}
+              {hasDeclaracionRenta && (
+                <NavItem icon={<ClipboardCheckIcon className="w-5 h-5" />} label="Informes / Formularios" href={informesHref} active={isActive(informesHref)} collapsed={false} />
               )}
               <NavItem icon={<BuildingIcon className="w-5 h-5" />} label="Mi empresa" href={empresaHref} active={isActive(empresaHref)} collapsed={false} />
               <NavItem icon={<UsersIcon className="w-5 h-5" />} label="Contacto" href={contactoHref} active={isActive(contactoHref)} collapsed={false} />

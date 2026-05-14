@@ -40,3 +40,8 @@ verify_jwt = false
 # admin tras configurar el Google Sheet).
 [functions.notify-client-dashboard-ready]
 verify_jwt = false
+
+# Invocada desde el server action sendRentaInvitationEmail cuando el asesor
+# pulsa "Enviar formulario" en el panel de Declaración de la renta del cliente.
+[functions.notify-renta-invitation]
+verify_jwt = false

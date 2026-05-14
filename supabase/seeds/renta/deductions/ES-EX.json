@@ -1,0 +1,611 @@
+[
+  {
+    "id": "ext-trabajo-dependiente",
+    "ccaa_code": "ES-EX",
+    "title": "Por trabajo dependiente",
+    "what_covers": "Deducción de 75 € por contribuyente con rendimientos del trabajo bajos y rentas adicionales muy reducidas.",
+    "requirements": [
+      "Rendimientos íntegros del trabajo ≤ 12.000 € anuales",
+      "Resto de rendimientos netos, ganancias/pérdidas e imputaciones de renta ≤ 300 €",
+      "Residencia habitual en Extremadura",
+      "Incompatible (para viudos) con la deducción 'Para contribuyentes viudos'"
+    ],
+    "legal_reference": "Art. 2 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "work_income_gross_eur", "label": "Rendimientos íntegros del trabajo (€, ≤ 12.000)", "kind": "number", "required": true, "min": 0, "max": 12000 },
+      { "key": "other_net_income_eur", "label": "Resto de rendimientos netos, ganancias/pérdidas e imputaciones (€, ≤ 300)", "kind": "number", "required": true, "min": 0, "max": 300 }
+    ],
+    "display_order": 10,
+    "is_active": true
+  },
+  {
+    "id": "ext-partos-multiples",
+    "ccaa_code": "ES-EX",
+    "title": "Por partos múltiples",
+    "what_covers": "Deducción de 300 € por cada hijo nacido en parto múltiple durante el ejercicio que conviva con el progenitor.",
+    "requirements": [
+      "Parto múltiple (≥ 2 hijos) en el período impositivo",
+      "Convivencia de los hijos con el progenitor",
+      "Bases imponibles ≤ 19.000 € (individual) / 24.000 € (conjunta)",
+      "Límites elevados a 28.000 / 45.000 € si reside en municipio < 3.000 habitantes",
+      "Sin límite de renta si además se es familia numerosa o monoparental con dos hijos"
+    ],
+    "legal_reference": "Arts. 3 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "gte", "path": "kids.length", "value": 2 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "multiple_birth_kids_count", "label": "Hijos nacidos en el parto múltiple del ejercicio", "kind": "number", "required": true, "min": 2 },
+      { "key": "birth_date", "label": "Fecha del parto múltiple", "kind": "date", "required": true },
+      { "key": "small_municipality_resident", "label": "¿Reside en municipio/entidad local menor < 3.000 habitantes?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 20,
+    "is_active": true
+  },
+  {
+    "id": "ext-acogimiento-menores",
+    "ccaa_code": "ES-EX",
+    "title": "Por acogimiento de menores",
+    "what_covers": "Deducción para quienes acogen menores en régimen familiar (temporal, permanente o de urgencia), modulada según los días de convivencia.",
+    "requirements": [
+      "Menor en régimen de acogimiento familiar temporal, permanente o de urgencia",
+      "250 € por menor si la convivencia es ≥ 183 días en el período impositivo",
+      "125 € por menor si la convivencia es entre 90 y 183 días",
+      "Residencia habitual en Extremadura"
+    ],
+    "legal_reference": "Art. 4 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "foster_minors_count", "label": "Número de menores en régimen de acogimiento", "kind": "number", "required": true, "min": 1 },
+      { "key": "foster_type", "label": "Modalidad de acogimiento", "kind": "select", "required": true, "options": [
+        { "value": "urgencia", "label": "Urgencia" },
+        { "value": "temporal", "label": "Temporal" },
+        { "value": "permanente", "label": "Permanente" }
+      ]},
+      { "key": "cohabit_days", "label": "Días de convivencia en el ejercicio (mínimo 90)", "kind": "number", "required": true, "min": 90 }
+    ],
+    "display_order": 30,
+    "is_active": true
+  },
+  {
+    "id": "ext-cuidado-familiares-discapacidad",
+    "ccaa_code": "ES-EX",
+    "title": "Por cuidado de familiares con discapacidad",
+    "what_covers": "Deducción por cuidado de ascendientes o descendientes con discapacidad reconocida igual o superior al 65% o judicialmente incapacitados.",
+    "requirements": [
+      "Ascendiente o descendiente con discapacidad ≥ 65% o incapacitado judicialmente",
+      "150 € por familiar con carácter general",
+      "220 € por familiar si tiene reconocido el derecho a una ayuda a la dependencia aún no percibida",
+      "Convivencia ininterrumpida con el contribuyente al menos la mitad del período impositivo",
+      "Cumplir los límites de renta del familiar y del contribuyente establecidos en el TR"
+    ],
+    "legal_reference": "Arts. 5, 12 bis y 13 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "disabled_relatives_count", "label": "Número de ascendientes/descendientes con discapacidad ≥ 65%", "kind": "number", "required": true, "min": 1 },
+      { "key": "relative_relation", "label": "Parentesco", "kind": "select", "required": true, "options": [
+        { "value": "ascendiente", "label": "Ascendiente" },
+        { "value": "descendiente", "label": "Descendiente" }
+      ]},
+      { "key": "cohabit_at_least_half_period", "label": "Convive ininterrumpidamente con el contribuyente al menos la mitad del período impositivo", "kind": "boolean", "required": true },
+      { "key": "has_dependency_aid_pending", "label": "¿Tiene reconocido el derecho a una ayuda a la dependencia aún no percibida?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 40,
+    "is_active": true
+  },
+  {
+    "id": "ext-cuidado-hijos-menores-14",
+    "ccaa_code": "ES-EX",
+    "title": "Por cuidado de hijos menores de hasta 14 años inclusive",
+    "what_covers": "Deducción del 10% de los gastos de cuidado de hijos de hasta 14 años (empleada del hogar o guardería/centro autorizado) para familias en las que ambos progenitores trabajan.",
+    "requirements": [
+      "Hijo/a de hasta 14 años inclusive con derecho al mínimo por descendientes",
+      "Gasto en persona empleada del hogar o guardería/centro de ocio/campamento urbano/ludoteca autorizado",
+      "Ambos progenitores realizan actividad por cuenta propia o ajena",
+      "Límite máximo 400 € anuales por unidad familiar",
+      "Bases ≤ 28.000 € (individual) / 45.000 € (conjunta)",
+      "Sin límite de renta si reside en municipio < 3.000 hab. y es familia numerosa o monoparental"
+    ],
+    "legal_reference": "Arts. 6 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "any_kid_age_lt", "value": 15 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "care_expenses_eur", "label": "Cantidades satisfechas por cuidado (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "care_type", "label": "Tipo de cuidado", "kind": "select", "required": true, "options": [
+        { "value": "empleado_hogar", "label": "Persona empleada del hogar" },
+        { "value": "guarderia_centro", "label": "Guardería / centro de ocio / campamento urbano / ludoteca autorizado" }
+      ]},
+      { "key": "kids_with_expenses", "label": "Hijos por los que se aplica la deducción (nombre y edad)", "kind": "textarea", "required": true },
+      { "key": "both_parents_active", "label": "Ambos padres realizan actividad por cuenta propia o ajena", "kind": "boolean", "required": true }
+    ],
+    "display_order": 50,
+    "is_active": true
+  },
+  {
+    "id": "ext-contribuyentes-viudos",
+    "ccaa_code": "ES-EX",
+    "title": "Para contribuyentes viudos",
+    "what_covers": "Deducción a tanto alzado para contribuyentes en estado civil de viudez, con importe mayor si tienen descendientes a su cargo.",
+    "requirements": [
+      "Estado civil de viudo/a",
+      "100 € con carácter general",
+      "200 € si tiene a cargo descendientes con derecho al mínimo y sin rentas propias",
+      "Bases ≤ 19.000 / 24.000 € (individual/conjunta), o 28.000 / 45.000 € en municipios < 3.000 hab.",
+      "Sin límite de renta si además es familia numerosa o monoparental",
+      "Incompatible con la deducción 'Por trabajo dependiente'",
+      "No aplicable a condenados por violencia de género al cónyuge fallecido"
+    ],
+    "legal_reference": "Arts. 7 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "eq", "path": "civil_status", "value": "viudo" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "dependent_descendants", "label": "¿Tiene descendientes a su cargo con derecho al mínimo y sin rentas?", "kind": "boolean", "required": true },
+      { "key": "small_municipality_resident", "label": "¿Reside en municipio/entidad local menor < 3.000 habitantes?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 60,
+    "is_active": true
+  },
+  {
+    "id": "ext-vivienda-jovenes-victimas-terrorismo",
+    "ccaa_code": "ES-EX",
+    "title": "Por adquisición o rehabilitación de vivienda habitual para jóvenes y para víctimas del terrorismo",
+    "what_covers": "Deducción por la adquisición o rehabilitación de la primera vivienda habitual nueva para contribuyentes jóvenes o víctimas del terrorismo.",
+    "requirements": [
+      "Ser menor de 36 años o víctima del terrorismo (sin requisito de edad)",
+      "Vivienda nueva que constituya la primera residencia habitual del contribuyente",
+      "3% de las cantidades satisfechas con carácter general",
+      "5% si la vivienda está en municipio < 3.000 hab. (adquisiciones/rehabilitaciones desde 01/01/2015)",
+      "Excluidos los intereses; base máxima 9.040 € anuales",
+      "Bases ≤ 19.000 / 24.000 € (individual/conjunta), o 28.000 / 45.000 € en municipios < 3.000 hab."
+    ],
+    "legal_reference": "Arts. 8, 12, 12 bis y 13 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "qualifying_condition", "label": "Condición que da derecho", "kind": "select", "required": true, "options": [
+        { "value": "joven", "label": "Joven (<36 años)" },
+        { "value": "victima_terrorismo", "label": "Víctima del terrorismo (sin requisito de edad)" }
+      ]},
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio sin intereses (€, base máx. 9.040)", "kind": "number", "required": true, "min": 0, "max": 9040 },
+      { "key": "acquisition_or_rehab", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición de vivienda nueva" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición/rehabilitación", "kind": "date", "required": true },
+      { "key": "small_municipality_resident", "label": "¿Inmueble en municipio < 3.000 habitantes?", "kind": "boolean", "required": false },
+      { "key": "first_home", "label": "Confirmo que se trata de mi primera vivienda", "kind": "boolean", "required": true }
+    ],
+    "display_order": 70,
+    "is_active": true
+  },
+  {
+    "id": "ext-arrendamiento-vivienda-habitual",
+    "ccaa_code": "ES-EX",
+    "title": "Por arrendamiento de vivienda habitual",
+    "what_covers": "Deducción del 30% del alquiler pagado por la vivienda habitual del contribuyente, con un límite anual elevado si la vivienda está en medio rural.",
+    "requirements": [
+      "Contrato de alquiler de la vivienda habitual del contribuyente",
+      "Pertenecer a uno de estos colectivos: <36 años, familia numerosa o monoparental con dos hijos, o discapacidad ≥ 65%",
+      "Bases ≤ 28.000 € (individual) / 45.000 € (conjunta)",
+      "Límite 1.000 € anuales (o 1.500 € si la vivienda está en municipio < 3.000 hab. de Extremadura)",
+      "No haber aplicado deducción estatal/autonómica por inversión en vivienda habitual",
+      "No poseer otra vivienda a menos de 75 km de la arrendada",
+      "Haber pagado el ITP/AJD del contrato o estar exento"
+    ],
+    "legal_reference": "Arts. 9, 12 bis y 13 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "eq", "path": "housing.type", "value": "alquiler" },
+        {
+          "any_of": [
+            { "op": "age_lt", "path": "birth_date", "value": 36 },
+            { "op": "in", "path": "large_family", "value": ["general", "especial"] },
+            { "op": "eq", "path": "monoparental", "value": true },
+            { "op": "gte", "path": "disability_pct", "value": 65 }
+          ]
+        },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 28000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "annual_rent_eur", "label": "Renta anual pagada (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "landlord_nif", "label": "NIF del arrendador", "kind": "text", "required": false },
+      { "key": "property_reference", "label": "Referencia catastral del inmueble", "kind": "text", "required": false },
+      { "key": "rural_municipality", "label": "¿La vivienda está en municipio < 3.000 habitantes (medio rural)?", "kind": "boolean", "required": false },
+      { "key": "itp_paid_or_exempt", "label": "Confirmo el pago del ITP/AJD o su exención", "kind": "boolean", "required": true }
+    ],
+    "display_order": 80,
+    "is_active": true
+  },
+  {
+    "id": "ext-arrendadores-viviendas-vacias",
+    "ccaa_code": "ES-EX",
+    "title": "Para arrendadores de viviendas vacías",
+    "what_covers": "Deducción para propietarios que ponen en alquiler como vivienda habitual una vivienda que estaba previamente vacía y en desuso.",
+    "requirements": [
+      "Vivienda situada en Extremadura",
+      "La vivienda estuvo vacía y en desuso ≥ 1 año antes del contrato",
+      "Destinada a vivienda habitual del arrendatario",
+      "Contrato con duración pactada ≥ 3 años",
+      "100% del rendimiento neto reducido del arrendamiento",
+      "Límite máximo 1.200 € por contribuyente",
+      "El contribuyente no puede tener más de 3 viviendas en propiedad/usufructo"
+    ],
+    "legal_reference": "Art. 9 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "net_rental_income_eur", "label": "Rendimiento neto reducido del arrendamiento (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "property_reference", "label": "Referencia catastral de la vivienda arrendada", "kind": "text", "required": false },
+      { "key": "vacant_at_least_1y", "label": "Confirmo que la vivienda estuvo vacía y en desuso al menos 1 año antes del contrato", "kind": "boolean", "required": true },
+      { "key": "contract_duration_years", "label": "Duración pactada del contrato (años, ≥ 3)", "kind": "number", "required": true, "min": 3 },
+      { "key": "owned_homes_count", "label": "Número de viviendas en propiedad/usufructo (máx. 3)", "kind": "number", "required": true, "min": 1, "max": 3 }
+    ],
+    "display_order": 90,
+    "is_active": true
+  },
+  {
+    "id": "ext-rehabilitacion-viviendas-rurales-alquiler",
+    "ccaa_code": "ES-EX",
+    "title": "Por inversiones en la rehabilitación de viviendas en zonas rurales para ser destinadas a su alquiler",
+    "what_covers": "Deducción del 15% de la inversión en rehabilitación de viviendas en municipios rurales de Extremadura que se destinen al alquiler como vivienda habitual.",
+    "requirements": [
+      "Vivienda situada en municipio/entidad local menor de Extremadura con < 3.000 habitantes",
+      "Obras de rehabilitación ejecutadas en el ejercicio",
+      "Compromiso de alquiler como vivienda habitual durante 5 años",
+      "Arrendatarios no familiares hasta el 3er grado de parentesco",
+      "Base máxima total 180.000 € por vivienda; máximo 9.040 € por ejercicio"
+    ],
+    "legal_reference": "Art. 9 ter Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "rehabilitation_cost_eur", "label": "Cantidades invertidas en rehabilitación (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "property_reference", "label": "Referencia catastral de la vivienda", "kind": "text", "required": false },
+      { "key": "municipality", "label": "Municipio (≤ 3.000 habitantes)", "kind": "text", "required": true },
+      { "key": "rehabilitation_year", "label": "Año en que se ejecutan las obras", "kind": "number", "required": true, "min": 2020 },
+      { "key": "rental_use_confirmed", "label": "Confirmo que la vivienda se destinará a alquiler como vivienda habitual durante 5 años", "kind": "boolean", "required": true }
+    ],
+    "display_order": 100,
+    "is_active": true
+  },
+  {
+    "id": "ext-compra-material-escolar",
+    "ccaa_code": "ES-EX",
+    "title": "Por la compra de material escolar",
+    "what_covers": "Deducción a tanto alzado por la compra de material escolar para hijos o descendientes en edad de educación obligatoria.",
+    "requirements": [
+      "Hijo/descendiente en edad escolar obligatoria (6-15 años)",
+      "Derecho al mínimo por descendientes respecto del menor",
+      "15 € de deducción por cada hijo/descendiente con derecho",
+      "Bases ≤ 19.000 / 24.000 € (individual/conjunta), o 28.000 / 45.000 € en municipios < 3.000 hab.",
+      "Sin límite de renta si reside en municipio < 3.000 hab. y es familia numerosa o monoparental"
+    ],
+    "legal_reference": "Arts. 10 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "gte", "path": "kids.length", "value": 1 }
+      ]
+    },
+    "extra_fields": [
+      { "key": "kids_school_age_count", "label": "Hijos/descendientes en edad escolar obligatoria (6-15 años)", "kind": "number", "required": true, "min": 1 },
+      { "key": "kids_with_expenses", "label": "Detalle (nombre, edad y nivel)", "kind": "textarea", "required": false },
+      { "key": "small_municipality_resident", "label": "¿Reside en municipio < 3.000 habitantes?", "kind": "boolean", "required": false }
+    ],
+    "display_order": 110,
+    "is_active": true
+  },
+  {
+    "id": "ext-inversion-acciones-participaciones",
+    "ccaa_code": "ES-EX",
+    "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
+    "what_covers": "Deducción del 20% por invertir en la creación o ampliación de capital de SA/SL/SAL/SLL o cooperativas extremeñas con actividad económica.",
+    "requirements": [
+      "Inversión en acciones/participaciones de SA, SL, SAL, SLL o cooperativa",
+      "Operación de constitución de la sociedad o ampliación de capital",
+      "Entidad con domicilio social y fiscal en Extremadura",
+      "Entidad debe desarrollar una actividad económica (no mera gestión patrimonial)",
+      "Participación del contribuyente y entorno familiar < 40% del capital",
+      "Mantenimiento de la inversión durante al menos 3 años",
+      "Límite máximo 4.000 € anuales de deducción"
+    ],
+    "legal_reference": "Art. 11 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "investment_amount_eur", "label": "Importe invertido en el ejercicio (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "entity_nif", "label": "NIF de la entidad participada", "kind": "text", "required": true },
+      { "key": "entity_type", "label": "Tipo de entidad", "kind": "select", "required": true, "options": [
+        { "value": "sa_sl", "label": "SA / SL" },
+        { "value": "sal_sll", "label": "SAL / SLL" },
+        { "value": "cooperativa", "label": "Cooperativa" }
+      ]},
+      { "key": "operation_type", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "constitucion", "label": "Constitución" },
+        { "value": "ampliacion", "label": "Ampliación de capital" }
+      ]},
+      { "key": "participation_percentage", "label": "% de participación adquirida (entorno familiar, < 40%)", "kind": "number", "required": false, "min": 0, "max": 40 },
+      { "key": "investment_date", "label": "Fecha de la inversión", "kind": "date", "required": true }
+    ],
+    "display_order": 120,
+    "is_active": true
+  },
+  {
+    "id": "ext-vivienda-habitual-zonas-rurales",
+    "ccaa_code": "ES-EX",
+    "title": "Por adquisición o rehabilitación de la vivienda habitual en zonas rurales",
+    "what_covers": "Deducción del 10% de lo invertido en adquirir o rehabilitar la vivienda habitual situada en un municipio rural de Extremadura.",
+    "requirements": [
+      "Vivienda situada en municipio/entidad local menor de Extremadura con < 3.000 habitantes",
+      "Adquisición desde el 01/01/2022",
+      "La vivienda debe constituir la residencia habitual del contribuyente",
+      "Base máxima total 180.000 € por vivienda; máximo 9.040 € por ejercicio",
+      "Las subvenciones recibidas de la Junta minoran la base de la deducción",
+      "Incompatible con 'Por adquisición o rehabilitación de vivienda habitual para jóvenes y víctimas del terrorismo'",
+      "Incompatible con 'Por intereses de financiación ajena para vivienda habitual para jóvenes'"
+    ],
+    "legal_reference": "Arts. 11 bis y 12 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        { "op": "eq", "path": "small_municipality", "value": true }
+      ]
+    },
+    "extra_fields": [
+      { "key": "amounts_paid_eur", "label": "Cantidades satisfechas en el ejercicio (€, base máx. 9.040)", "kind": "number", "required": true, "min": 0, "max": 9040 },
+      { "key": "acquisition_or_rehab", "label": "Tipo de operación", "kind": "select", "required": true, "options": [
+        { "value": "adquisicion", "label": "Adquisición" },
+        { "value": "rehabilitacion", "label": "Rehabilitación" }
+      ]},
+      { "key": "acquisition_date", "label": "Fecha de adquisición/rehabilitación (a partir 01/01/2022)", "kind": "date", "required": true },
+      { "key": "municipality", "label": "Municipio (≤ 3.000 habitantes)", "kind": "text", "required": true },
+      { "key": "subsidies_received_eur", "label": "Subvenciones recibidas de la Junta (€) — minoran la base", "kind": "number", "required": false, "min": 0 }
+    ],
+    "display_order": 130,
+    "is_active": true
+  },
+  {
+    "id": "ext-residencia-municipios-despoblacion",
+    "ccaa_code": "ES-EX",
+    "title": "Por residir habitualmente en municipios y entidades locales menores de Extremadura con población inferior a 3.000 habitantes",
+    "what_covers": "Deducción del 15% de la cuota íntegra autonómica para quienes residen habitualmente en municipios rurales de Extremadura, como medida frente a la despoblación.",
+    "requirements": [
+      "Residencia habitual en municipio/entidad local menor de Extremadura con < 3.000 habitantes",
+      "Bases imponibles ≤ 28.000 € (individual) / 45.000 € (conjunta)"
+    ],
+    "legal_reference": "Art. 11 ter Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "eq", "path": "small_municipality", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 28000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "municipality", "label": "Municipio/entidad local menor de residencia (< 3.000 habitantes)", "kind": "text", "required": true },
+      { "key": "habitual_residence_year", "label": "Año en que adquirió la residencia habitual en el municipio", "kind": "number", "required": false, "min": 1900 }
+    ],
+    "display_order": 140,
+    "is_active": true
+  },
+  {
+    "id": "ext-intereses-financiacion-vivienda-jovenes",
+    "ccaa_code": "ES-EX",
+    "title": "Por intereses de financiación ajena para la inversión en vivienda habitual para jóvenes",
+    "what_covers": "Deducción del 25% de los intereses de préstamos hipotecarios pagados por jóvenes para adquirir su primera vivienda habitual.",
+    "requirements": [
+      "Ser menor de 36 años",
+      "Préstamo hipotecario destinado a adquirir la vivienda habitual",
+      "Que sea la primera vivienda del contribuyente",
+      "Base máxima 1.000 € de intereses anuales",
+      "Bases ≤ 28.000 / 45.000 € (individual/conjunta)",
+      "Compatible con 'Por adquisición o rehabilitación de vivienda habitual para jóvenes'"
+    ],
+    "legal_reference": "Arts. 11 quater y 12 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" },
+        { "op": "age_lt", "path": "birth_date", "value": 36 },
+        { "op": "eq", "path": "housing.type", "value": "propiedad" },
+        { "op": "eq", "path": "housing.is_habitual", "value": true },
+        {
+          "any_of": [
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "individual" },
+              { "op": "lte", "path": "income_base", "value": 28000 }
+            ]},
+            { "all_of": [
+              { "op": "eq", "path": "declaration_mode", "value": "conjunta" },
+              { "op": "lte", "path": "income_base", "value": 45000 }
+            ]}
+          ]
+        }
+      ]
+    },
+    "extra_fields": [
+      { "key": "mortgage_interest_eur", "label": "Intereses satisfechos en el año (€, base máx. 1.000)", "kind": "number", "required": true, "min": 0, "max": 1000 },
+      { "key": "mortgage_lender", "label": "Entidad financiera prestamista", "kind": "text", "required": true },
+      { "key": "first_home", "label": "Confirmo que es mi primera vivienda", "kind": "boolean", "required": true }
+    ],
+    "display_order": 150,
+    "is_active": true
+  },
+  {
+    "id": "ext-donaciones-culturales-deportistas",
+    "ccaa_code": "ES-EX",
+    "title": "Por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas",
+    "what_covers": "Deducción del 20% de los importes donados a entidades culturales/artísticas extremeñas o como patrocinio a deportistas con domicilio fiscal en Extremadura.",
+    "requirements": [
+      "Donación en dinero (no en especie)",
+      "Receptor: entidad con domicilio fiscal en Extremadura que desarrolle actividad cultural o artística, o deportista con domicilio fiscal en Extremadura (art. 21.2 Ley 39/2022 del Deporte)",
+      "Donación pura, simple e irrevocable",
+      "Formalización por escrito",
+      "Límite máximo conjunto 500 € anuales por contribuyente"
+    ],
+    "legal_reference": "Art. 11 quinquies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "donation_amount_eur", "label": "Importe total donado (€, máx. 500)", "kind": "number", "required": true, "min": 0, "max": 500 },
+      { "key": "donation_recipients", "label": "Entidades/deportistas receptores y NIF", "kind": "textarea", "required": true },
+      { "key": "recipient_type", "label": "Tipo de receptor", "kind": "select", "required": true, "options": [
+        { "value": "entidad_cultural", "label": "Entidad cultural/artística con domicilio en Extremadura" },
+        { "value": "deportista", "label": "Deportista con domicilio fiscal en Extremadura" }
+      ]}
+    ],
+    "display_order": 160,
+    "is_active": true
+  },
+  {
+    "id": "ext-traslado-residencia-extremadura",
+    "ccaa_code": "ES-EX",
+    "title": "Para contribuyentes que trasladen su residencia habitual a Extremadura",
+    "what_covers": "Deducción sobre la cuota íntegra autonómica para quienes trasladen su residencia habitual a Extremadura desde 2025 y se comprometan a mantenerla.",
+    "requirements": [
+      "Trasladar la residencia habitual a Extremadura a partir del 01/01/2025",
+      "50% de la cuota íntegra autonómica con carácter general",
+      "75% de la cuota íntegra autonómica si el contribuyente tiene <36 años en la fecha de devengo",
+      "Compromiso de mantener la residencia habitual en Extremadura al menos 3 años",
+      "Aplica en el período impositivo del traslado y en los dos siguientes"
+    ],
+    "legal_reference": "Art. 11 sexies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "residence_change_date", "label": "Fecha del traslado de residencia habitual a Extremadura (≥ 01/01/2025)", "kind": "date", "required": true },
+      { "key": "previous_ccaa", "label": "CCAA o país de residencia anterior", "kind": "text", "required": false },
+      { "key": "is_under_36", "label": "¿Menor de 36 años a la fecha de devengo del IRPF?", "kind": "boolean", "required": true },
+      { "key": "commit_3y_residence", "label": "Confirmo que mantendré la residencia habitual en Extremadura al menos 3 años", "kind": "boolean", "required": true }
+    ],
+    "display_order": 170,
+    "is_active": true
+  },
+  {
+    "id": "ext-ayudas-ela",
+    "ccaa_code": "ES-EX",
+    "title": "Por la obtención de ayudas o subvenciones otorgadas por la Comunidad Autónoma a personas con Esclerosis Lateral Amiotrófica",
+    "what_covers": "Compensa la tributación de las subvenciones/ayudas que la Junta de Extremadura concede a personas con ELA y que se integran en la base imponible general.",
+    "requirements": [
+      "Diagnóstico confirmado de Esclerosis Lateral Amiotrófica",
+      "Subvención o ayuda pública otorgada por la Comunidad Autónoma de Extremadura",
+      "La ayuda debe estar integrada en la base imponible general del IRPF",
+      "La deducción es el resultado de aplicar los tipos medios de gravamen al importe de la ayuda"
+    ],
+    "legal_reference": "Art. 11 septies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "ela_aid_amount_eur", "label": "Importe de la subvención/ayuda integrada en la base imponible general (€)", "kind": "number", "required": true, "min": 0 },
+      { "key": "aid_grantor", "label": "Organismo otorgante (Junta de Extremadura)", "kind": "text", "required": false },
+      { "key": "ela_diagnosis_confirmed", "label": "Confirmo el diagnóstico de Esclerosis Lateral Amiotrófica", "kind": "boolean", "required": true }
+    ],
+    "display_order": 180,
+    "is_active": true
+  },
+  {
+    "id": "ext-enfermos-ela-familiares",
+    "ccaa_code": "ES-EX",
+    "title": "Destinada a los enfermos de Esclerosis Lateral Amiotrófica y sus familiares",
+    "what_covers": "Deducción anual fija para personas diagnosticadas de ELA y para los familiares directos que convivan con ellos o los tengan a su cargo.",
+    "requirements": [
+      "Importe de 2.000 € anuales por contribuyente con derecho",
+      "Aplicable al propio contribuyente diagnosticado de ELA",
+      "También aplicable a cónyuge, pareja de hecho, descendiente o ascendiente diagnosticado que conviva o esté a cargo del contribuyente",
+      "Los descendientes/ascendientes deben dar derecho al mínimo familiar correspondiente",
+      "Si varios contribuyentes tienen derecho respecto de la misma persona enferma, el importe se prorratea por partes iguales entre los familiares",
+      "El propio enfermo siempre percibe los 2.000 € íntegros, sin prorrateo"
+    ],
+    "legal_reference": "Art. 11 octies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
+    "eligibility_rule": {
+      "all_of": [
+        { "op": "eq", "path": "ccaa", "value": "ES-EX" }
+      ]
+    },
+    "extra_fields": [
+      { "key": "ela_relation", "label": "Vínculo con la persona diagnosticada de ELA", "kind": "select", "required": true, "options": [
+        { "value": "propio", "label": "El propio contribuyente está diagnosticado" },
+        { "value": "conyuge_pareja", "label": "Cónyuge o pareja de hecho conviviente o a cargo" },
+        { "value": "descendiente", "label": "Descendiente con derecho al mínimo por descendientes" },
+        { "value": "ascendiente", "label": "Ascendiente con derecho al mínimo por ascendientes" }
+      ]},
+      { "key": "ela_patient_detail", "label": "Detalle (nombre y parentesco de la persona diagnosticada)", "kind": "textarea", "required": false },
+      { "key": "shared_with_other_taxpayers", "label": "¿Otros contribuyentes tienen derecho a esta deducción respecto de la misma persona enferma? (prorrateo entre familiares; el propio enfermo nunca prorratea)", "kind": "boolean", "required": false }
+    ],
+    "display_order": 190,
+    "is_active": true
+  }
+]

@@ -48,6 +48,25 @@ Nota: en Supabase Free no podemos usar `ALTER DATABASE ... SET` (bloqueado a sup
 
 Las migraciones son la única vía para cambiar el schema — no tocar tablas/triggers/functions directamente desde el dashboard.
 
+### ⚠️ GRANTs explícitos al crear tablas en `public` (a partir del 30-oct-2026)
+
+Supabase deja de exponer por defecto las tablas nuevas del schema `public` a la Data API (supabase-js / PostgREST / GraphQL). Las tablas ya existentes mantienen sus GRANTs actuales — solo afecta a tablas creadas **a partir del 30 octubre 2026** en nuestros proyectos.
+
+Patrón obligatorio para cualquier `create table public.<x>` desde esa fecha:
+
+```sql
+create table public.<tabla> ( ... );
+
+grant select, insert, update, delete on public.<tabla> to authenticated;
+grant select, insert, update, delete on public.<tabla> to service_role;
+-- grant select on public.<tabla> to anon;  -- solo si lo necesita un endpoint público
+
+alter table public.<tabla> enable row level security;
+-- + políticas RLS habituales
+```
+
+Sin el GRANT, el SDK devuelve error `42501` indicando exactamente qué statement falta. Las tablas en schemas propios (`documentation`, `dashboard`, `renta`, ...) ya requieren GRANT explícito + estar añadidos en "Exposed schemas" → no cambia nada para ellos.
+
 ## Añadir o actualizar una edge function
 
 1. Código Deno en `supabase/functions/<slug>/index.ts`.
