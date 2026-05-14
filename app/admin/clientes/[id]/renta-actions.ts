@@ -57,7 +57,8 @@ export async function listAuthorizedFilers(
     supabase
       .from("submissions")
       .select("authorized_filer_id")
-      .eq("company_id", companyId),
+      .eq("company_id", companyId)
+      .is("revoked_at", null),
   ]);
 
   const submittedIds = new Set(
@@ -351,6 +352,33 @@ export async function updateSubmissionNotes(
     .from("submissions")
     .update({ admin_notes: notes })
     .eq("id", submissionId)
+    .select("company_id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
+  return { ok: true };
+}
+
+/**
+ * Revoca una submission para que el filer pueda volver a rellenar el formulario.
+ * Soft-delete: la fila se conserva como histórico (revoked_at + revoked_by) y la
+ * unique index parcial libera el slot para una nueva submission del mismo DNI.
+ */
+export async function revokeSubmission(
+  submissionId: string,
+  reason?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { user } = await requireAdmin();
+  const supabase = createAdminClient().schema("renta");
+  const { data, error } = await supabase
+    .from("submissions")
+    .update({
+      revoked_at: new Date().toISOString(),
+      revoked_by: user.id,
+      revoke_reason: reason?.trim() || null,
+    })
+    .eq("id", submissionId)
+    .is("revoked_at", null)
     .select("company_id")
     .single();
   if (error) return { ok: false, error: error.message };

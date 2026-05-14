@@ -17,7 +17,7 @@ export default function RentaPublicLayout({ children }: { children: React.ReactN
             <img
               src="https://leanfinance.es/wp-content/uploads/2022/01/LEANFINANCE_Ppal_Color_transp-2.png"
               alt="Lean Finance"
-              className="h-9 sm:h-11 w-auto"
+              className="h-12 sm:h-16 w-auto"
             />
           </a>
           <div className="flex flex-col items-end gap-0.5 text-right">

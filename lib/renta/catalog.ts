@@ -63,7 +63,8 @@ export async function hasSubmissionForFiler(
     .from("submissions")
     .select("id", { count: "exact", head: true })
     .eq("invitation_id", invitationId)
-    .eq("authorized_filer_id", authorizedFilerId);
+    .eq("authorized_filer_id", authorizedFilerId)
+    .is("revoked_at", null);
   return (count ?? 0) > 0;
 }
 

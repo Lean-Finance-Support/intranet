@@ -95,6 +95,9 @@ export interface RentaSubmission {
   submitted_user_agent: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  revoke_reason: string | null;
   created_at: string;
   updated_at: string;
 }

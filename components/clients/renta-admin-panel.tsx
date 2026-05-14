@@ -13,6 +13,7 @@ import {
   listSubmissions,
   setSubmissionStatus,
   updateSubmissionNotes,
+  revokeSubmission,
   getDeductionsCatalog,
 } from "@/app/admin/clientes/[id]/renta-actions";
 import ConfirmDialog from "@/components/confirm-dialog";
@@ -616,6 +617,8 @@ function SubmissionCard({
 }) {
   const [notes, setNotes] = useState(submission.admin_notes ?? "");
   const [isPending, startTransition] = useTransition();
+  const [confirmRevoke, setConfirmRevoke] = useState(false);
+  const isRevoked = submission.revoked_at != null;
   const isReviewed = submission.status === "revisada";
 
   function toggleStatus() {
@@ -632,25 +635,32 @@ function SubmissionCard({
     });
   }
 
+  function handleRevoke() {
+    startTransition(async () => {
+      await revokeSubmission(submission.id);
+      await onChanged();
+      setConfirmRevoke(false);
+    });
+  }
+
   const ccaaLabel = CCAA_LABELS[submission.profile_response.ccaa as CCAACode] ?? submission.profile_response.ccaa;
 
+  const badgeClass = isRevoked
+    ? "inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 line-through"
+    : isReviewed
+      ? "inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700"
+      : "inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700";
+  const badgeLabel = isRevoked ? "Revocada" : isReviewed ? "Revisada" : "Pendiente";
+
   return (
-    <div className="border border-gray-100 rounded-lg">
+    <div className={isRevoked ? "border border-gray-100 rounded-lg opacity-70" : "border border-gray-100 rounded-lg"}>
       <button
         type="button"
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-gray-50"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span
-            className={
-              isReviewed
-                ? "inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700"
-                : "inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700"
-            }
-          >
-            {isReviewed ? "Revisada" : "Pendiente"}
-          </span>
+          <span className={badgeClass}>{badgeLabel}</span>
           <div className="min-w-0">
             <p className="text-sm font-medium text-brand-navy truncate">{submission.full_name}</p>
             <p className="text-[11px] text-text-muted font-mono">
@@ -687,17 +697,46 @@ function SubmissionCard({
               className="text-xs px-2 py-1.5 border border-gray-200 rounded resize-none"
             />
           </label>
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={toggleStatus}
-              disabled={isPending}
-              className="text-xs font-medium px-3 py-1.5 rounded bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {isPending ? "Guardando…" : isReviewed ? "Marcar como pendiente" : "Marcar como revisada"}
-            </button>
+          {isRevoked && submission.revoked_at && (
+            <div className="text-[11px] text-text-muted bg-gray-50 border border-gray-200 rounded p-2">
+              Revocada el {new Date(submission.revoked_at).toLocaleDateString("es-ES")}.
+              El familiar puede volver a rellenar el formulario con el mismo enlace y DNI.
+            </div>
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            {!isRevoked && (
+              <button
+                type="button"
+                onClick={() => setConfirmRevoke(true)}
+                disabled={isPending}
+                className="text-xs px-3 py-1.5 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                Revocar para que rellene otra vez
+              </button>
+            )}
+            {!isRevoked && (
+              <button
+                type="button"
+                onClick={toggleStatus}
+                disabled={isPending}
+                className="text-xs font-medium px-3 py-1.5 rounded bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {isPending ? "Guardando…" : isReviewed ? "Marcar como pendiente" : "Marcar como revisada"}
+              </button>
+            )}
           </div>
         </div>
+      )}
+
+      {confirmRevoke && (
+        <ConfirmDialog
+          title="Revocar declaración"
+          message={`Se descartará esta declaración de ${submission.full_name} y podrá volver a rellenarla con el mismo enlace y DNI. Los datos enviados se conservan como histórico pero no se mostrarán como activos. ¿Continuar?`}
+          confirmLabel="Revocar"
+          destructive
+          onConfirm={async () => handleRevoke()}
+          onCancel={() => setConfirmRevoke(false)}
+        />
       )}
     </div>
   );
