@@ -17,6 +17,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/") ||
+    pathname.startsWith("/renta/") ||
     pathname === "/unauthorized" ||
     pathname === "/select-company" ||
     pathname === "/app/select-company" ||
@@ -28,6 +29,12 @@ export async function middleware(request: NextRequest) {
     }
     if (isProdDomain && pathname === "/select-department") {
       return NextResponse.rewrite(new URL(`/admin/select-department`, request.url));
+    }
+    // /renta/* es público: si llega por admin.leanfinance.es lo redirigimos
+    // al subdominio app, que es el que aparece en los emails.
+    if (pathname.startsWith("/renta/") && isAdminHost) {
+      const target = new URL(pathname + request.nextUrl.search, APP_URL);
+      return NextResponse.redirect(target);
     }
     return NextResponse.next({ request });
   }

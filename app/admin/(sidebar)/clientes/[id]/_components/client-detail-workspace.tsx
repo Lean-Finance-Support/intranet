@@ -91,6 +91,9 @@ const ServiceDetailSection = dynamic(
 const DashboardSheetPanel = dynamic(
   () => import("@/components/clients/dashboard-sheet-panel"),
 );
+const RentaAdminPanel = dynamic(
+  () => import("@/components/clients/renta-admin-panel"),
+);
 
 interface Props {
   detail: CompanyDetailInfo;
@@ -456,6 +459,9 @@ export default function ClientDetailWorkspace({
     (s) => s.service_slug === SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE
   );
   const hasTaxAccountingAdvice = !!taxAdviceService;
+  const hasDeclaracionRenta = company.services.some(
+    (s) => s.service_slug === SERVICE_SLUGS.DECLARACION_RENTA
+  );
   const canEditDashboardSheet =
     canEditCompany &&
     !!taxAdviceService?.department_id &&
@@ -1245,7 +1251,7 @@ export default function ClientDetailWorkspace({
             Para consultar o rellenar una vez.
           </p>
 
-          {hasTaxAccountingAdvice ? (
+          {hasTaxAccountingAdvice && (
             <FeatureCard
               icon={
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
@@ -1272,10 +1278,30 @@ export default function ClientDetailWorkspace({
                 </div>
               }
             />
-          ) : (
+          )}
+
+          {hasDeclaracionRenta && (
+            <FeatureCard
+              icon={
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+              title="Declaración de la renta"
+              description="Formulario público que rellena cada familiar (incluido el cliente principal) con sus deducciones autonómicas."
+              unlockedBy="Declaración de la renta"
+              extra={
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <RentaAdminPanel companyId={company.id} />
+                </div>
+              }
+            />
+          )}
+
+          {!hasTaxAccountingAdvice && !hasDeclaracionRenta && (
             <EmptyFeaturesState
               message="Esta empresa todavía no tiene informes desbloqueados."
-              hint="Contrata 'Asesoramiento fiscal y contable' para habilitar el Dashboard fiscal."
+              hint="Contrata 'Asesoramiento fiscal y contable' o 'Declaración de la renta' para habilitar informes."
             />
           )}
         </div>

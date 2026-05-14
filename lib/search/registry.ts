@@ -69,6 +69,14 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     icon: "briefcase",
     keywords: ["servicios", "catalogo", "catálogo", "oferta", "productos"],
   },
+  {
+    id: "admin:renta",
+    space: "admin",
+    label: "Declaraciones de la renta",
+    path: "/clientes",
+    icon: "document",
+    keywords: ["renta", "irpf", "declaración", "deducciones", "ccaa", "modelo 100"],
+  },
 
   // Cliente
   {

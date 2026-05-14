@@ -18,6 +18,7 @@ export interface SearchableCompany {
   company_name: string | null;
   has_dashboard_service: boolean;
   has_tax_models_service: boolean;
+  has_declaracion_renta_service: boolean;
 }
 
 export interface SearchContext {

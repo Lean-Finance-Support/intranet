@@ -57,6 +57,7 @@ export default async function AppSidebarLayout({
     company_name: c.company_name,
     has_dashboard_service: false,
     has_tax_models_service: false,
+    has_declaracion_renta_service: false,
   }));
 
   return (

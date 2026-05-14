@@ -54,6 +54,12 @@ export const SERVICE_SLUGS = {
    * "Dashboard fiscal" para el cliente.
    */
   TAX_ACCOUNTING_ADVICE: "asesoramiento-fiscal-y-contable",
+  /**
+   * Servicio "Declaración de la renta" (modelo 100). Habilita el feature
+   * card en el tab "Informes / Formularios" de la ficha del cliente, con
+   * la gestión de DNIs autorizados y el link público del formulario.
+   */
+  DECLARACION_RENTA: "declaracion-renta",
 } as const;
 
 export type ServiceSlug = (typeof SERVICE_SLUGS)[keyof typeof SERVICE_SLUGS];
@@ -62,6 +68,7 @@ export type ServiceSlug = (typeof SERVICE_SLUGS)[keyof typeof SERVICE_SLUGS];
 // La UI del catálogo bloquea editar el slug de estos servicios.
 export const LOAD_BEARING_SERVICE_SLUGS: ReadonlySet<string> = new Set([
   SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE,
+  SERVICE_SLUGS.DECLARACION_RENTA,
 ]);
 
 export interface ServiceCatalogItem extends Service {

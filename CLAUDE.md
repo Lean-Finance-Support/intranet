@@ -164,6 +164,7 @@ Trigger en `tax_notifications` llama a edge functions via `net.http_post`. La UR
 `supabase/` es la fuente de verdad del schema y las edge functions. Ver `supabase/README.md` para detalles.
 
 - **Migraciones**: `supabase/migrations/YYYYMMDDhhmmss_<slug>.sql`. Aplicar con `supabase db push` (usa management API, solo necesita `SUPABASE_ACCESS_TOKEN`). Nunca tocar schema desde el dashboard.
+- **GRANTs en `public` desde el 30-oct-2026**: cualquier `create table public.<x>` nueva requiere GRANT explícito a `authenticated` y `service_role` (y `anon` si aplica) — sin ello la Data API la oculta. Detalle y patrón en `supabase/README.md`. Tablas existentes no se ven afectadas.
 - **Edge functions**: `supabase/functions/<slug>/index.ts`. Deploy con `supabase functions deploy <slug> --project-ref <ref>`.
 - **Config por entorno**: tras aplicar migraciones en un proyecto nuevo, insertar en `public.app_settings` la `supabase_url` y `webhook_secret`. Secrets de edge functions (`RESEND_API_KEY`, `WEBHOOK_SECRET`) via `supabase secrets set`.
 - **pg_net**: debe estar instalado (la migración `20260414120100_parametrize_notifications.sql` lo crea). Sin él los triggers de notificación fallan con "schema 'net' does not exist".
