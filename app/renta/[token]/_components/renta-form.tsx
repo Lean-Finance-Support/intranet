@@ -130,7 +130,13 @@ function DniStep({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleVerify();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+    >
       <header>
         <h1 className="text-xl font-semibold text-brand-navy">Formulario de la declaración de la renta</h1>
         <p className="text-sm text-text-muted mt-1">
@@ -154,14 +160,13 @@ function DniStep({
         </div>
       )}
       <button
-        type="button"
-        onClick={handleVerify}
+        type="submit"
         disabled={isPending || dni.length === 0}
         className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
       >
         {isPending ? "Verificando…" : "Continuar"}
       </button>
-    </div>
+    </form>
   );
 }
 
@@ -193,7 +198,13 @@ function ProfileStep({
     profile.ccaa && profile.birth_date && profile.civil_status && profile.disability_pct !== undefined && housing != null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canAdvance) onNext();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6"
+    >
       <header>
         <p className="text-xs uppercase tracking-wider text-text-muted">Paso 2 de 4</p>
         <h1 className="text-xl font-semibold text-brand-navy mt-1">Tus datos</h1>
@@ -245,15 +256,14 @@ function ProfileStep({
           ← Atrás
         </button>
         <button
-          type="button"
-          onClick={onNext}
+          type="submit"
           disabled={!canAdvance}
           className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
         >
           Continuar
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -533,7 +543,13 @@ function DeductionsStep({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onNext();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+    >
       <header>
         <p className="text-xs uppercase tracking-wider text-text-muted">Paso 3 de 4</p>
         <h1 className="text-xl font-semibold text-brand-navy mt-1">
@@ -611,14 +627,13 @@ function DeductionsStep({
           ← Atrás
         </button>
         <button
-          type="button"
-          onClick={onNext}
+          type="submit"
           className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90"
         >
           Revisar y enviar
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -747,7 +762,13 @@ function ReviewStep({
   const selectedDeductions = applicableDeductions.filter((d) => d.id in deductionsResponse);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!isPending) handleSubmit();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+    >
       <header>
         <p className="text-xs uppercase tracking-wider text-text-muted">Paso 4 de 4</p>
         <h1 className="text-xl font-semibold text-brand-navy mt-1">Revisión y envío</h1>
@@ -803,15 +824,14 @@ function ReviewStep({
           ← Atrás
         </button>
         <button
-          type="button"
-          onClick={handleSubmit}
+          type="submit"
           disabled={isPending}
           className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
         >
           {isPending ? "Enviando…" : "Enviar declaración"}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 

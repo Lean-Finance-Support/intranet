@@ -102,7 +102,7 @@ Deno.serve(async (req: Request) => {
     .map((p) => firstName((p.full_name as string | null) ?? null, p.email as string))
     .filter(Boolean);
 
-  const subject = `Declaración de la renta — formulario para ${companyName}`;
+  const subject = `Formulario de deducciones fiscales para la declaración de la renta — Lean Finance`;
   const html = buildHtml({
     companyName,
     publicUrl,
@@ -200,7 +200,7 @@ function buildHtml(ctx: {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Declaración de la renta — ${escapeHtml(ctx.companyName)}</title>
+  <title>Formulario de deducciones fiscales para la declaración de la renta — Lean Finance</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:40px 16px;">
@@ -215,7 +215,8 @@ function buildHtml(ctx: {
           <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0f2444;line-height:1.3;">Formulario para preparar tu declaración</h1>
 
           <p style="margin:0 0 14px;font-size:15px;color:#4b5563;line-height:1.6;">${greeting}</p>
-          <p style="margin:0 0 14px;font-size:15px;color:#4b5563;line-height:1.6;">Para preparar la declaración de la renta de <strong>${escapeHtml(ctx.companyName)}</strong> hemos habilitado un formulario donde cada persona rellena su perfil y sus deducciones autonómicas.</p>
+          <p style="margin:0 0 14px;font-size:15px;color:#4b5563;line-height:1.6;">Como parte del servicio contratado por <strong>${escapeHtml(ctx.companyName)}</strong>, hemos habilitado un formulario para ver a qué deducciones fiscales tiene derecho cada persona que vaya a presentar su declaración de la renta con Lean Finance. Cada persona rellena su perfil y sus deducciones autonómicas con su propio DNI.</p>
+          <p style="margin:0 0 14px;font-size:15px;color:#4b5563;line-height:1.6;">Comparte este enlace con las personas que vayan a presentar su declaración con nosotros a través de tu contratación.</p>
 
           <table cellpadding="0" cellspacing="0" style="margin:16px 0 24px;">
             <tr>
@@ -226,11 +227,11 @@ function buildHtml(ctx: {
           </table>
 
           <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#0f2444;">¿Quién puede usar este enlace?</p>
-          <p style="margin:0 0 12px;font-size:14px;color:#4b5563;line-height:1.6;">Tu asesor de Lean Finance ha dado de alta estos DNIs. Solo estas personas podrán rellenar el formulario (cada una con su propio DNI). Si falta alguien de tu familia, escríbenos para añadirlo.</p>
+          <p style="margin:0 0 12px;font-size:14px;color:#4b5563;line-height:1.6;">Tu asesor de Lean Finance ha dado de alta estos DNIs. Solo estas personas podrán rellenar el formulario (cada una con su propio DNI). Si falta alguna persona por añadir, escríbenos para incluirla.</p>
 
           ${filersList}
 
-          <p style="margin:24px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">Comparte el enlace con los familiares de la lista para que entren cada uno con su DNI. El enlace expira el <strong>${expires}</strong>.</p>
+          <p style="margin:24px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">Comparte el enlace con las personas de la lista para que entren cada una con su DNI. El enlace expira el <strong>${expires}</strong>.</p>
 
           <p style="margin:24px 0 0;font-size:13px;color:#9ca3af;line-height:1.5;">Si el botón no funciona, copia y pega este enlace:<br/><a href="${ctx.publicUrl}" style="color:#00B0B7;word-break:break-all;">${ctx.publicUrl}</a></p>
         </td></tr>
@@ -257,15 +258,17 @@ function buildText(ctx: {
       : "(Todavía no nos has indicado los DNIs.)";
   return `${greeting}
 
-Para preparar la declaración de la renta de ${ctx.companyName} hemos habilitado un formulario.
+Como parte del servicio contratado por ${ctx.companyName}, hemos habilitado un formulario para ver a qué deducciones fiscales tiene derecho cada persona que vaya a presentar su declaración de la renta con Lean Finance. Cada persona rellena su perfil y sus deducciones autonómicas con su propio DNI.
+
+Comparte este enlace con las personas que vayan a presentar su declaración con nosotros a través de tu contratación.
 
 Enlace al formulario:
 ${ctx.publicUrl}
 
-DNIs autorizados:
+DNIs autorizados (si falta alguna persona por añadir, escríbenos para incluirla):
 ${filersText}
 
-Comparte el enlace con los familiares de la lista para que entren cada uno con su DNI.
+Comparte el enlace con las personas de la lista para que entren cada una con su DNI.
 
 — Lean Finance · Asesoría fiscal y contable
 `;
