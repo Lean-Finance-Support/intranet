@@ -262,11 +262,22 @@ export async function sendRentaInvitationEmail(
   }
 
   // Invocar edge function.
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return { ok: false, error: "WEBHOOK_SECRET no configurado en el servidor." };
+  }
   const fnName = "notify-renta-invitation";
-  const { error } = await supabase.functions.invoke(fnName, {
+  const { data, error } = await supabase.functions.invoke(fnName, {
     body: { company_id: companyId, sent_by_id: user.id, to_profile_ids: profileIds },
+    headers: { "x-webhook-secret": webhookSecret },
   });
-  if (error) return { ok: false, error: error.message ?? "Error invocando email." };
+  if (error) {
+    console.error("[sendRentaInvitationEmail] invoke error:", error);
+    return { ok: false, error: error.message ?? "Error invocando email." };
+  }
+  if (data && typeof data === "object" && "error" in data) {
+    return { ok: false, error: String((data as { error: unknown }).error) };
+  }
   return { ok: true };
 }
 
