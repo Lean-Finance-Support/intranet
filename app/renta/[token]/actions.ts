@@ -3,6 +3,11 @@
 import { updateTag } from "next/cache";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
+import { invalidateNotifications } from "@/lib/actions/notifications";
+import {
+  fetchChiefsForDepartment,
+  fetchTechniciansForService,
+} from "@/lib/team-queries";
 import {
   findAuthorizedFiler,
   hasSubmissionForFiler,
@@ -13,6 +18,7 @@ import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { checkAndRecord } from "@/lib/renta/rate-limit";
 import { evaluateRule } from "@/lib/renta/rule-engine";
 import { validateProfile } from "@/lib/renta/profile-schema";
+import { SERVICE_SLUGS } from "@/lib/types/services";
 import type {
   RentaProfileResponse,
   SubmitRentaInput,
@@ -137,5 +143,92 @@ export async function submitRenta(input: SubmitRentaInput): Promise<SubmitRentaR
   }
 
   updateTag(`renta:submissions:${invitation.company_id}`);
+
+  // Notificación in-app a técnicos asignados (+ chiefs del dpto fallback)
+  // del servicio "Declaración de la renta". No bloqueamos la respuesta al
+  // cliente si falla — la submission ya está guardada.
+  try {
+    await notifyRentaSubmission({
+      companyId: invitation.company_id,
+      filerFullName: filerRow.full_name,
+      filerDni: filerRow.dni,
+    });
+  } catch (notifyErr) {
+    console.error("[renta/submit] notify error:", notifyErr);
+  }
+
   return { ok: true, submission_id: inserted!.id };
+}
+
+async function notifyRentaSubmission({
+  companyId,
+  filerFullName,
+  filerDni,
+}: {
+  companyId: string;
+  filerFullName: string;
+  filerDni: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+
+  const [{ data: company }, { data: service }] = await Promise.all([
+    admin
+      .from("companies")
+      .select("legal_name, company_name")
+      .eq("id", companyId)
+      .single(),
+    admin
+      .from("services")
+      .select("id")
+      .eq("slug", SERVICE_SLUGS.DECLARACION_RENTA)
+      .single(),
+  ]);
+
+  if (!service?.id) {
+    console.error("[renta/submit] servicio declaracion-renta no encontrado");
+    return;
+  }
+
+  const recipients = new Set<string>();
+
+  const techs = await fetchTechniciansForService(admin, companyId, service.id);
+  for (const t of techs) recipients.add(t.profile_id);
+
+  // Fallback: chiefs de los dptos a los que pertenece el servicio
+  if (recipients.size === 0) {
+    const { data: deptLinks } = await admin
+      .from("department_services")
+      .select("department_id")
+      .eq("service_id", service.id);
+
+    const deptIds = [
+      ...new Set((deptLinks ?? []).map((d) => d.department_id as string)),
+    ];
+    for (const deptId of deptIds) {
+      const chiefs = await fetchChiefsForDepartment(admin, deptId);
+      for (const c of chiefs) recipients.add(c.profile_id);
+    }
+  }
+
+  if (recipients.size === 0) return;
+
+  const companyLabel =
+    (company?.company_name as string | null) ??
+    (company?.legal_name as string | null) ??
+    "Cliente";
+
+  const rows = [...recipients].map((recipientId) => ({
+    recipient_id: recipientId,
+    company_id: companyId,
+    title: `Nueva declaración recibida — ${filerFullName}`,
+    message: `${companyLabel}: ${filerFullName} (${filerDni}) ha enviado el formulario de declaración de la renta.`,
+    link: `/clientes/${companyId}?tab=informes`,
+  }));
+
+  const { error } = await admin.from("notifications").insert(rows);
+  if (error) {
+    console.error("[renta/submit] notifications insert error:", error.code);
+    return;
+  }
+  await invalidateNotifications(rows.map((r) => r.recipient_id));
 }

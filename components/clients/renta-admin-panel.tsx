@@ -13,12 +13,15 @@ import {
   listSubmissions,
   setSubmissionStatus,
   updateSubmissionNotes,
+  getDeductionsCatalog,
 } from "@/app/admin/clientes/[id]/renta-actions";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { CCAA_LABELS, type CCAACode } from "@/lib/types/renta";
 import type {
   RentaAuthorizedFilerWithUsage,
+  RentaDeduction,
+  RentaExtraField,
   RentaInvitation,
   RentaSubmission,
 } from "@/lib/types/renta";
@@ -32,32 +35,37 @@ export default function RentaAdminPanel({ companyId }: Props) {
   const [filers, setFilers] = useState<RentaAuthorizedFilerWithUsage[]>([]);
   const [invitation, setInvitation] = useState<RentaInvitation | null>(null);
   const [submissions, setSubmissions] = useState<RentaSubmission[]>([]);
+  const [deductions, setDeductions] = useState<RentaDeduction[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const [f, inv, s] = await Promise.all([
+    const [f, inv, s, d] = await Promise.all([
       listAuthorizedFilers(companyId),
       getActiveInvitation(companyId),
       listSubmissions(companyId),
+      getDeductionsCatalog(),
     ]);
     setFilers(f);
     setInvitation(inv);
     setSubmissions(s);
+    setDeductions(d);
     setLoading(false);
   }, [companyId]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [f, inv, s] = await Promise.all([
+      const [f, inv, s, d] = await Promise.all([
         listAuthorizedFilers(companyId),
         getActiveInvitation(companyId),
         listSubmissions(companyId),
+        getDeductionsCatalog(),
       ]);
       if (cancelled) return;
       setFilers(f);
       setInvitation(inv);
       setSubmissions(s);
+      setDeductions(d);
       setLoading(false);
     })();
     return () => {
@@ -97,6 +105,7 @@ export default function RentaAdminPanel({ companyId }: Props) {
       ) : (
         <SubmissionsSection
           submissions={submissions}
+          deductionsCatalog={deductions}
           onChanged={refresh}
         />
       )}
@@ -555,12 +564,20 @@ function PublicLinkSection({
 
 function SubmissionsSection({
   submissions,
+  deductionsCatalog,
   onChanged,
 }: {
   submissions: RentaSubmission[];
+  deductionsCatalog: RentaDeduction[];
   onChanged: () => Promise<void>;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const catalogIndex = useMemo(() => {
+    const map = new Map<string, RentaDeduction>();
+    for (const d of deductionsCatalog) map.set(d.id, d);
+    return map;
+  }, [deductionsCatalog]);
+
   if (submissions.length === 0) {
     return (
       <p className="text-xs text-text-muted italic py-3">
@@ -574,6 +591,7 @@ function SubmissionsSection({
         <SubmissionCard
           key={s.id}
           submission={s}
+          deductionsIndex={catalogIndex}
           expanded={expandedId === s.id}
           onToggle={() => setExpandedId((id) => (id === s.id ? null : s.id))}
           onChanged={onChanged}
@@ -585,11 +603,13 @@ function SubmissionsSection({
 
 function SubmissionCard({
   submission,
+  deductionsIndex,
   expanded,
   onToggle,
   onChanged,
 }: {
   submission: RentaSubmission;
+  deductionsIndex: Map<string, RentaDeduction>;
   expanded: boolean;
   onToggle: () => void;
   onChanged: () => Promise<void>;
@@ -654,6 +674,7 @@ function SubmissionCard({
           <SubmissionProfileDump profile={submission.profile_response} />
           <SubmissionDeductionsDump
             deductionsResponse={submission.deductions_response}
+            deductionsIndex={deductionsIndex}
           />
           <label className="flex flex-col gap-1">
             <span className="text-[11px] font-medium text-text-muted">Notas internas</span>
@@ -730,8 +751,10 @@ function describeHousing(h: RentaSubmission["profile_response"]["housing"]): str
 
 function SubmissionDeductionsDump({
   deductionsResponse,
+  deductionsIndex,
 }: {
   deductionsResponse: Record<string, Record<string, unknown>>;
+  deductionsIndex: Map<string, RentaDeduction>;
 }) {
   const entries = Object.entries(deductionsResponse ?? {});
   if (entries.length === 0) {
@@ -748,24 +771,99 @@ function SubmissionDeductionsDump({
   }
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-2">
         Deducciones aplicables ({entries.length})
       </p>
       <ul className="space-y-2">
-        {entries.map(([deductionId, payload]) => (
-          <li key={deductionId} className="rounded border border-gray-100 p-2">
-            <p className="text-xs font-medium text-brand-navy">{deductionId}</p>
-            <dl className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
-              {Object.entries(payload).map(([k, v]) => (
-                <div key={k} className="flex gap-1.5">
-                  <dt className="text-text-muted">{k}:</dt>
-                  <dd className="text-brand-navy">{String(v)}</dd>
-                </div>
-              ))}
-            </dl>
-          </li>
-        ))}
+        {entries.map(([deductionId, payload]) => {
+          const def = deductionsIndex.get(deductionId);
+          const fieldsByKey = new Map<string, RentaExtraField>();
+          if (def) for (const f of def.extra_fields ?? []) fieldsByKey.set(f.key, f);
+
+          const payloadEntries = Object.entries(payload ?? {});
+
+          return (
+            <li
+              key={deductionId}
+              className="rounded-lg border border-gray-100 bg-white p-3"
+            >
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <p className="text-xs font-medium text-brand-navy leading-snug">
+                  {def?.title ?? deductionId}
+                </p>
+                <code className="text-[10px] font-mono text-text-muted/70 shrink-0">
+                  {deductionId}
+                </code>
+              </div>
+              {def?.summary && (
+                <p className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                  {def.summary}
+                </p>
+              )}
+              {payloadEntries.length > 0 && (
+                <dl
+                  className={
+                    "mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]" +
+                    (def?.summary ? " pt-2 border-t border-gray-50" : "")
+                  }
+                >
+                  {payloadEntries.map(([k, v]) => {
+                    const field = fieldsByKey.get(k);
+                    const label = field?.label ?? k;
+                    return (
+                      <div key={k} className="flex flex-col gap-0.5 min-w-0">
+                        <dt className="text-text-muted truncate">{label}</dt>
+                        <dd className="text-brand-navy font-medium break-words">
+                          {formatExtraFieldValue(v, field, label)}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
+}
+
+/**
+ * Formatea el valor de un extra_field para mostrarlo en el panel admin.
+ * - boolean → "Sí" / "No"
+ * - number → toLocaleString("es-ES") (miles + decimal coma); añade " €" si el
+ *   label sugiere euros ("€", "eur", "euros") — case-insensitive.
+ * - select → resuelve a `label` de la opción si existe.
+ * - resto → String(v) con "—" si vacío/null/undefined.
+ */
+function formatExtraFieldValue(
+  value: unknown,
+  field: RentaExtraField | undefined,
+  label: string,
+): string {
+  if (value === null || value === undefined || value === "") return "—";
+
+  const labelSuggestsEuro = /€|eur(o|os)?\b/i.test(label) || /€|eur(o|os)?\b/i.test(field?.key ?? "");
+
+  if (typeof value === "boolean" || field?.kind === "boolean") {
+    return value ? "Sí" : "No";
+  }
+
+  if (field?.kind === "number" || typeof value === "number") {
+    const num = typeof value === "number" ? value : Number(value);
+    if (!Number.isNaN(num)) {
+      const formatted = num.toLocaleString("es-ES", {
+        maximumFractionDigits: 2,
+      });
+      return labelSuggestsEuro ? `${formatted} €` : formatted;
+    }
+  }
+
+  if (field?.kind === "select" && field.options) {
+    const opt = field.options.find((o) => o.value === value);
+    if (opt) return opt.label;
+  }
+
+  return String(value);
 }

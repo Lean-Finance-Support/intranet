@@ -9,6 +9,7 @@ import { SERVICE_SLUGS } from "@/lib/types/services";
 import type {
   RentaAuthorizedFiler,
   RentaAuthorizedFilerWithUsage,
+  RentaDeduction,
   RentaInvitation,
   RentaSubmission,
   RentaSubmissionStatus,
@@ -321,6 +322,23 @@ export async function setSubmissionStatus(
   if (error) return { ok: false, error: error.message };
   if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
   return { ok: true };
+}
+
+/**
+ * Devuelve el catálogo completo de deducciones (todas las CCAA, activas e inactivas).
+ * Se usa en el panel admin para hacer lookup de id → title + extra_fields al
+ * pintar las submissions: las deducciones pueden haberse desactivado o cambiado
+ * pero seguir presentes en submissions antiguas.
+ */
+export async function getDeductionsCatalog(): Promise<RentaDeduction[]> {
+  await requireAdmin();
+  const supabase = createAdminClient().schema("renta");
+  const { data } = await supabase
+    .from("deductions")
+    .select("*")
+    .order("ccaa_code")
+    .order("display_order");
+  return (data as RentaDeduction[]) ?? [];
 }
 
 export async function updateSubmissionNotes(

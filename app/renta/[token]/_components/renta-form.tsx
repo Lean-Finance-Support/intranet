@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { submitRenta, verifyDni } from "../actions";
 import { evaluateRule } from "@/lib/renta/rule-engine";
-import { PROFILE_QUESTIONS, PROFILE_SECTIONS } from "@/lib/renta/profile-schema";
+import { PROFILE_QUESTIONS } from "@/lib/renta/profile-schema";
 import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { CCAA_LABELS, type CCAACode, type RentaDeduction, type RentaProfileResponse } from "@/lib/types/renta";
 
@@ -14,7 +14,23 @@ interface Props {
   deductions: RentaDeduction[];
 }
 
-type Step = "dni" | "profile" | "deductions" | "review" | "done";
+// Steps lineales del formulario. Cada step de perfil se reparte en una pantalla
+// temática (más cortas, menos abrumadoras). Tras el perfil viene un wizard
+// secuencial de deducciones (una por pantalla) y finalmente el review + done.
+type Step =
+  | "dni"
+  | "location"
+  | "personal"
+  | "family"
+  | "income"
+  | "deductions"
+  | "review"
+  | "done";
+
+// Total de "Paso X de N" mostrados al usuario en la cabecera. No incluye DNI
+// (que es la verificación previa) ni `done` (que es confirmación final).
+const TOTAL_PROFILE_STEPS = 5; // location, personal, family, income, deductions, review
+const TOTAL_STEPS = 6;
 
 export default function RentaForm({ token, deductions }: Props) {
   const [step, setStep] = useState<Step>("dni");
@@ -40,19 +56,52 @@ export default function RentaForm({ token, deductions }: Props) {
         onVerified={(filerId, name) => {
           setAuthorizedFilerId(filerId);
           setFullName(name);
-          setStep("profile");
+          setStep("location");
         }}
       />
     );
   }
 
-  if (step === "profile") {
+  if (step === "location") {
     return (
-      <ProfileStep
+      <LocationStep
         fullName={fullName}
         profile={profile}
         onChange={setProfile}
         onBack={() => setStep("dni")}
+        onNext={() => setStep("personal")}
+      />
+    );
+  }
+
+  if (step === "personal") {
+    return (
+      <PersonalStep
+        profile={profile}
+        onChange={setProfile}
+        onBack={() => setStep("location")}
+        onNext={() => setStep("family")}
+      />
+    );
+  }
+
+  if (step === "family") {
+    return (
+      <FamilyStep
+        profile={profile}
+        onChange={setProfile}
+        onBack={() => setStep("personal")}
+        onNext={() => setStep("income")}
+      />
+    );
+  }
+
+  if (step === "income") {
+    return (
+      <IncomeStep
+        profile={profile}
+        onChange={setProfile}
+        onBack={() => setStep("family")}
         onNext={() => setStep("deductions")}
       />
     );
@@ -60,12 +109,12 @@ export default function RentaForm({ token, deductions }: Props) {
 
   if (step === "deductions") {
     return (
-      <DeductionsStep
+      <DeductionsWizardStep
         deductions={applicableDeductions}
         ccaa={profile.ccaa!}
         deductionsResponse={deductionsResponse}
         onChange={setDeductionsResponse}
-        onBack={() => setStep("profile")}
+        onBack={() => setStep("income")}
         onNext={() => setStep("review")}
       />
     );
@@ -87,6 +136,69 @@ export default function RentaForm({ token, deductions }: Props) {
   }
 
   return <DoneStep fullName={fullName} />;
+}
+
+// ===========================================================================
+// Utilidades compartidas
+// ===========================================================================
+
+/**
+ * Devuelve la pregunta del schema declarativo por `key`. Tira si no existe
+ * (catch en dev: una key mal escrita debe explotar).
+ */
+function getQuestion(key: string) {
+  const q = PROFILE_QUESTIONS.find((q) => q.key === key);
+  if (!q) throw new Error(`Pregunta no encontrada: ${key}`);
+  return q;
+}
+
+function StepHeader({
+  stepNumber,
+  title,
+  description,
+}: {
+  stepNumber: number;
+  title: string;
+  description?: React.ReactNode;
+}) {
+  return (
+    <header>
+      <p className="text-xs uppercase tracking-wider text-text-muted">
+        Paso {stepNumber} de {TOTAL_STEPS}
+      </p>
+      <h1 className="text-xl font-semibold text-brand-navy mt-1">{title}</h1>
+      {description && <p className="text-sm text-text-muted mt-1">{description}</p>}
+    </header>
+  );
+}
+
+function StepFooter({
+  onBack,
+  canAdvance = true,
+  nextLabel = "Continuar",
+}: {
+  onBack: () => void;
+  canAdvance?: boolean;
+  nextLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-sm text-text-muted hover:text-brand-navy"
+      >
+        ← Atrás
+      </button>
+      <button
+        type="submit"
+        disabled={!canAdvance}
+        className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
+      >
+        {nextLabel}
+      </button>
+    </div>
+  );
 }
 
 // ===========================================================================
@@ -171,10 +283,10 @@ function DniStep({
 }
 
 // ===========================================================================
-// Step 2: Profile
+// Step 2: Ubicación + vivienda habitual
 // ===========================================================================
 
-function ProfileStep({
+function LocationStep({
   fullName,
   profile,
   onChange,
@@ -192,10 +304,7 @@ function ProfileStep({
   }
 
   const housing = profile.housing;
-
-  // Validación mínima para avanzar.
-  const canAdvance =
-    profile.ccaa && profile.birth_date && profile.civil_status && profile.disability_pct !== undefined && housing != null;
+  const canAdvance = !!profile.ccaa && !!housing;
 
   return (
     <form
@@ -203,69 +312,216 @@ function ProfileStep({
         e.preventDefault();
         if (canAdvance) onNext();
       }}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6"
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
     >
-      <header>
-        <p className="text-xs uppercase tracking-wider text-text-muted">Paso 2 de 4</p>
-        <h1 className="text-xl font-semibold text-brand-navy mt-1">Tus datos</h1>
-        <p className="text-sm text-text-muted mt-1">
-          Hola <span className="font-medium text-brand-navy">{fullName}</span>. Completa los siguientes
-          datos. Determinarán qué deducciones de tu comunidad autónoma podemos aplicarte.
-        </p>
-      </header>
+      <StepHeader
+        stepNumber={2}
+        title="¿Dónde resides?"
+        description={
+          <>
+            Hola <span className="font-medium text-brand-navy">{fullName}</span>. Tu comunidad
+            autónoma determina qué deducciones podemos aplicarte.
+          </>
+        }
+      />
 
-      {PROFILE_SECTIONS.map((section) => (
-        <section key={section.key} className="space-y-3">
-          <div>
-            <h2 className="text-sm font-semibold text-brand-navy">{section.title}</h2>
-            {section.description && (
-              <p className="text-xs text-text-muted mt-0.5">{section.description}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {PROFILE_QUESTIONS.filter((q) => q.section === section.key).map((q) => (
-              <ProfileField
-                key={q.key as string}
-                question={q}
-                value={(profile as Record<string, unknown>)[q.key as string]}
-                onChange={(v) => set(q.key as keyof RentaProfileResponse, v as never)}
-              />
-            ))}
-          </div>
-
-          {section.key === "familiar" && (
-            <KidsEditor
-              kids={profile.kids ?? []}
-              onChange={(kids) => set("kids", kids)}
-            />
-          )}
-
-          {section.key === "vivienda" && (
-            <HousingEditor housing={housing} onChange={(h) => set("housing", h)} />
-          )}
-        </section>
-      ))}
-
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-text-muted hover:text-brand-navy"
-        >
-          ← Atrás
-        </button>
-        <button
-          type="submit"
-          disabled={!canAdvance}
-          className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
-        >
-          Continuar
-        </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ProfileField
+          question={getQuestion("ccaa")}
+          value={profile.ccaa}
+          onChange={(v) => set("ccaa", v as CCAACode)}
+        />
+        <ProfileField
+          question={getQuestion("small_municipality")}
+          value={profile.small_municipality}
+          onChange={(v) => set("small_municipality", v as boolean)}
+        />
       </div>
+
+      <HousingEditor housing={housing} onChange={(h) => set("housing", h)} />
+
+      <StepFooter onBack={onBack} canAdvance={canAdvance} />
     </form>
   );
 }
+
+// ===========================================================================
+// Step 3: Datos personales
+// ===========================================================================
+
+function PersonalStep({
+  profile,
+  onChange,
+  onBack,
+  onNext,
+}: {
+  profile: Partial<RentaProfileResponse>;
+  onChange: (p: Partial<RentaProfileResponse>) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  function set<K extends keyof RentaProfileResponse>(key: K, value: RentaProfileResponse[K]) {
+    onChange({ ...profile, [key]: value });
+  }
+
+  const canAdvance = !!profile.birth_date && profile.disability_pct !== undefined;
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canAdvance) onNext();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+    >
+      <StepHeader
+        stepNumber={3}
+        title="Datos personales"
+        description="Solo dos datos básicos sobre ti."
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ProfileField
+          question={getQuestion("birth_date")}
+          value={profile.birth_date}
+          onChange={(v) => set("birth_date", v as string)}
+        />
+        <ProfileField
+          question={getQuestion("disability_pct")}
+          value={profile.disability_pct}
+          onChange={(v) =>
+            // disability_pct admite 0 como valor semántico (no discapacidad);
+            // pero también dejamos que el usuario lo borre y vuelva a tipear.
+            set("disability_pct", (v === undefined ? 0 : (v as number)))
+          }
+        />
+      </div>
+
+      <StepFooter onBack={onBack} canAdvance={canAdvance} />
+    </form>
+  );
+}
+
+// ===========================================================================
+// Step 4: Situación familiar
+// ===========================================================================
+
+function FamilyStep({
+  profile,
+  onChange,
+  onBack,
+  onNext,
+}: {
+  profile: Partial<RentaProfileResponse>;
+  onChange: (p: Partial<RentaProfileResponse>) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  function set<K extends keyof RentaProfileResponse>(key: K, value: RentaProfileResponse[K]) {
+    onChange({ ...profile, [key]: value });
+  }
+
+  const canAdvance = !!profile.civil_status;
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canAdvance) onNext();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+    >
+      <StepHeader
+        stepNumber={4}
+        title="Situación familiar"
+        description="Si tienes hijos a cargo, añádelos aquí."
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ProfileField
+          question={getQuestion("civil_status")}
+          value={profile.civil_status}
+          onChange={(v) => set("civil_status", v as RentaProfileResponse["civil_status"])}
+        />
+        <ProfileField
+          question={getQuestion("declaration_mode")}
+          value={profile.declaration_mode}
+          onChange={(v) =>
+            set("declaration_mode", v as RentaProfileResponse["declaration_mode"])
+          }
+        />
+        <ProfileField
+          question={getQuestion("monoparental")}
+          value={profile.monoparental}
+          onChange={(v) => set("monoparental", v as boolean)}
+        />
+        <ProfileField
+          question={getQuestion("large_family")}
+          value={profile.large_family}
+          onChange={(v) => set("large_family", v as RentaProfileResponse["large_family"])}
+        />
+      </div>
+
+      <KidsEditor kids={profile.kids ?? []} onChange={(kids) => set("kids", kids)} />
+
+      <StepFooter onBack={onBack} canAdvance={canAdvance} />
+    </form>
+  );
+}
+
+// ===========================================================================
+// Step 5: Ingresos + notas
+// ===========================================================================
+
+function IncomeStep({
+  profile,
+  onChange,
+  onBack,
+  onNext,
+}: {
+  profile: Partial<RentaProfileResponse>;
+  onChange: (p: Partial<RentaProfileResponse>) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  function set<K extends keyof RentaProfileResponse>(key: K, value: RentaProfileResponse[K]) {
+    onChange({ ...profile, [key]: value });
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onNext();
+      }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+    >
+      <StepHeader
+        stepNumber={5}
+        title="Ingresos"
+        description="Si no sabes la cifra exacta, déjala en blanco — tu asesor la completará."
+      />
+
+      <ProfileField
+        question={getQuestion("income_base")}
+        value={profile.income_base}
+        onChange={(v) => set("income_base", v as number | undefined as RentaProfileResponse["income_base"])}
+      />
+
+      <ProfileField
+        question={getQuestion("notes")}
+        value={profile.notes}
+        onChange={(v) => set("notes", v as string | undefined as RentaProfileResponse["notes"])}
+      />
+
+      <StepFooter onBack={onBack} canAdvance={true} nextLabel="Ver deducciones" />
+    </form>
+  );
+}
+
+// ===========================================================================
+// Campo de perfil genérico (renderiza una pregunta del schema declarativo)
+// ===========================================================================
 
 function ProfileField({
   question,
@@ -305,6 +561,8 @@ function ProfileField({
       ) : question.kind === "number" ? (
         <input
           type="number"
+          // value vacío cuando undefined/null: permite borrar y rellenar (fix
+          // del bug "no puedo borrar el 0" cuando el input se inicializaba a 0).
           value={value === undefined || value === null ? "" : String(value)}
           min={question.min}
           max={question.max}
@@ -401,8 +659,13 @@ function KidsEditor({
                 type="number"
                 min={0}
                 max={100}
-                value={k.disability_pct}
-                onChange={(e) => update(k.id, { disability_pct: Number(e.target.value) })}
+                // value vacío cuando undefined → permite borrar y rellenar.
+                value={k.disability_pct === undefined ? "" : String(k.disability_pct)}
+                onChange={(e) =>
+                  update(k.id, {
+                    disability_pct: e.target.value === "" ? 0 : Number(e.target.value),
+                  })
+                }
                 className="text-xs px-2 py-1 border border-gray-200 rounded"
               />
             </label>
@@ -445,7 +708,14 @@ function HousingEditor({
           value={type}
           onChange={(e) => {
             const v = e.target.value;
-            if (v === "alquiler") onChange({ type: "alquiler", monthly_rent_eur: 0, start_date: "" });
+            if (v === "alquiler")
+              // monthly_rent_eur undefined al inicio: el input se queda vacío
+              // y permite tipear sin tener que borrar el 0 (fix UX).
+              onChange({
+                type: "alquiler",
+                monthly_rent_eur: undefined as unknown as number,
+                start_date: "",
+              });
             else if (v === "propiedad")
               onChange({ type: "propiedad", is_habitual: true, acquisition_date: null });
             else if (v === "otro") onChange({ type: "otro" });
@@ -464,9 +734,21 @@ function HousingEditor({
             <span className="text-[11px] text-text-muted">Renta mensual (€)</span>
             <input
               type="number"
-              value={housing.monthly_rent_eur}
+              min={0}
+              // Mismo patrón "vacío cuando undefined" que en disability_pct.
+              value={
+                housing.monthly_rent_eur === undefined || housing.monthly_rent_eur === null
+                  ? ""
+                  : String(housing.monthly_rent_eur)
+              }
               onChange={(e) =>
-                onChange({ ...housing, monthly_rent_eur: Number(e.target.value) })
+                onChange({
+                  ...housing,
+                  monthly_rent_eur:
+                    e.target.value === ""
+                      ? (undefined as unknown as number)
+                      : Number(e.target.value),
+                })
               }
               className="text-xs px-2 py-1 border border-gray-200 rounded"
             />
@@ -510,10 +792,10 @@ function HousingEditor({
 }
 
 // ===========================================================================
-// Step 3: Deductions
+// Step 6: Wizard de deducciones (una pregunta por pantalla)
 // ===========================================================================
 
-function DeductionsStep({
+function DeductionsWizardStep({
   deductions,
   ccaa,
   deductionsResponse,
@@ -528,110 +810,207 @@ function DeductionsStep({
   onBack: () => void;
   onNext: () => void;
 }) {
-  function setField(deductionId: string, key: string, value: unknown) {
-    const current = deductionsResponse[deductionId] ?? {};
-    onChange({ ...deductionsResponse, [deductionId]: { ...current, [key]: value } });
+  // Índice de la deducción que se está mostrando. Si supera la longitud,
+  // saltamos a review. Si retrocede de 0, volvemos al step anterior (ingresos).
+  const [currentIdx, setCurrentIdx] = useState(0);
+  // Estado "¿te aplica?" pendiente para la pantalla actual cuando aún no se
+  // ha decidido (se inicializa undefined; al elegir Sí, se persiste y se
+  // muestran los extra_fields; al elegir No, se avanza directamente).
+  const [pendingApplies, setPendingApplies] = useState<boolean | undefined>(undefined);
+
+  // Caso borde: no hay deducciones aplicables → mostramos un mensaje y un único
+  // botón "Continuar al envío" que salta al review.
+  if (deductions.length === 0) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onNext();
+        }}
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+      >
+        <StepHeader
+          stepNumber={6}
+          title={`Deducciones de ${CCAA_LABELS[ccaa]}`}
+        />
+        <div className="text-sm text-text-muted bg-amber-50 border border-amber-200 rounded-lg p-4">
+          No detectamos deducciones autonómicas aplicables con los datos introducidos. Tu asesor
+          revisará igualmente tus datos por si encaja alguna deducción estatal o circunstancia
+          adicional.
+        </div>
+        <StepFooter onBack={onBack} canAdvance={true} nextLabel="Continuar" />
+      </form>
+    );
   }
-  function setApplies(deductionId: string, applies: boolean) {
-    if (applies) {
-      onChange({ ...deductionsResponse, [deductionId]: deductionsResponse[deductionId] ?? {} });
+
+  const deduction = deductions[currentIdx];
+  const savedResponse = deductionsResponse[deduction.id];
+  const alreadyDecided = savedResponse !== undefined;
+  // Resolución del estado mostrado: si ya se decidió antes, partimos de ese
+  // valor; si no, del pending state local.
+  const applies = alreadyDecided ? true : pendingApplies;
+
+  function goPrev() {
+    setPendingApplies(undefined);
+    if (currentIdx === 0) {
+      onBack();
     } else {
-      const next = { ...deductionsResponse };
-      delete next[deductionId];
-      onChange(next);
+      setCurrentIdx((i) => i - 1);
     }
   }
+
+  function goNext() {
+    setPendingApplies(undefined);
+    if (currentIdx + 1 >= deductions.length) {
+      onNext();
+    } else {
+      setCurrentIdx((i) => i + 1);
+    }
+  }
+
+  function acceptDeduction() {
+    // Marcar como aplicable: crea (o conserva) la entrada en el response map.
+    onChange({ ...deductionsResponse, [deduction.id]: savedResponse ?? {} });
+    setPendingApplies(true);
+  }
+
+  function rejectDeduction() {
+    // Marcar como no aplicable: borra la entrada y avanza.
+    const next = { ...deductionsResponse };
+    delete next[deduction.id];
+    onChange(next);
+    goNext();
+  }
+
+  function setField(key: string, value: unknown) {
+    const current = deductionsResponse[deduction.id] ?? {};
+    onChange({ ...deductionsResponse, [deduction.id]: { ...current, [key]: value } });
+  }
+
+  // Cuando se han marcado como aplicables Y se ha completado el formulario,
+  // permitimos avanzar.
+  const response = savedResponse ?? {};
+  const requiredFieldsOk = deduction.extra_fields
+    .filter((f) => f.required)
+    .every((f) => {
+      const v = response[f.key];
+      return v !== undefined && v !== null && v !== "";
+    });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onNext();
+        if (applies === true && requiredFieldsOk) goNext();
       }}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
     >
-      <header>
-        <p className="text-xs uppercase tracking-wider text-text-muted">Paso 3 de 4</p>
-        <h1 className="text-xl font-semibold text-brand-navy mt-1">
-          Deducciones de {CCAA_LABELS[ccaa]}
-        </h1>
-        <p className="text-sm text-text-muted mt-1">
-          Según los datos que has introducido, estas son las deducciones que potencialmente te aplican.
-          Marca las que correspondan y completa los campos requeridos.
-        </p>
-      </header>
+      <StepHeader
+        stepNumber={6}
+        title={`Deducciones de ${CCAA_LABELS[ccaa]}`}
+        description={
+          <>
+            Deducción {currentIdx + 1} de {deductions.length}
+          </>
+        }
+      />
 
-      {deductions.length === 0 ? (
-        <div className="text-sm text-text-muted bg-amber-50 border border-amber-200 rounded-lg p-4">
-          No detectamos deducciones autonómicas aplicables con los datos introducidos. Tu asesor
-          revisará igualmente tus datos por si encaja alguna deducción estatal o circunstancia
-          adicional. Puedes continuar.
-        </div>
-      ) : (
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold text-brand-navy">{deduction.title}</h2>
+        {deduction.summary && (
+          <p className="text-sm text-text-muted">{deduction.summary}</p>
+        )}
+        {deduction.legal_reference && (
+          <p className="text-[11px] text-text-muted/80 italic">{deduction.legal_reference}</p>
+        )}
+      </div>
+
+      {applies === undefined && (
         <div className="space-y-3">
-          {deductions.map((d) => {
-            const applies = d.id in deductionsResponse;
-            const response = deductionsResponse[d.id] ?? {};
-            return (
-              <div
-                key={d.id}
-                className={
-                  applies
-                    ? "border border-brand-teal/40 bg-brand-teal/5 rounded-lg p-3"
-                    : "border border-gray-100 rounded-lg p-3"
-                }
-              >
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={applies}
-                    onChange={(e) => setApplies(d.id, e.target.checked)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-brand-navy">{d.title}</p>
-                    {d.summary && (
-                      <p className="text-xs text-text-muted mt-0.5">{d.summary}</p>
-                    )}
-                    {d.legal_reference && (
-                      <p className="text-[11px] text-text-muted/80 italic mt-0.5">
-                        {d.legal_reference}
-                      </p>
-                    )}
-                  </div>
-                </label>
-                {applies && d.extra_fields.length > 0 && (
-                  <div className="mt-3 pl-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {d.extra_fields.map((field) => (
-                      <ExtraFieldInput
-                        key={field.key}
-                        field={field}
-                        value={response[field.key]}
-                        onChange={(v) => setField(d.id, field.key, v)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          <p className="text-sm font-medium text-brand-navy">¿Te aplica esta deducción?</p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={acceptDeduction}
+              className="flex-1 sm:flex-none text-sm font-medium py-3 px-6 rounded-lg bg-brand-teal text-white hover:opacity-90"
+            >
+              Sí, me aplica
+            </button>
+            <button
+              type="button"
+              onClick={rejectDeduction}
+              className="flex-1 sm:flex-none text-sm font-medium py-3 px-6 rounded-lg border border-gray-200 text-brand-navy hover:bg-gray-50"
+            >
+              No me aplica
+            </button>
+          </div>
+        </div>
+      )}
+
+      {applies === true && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs text-brand-teal">
+            <span className="inline-flex w-4 h-4 items-center justify-center rounded-full bg-brand-teal/15">
+              ✓
+            </span>
+            <span>Marcada como aplicable. Completa los datos abajo.</span>
+            <button
+              type="button"
+              onClick={() => {
+                // Permite cambiar de opinión y declarar la deducción como no
+                // aplicable: limpiamos respuestas y mostramos de nuevo el
+                // selector.
+                const next = { ...deductionsResponse };
+                delete next[deduction.id];
+                onChange(next);
+                setPendingApplies(undefined);
+              }}
+              className="ml-auto text-[11px] text-text-muted hover:underline"
+            >
+              cambiar
+            </button>
+          </div>
+
+          {deduction.extra_fields.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {deduction.extra_fields.map((field) => (
+                <ExtraFieldInput
+                  key={field.key}
+                  field={field}
+                  value={response[field.key]}
+                  onChange={(v) => setField(field.key, v)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-text-muted italic">
+              No hay datos adicionales que rellenar para esta deducción.
+            </p>
+          )}
         </div>
       )}
 
       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
         <button
           type="button"
-          onClick={onBack}
+          onClick={goPrev}
           className="text-sm text-text-muted hover:text-brand-navy"
         >
           ← Atrás
         </button>
-        <button
-          type="submit"
-          className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90"
-        >
-          Revisar y enviar
-        </button>
+        {applies === true ? (
+          <button
+            type="submit"
+            disabled={!requiredFieldsOk}
+            className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {currentIdx + 1 >= deductions.length ? "Revisar y enviar" : "Continuar"}
+          </button>
+        ) : (
+          <span className="text-xs text-text-muted">
+            Elige una opción para continuar
+          </span>
+        )}
       </div>
     </form>
   );
@@ -710,7 +1089,7 @@ function ExtraFieldInput({
 }
 
 // ===========================================================================
-// Step 4: Review + submit
+// Review + submit
 // ===========================================================================
 
 function ReviewStep({
@@ -770,7 +1149,9 @@ function ReviewStep({
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
     >
       <header>
-        <p className="text-xs uppercase tracking-wider text-text-muted">Paso 4 de 4</p>
+        <p className="text-xs uppercase tracking-wider text-text-muted">
+          Paso {TOTAL_PROFILE_STEPS + 1} de {TOTAL_STEPS}
+        </p>
         <h1 className="text-xl font-semibold text-brand-navy mt-1">Revisión y envío</h1>
         <p className="text-sm text-text-muted mt-1">
           Revisa los datos. Una vez envíes el formulario, no podrás editarlo — para correcciones tendrás
@@ -853,8 +1234,8 @@ function DoneStep({ fullName }: { fullName: string }) {
         contigo si necesita información adicional.
       </p>
       <p className="text-sm text-text-muted">
-        ¿Otro familiar también tiene que rellenar el formulario? Puede usar el mismo enlace en otro
-        dispositivo o pestaña con su DNI.
+        ¿Hay más personas que tienen que rellenar el formulario? Pueden usar este mismo enlace cada
+        una con su DNI.
       </p>
     </div>
   );

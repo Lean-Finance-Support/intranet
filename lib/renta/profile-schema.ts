@@ -41,13 +41,6 @@ export const PROFILE_QUESTIONS: ProfileQuestion[] = [
     options: ALL_CCAA.map((c) => ({ value: c, label: CCAA_LABELS[c] })),
   },
   {
-    key: "municipality",
-    label: "Municipio de residencia",
-    kind: "text",
-    required: false,
-    section: "ubicacion",
-  },
-  {
     key: "small_municipality",
     label: "¿Resides en un municipio pequeño o en riesgo de despoblación?",
     help_text: "Pueblos de menos de 5.000 habitantes. Activa deducciones específicas en muchas CCAA.",
