@@ -107,7 +107,10 @@ export interface RentaDeduction {
   id: string;
   ccaa_code: CCAACode;
   title: string;
-  summary: string | null;
+  /** Descripción de qué gastos/situaciones cubre. Render en tarjeta "Qué cubre". */
+  what_covers: string | null;
+  /** Array de strings con requisitos legibles. Render como checklist. */
+  requirements: string[];
   legal_reference: string | null;
   eligibility_rule: RentaRule;
   extra_fields: RentaExtraField[];

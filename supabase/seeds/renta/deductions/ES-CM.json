@@ -3,7 +3,14 @@
     "id": "clm-nacimiento-adopcion-hijos",
     "ccaa_code": "ES-CM",
     "title": "Por nacimiento o adopción de hijos",
-    "summary": "100 € por parto/adopción de un hijo, 500 € si son dos hijos, 900 € si son tres o más. Requiere base imponible (suma BI general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+    "what_covers": "Deducción por el nacimiento o la adopción de hijos durante el ejercicio. La cuantía aumenta cuando se trata de parto o adopción múltiple.",
+    "requirements": [
+      "Haber tenido un hijo por nacimiento o adopción durante el ejercicio.",
+      "Importes: 100 € por 1 hijo, 500 € por 2 hijos, 900 € por 3 o más hijos en un mismo parto/adopción.",
+      "Base imponible (general + ahorro) ≤ 27.000 € en declaración individual.",
+      "Base imponible (general + ahorro) ≤ 36.000 € en declaración conjunta.",
+      "Aportar nombre y fecha de nacimiento/adopción de los hijos."
+    ],
     "legal_reference": "Arts. 1 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -38,7 +45,14 @@
     "id": "clm-familia-numerosa",
     "ccaa_code": "ES-CM",
     "title": "Por familia numerosa",
-    "summary": "200 € (general) / 400 € (especial). Si algún cónyuge o descendiente con derecho a mínimo por discapacidad tiene grado ≥ 65%: 300 € (general) / 900 € (especial). Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con deducción autonómica por arrendamiento de vivienda habitual por familias numerosas.",
+    "what_covers": "Deducción a tanto alzado para contribuyentes con título de familia numerosa en vigor, con cuantías incrementadas si hay miembros con discapacidad reconocida ≥ 65%.",
+    "requirements": [
+      "Disponer de título de familia numerosa en vigor (general o especial).",
+      "Importes: 200 € familia numerosa general; 400 € especial.",
+      "Si algún cónyuge o descendiente con derecho a mínimo por discapacidad tiene grado ≥ 65%: 300 € (general) o 900 € (especial).",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Incompatible con la deducción autonómica por arrendamiento de vivienda habitual para familias numerosas."
+    ],
     "legal_reference": "Arts. 2 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -73,7 +87,14 @@
     "id": "clm-familia-monoparental",
     "ccaa_code": "ES-CM",
     "title": "Por familia monoparental",
-    "summary": "200 € anuales para el padre o madre que integre una familia monoparental. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con la deducción autonómica por arrendamiento de vivienda habitual por familias monoparentales.",
+    "what_covers": "Deducción fija anual para el padre o madre que constituya una familia monoparental con hijos a su cargo.",
+    "requirements": [
+      "Ser padre o madre que integre una familia monoparental.",
+      "Importe: 200 € anuales.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Incompatible con la deducción autonómica por arrendamiento de vivienda habitual para familias monoparentales.",
+      "Identificar a los hijos que integran la unidad monoparental."
+    ],
     "legal_reference": "Arts. 2 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -103,7 +124,14 @@
     "id": "clm-gastos-libros-idiomas-educacion",
     "ccaa_code": "ES-CM",
     "title": "Por gastos en la adquisición de libros de texto, enseñanza de idiomas y otros gastos relacionados con la educación",
-    "summary": "100% libros de texto + 15% enseñanza idiomas extraescolares, actividades de refuerzo, acceso a nuevas tecnologías y estudios fuera del municipio. Límites por hijo según base imponible (declaración individual o conjunta y condición de familia numerosa). Se minoran becas/ayudas recibidas.",
+    "what_covers": "Deducción por gastos educativos de hijos: libros de texto, idiomas extraescolares, actividades de refuerzo, acceso a nuevas tecnologías y estudios fuera del municipio.",
+    "requirements": [
+      "Tener hijos escolarizados por los que se aplique la deducción.",
+      "100% del gasto en libros de texto y 15% del resto de gastos (idiomas extraescolares, refuerzo, acceso a internet, residencia fuera del municipio).",
+      "Límites por hijo según base imponible (declaración individual o conjunta) y condición de familia numerosa.",
+      "Las cantidades se minoran por las becas o ayudas recibidas para los mismos conceptos.",
+      "Justificar los gastos con facturas a nombre del contribuyente."
+    ],
     "legal_reference": "Arts. 3 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -128,7 +156,15 @@
     "id": "clm-gastos-guarderia",
     "ccaa_code": "ES-CM",
     "title": "Por gastos de guardería",
-    "summary": "30% de las cantidades satisfechas por custodia de hijos menores de 3 años en guarderías o centros de educación infantil. Límite 500 € por hijo (250 € en el ejercicio en que cumple 3 años). Base imponible ≤ 27.000 € individual / 36.000 € conjunta.",
+    "what_covers": "Deducción por los gastos satisfechos a guarderías y centros de educación infantil por la custodia de hijos menores de 3 años.",
+    "requirements": [
+      "Tener hijos menores de 3 años (o que cumplan 3 años en el ejercicio).",
+      "30% de las cantidades pagadas a la guardería/centro de educación infantil.",
+      "Límite: 500 € por hijo (250 € en el ejercicio en que el hijo cumple 3 años).",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Necesario aportar el NIF del centro de educación infantil.",
+      "Las cantidades se minoran por las becas o ayudas recibidas."
+    ],
     "legal_reference": "Arts. 3 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -161,7 +197,14 @@
     "id": "clm-discapacidad-contribuyente",
     "ccaa_code": "ES-CM",
     "title": "Por discapacidad del contribuyente",
-    "summary": "300 € por cada contribuyente con discapacidad acreditada ≥ 65% y derecho al mínimo por discapacidad. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con la deducción 'Por discapacidad de ascendientes o descendientes', 'Para contribuyentes mayores de 75 años' y 'Por arrendamiento de vivienda habitual por personas con discapacidad' (sobre la misma persona).",
+    "what_covers": "Deducción a tanto alzado para contribuyentes con grado de discapacidad acreditado igual o superior al 65%.",
+    "requirements": [
+      "Tener un grado de discapacidad acreditado ≥ 65%.",
+      "Tener derecho a aplicar el mínimo por discapacidad en el IRPF.",
+      "Importe: 300 € por contribuyente.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Incompatible (sobre la misma persona) con 'Por discapacidad de ascendientes/descendientes', 'Para contribuyentes mayores de 75 años' y 'Por arrendamiento de vivienda habitual por personas con discapacidad'."
+    ],
     "legal_reference": "Arts. 4 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -192,7 +235,14 @@
     "id": "clm-discapacidad-ascendientes-descendientes",
     "ccaa_code": "ES-CM",
     "title": "Por discapacidad de ascendientes o descendientes",
-    "summary": "300 € por cada ascendiente o descendiente con discapacidad acreditada ≥ 65% que genere derecho al mínimo por discapacidad. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con 'Por discapacidad del contribuyente' (misma persona) y con 'Por el cuidado de ascendientes mayores de 75 años' cuando el ascendiente tenga ≥ 65% (en ese caso se aplica esta).",
+    "what_covers": "Deducción por cada ascendiente o descendiente del contribuyente con grado de discapacidad acreditado igual o superior al 65%.",
+    "requirements": [
+      "Convivir o tener a cargo ascendientes/descendientes con grado de discapacidad ≥ 65%.",
+      "Que dichos familiares generen el derecho al mínimo por discapacidad en el IRPF del contribuyente.",
+      "Importe: 300 € por cada ascendiente o descendiente que cumpla los requisitos.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Incompatible con 'Por discapacidad del contribuyente' (sobre la misma persona) y, cuando el ascendiente tenga ≥ 65%, se aplica esta y no la de 'cuidado de ascendientes mayores de 75 años'."
+    ],
     "legal_reference": "Arts. 5 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -222,7 +272,14 @@
     "id": "clm-contribuyentes-mayores-75",
     "ccaa_code": "ES-CM",
     "title": "Para contribuyentes mayores de 75 años",
-    "summary": "150 € para los contribuyentes mayores de 75 años. No aplica si reside más de 30 días en Centros Residenciales de Mayores subvencionados. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con 'Por discapacidad del contribuyente' (si el grado es ≥ 65%, se aplica la de discapacidad).",
+    "what_covers": "Deducción a tanto alzado para contribuyentes que hayan cumplido los 75 años durante el ejercicio.",
+    "requirements": [
+      "Tener 75 años o más a 31 de diciembre del ejercicio.",
+      "Importe: 150 € por contribuyente.",
+      "No haber residido más de 30 días durante el ejercicio en Centros Residenciales de Mayores subvencionados.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Incompatible con 'Por discapacidad del contribuyente' (si el grado es ≥ 65% se aplica la de discapacidad)."
+    ],
     "legal_reference": "Arts. 6.1 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -252,7 +309,14 @@
     "id": "clm-cuidado-ascendientes-mayores-75",
     "ccaa_code": "ES-CM",
     "title": "Por el cuidado de ascendientes mayores de 75 años",
-    "summary": "150 € por el cuidado de cada ascendiente mayor de 75 años que cause derecho al mínimo por ascendientes. No aplica si reside más de 30 días en Centros Residenciales de Mayores subvencionados. Base imponible ≤ 27.000 € individual / 36.000 € conjunta. Incompatible con 'Por discapacidad de ascendiente' si el grado es ≥ 65% (se aplica la de discapacidad).",
+    "what_covers": "Deducción por el cuidado de cada ascendiente del contribuyente que haya cumplido 75 años y conviva o esté a su cargo.",
+    "requirements": [
+      "Tener un ascendiente mayor de 75 años que genere el derecho al mínimo por ascendientes.",
+      "Importe: 150 € por cada ascendiente que cumpla los requisitos.",
+      "El ascendiente no debe haber residido más de 30 días en Centros Residenciales de Mayores subvencionados.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Incompatible con 'Por discapacidad de ascendiente' si el grado es ≥ 65% (se aplica la de discapacidad)."
+    ],
     "legal_reference": "Arts. 6.2 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -283,7 +347,14 @@
     "id": "clm-acogimiento-familiar-menores",
     "ccaa_code": "ES-CM",
     "title": "Por acogimiento familiar no remunerado de menores",
-    "summary": "500 € por el primer menor, 600 € por el segundo y sucesivos, en acogimiento familiar no remunerado o por delegación de guarda para convivencia preadoptiva, con convivencia superior a 183 días. Base imponible ≤ 12.500 € individual / 25.000 € conjunta.",
+    "what_covers": "Deducción por el acogimiento familiar no remunerado de menores o la delegación de guarda para la convivencia preadoptiva, con convivencia superior a la mitad del ejercicio.",
+    "requirements": [
+      "Tener formalizado un acogimiento familiar no remunerado (temporal, permanente) o delegación de guarda para convivencia preadoptiva.",
+      "Convivencia con el menor superior a 183 días en el ejercicio.",
+      "Importes: 500 € por el primer menor; 600 € por el segundo y sucesivos.",
+      "No haber recibido ayudas de la Junta de Comunidades vinculadas al acogimiento.",
+      "Base imponible (general + ahorro) ≤ 12.500 € individual / 25.000 € conjunta."
+    ],
     "legal_reference": "Art. 7 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -319,7 +390,16 @@
     "id": "clm-acogimiento-mayores-65-discapacidad",
     "ccaa_code": "ES-CM",
     "title": "Por acogimiento no remunerado de mayores de 65 años o con discapacidad",
-    "summary": "600 € por cada persona mayor de 65 años o con discapacidad ≥ 33% que conviva con el contribuyente más de 183 días en régimen de acogimiento sin contraprestación. Base imponible ≤ 12.500 € individual / 25.000 € conjunta. No aplica si hay vínculo de parentesco hasta el 4º grado.",
+    "what_covers": "Deducción por convivir, sin contraprestación, con personas mayores de 65 años o con discapacidad ≥ 33% en régimen de acogimiento.",
+    "requirements": [
+      "Convivir con la persona acogida más de 183 días durante el ejercicio.",
+      "La persona acogida debe ser mayor de 65 años o tener discapacidad ≥ 33%.",
+      "No mediar contraprestación económica por el acogimiento.",
+      "No existir vínculo de parentesco hasta el 4º grado con la persona acogida.",
+      "No haber recibido ayudas de la Junta de Comunidades vinculadas al acogimiento.",
+      "Importe: 600 € por cada persona acogida.",
+      "Base imponible (general + ahorro) ≤ 12.500 € individual / 25.000 € conjunta."
+    ],
     "legal_reference": "Art. 8 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -352,7 +432,15 @@
     "id": "clm-arrendamiento-vivienda-menores-36",
     "ccaa_code": "ES-CM",
     "title": "Por arrendamiento de vivienda habitual por menores de 36 años",
-    "summary": "15% de las cantidades pagadas por alquiler (máx. 500 €). Sube al 20% (máx. 612 €) si la vivienda está en municipio de ≤ 2.500 habitantes o en uno de 2.501-10.000 a más de 30 km de un municipio mayor de 50.000. Contribuyente < 36 años. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+    "what_covers": "Deducción por las cantidades satisfechas en concepto de alquiler de la vivienda habitual cuando el contribuyente tiene menos de 36 años, con porcentaje incrementado en municipios pequeños.",
+    "requirements": [
+      "Ser menor de 36 años al cierre del ejercicio.",
+      "Que la vivienda alquilada sea la habitual del contribuyente.",
+      "Aportar el NIF del arrendador.",
+      "15% de las cantidades pagadas, con un máximo de 500 €.",
+      "Porcentaje del 20% y máximo 612 € si la vivienda está en un municipio de ≤ 2.500 habitantes, o de 2.501-10.000 a más de 30 km de un municipio mayor de 50.000.",
+      "Base imponible (BI menos mínimo por descendientes) ≤ 12.500 € individual / 25.000 € conjunta."
+    ],
     "legal_reference": "Arts. 9 y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -386,7 +474,14 @@
     "id": "clm-arrendamiento-vivienda-dacion-pago",
     "ccaa_code": "ES-CM",
     "title": "Por arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
-    "summary": "15% de las cantidades satisfechas por el arrendamiento de la vivienda habitual cuando el contrato esté vinculado a una operación de adjudicación en pago de la totalidad de la deuda hipotecaria. Máximo 500 €. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+    "what_covers": "Deducción para quienes alquilan su vivienda habitual cuando el contrato de arrendamiento está vinculado a una operación de dación en pago de la totalidad de la deuda hipotecaria.",
+    "requirements": [
+      "Que la vivienda alquilada sea la habitual.",
+      "Que el contrato esté vinculado a una operación de adjudicación en pago de la totalidad de la deuda hipotecaria sobre esa misma vivienda.",
+      "Aportar el NIF del arrendador y la fecha de la dación en pago.",
+      "15% de las cantidades satisfechas, con un máximo de 500 €.",
+      "Base imponible (BI menos mínimo por descendientes) ≤ 12.500 € individual / 25.000 € conjunta."
+    ],
     "legal_reference": "Arts. 9 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -418,7 +513,15 @@
     "id": "clm-arrendamiento-vivienda-familias-numerosas",
     "ccaa_code": "ES-CM",
     "title": "Por arrendamiento de vivienda habitual por familias numerosas",
-    "summary": "15% de las cantidades satisfechas por arrendamiento de vivienda habitual (máximo 500 €). Familia numerosa con título vigente. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta. Incompatible con la deducción autonómica 'Por familia numerosa'.",
+    "what_covers": "Deducción por las cantidades pagadas en alquiler de vivienda habitual cuando el contribuyente tiene reconocida la condición de familia numerosa.",
+    "requirements": [
+      "Disponer de título de familia numerosa en vigor (general o especial).",
+      "Que la vivienda alquilada sea la habitual.",
+      "Aportar el NIF del arrendador.",
+      "15% de las cantidades satisfechas, con un máximo de 500 €.",
+      "Base imponible (BI menos mínimo por descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+      "Incompatible con la deducción autonómica 'Por familia numerosa'."
+    ],
     "legal_reference": "Arts. 9 ter y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -454,7 +557,15 @@
     "id": "clm-arrendamiento-vivienda-familias-monoparentales",
     "ccaa_code": "ES-CM",
     "title": "Por arrendamiento de vivienda habitual por familias monoparentales",
-    "summary": "15% de las cantidades satisfechas por arrendamiento de vivienda habitual (máximo 500 €). Padre o madre que integre una familia monoparental. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta. Incompatible con la deducción autonómica 'Por familia monoparental'.",
+    "what_covers": "Deducción por las cantidades satisfechas en alquiler de vivienda habitual para padres o madres que integren una familia monoparental.",
+    "requirements": [
+      "Ser padre o madre que integre una familia monoparental.",
+      "Que la vivienda alquilada sea la habitual.",
+      "Aportar el NIF del arrendador.",
+      "15% de las cantidades satisfechas, con un máximo de 500 €.",
+      "Base imponible (BI menos mínimo por descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+      "Incompatible con la deducción autonómica 'Por familia monoparental'."
+    ],
     "legal_reference": "Arts. 9 quater y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -486,7 +597,15 @@
     "id": "clm-arrendamiento-vivienda-discapacidad",
     "ccaa_code": "ES-CM",
     "title": "Por arrendamiento de vivienda habitual por personas con discapacidad",
-    "summary": "15% de las cantidades satisfechas por arrendamiento de vivienda habitual (máximo 500 €). Contribuyente con grado de discapacidad acreditado ≥ 65% y derecho al mínimo por discapacidad. Base imponible (BI - mínimo descendientes) ≤ 12.500 € individual / 25.000 € conjunta. Incompatible con 'Por discapacidad del contribuyente'.",
+    "what_covers": "Deducción por las cantidades satisfechas en alquiler de vivienda habitual para contribuyentes con grado de discapacidad acreditado ≥ 65%.",
+    "requirements": [
+      "Tener grado de discapacidad acreditado ≥ 65% y derecho al mínimo por discapacidad.",
+      "Que la vivienda alquilada sea la habitual.",
+      "Aportar el NIF del arrendador.",
+      "15% de las cantidades satisfechas, con un máximo de 500 €.",
+      "Base imponible (BI menos mínimo por descendientes) ≤ 12.500 € individual / 25.000 € conjunta.",
+      "Incompatible con la deducción 'Por discapacidad del contribuyente'."
+    ],
     "legal_reference": "Arts. 9 quinquies y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -519,7 +638,14 @@
     "id": "clm-donativos-cooperacion-internacional",
     "ccaa_code": "ES-CM",
     "title": "Por cantidades donadas para la cooperación internacional al desarrollo y a las entidades para la lucha contra la pobreza, la exclusión social y la ayuda a personas con discapacidad",
-    "summary": "15% de las donaciones dinerarias a ONG, fundaciones y asociaciones de ayuda a personas con discapacidad inscritas en los registros de Castilla-La Mancha. Base de la deducción ≤ 10% de la base liquidable.",
+    "what_covers": "Deducción por donaciones dinerarias a entidades dedicadas a cooperación internacional al desarrollo, lucha contra la pobreza y la exclusión social o ayuda a personas con discapacidad.",
+    "requirements": [
+      "Realizar donaciones dinerarias a ONG, fundaciones o asociaciones inscritas en los registros correspondientes de Castilla-La Mancha.",
+      "La entidad receptora debe tener como finalidad la cooperación internacional, la lucha contra la pobreza/exclusión social o la ayuda a personas con discapacidad.",
+      "Importe deducible: 15% de las cantidades donadas.",
+      "Base de la deducción limitada al 10% de la base liquidable del contribuyente.",
+      "Justificar la donación mediante certificado de la entidad receptora (NIF incluido)."
+    ],
     "legal_reference": "Art. 10 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -542,7 +668,13 @@
     "id": "clm-donaciones-investigacion-innovacion",
     "ccaa_code": "ES-CM",
     "title": "Por donaciones con finalidad en investigación y desarrollo científico e innovación empresarial",
-    "summary": "15% de donaciones dinerarias a la Junta de Comunidades de Castilla-La Mancha y entidades públicas dependientes, y a entidades sin fines lucrativos inscritas en CLM cuya finalidad sea I+D+i. Límite: 10% de la cuota íntegra autonómica.",
+    "what_covers": "Deducción por donaciones dinerarias destinadas a financiar actuaciones de investigación, desarrollo científico e innovación empresarial en Castilla-La Mancha.",
+    "requirements": [
+      "Donar a la Junta de Comunidades de CLM, a sus entidades públicas dependientes o a entidades sin fines lucrativos inscritas en CLM cuya finalidad sea I+D+i.",
+      "Importe deducible: 15% de las cantidades donadas.",
+      "Límite: 10% de la cuota íntegra autonómica del contribuyente.",
+      "Justificar la donación mediante certificado de la entidad receptora (NIF incluido)."
+    ],
     "legal_reference": "Art. 11 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -564,7 +696,14 @@
     "id": "clm-donaciones-patrimonio-cultural",
     "ccaa_code": "ES-CM",
     "title": "Por donaciones de bienes culturales y contribuciones para la conservación, reparación y restauración del patrimonio cultural de Castilla-La Mancha y para fines culturales (Plan de Mecenazgo Cultural)",
-    "summary": "15% de donaciones puras y simples de bienes inscritos en el Inventario del Patrimonio Cultural de CLM a la Junta, universidades, centros de investigación y entidades sin fines lucrativos culturales inscritas en CLM. 15% de cantidades para conservación/restauración del patrimonio. 15% para fines culturales del Plan de Mecenazgo Cultural (Ley 9/2019). Suma máxima: 10% de la base liquidable.",
+    "what_covers": "Deducción por donaciones de bienes inscritos en el Inventario del Patrimonio Cultural de CLM, así como por aportaciones para su conservación o para fines culturales del Plan de Mecenazgo Cultural.",
+    "requirements": [
+      "Realizar donaciones puras y simples a la Junta, universidades, centros de investigación o entidades sin fines lucrativos culturales inscritas en CLM.",
+      "Los bienes donados deben estar inscritos en el Inventario del Patrimonio Cultural de Castilla-La Mancha, o las aportaciones destinarse a su conservación/restauración o a fines del Plan de Mecenazgo Cultural (Ley 9/2019).",
+      "Importe deducible: 15% del importe donado o del valor de los bienes.",
+      "Límite conjunto con otras deducciones por donaciones: 10% de la base liquidable.",
+      "Justificar la donación con certificado de la entidad receptora."
+    ],
     "legal_reference": "Arts. 11 bis y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -587,7 +726,15 @@
     "id": "clm-intereses-financiacion-primera-vivienda-menores-40",
     "ccaa_code": "ES-CM",
     "title": "Por los gastos en intereses por la financiación ajena de la adquisición de primera vivienda habitual por menores de 40 años",
-    "summary": "100% de los intereses satisfechos por financiación ajena para la adquisición de la primera vivienda habitual. Contribuyente < 40 años, préstamo a interés variable, base imponible ≤ 27.000 € individual / 36.000 € conjunta. Límite 100-150 € por contribuyente según tramos de BI.",
+    "what_covers": "Deducción por los intereses pagados en el ejercicio derivados de un préstamo a interés variable para la adquisición de la primera vivienda habitual del contribuyente menor de 40 años.",
+    "requirements": [
+      "Ser menor de 40 años al cierre del ejercicio.",
+      "Que se trate de la primera vivienda habitual del contribuyente.",
+      "Que la financiación sea ajena y el préstamo se haya concertado a interés variable.",
+      "Importe deducible: 100% de los intereses pagados, con un límite entre 100 € y 150 € por contribuyente según el tramo de base imponible.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Indicar la entidad financiera prestamista."
+    ],
     "legal_reference": "Art. 12 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -622,7 +769,13 @@
     "id": "clm-residencia-zonas-rurales",
     "ccaa_code": "ES-CM",
     "title": "Por residencia habitual en zonas rurales",
-    "summary": "Porcentaje de la cuota íntegra autonómica (10%-25%) según el tipo de zona rural (intensa/extrema/riesgo de despoblación o intermedia agrícola) y la población del municipio (<2.000 o 2.000-5.000 hab.). Requiere residencia habitual y estancia efectiva en municipio de CLM incluido en las zonas reguladas por la Ley 2/2021.",
+    "what_covers": "Bonificación sobre la cuota íntegra autonómica para contribuyentes que residen habitualmente en municipios incluidos en zonas rurales con problemas de despoblación de Castilla-La Mancha.",
+    "requirements": [
+      "Tener residencia habitual durante el ejercicio en un municipio de CLM incluido en las zonas reguladas por la Ley 2/2021 (intensa/extrema/riesgo de despoblación o rural intermedia agrícola).",
+      "El porcentaje aplicable sobre la cuota íntegra autonómica varía entre el 10% y el 25% en función del tipo de zona y la población del municipio (<2.000 o 2.000-5.000 habitantes).",
+      "Para 'rural intermedia agrícola' el municipio debe tener menos de 2.000 habitantes y pérdida de población en el periodo 2016-2021.",
+      "Acreditar la estancia efectiva en el municipio (p. ej. tarjeta sanitaria o matrícula escolar)."
+    ],
     "legal_reference": "Art. 12 bis y D.A. segunda Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -648,7 +801,16 @@
     "id": "clm-adquisicion-rehabilitacion-vivienda-zonas-rurales",
     "ccaa_code": "ES-CM",
     "title": "Por adquisición o rehabilitación de la vivienda habitual en zonas rurales",
-    "summary": "15% de las cantidades satisfechas por adquisición o rehabilitación de la vivienda habitual en municipios de zonas escasamente pobladas (Ley 2/2021) con población < 5.000 hab. Adquisición/rehabilitación a partir del 1 de enero de 2021. Base máxima total: 180.000 € (por todos los ejercicios); base máxima anual: 12.000 €. Requiere incremento patrimonial equivalente.",
+    "what_covers": "Deducción por las cantidades pagadas para adquirir, construir o rehabilitar la vivienda habitual situada en un municipio de CLM incluido en zonas escasamente pobladas (Ley 2/2021).",
+    "requirements": [
+      "Que la vivienda esté en un municipio de CLM con población inferior a 5.000 habitantes incluido en zonas escasamente pobladas.",
+      "Que se trate de la vivienda habitual del contribuyente.",
+      "Adquisición, rehabilitación o construcción/ampliación iniciada a partir del 1 de enero de 2021.",
+      "Importe deducible: 15% de las cantidades satisfechas en el ejercicio.",
+      "Base máxima anual: 12.000 €. Base máxima total acumulada en todos los ejercicios: 180.000 €.",
+      "Requiere acreditar el correspondiente incremento patrimonial.",
+      "Minorar la base por las subvenciones de la Junta recibidas para la adquisición/rehabilitación."
+    ],
     "legal_reference": "Art. 12 ter y D.A. segunda Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -676,7 +838,15 @@
     "id": "clm-traslado-vivienda-habitual",
     "ccaa_code": "ES-CM",
     "title": "Por traslado de vivienda habitual",
-    "summary": "500 € en el período del traslado y en el siguiente, por trasladar la residencia habitual a un municipio de Castilla-La Mancha incluido en zonas escasamente pobladas (Ley 2/2021). Traslado por motivos laborales. Base liquidable < 22.946 € individual / 31.485 € conjunta. Permanencia 3 años posteriores.",
+    "what_covers": "Deducción a tanto alzado por trasladar la residencia habitual a un municipio de CLM incluido en zonas escasamente pobladas por motivos laborales, aplicable durante dos ejercicios.",
+    "requirements": [
+      "Trasladar la residencia habitual a un municipio de CLM incluido en zonas escasamente pobladas (Ley 2/2021).",
+      "Que el traslado se produzca por motivos laborales.",
+      "Comprometerse a permanecer en la nueva residencia los 3 años siguientes.",
+      "Importe: 500 € en el ejercicio del traslado y 500 € en el siguiente.",
+      "Base liquidable < 22.946 € en declaración individual y < 31.485 € en declaración conjunta.",
+      "Indicar municipio de destino y fecha del cambio de residencia."
+    ],
     "legal_reference": "Art. 12 quater y D.A. segunda Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -709,7 +879,17 @@
     "id": "clm-inversion-acciones-sociedades-mercantiles",
     "ccaa_code": "ES-CM",
     "title": "Por inversión en la adquisición de acciones y participaciones sociales como consecuencia de acuerdos de constitución de sociedades o ampliación de capital en las sociedades mercantiles",
-    "summary": "20% de las cantidades invertidas en la adquisición de acciones/participaciones en SA, SL, SAL, SLL o cooperativa con domicilio en CLM y actividad económica. Límite 4.000 €/año. Participación ≤ 40% (con entorno familiar), mantenimiento 3 años, sin funciones ejecutivas. Requisitos adicionales para constitución (plantilla ≥ 1) y ampliación (incremento plantilla).",
+    "what_covers": "Deducción para impulsar el emprendimiento: invertir en la constitución o ampliación de capital de sociedades mercantiles con domicilio social y actividad económica en Castilla-La Mancha.",
+    "requirements": [
+      "La inversión debe realizarse en acciones o participaciones de SA, SL, SAL, SLL o cooperativa.",
+      "La sociedad debe tener domicilio social y desarrollar actividad económica en CLM.",
+      "Importe deducible: 20% de las cantidades invertidas, con un máximo de 4.000 € anuales.",
+      "La participación del contribuyente (junto con la de su entorno familiar) no puede superar el 40% del capital.",
+      "Mantenimiento de la inversión durante al menos 3 años.",
+      "El contribuyente no puede ejercer funciones ejecutivas ni de dirección en la entidad.",
+      "Constitución: la sociedad debe tener plantilla ≥ 1 desde el inicio. Ampliación: debe producir incremento de plantilla.",
+      "Indicar NIF de la entidad participada, tipo de operación y fecha de la inversión."
+    ],
     "legal_reference": "Art. 12 sexies Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -738,7 +918,16 @@
     "id": "clm-inversion-economia-social",
     "ccaa_code": "ES-CM",
     "title": "Por inversión en entidades de la economía social",
-    "summary": "20% de las cantidades invertidas para ser socio de entidades de la economía social (Ley 5/2011) con domicilio en CLM. Límite 4.000 €/año. Participación ≤ 40% (con entorno familiar), mantenimiento 5 años, entidad con al menos un empleado a jornada completa. Incompatible con la deducción 'Por inversión en sociedades mercantiles'.",
+    "what_covers": "Deducción por las aportaciones realizadas para convertirse en socio de entidades de la economía social (Ley 5/2011) con domicilio en Castilla-La Mancha.",
+    "requirements": [
+      "Realizar una aportación dineraria para adquirir la condición de socio en una entidad de la economía social con domicilio en CLM.",
+      "Importe deducible: 20% de las cantidades invertidas, con un máximo de 4.000 € anuales.",
+      "La participación del contribuyente (incluido entorno familiar) no puede superar el 40%.",
+      "Mantenimiento de la inversión durante al menos 5 años.",
+      "La entidad debe contar al menos con un empleado a jornada completa dado de alta en la Seguridad Social.",
+      "Indicar NIF y denominación de la entidad y fecha de la aportación.",
+      "Incompatible con la deducción 'Por inversión en sociedades mercantiles'."
+    ],
     "legal_reference": "Art. 12 septies Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -759,7 +948,16 @@
     "id": "clm-ahorro-inversion-primera-vivienda",
     "ccaa_code": "ES-CM",
     "title": "Por ahorro-inversión en la adquisición o construcción de la primera vivienda habitual",
-    "summary": "15% de las cantidades depositadas en cuentas de entidades de crédito destinadas a la adquisición o construcción de la primera vivienda habitual en CLM, dentro de los 6 años desde la apertura. Deducción máxima total 3.000 € (anual 750 €). Contribuyente < 36 años. Base imponible ≤ 27.000 € individual / 36.000 € conjunta.",
+    "what_covers": "Deducción por las cantidades depositadas en cuentas vivienda de entidades de crédito destinadas a adquirir o construir la primera vivienda habitual en Castilla-La Mancha.",
+    "requirements": [
+      "Ser menor de 36 años al cierre del ejercicio.",
+      "Que la cuenta vivienda esté abierta en una entidad de crédito y los depósitos se destinen a la primera vivienda habitual en CLM.",
+      "La vivienda debe adquirirse o construirse dentro de los 6 años siguientes a la apertura de la cuenta.",
+      "Importe deducible: 15% de las cantidades depositadas en el ejercicio (máx. 750 €/año).",
+      "Deducción máxima total acumulada: 3.000 €.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta.",
+      "Indicar la entidad de crédito y la fecha de apertura de la cuenta."
+    ],
     "legal_reference": "Art. 12 octies Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [
@@ -792,7 +990,15 @@
     "id": "clm-perros-asistencia",
     "ccaa_code": "ES-CM",
     "title": "Por gastos derivados de controles veterinarios y vacunación por la tenencia de perros de asistencia",
-    "summary": "30% de las cantidades satisfechas por gastos veterinarios y vacunación (vacunaciones, desparasitación, esterilización y demás tratamientos obligatorios) de perros de asistencia oficialmente reconocidos. Límite 100 € anuales por contribuyente. Base imponible ≤ 27.000 € individual / 36.000 € conjunta.",
+    "what_covers": "Deducción por los gastos veterinarios y de vacunación obligatoria de perros de asistencia oficialmente reconocidos como tales por la Junta de Comunidades.",
+    "requirements": [
+      "Tener un perro de asistencia (guía, señalización de sonidos, servicio, aviso médico o para personas con TEA) con la unidad de vinculación reconocida por la Consejería competente (Ley 5/2018).",
+      "Los gastos elegibles son vacunaciones, desparasitación, esterilización y demás tratamientos veterinarios obligatorios.",
+      "Importe deducible: 30% de las cantidades satisfechas.",
+      "Límite: 100 € anuales por contribuyente.",
+      "Los gastos no pueden haber sido subvencionados.",
+      "Base imponible (general + ahorro) ≤ 27.000 € individual / 36.000 € conjunta."
+    ],
     "legal_reference": "Arts. 12 nonies y 13 Ley 8/2013 de la Comunidad Autónoma de Castilla-La Mancha, de Medidas Tributarias",
     "eligibility_rule": {
       "all_of": [

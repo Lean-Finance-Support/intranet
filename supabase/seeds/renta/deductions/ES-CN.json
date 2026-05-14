@@ -3,7 +3,14 @@
     "id": "can-donaciones-ecologicas",
     "ccaa_code": "ES-CN",
     "title": "Por donaciones con finalidad ecológica",
-    "summary": "10% de donaciones dinerarias puras y simples con finalidad ecológica a entidades públicas o sin fines lucrativos canarias. Límite: 10% de la cuota íntegra autonómica o 150 € por contribuyente.",
+    "what_covers": "Donaciones dinerarias puras y simples con finalidad ecológica realizadas a entidades públicas canarias o a entidades sin fines lucrativos.",
+    "requirements": [
+      "Deducción del 10% del importe donado",
+      "Donación dineraria, pura y simple (sin contraprestación)",
+      "Entidad receptora: entidad pública dependiente de Canarias, cabildo o municipio; o entidad sin fines lucrativos (Ley 49/2002) inscrita en registros canarios",
+      "Justificación documental de la donación con NIF de la entidad receptora",
+      "Límite: 10% de la cuota íntegra autonómica o 150 € por contribuyente"
+    ],
     "legal_reference": "Art. 3 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -25,7 +32,14 @@
     "id": "can-donaciones-patrimonio-historico",
     "ccaa_code": "ES-CN",
     "title": "Por donaciones para la rehabilitación o conservación del patrimonio histórico de Canarias",
-    "summary": "20% de cantidades donadas a la rehabilitación o conservación de bienes inscritos en el Registro Canario de Bienes de Interés Cultural o en el Inventario de Bienes Muebles. Límite: 10% de la cuota íntegra autonómica o 150 € por contribuyente.",
+    "what_covers": "Donaciones destinadas a la rehabilitación o conservación de bienes del patrimonio histórico canario, inscritos en el Registro Canario de Bienes de Interés Cultural o en el Inventario de Bienes Muebles.",
+    "requirements": [
+      "Deducción del 20% de las cantidades donadas",
+      "El bien debe estar inscrito en el Registro Canario de Bienes de Interés Cultural o en el Inventario de Bienes Muebles",
+      "Entidades receptoras válidas: Administraciones Públicas, Iglesia católica o fundaciones reconocidas",
+      "Justificación documental de la donación y de la inscripción del bien",
+      "Límite: 10% de la cuota íntegra autonómica o 150 € por contribuyente"
+    ],
     "legal_reference": "Art. 4 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -44,7 +58,14 @@
     "id": "can-donaciones-fines-culturales-deportivos-investigacion",
     "ccaa_code": "ES-CN",
     "title": "Por donaciones y aportaciones para fines culturales, deportivos, investigación o docencia",
-    "summary": "15% del importe de donaciones y aportaciones para fines culturales, deportivos, de investigación o docencia a entidades públicas, universidades o empresas culturales/científicas/tecnológicas canarias. Bases máximas variables (3.000 € o 50.000 € según el destinatario). Límite global: 5% de la cuota íntegra autonómica.",
+    "what_covers": "Donaciones y aportaciones realizadas a entidades públicas, universidades o empresas culturales, científicas o tecnológicas canarias para fines culturales, deportivos, de investigación o docencia.",
+    "requirements": [
+      "Deducción del 15% del importe donado o aportado",
+      "Destinatarios válidos: Administración Pública canaria, corporación local o entidad pública canaria; empresa cultural o científica con fondos propios < 300.000 €; universidades, centros de investigación o centros superiores artísticos; universidades públicas canarias o centros artísticos públicos (fomento del acceso a educación superior); aportaciones de capital a empresas de base tecnológica de universidades canarias",
+      "Base máxima variable: 3.000 € o 50.000 € según el destinatario",
+      "Límite global: 5% de la cuota íntegra autonómica",
+      "Justificación documental con NIF de la entidad receptora"
+    ],
     "legal_reference": "Art. 4 bis Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -71,7 +92,15 @@
     "id": "can-donaciones-entidades-sin-animo-lucro",
     "ccaa_code": "ES-CN",
     "title": "Por donaciones a entidades sin ánimo de lucro",
-    "summary": "Deducción adicional a la estatal por donativos a entidades de la Ley 49/2002: 20% hasta 150 €; 15% sobre el resto; 17,5% si reiteración a la misma entidad. Base limitada al 10% de la base liquidable.",
+    "what_covers": "Donaciones realizadas a entidades sin ánimo de lucro acogidas a la Ley 49/2002, complementaria a la deducción estatal por donativos.",
+    "requirements": [
+      "20% sobre los primeros 150 € donados",
+      "15% sobre el importe restante",
+      "17,5% si hay reiteración de donaciones a la misma entidad por importe igual o superior en los 2 años anteriores",
+      "Entidad receptora acogida a la Ley 49/2002 (entidades sin ánimo de lucro)",
+      "Base de la deducción limitada al 10% de la base liquidable del contribuyente",
+      "Justificación documental con NIF de la entidad receptora"
+    ],
     "legal_reference": "Art. 4 ter Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -90,7 +119,14 @@
     "id": "can-restauracion-bienes-interes-cultural",
     "ccaa_code": "ES-CN",
     "title": "Por cantidades destinadas por sus titulares a la restauración, rehabilitación o reparación de bienes inmuebles declarados de interés cultural",
-    "summary": "10% de cantidades destinadas por titulares a la restauración, rehabilitación o reparación de inmuebles inscritos en el Registro Canario de Bienes de Interés Cultural. Límite 10% de la cuota íntegra autonómica (y 15% conjunto con otras deducciones de vivienda).",
+    "what_covers": "Cantidades destinadas por los titulares a la restauración, rehabilitación o reparación de bienes inmuebles inscritos en el Registro Canario de Bienes de Interés Cultural.",
+    "requirements": [
+      "Deducción del 10% de las cantidades destinadas en el ejercicio",
+      "El inmueble debe estar inscrito en el Registro Canario de Bienes de Interés Cultural",
+      "Las obras deben estar autorizadas por el órgano competente (Comunidad, Cabildo o Ayuntamiento)",
+      "El contribuyente debe ser titular del inmueble",
+      "Límite: 10% de la cuota íntegra autonómica (15% conjunto con otras deducciones de vivienda)"
+    ],
     "legal_reference": "Arts. 6 y 14 quater Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -109,7 +145,15 @@
     "id": "can-gastos-estudios-educacion-superior",
     "ccaa_code": "ES-CN",
     "title": "Por gastos de estudios de educación superior",
-    "summary": "1.800 € (o 1.920 € si base liquidable < 37.062 €) por descendiente que curse estudios de educación superior FUERA de su isla de residencia; 900 € si los cursa en la misma isla trasladando domicilio a vivienda alquilada/colegio mayor en otro municipio. Límite: 40% de la cuota íntegra autonómica. Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Gastos derivados de tener descendientes cursando estudios de educación superior fuera de la isla de residencia familiar (o en la misma isla con traslado de domicilio a otro municipio).",
+    "requirements": [
+      "1.800 € por descendiente que curse estudios de educación superior fuera de su isla de residencia",
+      "1.920 € si la base liquidable del contribuyente es inferior a 37.062 €",
+      "900 € si los estudios se cursan en la misma isla con traslado de domicilio a vivienda alquilada o colegio mayor en otro municipio",
+      "El descendiente debe generar derecho a mínimo por descendientes",
+      "Base imponible del contribuyente ≤ 46.455 € (tributación individual) o ≤ 61.770 € (conjunta)",
+      "Límite: 40% de la cuota íntegra autonómica"
+    ],
     "legal_reference": "Art. 7 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -145,7 +189,16 @@
     "id": "can-gastos-estudios-no-superiores",
     "ccaa_code": "ES-CN",
     "title": "Por gastos de estudios no superiores",
-    "summary": "100% de las cantidades pagadas por libros de texto, material didáctico, transporte, uniforme y comedores escolares en estudios de Infantil 1º/2º ciclo, educación básica y ESO postobligatoria. Límites: 133 € por el primer hijo + 66 € por cada uno adicional. Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Gastos satisfechos por libros de texto, material didáctico, transporte, uniformes y comedores escolares en estudios de Infantil (1º y 2º ciclo), educación básica y ESO postobligatoria de los hijos.",
+    "requirements": [
+      "Deducción del 100% de las cantidades pagadas, con límites por hijo",
+      "Conceptos elegibles: libros de texto, material didáctico, transporte escolar, uniforme y comedores escolares",
+      "Estudios cubiertos: Infantil 1º y 2º ciclo, educación básica y ESO postobligatoria",
+      "Límite: 133 € por el primer hijo + 66 € por cada hijo adicional",
+      "Las ayudas o subvenciones recibidas minoran la base de la deducción",
+      "Base imponible del contribuyente ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Justificación con factura"
+    ],
     "legal_reference": "Art. 7 bis Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -178,7 +231,14 @@
     "id": "can-traslado-otra-isla-actividad-laboral",
     "ccaa_code": "ES-CN",
     "title": "Por trasladar la residencia habitual a otra isla del Archipiélago para realizar una actividad laboral por cuenta ajena o una actividad económica",
-    "summary": "300 € en el período del traslado y en el siguiente, por trasladar la residencia habitual a otra isla canaria por motivo laboral. Permanencia en la isla de destino 3 años. Base imponible ≤ 46.455 € (indiv. 2025) / 61.770 € (conj.).",
+    "what_covers": "Traslado de la residencia habitual a otra isla del archipiélago canario por motivos laborales (cuenta ajena o actividad económica).",
+    "requirements": [
+      "Importe: 300 € en el ejercicio del traslado y en el siguiente",
+      "Motivo del traslado: actividad laboral por cuenta ajena o actividad económica",
+      "Permanencia mínima de 3 años en la isla de destino",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Documentar la fecha del traslado, la isla de origen y la de destino"
+    ],
     "legal_reference": "Art. 8 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -213,7 +273,16 @@
     "id": "can-inversion-nuevas-entidades",
     "ccaa_code": "ES-CN",
     "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
-    "summary": "20% (límite 4.000 €) en SA/SL; 30% (límite 6.000 €) en SAL/SLL/cooperativas o en sociedades de universidades/centros de investigación. Entidad con domicilio social y fiscal en Canarias, actividad económica, mantenimiento de 3 años y participación ≤ 40% (con entorno familiar).",
+    "what_covers": "Inversión mediante adquisición de acciones o participaciones sociales en entidades canarias de nueva o reciente creación, con domicilio social y fiscal en Canarias.",
+    "requirements": [
+      "20% del importe invertido en SA o SL (límite 4.000 €)",
+      "30% en SAL, SLL, cooperativas, o sociedades creadas/participadas por universidades o centros de investigación (límite 6.000 €)",
+      "La entidad debe tener domicilio social y fiscal en Canarias",
+      "La entidad debe ejercer una actividad económica (no mera tenencia de patrimonio)",
+      "Mantener la inversión durante al menos 3 años",
+      "Participación máxima (junto con cónyuge y parientes hasta 2º grado): 40% del capital",
+      "Documentar la fecha de la inversión y el NIF de la entidad participada"
+    ],
     "legal_reference": "Art. 9 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -238,7 +307,13 @@
     "id": "can-nacimiento-adopcion-hijos",
     "ccaa_code": "ES-CN",
     "title": "Por nacimiento o adopción de hijos",
-    "summary": "Por cada hijo nacido o adoptado: 265 € (1º/2º), 530 € (3º), 796 € (4º), 928 € (5º o sucesivo). Adicional si discapacidad ≥ 65%: 600 € (1º/2º) o 1.100 € (3º o posterior si conviven los anteriores con discapacidad). Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Nacimiento o adopción de hijos en el ejercicio, con importe creciente según el orden del hijo y un complemento adicional si el hijo nacido/adoptado tiene discapacidad reconocida.",
+    "requirements": [
+      "Importes por hijo nacido o adoptado: 265 € (1º o 2º), 530 € (3º), 796 € (4º), 928 € (5º o sucesivos)",
+      "Adicional 600 € (1º o 2º) o 1.100 € (3º o sucesivo, si conviven los anteriores con discapacidad) si el hijo tiene discapacidad física, psíquica o sensorial ≥ 65%",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Si ambos progenitores tienen derecho y tributan individualmente, la deducción se prorratea al 50%"
+    ],
     "legal_reference": "Art. 10 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -271,7 +346,14 @@
     "id": "can-discapacidad-mayores-65",
     "ccaa_code": "ES-CN",
     "title": "Por contribuyentes con discapacidad y mayores de 65 años",
-    "summary": "400 € por contribuyente con discapacidad ≥ 33% + 160 € por contribuyente mayor de 65 años (acumulables). Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Beneficio fiscal para contribuyentes que tienen reconocida discapacidad ≥ 33% o que son mayores de 65 años (acumulable si concurren ambas condiciones).",
+    "requirements": [
+      "400 € por contribuyente con discapacidad reconocida ≥ 33%",
+      "160 € por contribuyente mayor de 65 años a 31/12 del ejercicio",
+      "Las dos cuantías son acumulables si se cumplen ambas condiciones",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Disponer del certificado de discapacidad o equivalente"
+    ],
     "legal_reference": "Art. 11 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -308,7 +390,14 @@
     "id": "can-acogimiento-menores",
     "ccaa_code": "ES-CN",
     "title": "Por acogimiento de menores",
-    "summary": "330 € por cada menor en régimen de acogimiento familiar de urgencia, temporal o permanente (art. 173 bis CC), siempre que conviva todo el ejercicio (o prorrateo por días). No aplica si se adopta al menor en el ejercicio.",
+    "what_covers": "Acogimiento de menores en régimen de urgencia, temporal o permanente (art. 173 bis del Código Civil), siempre que el menor conviva con el contribuyente durante el ejercicio.",
+    "requirements": [
+      "330 € por cada menor acogido",
+      "Modalidad de acogimiento familiar: urgencia, temporal o permanente",
+      "Convivencia con el menor durante todo el ejercicio (o prorrateo por días de convivencia)",
+      "No procede si en el ejercicio se adopta al menor",
+      "Documentar la resolución administrativa de acogimiento"
+    ],
     "legal_reference": "Art. 11 bis Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -331,7 +420,14 @@
     "id": "can-familias-monoparentales",
     "ccaa_code": "ES-CN",
     "title": "Por familias monoparentales",
-    "summary": "133 € para el contribuyente con descendientes a su cargo que no conviva con otra persona (salvo ascendientes que generen mínimo). Descendientes menores o mayores con discapacidad sin rentas > 8.000 € anuales. Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Beneficio fiscal para el contribuyente que tenga a su cargo descendientes y no conviva con otra persona distinta a ellos (salvo ascendientes que generen derecho a mínimo).",
+    "requirements": [
+      "Importe: 133 €",
+      "Tener descendientes a cargo (menores, o mayores con discapacidad)",
+      "No convivir con otra persona distinta a los descendientes (se admite convivir con ascendientes que generen mínimo)",
+      "Los descendientes no deben obtener rentas anuales superiores a 8.000 €",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)"
+    ],
     "legal_reference": "Art. 11 ter Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -363,7 +459,15 @@
     "id": "can-gastos-custodia-guarderias",
     "ccaa_code": "ES-CN",
     "title": "Por gastos de custodia en guarderías",
-    "summary": "18% de las cantidades satisfechas por custodia en guarderías autorizadas, por descendientes menores de 3 años. Máximo 530 € anuales por descendiente. Rentas del contribuyente ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Cantidades satisfechas por la custodia en guarderías autorizadas de descendientes menores de 3 años.",
+    "requirements": [
+      "Deducción del 18% de las cantidades satisfechas por custodia",
+      "Descendiente menor de 3 años",
+      "La guardería debe estar autorizada (se requiere NIF)",
+      "Las ayudas exentas recibidas minoran la base de la deducción",
+      "Máximo: 530 € anuales por cada descendiente",
+      "Rentas del contribuyente ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)"
+    ],
     "legal_reference": "Art. 12 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -396,7 +500,14 @@
     "id": "can-familia-numerosa",
     "ccaa_code": "ES-CN",
     "title": "Por familia numerosa",
-    "summary": "597 € (general) o 796 € (especial). Si algún cónyuge/descendiente con mínimo personal/familiar tiene discapacidad ≥ 65%: 1.326 € (general) o 1.459 € (especial). Título expedido por el Gobierno de Canarias o equivalente.",
+    "what_covers": "Beneficio fiscal para contribuyentes con título de familia numerosa, con cuantía elevada si algún miembro de la unidad familiar tiene discapacidad reconocida.",
+    "requirements": [
+      "597 € si la familia numerosa es de categoría general",
+      "796 € si la familia numerosa es de categoría especial",
+      "1.326 € (general) o 1.459 € (especial) si algún cónyuge o descendiente con mínimo personal/familiar tiene discapacidad ≥ 65%",
+      "Disponer del título de familia numerosa expedido por el Gobierno de Canarias o documento equivalente",
+      "Si concurre el derecho en varios contribuyentes, se prorratea entre ellos"
+    ],
     "legal_reference": "Art. 13 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -419,7 +530,16 @@
     "id": "can-inversion-vivienda-habitual",
     "ccaa_code": "ES-CN",
     "title": "Por inversión en vivienda habitual",
-    "summary": "Porcentaje variable (5% / 3,5% — o 5,5% / 4% si <40 años) sobre cantidades pagadas para adquisición de vivienda habitual, según base imponible. Base máxima 6.000 € anuales. Aplica en condiciones del art. 68.1 Ley IRPF vigente a 1/1/2012. Límite conjunto 15% de la cuota íntegra autonómica con otras deducciones de vivienda.",
+    "what_covers": "Cantidades pagadas en el ejercicio para la adquisición o construcción de la vivienda habitual, con porcentaje variable según la base imponible y la edad del contribuyente.",
+    "requirements": [
+      "Porcentajes: 5% / 3,5% según base imponible (o 5,5% / 4% si el contribuyente es menor de 40 años)",
+      "Vivienda habitual en propiedad del contribuyente",
+      "Aplica en condiciones del art. 68.1 LIRPF vigente a 1/1/2012 (régimen transitorio de la deducción estatal)",
+      "Base máxima de la deducción: 6.000 € anuales",
+      "Base imponible del contribuyente inferior a 46.455 €",
+      "Las ayudas públicas exentas minoran la base",
+      "Límite conjunto: 15% de la cuota íntegra autonómica con otras deducciones de vivienda"
+    ],
     "legal_reference": "Arts. 14 y 14 quater Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -442,7 +562,16 @@
     "id": "can-obras-rehabilitacion-energetica",
     "ccaa_code": "ES-CN",
     "title": "Por obras de rehabilitación energética de la vivienda habitual",
-    "summary": "12% de cantidades satisfechas (mediante medios bancarios) por obras de rehabilitación energética de la vivienda habitual. Base máxima 7.000 € anuales. Límite 10% de la cuota íntegra autonómica (15% conjunto con otras deducciones de vivienda). Requiere certificados de eficiencia energética.",
+    "what_covers": "Cantidades satisfechas por obras de rehabilitación energética en la vivienda habitual del contribuyente (propiedad).",
+    "requirements": [
+      "Deducción del 12% de las cantidades satisfechas",
+      "Vivienda habitual en propiedad",
+      "Pago obligatorio por tarjeta, transferencia, cheque nominativo o ingreso en cuenta (no efectivo)",
+      "Requiere certificado de eficiencia energética previo y posterior a las obras",
+      "Las ayudas públicas exentas minoran la base de la deducción",
+      "Base máxima: 7.000 € anuales",
+      "Límite: 10% de la cuota íntegra autonómica (15% conjunto con otras deducciones de vivienda)"
+    ],
     "legal_reference": "Arts. 14 bis y 14 quater Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -466,7 +595,15 @@
     "id": "can-adecuacion-vivienda-discapacidad",
     "ccaa_code": "ES-CN",
     "title": "Por obras de adecuación de la vivienda habitual por personas con discapacidad",
-    "summary": "14% (18% si ≥ 65 años) de cantidades satisfechas en obras de adecuación de la vivienda habitual cuando el contribuyente tenga discapacidad ≥ 65%. También aplicable si la discapacidad la padece cónyuge, ascendientes o descendientes que convivan, sin rentas anuales > 35.735 €. Base máxima 15.000 € por contribuyente.",
+    "what_covers": "Obras de adecuación de la vivienda habitual cuando el contribuyente, su cónyuge, ascendiente o descendiente conviviente padece discapacidad ≥ 65%.",
+    "requirements": [
+      "Deducción del 14% de las cantidades satisfechas (18% si la persona con discapacidad es mayor de 65 años)",
+      "La discapacidad debe ser ≥ 65% en el contribuyente, su cónyuge, ascendiente o descendiente conviviente",
+      "Si la discapacidad la padece familiar (no contribuyente): convivencia y rentas anuales del familiar ≤ 35.735 €",
+      "Vivienda habitual del contribuyente",
+      "Se requiere resolución/certificado de la consejería competente acreditando la necesidad de las obras",
+      "Base máxima: 15.000 € por contribuyente"
+    ],
     "legal_reference": "Arts. 14 ter y 14 quater Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -492,7 +629,16 @@
     "id": "can-alquiler-vivienda-habitual",
     "ccaa_code": "ES-CN",
     "title": "Por alquiler de vivienda habitual",
-    "summary": "24% de cantidades pagadas por alquiler de vivienda habitual, máximo 740 €/año (760 € si <40 años o ≥75 años). El alquiler debe superar el 10% de la base imponible. Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Cantidades pagadas por el alquiler de la vivienda habitual del contribuyente.",
+    "requirements": [
+      "Deducción del 24% de las cantidades pagadas en el ejercicio",
+      "Máximo general: 740 €/año",
+      "Máximo ampliado a 760 €/año si el contribuyente es menor de 40 años o tiene 75 años o más",
+      "El importe pagado en alquiler debe ser superior al 10% de la base imponible",
+      "Vivienda habitual en régimen de alquiler",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Aportar NIF del arrendador y referencia catastral del inmueble"
+    ],
     "legal_reference": "Art. 15 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -529,7 +675,15 @@
     "id": "can-arrendamiento-dacion-pago",
     "ccaa_code": "ES-CN",
     "title": "Por arrendamiento de vivienda habitual vinculado a determinadas operaciones de dación en pago",
-    "summary": "25% de cantidades pagadas por el alquiler de la vivienda habitual, máximo 1.200 €/año, cuando el contribuyente transmitió previamente esa vivienda a la entidad financiera acreedora en dación en pago y continúa ocupándola en alquiler con opción de compra. Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Cantidades pagadas por alquiler de la vivienda habitual cuando el contribuyente transmitió previamente esa vivienda a la entidad financiera acreedora en dación en pago y continúa ocupándola en alquiler con opción de compra.",
+    "requirements": [
+      "Deducción del 25% de las cantidades pagadas",
+      "Haber transmitido la vivienda previamente a la entidad financiera acreedora (o filial inmobiliaria del grupo) en dación en pago",
+      "Continuar ocupando la misma vivienda como habitual en régimen de alquiler con opción de compra",
+      "Base máxima: 1.200 €/año",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Aportar fecha de la dación y datos de la entidad acreedora"
+    ],
     "legal_reference": "Art. 15 bis Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -562,7 +716,14 @@
     "id": "can-gastos-adecuacion-arrendamiento",
     "ccaa_code": "ES-CN",
     "title": "Por gastos derivados de la adecuación de un inmueble con destino al arrendamiento como vivienda habitual",
-    "summary": "10% de gastos de reparación, formalización del contrato, primas de seguros (daños e impagos) y certificados de eficiencia energética, en inmuebles destinados al arrendamiento como vivienda habitual. Límite 150 € por inmueble (deducción del arrendador).",
+    "what_covers": "Gastos del arrendador para poner un inmueble en condiciones de ser arrendado como vivienda habitual: reparación, formalización del contrato, seguros y certificados de eficiencia energética.",
+    "requirements": [
+      "Deducción del 10% de los gastos justificados con factura",
+      "Conceptos elegibles: reparación, formalización del contrato, primas de seguros (daños e impagos) y certificados de eficiencia energética",
+      "El inmueble debe destinarse al arrendamiento como vivienda habitual",
+      "Aportar NIF del prestador del servicio (obligatorio en gastos de reparación o conservación)",
+      "Límite: 150 € por inmueble"
+    ],
     "legal_reference": "Art. 15 ter Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -582,7 +743,17 @@
     "id": "can-primas-seguros-impago-alquiler",
     "ccaa_code": "ES-CN",
     "title": "Por gastos en primas de seguros de crédito para cubrir impagos de rentas de arrendamientos de vivienda (deducción del arrendador)",
-    "summary": "75% de las primas de seguros de crédito para cubrir impagos de rentas de arrendamiento de inmueble situado en Canarias destinado a vivienda. Máximo 150 €/año. Requiere contrato ≥ 1 año, depósito de fianza, declaración del rendimiento y renta mensual ≤ 800 €.",
+    "what_covers": "Primas pagadas por seguros de crédito que cubren impagos de rentas en el arrendamiento de un inmueble situado en Canarias destinado a vivienda (deducción para el arrendador).",
+    "requirements": [
+      "Deducción del 75% de las primas de seguro pagadas en el año",
+      "El inmueble arrendado debe estar situado en Canarias y destinarse a vivienda",
+      "Duración mínima del contrato de arrendamiento: 1 año",
+      "Renta mensual del arrendamiento ≤ 800 €",
+      "Constitución del depósito de la fianza ante el órgano competente",
+      "Declarar el rendimiento del arrendamiento en el IRPF",
+      "Aportar NIF del arrendatario y referencia catastral del inmueble",
+      "Máximo: 150 €/año"
+    ],
     "legal_reference": "Art. 15 quater Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -603,7 +774,16 @@
     "id": "can-puesta-mercado-arrendamiento",
     "ccaa_code": "ES-CN",
     "title": "Por la puesta de viviendas en el mercado de arrendamiento de viviendas habituales",
-    "summary": "1.000 € por cada inmueble situado en Canarias destinado al arrendamiento de vivienda habitual (Ley 29/1994 LAU), máximo 5 inmuebles. Deducción única en el primer ejercicio en que la vivienda sea arrendada. Contrato ≥ 3 años. Arrendatario no puede ser cónyuge/pariente hasta 3er grado.",
+    "what_covers": "Puesta en el mercado de inmuebles situados en Canarias destinados al arrendamiento de vivienda habitual conforme a la Ley 29/1994 LAU.",
+    "requirements": [
+      "1.000 € por cada inmueble puesto en arrendamiento como vivienda habitual",
+      "Máximo: 5 inmuebles por contribuyente",
+      "Inmueble situado en Canarias",
+      "Duración mínima del contrato pactada: 3 años",
+      "El arrendatario no puede ser cónyuge ni pariente del contribuyente hasta el 3er grado",
+      "El inmueble debe haber tenido imputación de renta inmobiliaria en el ejercicio anterior (o haberse adquirido y arrendado en los 6 meses siguientes)",
+      "Deducción única en el primer ejercicio en que la vivienda sea arrendada"
+    ],
     "legal_reference": "Art. 16 Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -624,7 +804,14 @@
     "id": "can-contribuyentes-desempleados",
     "ccaa_code": "ES-CN",
     "title": "Por contribuyentes desempleados",
-    "summary": "120 € para contribuyentes que perciban prestaciones de desempleo durante > 6 meses del ejercicio. Rendimientos íntegros del trabajo > 15.876 € e ≤ 22.000 €. Suma del resto de bases ≤ 1.600 €.",
+    "what_covers": "Beneficio fiscal para contribuyentes que perciben prestaciones de desempleo durante más de 6 meses del ejercicio y cumplen umbrales de rentas.",
+    "requirements": [
+      "Importe: 120 €",
+      "Estar en situación de desempleo durante más de 6 meses del ejercicio",
+      "Rendimientos íntegros del trabajo superiores a 15.876 € e iguales o inferiores a 22.000 €",
+      "Suma del resto de bases (general y del ahorro, excluyendo trabajo) no superior a 1.600 €",
+      "Aportar documentación del SEPE acreditando el desempleo"
+    ],
     "legal_reference": "Art. 16 bis Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -643,7 +830,15 @@
     "id": "can-gasto-enfermedad",
     "ccaa_code": "ES-CN",
     "title": "Por gasto de enfermedad (general)",
-    "summary": "12% de honorarios pagados a profesionales médicos/sanitarios (no farmacéuticos) por prevención, diagnóstico o tratamiento, salud dental, embarazo, accidentes e invalidez; y 12% en gafas/lentillas y aparatos para suplir deficiencias físicas. Límite 500 € indiv. / 700 € conj. (+100 € si ≥65 años o discapacidad ≥65%) cuando base ≤ 46.455 € (indiv.) / 61.770 € (conj.); 150 € por contribuyente en otro caso.",
+    "what_covers": "Honorarios pagados a profesionales médicos o sanitarios (no farmacéuticos) por prevención, diagnóstico o tratamiento, así como gastos en gafas, lentillas y aparatos para suplir deficiencias físicas.",
+    "requirements": [
+      "Deducción del 12% de los gastos pagados a profesionales médicos o sanitarios (no farmacéuticos)",
+      "Conceptos elegibles: prevención, diagnóstico, tratamiento, salud dental, embarazo, accidentes e invalidez",
+      "12% adicional en gastos por gafas graduadas, lentillas y aparatos para suplir deficiencias físicas",
+      "Límite si base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta): 500 € individual / 700 € conjunta (+100 € si el contribuyente tiene ≥ 65 años o discapacidad ≥ 65%)",
+      "Límite si la base supera los umbrales anteriores: 150 € por contribuyente",
+      "Aportar NIF de los prestadores de los servicios"
+    ],
     "legal_reference": "Art. 16 ter Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -663,7 +858,14 @@
     "id": "can-familiares-dependientes-discapacidad",
     "ccaa_code": "ES-CN",
     "title": "Por familiares dependientes con discapacidad",
-    "summary": "a) 600 € por cada ascendiente o descendiente con discapacidad ≥ 65% que genere mínimo por discapacidad. b) 20% de las cuotas a la Seguridad Social pagadas por un empleado de hogar destinado a la asistencia, cuando el familiar con discapacidad ≥ 65% necesite tercera persona. Límite 500 €/año. Base imponible ≤ 46.455 € (indiv.) / 61.770 € (conj.).",
+    "what_covers": "Beneficio fiscal por tener ascendientes o descendientes con discapacidad ≥ 65% a cargo, o por las cuotas a la Seguridad Social pagadas por un empleado de hogar destinado a su asistencia cuando necesiten tercera persona.",
+    "requirements": [
+      "Modalidad a) 600 € por cada ascendiente o descendiente con discapacidad ≥ 65% que genere mínimo por discapacidad",
+      "Modalidad b) 20% de las cuotas a la Seguridad Social pagadas por un empleado de hogar destinado a la asistencia del familiar con discapacidad ≥ 65% que necesite tercera persona",
+      "Límite en la modalidad b): 500 €/año",
+      "Base imponible ≤ 46.455 € (individual) o ≤ 61.770 € (conjunta)",
+      "Aportar detalle del parentesco, grado de discapacidad y, en su caso, NIF del empleado de hogar"
+    ],
     "legal_reference": "Art. 16 quater Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [
@@ -695,7 +897,15 @@
     "id": "can-empleados-hogar",
     "ccaa_code": "ES-CN",
     "title": "Por cuotas satisfechas a la Seguridad Social por la contratación de empleados o empleadas de hogar",
-    "summary": "20% de las cuotas a la Seguridad Social pagadas por un empleado del hogar familiar (Sistema Especial Empleados de Hogar) destinado a la vivienda habitual. Máximo 500 € anuales. Aplica si: hay mínimo por descendientes y rendimientos de trabajo/actividades, o si el contribuyente tiene ≥ 75 años, o si tiene > 65 años con discapacidad.",
+    "what_covers": "Cuotas a la Seguridad Social (Sistema Especial Empleados de Hogar) pagadas por la contratación de una persona empleada del hogar familiar destinada a la vivienda habitual del contribuyente.",
+    "requirements": [
+      "Deducción del 20% de las cuotas pagadas",
+      "Empleado dado de alta en el Sistema Especial de Empleados de Hogar de la Seguridad Social",
+      "El empleado debe estar destinado a la vivienda habitual del contribuyente",
+      "Procede si concurre alguna de estas circunstancias: i) el contribuyente genera mínimo por descendientes y obtiene rendimientos del trabajo o de actividades económicas; ii) el contribuyente tiene 75 años o más; iii) el contribuyente es mayor de 65 años con discapacidad (≥ 65% física/orgánica/sensorial o ≥ 33% cognitiva/psicosocial)",
+      "Aportar NIF/NIE del empleado de hogar",
+      "Máximo: 500 €/año"
+    ],
     "legal_reference": "Art. 16 quinquies Texto Refundido Decreto-Legislativo 1/2009 de la Comunidad Autónoma de Canarias",
     "eligibility_rule": {
       "all_of": [

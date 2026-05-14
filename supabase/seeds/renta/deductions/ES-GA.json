@@ -3,7 +3,14 @@
     "id": "gal-nacimiento-adopcion-hijos",
     "ccaa_code": "ES-GA",
     "title": "Por nacimiento o adopción de hijos",
-    "summary": "Por cada hijo nacido o adoptado conviviente: si base imponible total menos mínimo personal y familiar ≤ 22.000 €, 360 € (1º hijo), 1.200 € (2º), 2.400 € (3º y siguientes); si > 22.000 €, 300 €/hijo (360 € en parto múltiple). Incremento del 20% si reside en municipio < 5.000 habitantes. Aplica también en los dos ejercicios siguientes al nacimiento/adopción. Cuantías duplicadas si el hijo tiene discapacidad ≥ 33%.",
+    "what_covers": "Deducción por cada hijo nacido o adoptado conviviente con el contribuyente. Aplica en el ejercicio del nacimiento/adopción y en los dos siguientes.",
+    "requirements": [
+      "Hijo nacido o adoptado en el ejercicio (o en los dos anteriores) y que conviva con el contribuyente.",
+      "Si la base imponible total menos el mínimo personal y familiar ≤ 22.000 €: 360 € (1er hijo), 1.200 € (2º), 2.400 € (3º y siguientes).",
+      "Si la base imponible total menos el mínimo personal y familiar > 22.000 €: 300 €/hijo (360 € en parto o adopción múltiple).",
+      "Cuantías duplicadas si el hijo tiene una discapacidad ≥ 33%.",
+      "Incremento del 20% si la residencia habitual del contribuyente está en un municipio < 5.000 habitantes (o resultante de fusión/incorporación)."
+    ],
     "legal_reference": "Art. 5.Dos Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -24,7 +31,13 @@
     "id": "gal-familias-dos-hijos",
     "ccaa_code": "ES-GA",
     "title": "Para familias con dos hijos e hijas",
-    "summary": "250 € para contribuyentes con dos hijos que generen derecho al mínimo por descendientes (500 € si el contribuyente o algún hijo tiene discapacidad ≥ 65%). Incompatible con la deducción por familia numerosa.",
+    "what_covers": "Deducción a tanto alzado para contribuyentes con exactamente dos hijos que generen derecho al mínimo por descendientes.",
+    "requirements": [
+      "Tener dos hijos que den derecho al mínimo por descendientes.",
+      "Cuantía: 250 € con carácter general.",
+      "500 € si el contribuyente o alguno de los hijos tiene una discapacidad ≥ 65%.",
+      "Incompatible con la deducción autonómica por familia numerosa."
+    ],
     "legal_reference": "Art. 5.Tres.1 Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -42,7 +55,13 @@
     "id": "gal-familia-numerosa",
     "ccaa_code": "ES-GA",
     "title": "Por familia numerosa",
-    "summary": "250 € (general, hasta 2 hijos) o 400 € (categoría especial, hasta 2 hijos); +250 € adicional por cada hijo en el resto de los casos. Cuantías duplicadas (500/800 € y +500 €/hijo) si el contribuyente o algún descendiente tiene discapacidad ≥ 65%.",
+    "what_covers": "Deducción por ostentar la condición de familia numerosa, en categoría general o especial, en la fecha de devengo del impuesto.",
+    "requirements": [
+      "Disponer del título de familia numerosa en vigor a 31 de diciembre.",
+      "Categoría general: 250 € (hasta 2 hijos) + 250 € por cada hijo a partir del 3º.",
+      "Categoría especial: 400 € (hasta 2 hijos) + 250 € por cada hijo a partir del 3º.",
+      "Cuantías duplicadas (500 € / 800 € y +500 € por hijo adicional) si el contribuyente o algún descendiente tiene discapacidad ≥ 65%."
+    ],
     "legal_reference": "Art. 5.Tres.2 Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -66,7 +85,12 @@
     "id": "gal-acogimiento-menores",
     "ccaa_code": "ES-GA",
     "title": "Por acogimiento de menores",
-    "summary": "300 € por cada menor en régimen de acogimiento familiar simple, permanente, provisional o preadoptivo, administrativo o judicial. Requiere formalización por el órgano competente de la Xunta de Galicia.",
+    "what_covers": "Deducción por tener acogido a uno o varios menores en régimen de acogimiento familiar formalizado por la Xunta de Galicia.",
+    "requirements": [
+      "300 € por cada menor en régimen de acogimiento familiar (urgencia, temporal, permanente o delegación de guarda para convivencia preadoptiva).",
+      "Acogimiento formalizado por el órgano competente de la Xunta de Galicia, ya sea administrativo o judicial.",
+      "Convivencia del menor con el contribuyente durante más de 183 días del período impositivo (prorrateo si menos)."
+    ],
     "legal_reference": "Art. 5.Cuatro Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -90,7 +114,15 @@
     "id": "gal-cuidado-hijos-menores",
     "ccaa_code": "ES-GA",
     "title": "Por cuidado de hijos menores",
-    "summary": "30% de las cantidades satisfechas a una persona empleada del hogar o escuela infantil 0-3 años, por contribuyentes que por motivos de trabajo (cuenta propia o ajena) dejen a sus hijos ≤ 3 años al cuidado. Límite: 400 € (600 € con dos o más hijos ≤ 3 años). Suma de bases ≤ 22.000 € individual / 31.000 € conjunta.",
+    "what_covers": "Deducción para contribuyentes que, por motivos laborales, dejan a sus hijos menores de 3 años al cuidado de una persona empleada del hogar o una escuela infantil 0-3.",
+    "requirements": [
+      "30% de las cantidades satisfechas a empleada del hogar o escuela infantil 0-3 años.",
+      "Límite 400 € (600 € si hay dos o más hijos ≤ 3 años).",
+      "Hijos con edad igual o inferior a 3 años a la fecha de devengo.",
+      "Ambos progenitores (o el contribuyente en familias monoparentales) deben realizar actividad por cuenta propia o ajena con alta en SS o mutualidad.",
+      "Si es empleada del hogar, debe estar dada de alta en el Sistema Especial de Empleados del Hogar.",
+      "Suma de bases imponibles ≤ 22.000 € en tributación individual o ≤ 31.000 € en conjunta."
+    ],
     "legal_reference": "Art. 5.Cinco Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -126,7 +158,14 @@
     "id": "gal-discapacidad-65-ayuda-terceros",
     "ccaa_code": "ES-GA",
     "title": "Por contribuyentes con discapacidad, de edad igual o superior a 65 años, que precisen ayuda de terceras personas",
-    "summary": "10% de las cantidades satisfechas a terceros por contribuyentes ≥ 65 años con discapacidad ≥ 65% que precisen ayuda de terceras personas. Límite 600 €. Suma de bases ≤ 22.000 € individual / 31.000 € conjunta. No aplicable a usuarios de residencias públicas o concertadas de Galicia.",
+    "what_covers": "Deducción por las cantidades pagadas a terceros para ayudar al contribuyente mayor con discapacidad en su día a día.",
+    "requirements": [
+      "Contribuyente con edad ≥ 65 años a la fecha de devengo.",
+      "Grado de discapacidad ≥ 65% y necesidad de ayuda de terceras personas debidamente acreditada.",
+      "Deducción del 10% de las cantidades satisfechas, con límite de 600 €.",
+      "Suma de bases imponibles ≤ 22.000 € en individual o ≤ 31.000 € en conjunta.",
+      "No aplicable si el contribuyente es usuario de residencias públicas o concertadas de la Xunta de Galicia."
+    ],
     "legal_reference": "Art. 5.Seis Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -159,7 +198,15 @@
     "id": "gal-alquiler-vivienda-habitual",
     "ccaa_code": "ES-GA",
     "title": "Por alquiler de la vivienda habitual",
-    "summary": "10% de las cantidades pagadas por alquiler, con límite 300 €/contrato/año (20% y 600 € con dos o más hijos menores; cuantías duplicadas si el arrendatario tiene discapacidad ≥ 33%). Contribuyente ≤ 35 años, contrato posterior a 01/01/2003, fianza depositada en IGVS y suma de bases ≤ 22.000 €.",
+    "what_covers": "Deducción por las rentas pagadas por el contribuyente joven que vive de alquiler como vivienda habitual en Galicia.",
+    "requirements": [
+      "Contribuyente con edad ≤ 35 años a la fecha de devengo.",
+      "Contrato de arrendamiento posterior al 01/01/2003 y depósito de la fianza en el Instituto Gallego de la Vivienda y Suelo (IGVS).",
+      "Deducción del 10% de las cantidades pagadas, con límite de 300 € por contrato y año.",
+      "20% y límite 600 € si el contribuyente tiene dos o más hijos menores.",
+      "Cuantías y límites duplicados si el arrendatario tiene una discapacidad ≥ 33%.",
+      "Suma de bases imponibles ≤ 22.000 €."
+    ],
     "legal_reference": "Art. 5.Siete Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -184,7 +231,14 @@
     "id": "gal-nuevas-tecnologias-hogares-gallegos",
     "ccaa_code": "ES-GA",
     "title": "Por gastos dirigidos al uso de nuevas tecnologías en los hogares gallegos",
-    "summary": "30% de las cantidades satisfechas en el ejercicio por cuotas de alta y mensualidades para acceso a Internet por líneas de alta velocidad. Límite 100 €. Solo en el ejercicio en que se celebre el contrato; uso exclusivo del hogar (no vinculado a actividad empresarial).",
+    "what_covers": "Deducción por contratar el acceso a Internet de alta velocidad en el hogar familiar gallego, durante el ejercicio en que se firma el contrato.",
+    "requirements": [
+      "Deducción del 30% de las cuotas de alta y mensualidades pagadas por acceso a Internet por líneas de alta velocidad.",
+      "Límite máximo de 100 € por contribuyente.",
+      "Solo aplica en el ejercicio en que se celebre el contrato (no en años posteriores).",
+      "La línea debe destinarse al uso exclusivo del hogar, no vinculada a actividad económica.",
+      "No aplica si la contratación supone simplemente el cambio de proveedor o un upgrade del servicio anterior."
+    ],
     "legal_reference": "Art. 5.Ocho Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -204,7 +258,15 @@
     "id": "gal-inversion-acciones-nuevas-entidades",
     "ccaa_code": "ES-GA",
     "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
-    "summary": "30% de las cantidades invertidas en SA, SL, sociedades laborales y cooperativas (45% si la entidad es PYME innovadora, IEBT o participada por universidades/centros de investigación). Límite 6.000 € (9.000 € en incremento). Domicilio social y fiscal en Galicia, actividad económica y al menos un empleado a jornada completa con residencia en Galicia.",
+    "what_covers": "Deducción por suscribir acciones o participaciones en sociedades gallegas nuevas o de reciente creación que tienen actividad económica y empleo local.",
+    "requirements": [
+      "30% de las cantidades invertidas en SA, SL, sociedades laborales y cooperativas (45% si la entidad es PYME innovadora, IEBT o participada por universidades/centros de investigación).",
+      "Límite general 6.000 € (9.000 € con incremento).",
+      "La entidad debe tener domicilio social y fiscal en Galicia y desarrollar actividad económica.",
+      "La entidad debe contar al menos con una persona empleada a jornada completa con residencia habitual en Galicia.",
+      "Participación adquirida (incluido el entorno familiar) > 1% y ≤ 40% del capital.",
+      "La inversión debe documentarse en escritura pública y mantenerse durante al menos 3 años."
+    ],
     "legal_reference": "Art. 5.Nueve Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -234,7 +296,15 @@
     "id": "gal-inversion-acciones-nuevas-entidades-financiacion",
     "ccaa_code": "ES-GA",
     "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación y su financiación",
-    "summary": "30% de las cantidades invertidas, prestadas o garantizadas (45% si la entidad es PYME innovadora, IEBT o participada por universidades/centros de investigación). Límite conjunto 20.000 € (35.000 € en incremento). Domicilio social y fiscal en Galicia, actividad económica y un empleado a jornada completa con residencia en Galicia.",
+    "what_covers": "Deducción ampliada cuando, además de invertir en una entidad gallega nueva, el contribuyente la financia mediante préstamos o avales personales.",
+    "requirements": [
+      "30% de las cantidades invertidas, prestadas o garantizadas (45% si la entidad es PYME innovadora, IEBT o participada por universidades/centros de investigación).",
+      "Límite conjunto 20.000 € (35.000 € con incremento).",
+      "Tipos de operación admitidos: adquisición de acciones/participaciones, préstamo a la sociedad o aval/garantía personal.",
+      "Domicilio social y fiscal en Galicia y actividad económica efectiva.",
+      "Al menos un empleado a jornada completa con residencia habitual en Galicia.",
+      "Mantenimiento de la inversión/préstamo/garantía durante al menos 5 años."
+    ],
     "legal_reference": "Art. 5.Diez Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -264,7 +334,14 @@
     "id": "gal-inversion-mab-empresas-expansion",
     "ccaa_code": "ES-GA",
     "title": "Por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del mercado alternativo bursátil",
-    "summary": "15% de las cantidades invertidas en ampliaciones de capital suscritas en el segmento de empresas en expansión del MAB. Límite 4.000 € prorrateado en el ejercicio y los tres siguientes. Participación ≤ 10%, mantenimiento ≥ 3 años, entidad con domicilio social y fiscal en Galicia.",
+    "what_covers": "Deducción por suscribir acciones en ampliaciones de capital de sociedades gallegas cotizadas en el segmento de empresas en expansión del MAB.",
+    "requirements": [
+      "15% de las cantidades invertidas en ampliaciones de capital suscritas en el segmento de empresas en expansión del MAB.",
+      "Límite 4.000 €, prorrateado entre el ejercicio de la inversión y los tres siguientes.",
+      "La entidad debe tener domicilio social y fiscal en Galicia y desarrollar actividad económica.",
+      "Participación adquirida ≤ 10% del capital social.",
+      "Mantenimiento de las acciones durante al menos 3 años desde la adquisición."
+    ],
     "legal_reference": "Art. 5.Once Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -284,7 +361,14 @@
     "id": "gal-donaciones-investigacion-desarrollo",
     "ccaa_code": "ES-GA",
     "title": "Por donaciones con finalidad en investigación y desarrollo científico e innovación tecnológica",
-    "summary": "25% de donativos monetarios a centros de investigación adscritos a universidades gallegas o promovidos/participados por la Comunidad Autónoma con objeto de I+D+i, y a entidades sin ánimo de lucro acogidas a la Ley 49/2002 con consideración de organismo de investigación. Límite: 10% de la cuota íntegra autonómica.",
+    "what_covers": "Deducción por donativos monetarios destinados a I+D+i realizados a centros de investigación gallegos o entidades sin ánimo de lucro acreditadas como organismos de investigación.",
+    "requirements": [
+      "25% del importe donado en metálico.",
+      "Receptor: centro de investigación adscrito a una universidad gallega, centro promovido o participado por la Comunidad Autónoma de Galicia, o ESFL acogida a la Ley 49/2002 con consideración de organismo de investigación.",
+      "Finalidad expresa de I+D+i.",
+      "Límite máximo: 10% de la cuota íntegra autonómica.",
+      "Justificación documental del donativo (certificado de la entidad receptora)."
+    ],
     "legal_reference": "Art. 5.Doce Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -307,7 +391,15 @@
     "id": "gal-climatizacion-acs-renovables-autoconsumo",
     "ccaa_code": "ES-GA",
     "title": "Por inversión en instalaciones de climatización y/o agua caliente sanitaria que empleen energías renovables en la vivienda habitual y destinadas exclusivamente al autoconsumo",
-    "summary": "5% de las cantidades satisfechas por la instalación en la vivienda habitual de sistemas de climatización y/o ACS que utilicen energías renovables. Límite 280 €/contribuyente. Pago no en efectivo; instalación registrada en la OVI.",
+    "what_covers": "Deducción por instalar en la vivienda habitual sistemas de climatización y/o ACS basados en energías renovables, exclusivamente para autoconsumo.",
+    "requirements": [
+      "5% de las cantidades satisfechas por la instalación.",
+      "Límite 280 € por contribuyente.",
+      "Instalación realizada en la vivienda habitual del contribuyente.",
+      "Sistema dedicado exclusivamente al autoconsumo (no a venta de energía).",
+      "Pago acreditado por medios distintos al efectivo (transferencia, tarjeta, etc.).",
+      "Instalación registrada en la Oficina Virtual de Industria (OVI) con su código de verificación."
+    ],
     "legal_reference": "Art. 5.Trece Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -332,7 +424,14 @@
     "id": "gal-rehabilitacion-centros-historicos",
     "ccaa_code": "ES-GA",
     "title": "Por rehabilitación de bienes inmuebles situados en centros históricos",
-    "summary": "15% de las cantidades invertidas en la rehabilitación de inmuebles propiedad del contribuyente situados en los centros históricos delimitados por la Orden de 1 de marzo de 2018. Límite 9.000 € (mismo en tributación individual y conjunta). Obras con permisos administrativos.",
+    "what_covers": "Deducción por rehabilitar inmuebles propiedad del contribuyente situados en alguno de los centros históricos delimitados por la Orden de 1 de marzo de 2018.",
+    "requirements": [
+      "15% de las cantidades invertidas en la rehabilitación.",
+      "Límite 9.000 € (mismo importe en tributación individual y conjunta).",
+      "Inmueble propiedad del contribuyente situado en un centro histórico incluido en la Orden de 1/3/2018.",
+      "Obras realizadas con los permisos administrativos y licencias urbanísticas correspondientes.",
+      "Acreditación documental de la pertenencia al centro histórico (certificado municipal o referencia catastral)."
+    ],
     "legal_reference": "Art. 5.Catorce Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -353,7 +452,15 @@
     "id": "gal-inversion-empresas-actividades-agrarias",
     "ccaa_code": "ES-GA",
     "title": "Por inversión en empresas que desarrollen actividades agrarias",
-    "summary": "20% de las cantidades invertidas en sociedades de fomento forestal (Ley 7/2012), entidades agrarias, cooperativas agrarias o entidades de recuperación de tierras agrarias (Ley 11/2021): adquisición/ampliación de capital, préstamos, garantías o aportaciones en cuentas en participación. Límite conjunto 20.000 €. Escritura pública, mantenimiento 5 años.",
+    "what_covers": "Deducción por aportar capital, préstamos o garantías a sociedades de fomento forestal, entidades agrarias, cooperativas agrarias o entidades de recuperación de tierras agrarias gallegas.",
+    "requirements": [
+      "20% de las cantidades invertidas en el ejercicio.",
+      "Límite conjunto 20.000 €.",
+      "Tipo de aportación: adquisición/ampliación de capital o reservas, préstamo, garantía personal o aportación en cuentas en participación.",
+      "Entidades admitidas: sociedades de fomento forestal (Ley 7/2012), entidades agrarias o cooperativas agrarias y entidades de movilización/recuperación de tierras agrarias (Ley 11/2021).",
+      "Operación formalizada en escritura pública.",
+      "Mantenimiento de la inversión durante al menos 5 años."
+    ],
     "legal_reference": "Art. 5.Quince Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -382,7 +489,13 @@
     "id": "gal-incendios-peifoga-2025",
     "ccaa_code": "ES-GA",
     "title": "Por las subvenciones y/o ayudas obtenidas como consecuencia de los daños causados por los incendios forestales que provocaron la activación del PEIFOGA en Situación 2 ocurridos en Galicia en 2025",
-    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la subvención o ayuda que se integre en la base liquidable. Aplica a ayudas del Decreto 76/2025 por daños de incendios de 2025 obtenidas de la Administración general autonómica.",
+    "what_covers": "Deducción que neutraliza la tributación de las ayudas autonómicas recibidas por daños de los incendios forestales de 2025 que activaron el PEIFOGA en Situación 2.",
+    "requirements": [
+      "Importe de la deducción: resultado de aplicar los tipos medios de gravamen al importe de la subvención/ayuda que se integre en la base liquidable.",
+      "Ayuda concedida al amparo del Decreto 76/2025 por daños de los incendios forestales de 2025 en Galicia.",
+      "Otorgada por la Administración general autonómica de Galicia.",
+      "La ayuda debe estar efectivamente integrada en la base imponible del IRPF del ejercicio."
+    ],
     "legal_reference": "Art. 5.Dieciséis Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -400,7 +513,15 @@
     "id": "gal-eficiencia-energetica-viviendas",
     "ccaa_code": "ES-GA",
     "title": "Por obras de mejora de eficiencia energética en edificios de viviendas o en viviendas unifamiliares",
-    "summary": "15% de las cantidades invertidas en obras de mejora de eficiencia energética en edificios de viviendas o viviendas unifamiliares (base máxima 9.000 €/contribuyente) + 100% del coste de honorarios del certificado y tasas de inscripción (límite único 150 €). Requiere subir una letra en la calificación energética y pago no en efectivo.",
+    "what_covers": "Deducción por acometer obras que mejoran la calificación energética de edificios de viviendas o viviendas unifamiliares en Galicia.",
+    "requirements": [
+      "15% de las cantidades invertidas en las obras (base máxima 9.000 € por contribuyente).",
+      "100% del coste de honorarios del certificado de eficiencia energética y tasas de inscripción, con límite único de 150 €.",
+      "Las obras deben subir al menos una letra en la calificación energética del inmueble (acreditado por certificado posterior a la reforma).",
+      "Aplica tanto a viviendas unifamiliares como a edificios de viviendas (propiedad horizontal).",
+      "Pago acreditado por medios distintos al efectivo.",
+      "Certificado energético posterior inscrito en el registro correspondiente."
+    ],
     "legal_reference": "Art. 5.Dieciocho Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -425,7 +546,13 @@
     "id": "gal-deportistas-alto-nivel",
     "ccaa_code": "ES-GA",
     "title": "Por las ayudas y subvenciones recibidas por los deportistas de alto nivel de Galicia",
-    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la subvención o ayuda pública en la base liquidable. Contribuyente reconocido como deportista de alto nivel por la Administración general autonómica con competencias en deporte. La actividad deportiva no debe generar rendimientos de actividades económicas.",
+    "what_covers": "Deducción que neutraliza el efecto fiscal de las ayudas o subvenciones públicas percibidas por deportistas gallegos reconocidos como de alto nivel.",
+    "requirements": [
+      "Importe de la deducción: resultado de aplicar los tipos medios de gravamen al importe de la subvención/ayuda integrada en la base liquidable.",
+      "Contribuyente reconocido como deportista de alto nivel por la Administración general autonómica con competencias en deporte.",
+      "La ayuda debe ser pública y estar integrada en la base imponible general del ejercicio.",
+      "La actividad deportiva del contribuyente no debe generar rendimientos de actividades económicas."
+    ],
     "legal_reference": "Art. 5.Diecinueve Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -444,7 +571,15 @@
     "id": "gal-aldeas-modelo-vivienda",
     "ccaa_code": "ES-GA",
     "title": "Por adquisición y rehabilitación de viviendas en los proyectos de aldeas modelo",
-    "summary": "15% de las cantidades satisfechas en el ejercicio para adquisición (viviendas adquiridas desde 01/01/2021) o rehabilitación (obras iniciadas desde 01/01/2021) de viviendas en proyectos de aldeas modelo (Ley 11/2021). Base máxima: 9.000 €/año vivienda habitual / 4.500 €/año otros casos.",
+    "what_covers": "Deducción por adquirir o rehabilitar viviendas dentro de los proyectos de aldeas modelo regulados por la Ley 11/2021.",
+    "requirements": [
+      "15% de las cantidades satisfechas en el ejercicio.",
+      "Base máxima 9.000 €/año si se destina a vivienda habitual; 4.500 €/año en otros casos (p. ej. residencia esporádica).",
+      "Adquisiciones de viviendas formalizadas a partir del 01/01/2021.",
+      "Obras de rehabilitación iniciadas a partir del 01/01/2021.",
+      "Vivienda integrada en un proyecto de aldea modelo aprobado al amparo de la Ley 11/2021.",
+      "Vivienda en titularidad del contribuyente (propiedad)."
+    ],
     "legal_reference": "Art. 5.Veinte Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -469,7 +604,15 @@
     "id": "gal-inversion-proyectos-interes-publico",
     "ccaa_code": "ES-GA",
     "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades que realicen determinados proyectos declarados de especial interés público, social o económico",
-    "summary": "20% de las cantidades invertidas en adquisición de acciones/participaciones por constitución o ampliación en entidades con objeto social exclusivo proyectos declarados de especial interés (Ley 2/2024). Base máxima 10.000 € por entidad. Incompatible con cualquier otra deducción autonómica por la misma inversión.",
+    "what_covers": "Deducción por invertir en entidades cuyo objeto social exclusivo es ejecutar proyectos declarados de especial interés público, social o económico por la Xunta (Ley 2/2024), típicamente vinculados a renovables y repotenciación eólica.",
+    "requirements": [
+      "20% del importe invertido por constitución o ampliación de capital de la entidad.",
+      "Base máxima 10.000 € por entidad.",
+      "Objeto social exclusivo de la entidad: ejecución de proyectos declarados de especial interés al amparo de la Ley 2/2024.",
+      "Tipos de proyecto admitidos: renovables (PPA, inversión en territorio, autoconsumo) y repotenciación o actualización de parques eólicos existentes.",
+      "Existencia de resolución del Consello de la Xunta declarando el proyecto como de especial interés.",
+      "Incompatible con cualquier otra deducción autonómica por la misma inversión."
+    ],
     "legal_reference": "Art. 5.Veintiuno Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -495,7 +638,16 @@
     "id": "gal-adecuacion-inmueble-vacio-alquiler",
     "ccaa_code": "ES-GA",
     "title": "Por gastos derivados de la adecuación de un inmueble vacío con destino al arrendamiento como vivienda",
-    "summary": "15% de las cantidades satisfechas por obras de reparación/conservación y gastos necesarios para arrendar el inmueble como vivienda (incluido certificado energético y formalización del contrato). Base máxima 9.000 € por vivienda. Inmueble en Galicia, vacío al menos 1 año, valor ≤ 250.000 €. Máximo 3 viviendas/contribuyente. Base máxima anual 3.000 €/vivienda (6.000 € si 2-3 viviendas conviven).",
+    "what_covers": "Deducción por los gastos de reparación, conservación y formalización necesarios para poner en alquiler como vivienda un inmueble que llevaba al menos un año vacío.",
+    "requirements": [
+      "15% de las cantidades satisfechas por obras de reparación/conservación y gastos asociados (certificado energético, formalización del contrato, etc.).",
+      "Base máxima 9.000 € por vivienda.",
+      "Base máxima anual 3.000 €/vivienda (6.000 € si conviven 2-3 viviendas en el ejercicio).",
+      "Inmueble situado en Galicia y con valor ≤ 250.000 €.",
+      "Vivienda vacía durante al menos 1 año antes del inicio de las obras.",
+      "Máximo 3 viviendas susceptibles de deducción por contribuyente (excluida la habitual).",
+      "El arrendatario no puede ser cónyuge ni pariente del contribuyente hasta el 3er grado."
+    ],
     "legal_reference": "Art. 5.Veintidós Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -518,7 +670,16 @@
     "id": "gal-arrendamiento-viviendas-vacias",
     "ccaa_code": "ES-GA",
     "title": "Por el arrendamiento de viviendas vacías",
-    "summary": "500 € por cada bien inmueble destinado al arrendamiento de vivienda. Aplica en el primer período impositivo en que se ponga la vivienda en arrendamiento. Inmueble en Galicia, vacío ≥ 1 año, contrato LAU de al menos 3 años, alquiler ≤ 700 €/mes, máximo 3 viviendas.",
+    "what_covers": "Deducción de cuantía fija para propietarios que sacan al mercado del alquiler de larga duración una vivienda que llevaba vacía al menos un año.",
+    "requirements": [
+      "500 € por cada bien inmueble destinado al arrendamiento como vivienda.",
+      "Solo aplica en el primer período impositivo en que se pone la vivienda en arrendamiento.",
+      "Inmueble situado en Galicia y vacío ≥ 1 año antes de formalizar el contrato.",
+      "Contrato de arrendamiento bajo la LAU con duración mínima de 3 años.",
+      "Precio mensual del alquiler ≤ 700 €.",
+      "Máximo 3 viviendas por contribuyente.",
+      "El arrendatario no puede ser cónyuge ni pariente hasta el 3er grado."
+    ],
     "legal_reference": "Art. 5.Veintitrés Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -540,7 +701,13 @@
     "id": "gal-ela-fenotipos",
     "ccaa_code": "ES-GA",
     "title": "Por las ayudas y subvenciones recibidas por personas con diagnóstico de esclerosis lateral amiotrófica o con sus fenotipos",
-    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la subvención o ayuda pública integrada en la base liquidable. Aplica a contribuyentes que integren en la base imponible general una ayuda destinada a personas con diagnóstico de ELA o sus fenotipos.",
+    "what_covers": "Deducción que neutraliza la tributación de las ayudas públicas percibidas por personas con diagnóstico de ELA o de alguno de sus fenotipos.",
+    "requirements": [
+      "Importe de la deducción: resultado de aplicar los tipos medios de gravamen al importe de la ayuda integrada en la base liquidable.",
+      "Contribuyente con diagnóstico acreditado de ELA o de un fenotipo asociado.",
+      "La ayuda debe ser pública y estar destinada específicamente a personas con ELA o sus fenotipos.",
+      "La ayuda debe haberse integrado en la base imponible general del ejercicio."
+    ],
     "legal_reference": "Art. 5.Veinticuatro Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -558,7 +725,17 @@
     "id": "gal-libros-texto-material-escolar",
     "ccaa_code": "ES-GA",
     "title": "Por la adquisición de libros de texto y material escolar",
-    "summary": "15% de las cantidades satisfechas por libros de texto (Primaria, ESO, Educación Especial) y material escolar para descendientes en centros sostenidos con fondos públicos. Límite 105 €/descendiente matriculado. Renta per cápita de la unidad familiar ≤ 30.000 €. Solo facturas emitidas entre 01/07/2025 y 31/12/2025. Material escolar limitado a 300 € (150 € deportivo).",
+    "what_covers": "Deducción por los gastos en libros de texto y material escolar de los descendientes matriculados en Primaria, ESO o Educación Especial en centros sostenidos con fondos públicos.",
+    "requirements": [
+      "15% de las cantidades satisfechas en libros de texto y material escolar.",
+      "Límite 105 € por descendiente matriculado.",
+      "Gasto en material escolar limitado a 300 € por descendiente (150 € en material deportivo).",
+      "Solo facturas emitidas entre 01/07/2025 y 31/12/2025.",
+      "Descendientes matriculados en Educación Primaria, ESO o Educación Especial.",
+      "Centro docente sostenido con fondos públicos.",
+      "Renta per cápita de la unidad familiar ≤ 30.000 €.",
+      "Importe minorado en el importe de becas o ayudas recibidas (fondo solidario de libros u otras de la Consejería)."
+    ],
     "legal_reference": "Art. 5.Veinticinco Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [
@@ -581,7 +758,13 @@
     "id": "gal-talidomida-1950-1985",
     "ccaa_code": "ES-GA",
     "title": "Por las ayudas recibidas por las personas afectadas por la talidomida en España durante el período 1950-1985",
-    "summary": "Resultado de aplicar los tipos medios de gravamen al importe de la ayuda pública integrada en la base liquidable. Aplica a ayudas públicas percibidas e integradas en las bases imponibles generales de 2023 y siguientes (puede rectificarse autoliquidaciones 2023/2024).",
+    "what_covers": "Deducción que neutraliza la tributación de las ayudas públicas percibidas por personas reconocidas como afectadas por la talidomida en España (1950-1985).",
+    "requirements": [
+      "Importe de la deducción: resultado de aplicar los tipos medios de gravamen al importe de la ayuda integrada en la base liquidable.",
+      "Contribuyente reconocido como afectado por la talidomida en España durante 1950-1985.",
+      "Ayudas públicas percibidas e integradas en la base imponible general del ejercicio 2023 o siguientes.",
+      "Se permite rectificar las autoliquidaciones de 2023 y 2024 para aplicar la deducción si no se hizo en su momento."
+    ],
     "legal_reference": "Art. 5.Veintiséis Texto Refundido Decreto Legislativo 1/2011 de la Comunidad Autónoma de Galicia",
     "eligibility_rule": {
       "all_of": [

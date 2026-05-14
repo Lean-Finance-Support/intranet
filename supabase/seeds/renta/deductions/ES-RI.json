@@ -3,7 +3,14 @@
     "id": "rio-nacimiento-adopcion-hijos",
     "ccaa_code": "ES-RI",
     "title": "Por nacimiento y adopción de hijos",
-    "summary": "600 € (1º hijo), 750 € (2º), 900 € (3º y sucesivos). +60 € adicionales por hijo en nacimientos/adopciones múltiples. Hijo nacido o adoptado en el período impositivo y conviviente.",
+    "what_covers": "Deducción por cada hijo nacido o adoptado durante el ejercicio que conviva con el contribuyente, con importe creciente según el orden de nacimiento.",
+    "requirements": [
+      "El hijo debe haber nacido o ser adoptado durante el período impositivo.",
+      "El hijo debe convivir con el contribuyente.",
+      "Residencia habitual en La Rioja.",
+      "Importes: 600 € por el primer hijo, 750 € por el segundo, 900 € por el tercero y sucesivos.",
+      "Si el parto o adopción es múltiple, se suman 60 € adicionales por cada hijo nacido en ese parto/adopción."
+    ],
     "legal_reference": "Art. 32.1 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -27,7 +34,15 @@
     "id": "rio-vivienda-pequenos-municipios",
     "ccaa_code": "ES-RI",
     "title": "Por la adquisición, construcción o rehabilitación de vivienda habitual en pequeños municipios de La Rioja",
-    "summary": "5% de las cantidades satisfechas en adquisición, rehabilitación o construcción de vivienda habitual en pequeños municipios de La Rioja. Límite 452 €/declaración. Base máxima anual 9.040 €. Vivienda adquirida desde 01/01/2017.",
+    "what_covers": "Deducción por las cantidades pagadas en el ejercicio para adquirir, construir o rehabilitar la vivienda habitual situada en un pequeño municipio de La Rioja.",
+    "requirements": [
+      "Vivienda situada en un pequeño municipio de La Rioja (anexo B.7, casilla [1067]).",
+      "La vivienda debe ser la habitual del contribuyente y figurar en propiedad.",
+      "Adquirida, construida o iniciada la rehabilitación a partir del 01/01/2017.",
+      "Se deduce el 5% de las cantidades satisfechas en el ejercicio.",
+      "Base máxima anual: 9.040 €.",
+      "Límite de la deducción: 452 € por declaración."
+    ],
     "legal_reference": "Art. 32.2 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -54,7 +69,16 @@
     "id": "rio-escuelas-infantiles-pequenos-municipios",
     "ccaa_code": "ES-RI",
     "title": "Por gastos en escuelas infantiles, centros de educación infantil o personal contratado para el cuidado de hijos de 0 a 3 años para contribuyentes que fijen su residencia habitual en pequeños municipios de La Rioja",
-    "summary": "30% de gastos en escuelas infantiles, centros de educación infantil o personal para cuidado de hijos de 0 a 3 años en pequeños municipios. Límite 600 €/menor. Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta) y base del ahorro ≤ 1.800 €.",
+    "what_covers": "Deducción por los gastos en escuela infantil, centro de educación infantil o personal contratado para el cuidado de hijos de 0 a 3 años, cuando el contribuyente reside en un pequeño municipio de La Rioja.",
+    "requirements": [
+      "Residencia habitual del contribuyente en un pequeño municipio de La Rioja (casilla [1071]).",
+      "Hijos con edades de 0 a 3 años.",
+      "Se deduce el 30% de los gastos satisfechos en el ejercicio.",
+      "Límite: 600 € por menor.",
+      "Base liquidable general: ≤ 18.030 € (individual) o ≤ 30.050 € (conjunta).",
+      "Base liquidable del ahorro ≤ 1.800 €.",
+      "Necesario disponer del NIF de la escuela/centro o de la persona empleada (casilla [1070])."
+    ],
     "legal_reference": "Art. 32.3 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -92,7 +116,15 @@
     "id": "rio-acogimiento-familiar-menores",
     "ccaa_code": "ES-RI",
     "title": "Por cada menor en régimen de acogimiento familiar de urgencia, temporal o permanente o guarda con fines de adopción",
-    "summary": "300 € por menor en acogimiento ≥183 días en el ejercicio, o 150 € si la convivencia es >90 y <183 días. Formalizado por el órgano competente de La Rioja. No procede si se ha producido la adopción del menor.",
+    "what_covers": "Deducción por cada menor en régimen de acogimiento familiar (urgencia, temporal o permanente) o guarda con fines de adopción, formalizado por el órgano competente de La Rioja.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Acogimiento formalizado por el órgano competente de La Rioja.",
+      "Convivencia de al menos 183 días en el ejercicio: 300 € por menor.",
+      "Si la convivencia es superior a 90 e inferior a 183 días: 150 € por menor.",
+      "Si la convivencia es de 90 días o menos no procede la deducción.",
+      "No se aplica si durante el ejercicio se ha producido la adopción del menor."
+    ],
     "legal_reference": "Art. 32.4 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -117,7 +149,14 @@
     "id": "rio-hijos-0-3-pequenos-municipios",
     "ccaa_code": "ES-RI",
     "title": "Por cada hijo de 0 a 3 años de contribuyentes que tengan su residencia o trasladen la misma a pequeños municipios de La Rioja",
-    "summary": "100 € mensuales por cada hijo de 0 a 3 años. Residir o trasladar la residencia a un pequeño municipio de La Rioja y mantenerla durante al menos 3 años consecutivos. El hijo debe dar derecho al mínimo por descendientes.",
+    "what_covers": "Deducción mensual por cada hijo de 0 a 3 años cuando el contribuyente reside o traslada su residencia habitual a un pequeño municipio de La Rioja.",
+    "requirements": [
+      "Residencia habitual del contribuyente en un pequeño municipio de La Rioja (casilla [1162]).",
+      "Compromiso de mantener la residencia en el pequeño municipio al menos 3 años consecutivos.",
+      "Hijos con edades entre 0 y 3 años que den derecho al mínimo por descendientes.",
+      "100 € por cada hijo y por cada mes completo cumpliendo los requisitos.",
+      "Necesaria fecha de inicio de la residencia en el pequeño municipio."
+    ],
     "legal_reference": "Art. 32.5 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -139,7 +178,17 @@
     "id": "rio-escolarizacion-0-3-cualquier-municipio",
     "ccaa_code": "ES-RI",
     "title": "Por cada hijo de 0 a 3 años en escuelas infantiles o centros de educación infantil de cualquier municipio de La Rioja",
-    "summary": "20% de los gastos de escolarización no subvencionados por cada hijo de 0 a 3 años en escuela/centro infantil de cualquier municipio de La Rioja. Límite 600 €/año por hijo. Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta) y base del ahorro ≤ 1.800 €.",
+    "what_covers": "Deducción por los gastos de escolarización (no subvencionados) de hijos de 0 a 3 años en escuelas o centros de educación infantil de cualquier municipio de La Rioja.",
+    "requirements": [
+      "Residencia habitual del contribuyente en La Rioja.",
+      "Hijos con edades entre 0 y 3 años escolarizados.",
+      "Centro o escuela infantil situado en La Rioja (es necesario su NIF, casilla [1076]).",
+      "Solo se computan gastos efectivamente pagados y no subvencionados.",
+      "Se deduce el 20% de dichos gastos.",
+      "Límite: 600 € por hijo al año.",
+      "Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta).",
+      "Base liquidable del ahorro ≤ 1.800 €."
+    ],
     "legal_reference": "Art. 32.6 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -171,7 +220,16 @@
     "id": "rio-vehiculos-electricos",
     "ccaa_code": "ES-RI",
     "title": "Por adquisición de vehículos eléctricos nuevos",
-    "summary": "15% del importe pagado por la adquisición de vehículos eléctricos nuevos no afectos a actividad. Límite 300 € (vehículos a motor) o 225 € (bicicletas pedaleo asistido). Importe máximo del vehículo 50.000 €. Una sola vez por persona y ejercicio de matriculación.",
+    "what_covers": "Deducción por la adquisición de vehículos eléctricos nuevos (incluidas bicicletas de pedaleo asistido) no afectos a actividad empresarial o profesional.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Vehículo nuevo y eléctrico (N1, L1e, L2e o bicicleta de pedaleo asistido).",
+      "El vehículo no puede estar afecto a una actividad empresarial o profesional.",
+      "Importe máximo del vehículo: 50.000 €.",
+      "Se deduce el 15% del importe pagado.",
+      "Límite: 300 € para vehículos a motor y 225 € para bicicletas de pedaleo asistido.",
+      "Solo una vez por contribuyente y ejercicio de matriculación."
+    ],
     "legal_reference": "Art. 32.7 y Disp. adicional tercera Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -196,7 +254,15 @@
     "id": "rio-poblacion-rural",
     "ccaa_code": "ES-RI",
     "title": "Para fomentar la fijación de población ocupada en el medio rural",
-    "summary": "1.000 € por contribuyente que inicie actividad agraria como autónomo a partir del 01/01/2025 con residencia habitual en un municipio de La Rioja. No aplica a autónomos colaboradores ni socios de mercantiles. Aplicable en el ejercicio de inicio y los 2 siguientes.",
+    "what_covers": "Deducción de cuantía fija para quienes inician una actividad agraria por cuenta propia con residencia habitual en un municipio de La Rioja.",
+    "requirements": [
+      "Residencia habitual en un municipio de La Rioja.",
+      "Alta como trabajador autónomo titular en una actividad agraria a partir del 01/01/2025.",
+      "No aplica a autónomos colaboradores ni a socios de sociedades mercantiles.",
+      "No haber cesado como autónomo agrario en los 2 años anteriores al alta.",
+      "Importe: 1.000 € por contribuyente.",
+      "Se aplica en el ejercicio de inicio y en los 2 ejercicios siguientes."
+    ],
     "legal_reference": "Art. 32.8 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -220,7 +286,15 @@
     "id": "rio-internet-jovenes-emancipados",
     "ccaa_code": "ES-RI",
     "title": "Por acceso a Internet para los jóvenes emancipados",
-    "summary": "30% del importe de gastos anuales de contrato de Internet para vivienda habitual de joven emancipado <36 años. 40% si unidad familiar monoparental o residencia en pequeño municipio. Contrato suscrito con ≥6 meses de antelación. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Una sola vez por vivienda y contribuyente.",
+    "what_covers": "Deducción por los gastos de contrato de acceso a Internet asociado a la vivienda habitual del joven emancipado.",
+    "requirements": [
+      "Contribuyente menor de 36 años emancipado y con residencia habitual en La Rioja.",
+      "El contrato de Internet debe haberse suscrito con al menos 6 meses de antelación al devengo.",
+      "Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta).",
+      "Se deduce el 30% de los gastos anuales facturados y pagados.",
+      "Porcentaje incrementado al 40% si la unidad familiar es monoparental o si la residencia está en un pequeño municipio (casilla [1204]).",
+      "Solo se aplica una vez por vivienda y contribuyente."
+    ],
     "legal_reference": "Art. 32.9 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -258,7 +332,16 @@
     "id": "rio-luz-gas-jovenes-emancipados",
     "ccaa_code": "ES-RI",
     "title": "Por suministro de luz y gas de uso doméstico para los jóvenes emancipados",
-    "summary": "15% del importe de gastos anuales de luz/gas en vivienda habitual de joven emancipado <36 años. 20% si residencia en pequeño municipio. 25% si unidad familiar monoparental. Contratos con ≥6 meses de antelación. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Una sola vez por vivienda y contribuyente.",
+    "what_covers": "Deducción por los gastos de los contratos de suministro de luz y gas de uso doméstico de la vivienda habitual de jóvenes emancipados.",
+    "requirements": [
+      "Contribuyente menor de 36 años emancipado, con residencia habitual en La Rioja.",
+      "Contratos de luz/gas suscritos con al menos 6 meses de antelación al devengo.",
+      "Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta).",
+      "Se deduce el 15% de los gastos anuales facturados y pagados.",
+      "Porcentaje incrementado al 20% si la residencia está en un pequeño municipio (casilla [1205]).",
+      "Porcentaje incrementado al 25% si la unidad familiar es monoparental.",
+      "Solo se aplica una vez por vivienda y contribuyente."
+    ],
     "legal_reference": "Art. 32.10 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -296,7 +379,15 @@
     "id": "rio-inversion-vivienda-jovenes-36",
     "ccaa_code": "ES-RI",
     "title": "Por inversión en vivienda habitual de jóvenes menores de 36 años",
-    "summary": "15% de las cantidades satisfechas por adquisición, construcción, ampliación o rehabilitación de vivienda habitual en La Rioja. Contribuyente <36 años. Vivienda adquirida desde 01/01/2013. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Base máxima anual 9.000 €.",
+    "what_covers": "Deducción por las cantidades invertidas por jóvenes menores de 36 años en adquirir, construir, ampliar o rehabilitar su vivienda habitual situada en La Rioja.",
+    "requirements": [
+      "Contribuyente menor de 36 años.",
+      "Vivienda habitual en propiedad situada en La Rioja.",
+      "Vivienda adquirida (o inicio de la rehabilitación) a partir del 01/01/2013.",
+      "Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta).",
+      "Se deduce el 15% de las cantidades satisfechas en el ejercicio.",
+      "Base máxima anual de deducción: 9.000 €."
+    ],
     "legal_reference": "Art. 32.11 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -335,7 +426,17 @@
     "id": "rio-arrendamiento-vivienda-jovenes-36",
     "ccaa_code": "ES-RI",
     "title": "Por arrendamiento de vivienda habitual para contribuyentes menores de 36 años",
-    "summary": "10% de las cantidades no subvencionadas (límite 300 €/contrato) o 20% si vivienda en pequeño municipio (límite 400 €). Contribuyente <36 años, vivienda en La Rioja, contrato con modelo de ITP/AJD presentado. Base liquidable ≤ 18.030 € (individual) / 30.050 € (conjunta). Incompatible con deducción por inversión en vivienda.",
+    "what_covers": "Deducción por las cantidades pagadas en concepto de alquiler de la vivienda habitual del contribuyente menor de 36 años.",
+    "requirements": [
+      "Contribuyente menor de 36 años.",
+      "Vivienda habitual en régimen de alquiler situada en La Rioja.",
+      "Base liquidable general ≤ 18.030 € (individual) / 30.050 € (conjunta).",
+      "Necesario haber presentado el modelo de ITP y AJD por el contrato de arrendamiento.",
+      "Solo se computan las cantidades no subvencionadas.",
+      "Se deduce el 10% de la renta anual, con límite de 300 € por contrato.",
+      "Porcentaje incrementado al 20% (límite 400 €) si la vivienda está en un pequeño municipio (casilla [1164]).",
+      "Incompatible con la deducción por inversión en vivienda."
+    ],
     "legal_reference": "Art. 32.12 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -371,7 +472,14 @@
     "id": "rio-bicicletas-pedaleo-no-asistido",
     "ccaa_code": "ES-RI",
     "title": "Por adquisición de bicicletas de pedaleo no asistido",
-    "summary": "15% del importe de adquisición de bicicletas de pedaleo no asistido. Límites: 50 €/vehículo y máximo 2 vehículos por unidad familiar. Justificación mediante factura.",
+    "what_covers": "Deducción por la compra de bicicletas convencionales (sin pedaleo asistido por motor eléctrico) por parte de la unidad familiar.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Máximo 2 bicicletas por unidad familiar al año.",
+      "Se deduce el 15% del importe de adquisición.",
+      "Límite: 50 € por bicicleta.",
+      "La adquisición debe justificarse con factura a nombre del contribuyente."
+    ],
     "legal_reference": "Art. 32.13 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -390,7 +498,14 @@
     "id": "rio-rehabilitacion-vivienda-habitual-transitoria",
     "ccaa_code": "ES-RI",
     "title": "Por las cantidades invertidas en obras de rehabilitación de la vivienda habitual",
-    "summary": "Régimen transitorio: 5% (jóvenes <36 años con vivienda habitual), 7% (jóvenes con base liquidable ≤18.030 €/30.050 €) o 2% (resto). Solo para quienes practicaran la deducción antes de 01/01/2013 con obras finalizadas antes de 01/01/2017. Base máxima conjunta con adecuación por discapacidad 9.040 €.",
+    "what_covers": "Régimen transitorio para quienes ya venían deduciéndose por obras de rehabilitación de su vivienda habitual antes de 2013.",
+    "requirements": [
+      "Vivienda habitual en propiedad situada en La Rioja.",
+      "Haber practicado la deducción en algún ejercicio anterior al 01/01/2013.",
+      "Las obras deben haber finalizado antes del 01/01/2017.",
+      "Porcentaje aplicable: 5% para jóvenes menores de 36 años; 7% para jóvenes con base liquidable ≤ 18.030 € (individual) o ≤ 30.050 € (conjunta); 2% para el resto.",
+      "Base máxima anual conjunta con la deducción por adecuación de vivienda por discapacidad: 9.040 €."
+    ],
     "legal_reference": "Disp. transitoria primera.a) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -412,7 +527,14 @@
     "id": "rio-adquisicion-vivienda-jovenes-transitoria",
     "ccaa_code": "ES-RI",
     "title": "Por cantidades invertidas en adquisición o construcción de vivienda habitual para jóvenes",
-    "summary": "Régimen transitorio: 3% (general jóvenes <36 años) o 5% (jóvenes con base liquidable ≤18.030 €/30.050 €). Solo para quienes adquirieran la vivienda antes de 01/01/2013 o pagaran cantidades para construcción antes de esa fecha. Base máxima 9.040 € (menos cantidades de la deducción estatal).",
+    "what_covers": "Régimen transitorio para jóvenes menores de 36 años que ya se deducían por la adquisición o construcción de su vivienda habitual antes de 2013.",
+    "requirements": [
+      "Contribuyente menor de 36 años con vivienda habitual en propiedad en La Rioja.",
+      "Vivienda adquirida antes del 01/01/2013, o pagos para construcción anteriores a esa fecha.",
+      "Haber practicado la deducción por inversión en vivienda en algún ejercicio anterior a 01/01/2013.",
+      "Porcentaje general jóvenes: 3%; porcentaje incrementado 5% si la base liquidable es ≤ 18.030 € (individual) o ≤ 30.050 € (conjunta).",
+      "Base máxima anual: 9.040 €, minorada por las cantidades aplicadas en la deducción estatal."
+    ],
     "legal_reference": "Disp. transitoria primera.b) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -434,7 +556,15 @@
     "id": "rio-segunda-vivienda-medio-rural",
     "ccaa_code": "ES-RI",
     "title": "Por adquisición o rehabilitación de segunda vivienda en el medio rural",
-    "summary": "Régimen transitorio: 8% de cantidades invertidas en adquisición, construcción, ampliación o rehabilitación de una única segunda vivienda en el medio rural (municipio distinto al de la vivienda habitual). Límite 450,76 €/año. Solo si la segunda vivienda se adquirió antes de 01/01/2013 o se pagaron cantidades para rehabilitación con obras terminadas antes de 01/01/2017.",
+    "what_covers": "Régimen transitorio por las cantidades invertidas en una única segunda vivienda situada en el medio rural de La Rioja (municipio distinto al de la vivienda habitual).",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Segunda vivienda situada en un municipio rural de La Rioja (casilla [1064]) distinto al de la vivienda habitual.",
+      "Solo procede por una única segunda vivienda.",
+      "Vivienda adquirida antes del 01/01/2013, o cantidades pagadas antes de esa fecha cuyas obras de rehabilitación terminaron antes del 01/01/2017.",
+      "Se deduce el 8% de las cantidades invertidas en el ejercicio.",
+      "Límite: 450,76 € al año."
+    ],
     "legal_reference": "Disp. transitoria primera.c) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -459,7 +589,15 @@
     "id": "rio-adecuacion-vivienda-discapacidad",
     "ccaa_code": "ES-RI",
     "title": "Por obras de adecuación de vivienda habitual en La Rioja para personas con discapacidad",
-    "summary": "Régimen transitorio: 15% de cantidades satisfechas en obras de adecuación de la vivienda habitual en La Rioja para personas con discapacidad. Solo aplica a quienes pagaran cantidades antes de 01/01/2013 con obras finalizadas antes de 01/01/2017. Base máxima conjunta con rehabilitación 9.040 €.",
+    "what_covers": "Régimen transitorio por las obras de adecuación de la vivienda habitual en La Rioja para personas con discapacidad (accesibilidad y comunicación).",
+    "requirements": [
+      "Vivienda habitual situada en La Rioja.",
+      "Contribuyente o miembro de la unidad familiar con discapacidad ≥ 33%.",
+      "Se pagaron cantidades antes del 01/01/2013 con obras finalizadas antes del 01/01/2017.",
+      "Se deduce el 15% de las cantidades satisfechas en el ejercicio.",
+      "Base máxima anual conjunta con la deducción por rehabilitación: 9.040 €.",
+      "Recomendable disponer de informe técnico que acredite la necesidad de las obras."
+    ],
     "legal_reference": "Disp. transitoria primera.d) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -480,7 +618,15 @@
     "id": "rio-mecenazgo-fomento-actividades",
     "ccaa_code": "ES-RI",
     "title": "Por donaciones para la promoción y estímulo de las actividades de fomento de mecenazgo",
-    "summary": "15% de las cantidades donadas para actividades culturales, científicas, deportivas y otros fines de interés general previstos en la Ley 3/2021 de Mecenazgo de La Rioja. Límite conjunto con otra deducción de mecenazgo de Patrimonio Histórico: 500 €/año. Límite agregado del art. 32.14: 30% de la cuota íntegra autonómica.",
+    "what_covers": "Deducción por las donaciones realizadas para actividades culturales, científicas, deportivas, sociales y otros fines de interés general previstos en la Ley de Mecenazgo de La Rioja.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Donación dineraria a entidades beneficiarias conforme a la Ley 3/2021 de Mecenazgo de La Rioja.",
+      "Aportar entidades receptoras con su NIF y tipo de actividad receptora.",
+      "Se deduce el 15% del importe donado en el ejercicio.",
+      "Límite conjunto con la deducción de mecenazgo de Patrimonio Histórico: 500 € al año.",
+      "Límite agregado del art. 32.14: 30% de la cuota íntegra autonómica."
+    ],
     "legal_reference": "Art. 32.14.a) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -506,7 +652,15 @@
     "id": "rio-mecenazgo-patrimonio-historico",
     "ccaa_code": "ES-RI",
     "title": "Por donaciones para la investigación, conservación, restauración, rehabilitación, consolidación, difusión, exposición y adquisición de bienes de interés cultural del Patrimonio Histórico de La Rioja",
-    "summary": "15% de las cantidades donadas para investigación, conservación, restauración, etc. de bienes ubicados en La Rioja cuya titularidad sea de la Administración riojana o declarados BIC inscritos en el Inventario de Patrimonio Histórico de La Rioja. Límite conjunto con fomento de mecenazgo: 500 €/año. Límite agregado del art. 32.14: 30% cuota íntegra autonómica.",
+    "what_covers": "Deducción por las donaciones destinadas a la investigación, conservación, restauración, rehabilitación, consolidación, difusión, exposición y adquisición de bienes del Patrimonio Histórico de La Rioja.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Bienes ubicados en La Rioja cuya titularidad sea de la Administración riojana o declarados BIC e inscritos en el Inventario de Patrimonio Histórico de La Rioja.",
+      "Aportar entidades receptoras con su NIF.",
+      "Se deduce el 15% del importe donado en el ejercicio.",
+      "Límite conjunto con la deducción por fomento de mecenazgo: 500 € al año.",
+      "Límite agregado del art. 32.14: 30% de la cuota íntegra autonómica."
+    ],
     "legal_reference": "Art. 32.14.b) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -525,7 +679,15 @@
     "id": "rio-mecenazgo-empresas-culturales",
     "ccaa_code": "ES-RI",
     "title": "Por donaciones a empresas culturales",
-    "summary": "20% de las cantidades donadas a empresas culturales con fondos propios <300.000 € y domicilio fiscal en La Rioja, para cinematografía, artes escénicas, plásticas, libro, patrimonio cultural, folclore, artes aplicadas. Límite individual 500 €/año. Límite agregado del art. 32.14: 30% cuota íntegra autonómica.",
+    "what_covers": "Deducción por las donaciones realizadas a empresas culturales con domicilio fiscal en La Rioja dedicadas a actividades como cinematografía, artes escénicas, libro, patrimonio cultural u otras artes aplicadas.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Empresa receptora con fondos propios inferiores a 300.000 € y domicilio fiscal en La Rioja.",
+      "Aportar empresa receptora con su NIF y la actividad cultural desarrollada.",
+      "Se deduce el 20% del importe donado en el ejercicio.",
+      "Límite individual: 500 € al año.",
+      "Límite agregado del art. 32.14: 30% de la cuota íntegra autonómica."
+    ],
     "legal_reference": "Art. 32.14.d) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -552,7 +714,17 @@
     "id": "rio-donacion-bienes-culturales-autores",
     "ccaa_code": "ES-RI",
     "title": "Por donación de bienes culturales por sus autores o creadores y sus herederos",
-    "summary": "20% de la valoración de bienes culturales de calidad garantizada donados (o cedidos en usufructo o depósito sin contraprestación) por sus autores/creadores y herederos a instituciones culturales de La Rioja. Límite individual 500 €/año. Aceptación por la Consejería competente. Límite agregado art. 32.14: 30% cuota íntegra autonómica.",
+    "what_covers": "Deducción por la donación, usufructo o depósito temporal sin contraprestación de bienes culturales por parte de sus autores, creadores o herederos a instituciones culturales de La Rioja.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "El donante debe ser el autor/creador del bien o un heredero suyo.",
+      "Operación admitida: donación, usufructo o depósito temporal sin contraprestación.",
+      "Bien cultural de calidad garantizada con descripción detallada.",
+      "Aceptación previa por la Consejería competente y entrega a institución cultural de La Rioja.",
+      "Se deduce el 20% de la valoración del bien donado/cedido.",
+      "Límite individual: 500 € al año.",
+      "Límite agregado del art. 32.14: 30% de la cuota íntegra autonómica."
+    ],
     "legal_reference": "Art. 32.14.e) Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -580,7 +752,15 @@
     "id": "rio-patrimonio-historico-conservacion",
     "ccaa_code": "ES-RI",
     "title": "Por cantidades destinadas a investigación, conservación, restauración, rehabilitación o consolidación de bienes que formen parte del patrimonio histórico de La Rioja",
-    "summary": "15% de las cantidades destinadas a investigación, conservación, restauración, rehabilitación o consolidación de bienes de su titularidad (en propiedad o usufructo) que formen parte del patrimonio histórico de La Rioja e inscritos en el Registro General correspondiente. Límite 500 €/año. No aplica a inversiones empresariales.",
+    "what_covers": "Deducción por las cantidades que el propio contribuyente destina a investigación, conservación, restauración, rehabilitación o consolidación de bienes de su titularidad que forman parte del patrimonio histórico de La Rioja.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "El bien debe ser de titularidad del contribuyente (en propiedad o usufructo).",
+      "El bien debe estar inscrito en el Registro General del Patrimonio Histórico de La Rioja.",
+      "Solo se aplica si NO se trata de inversiones empresariales.",
+      "Se deduce el 15% de las cantidades destinadas en el ejercicio.",
+      "Límite: 500 € al año."
+    ],
     "legal_reference": "Art. 32.15 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -603,7 +783,15 @@
     "id": "rio-ejercicio-fisico-deporte",
     "ccaa_code": "ES-RI",
     "title": "Para fomentar el ejercicio físico y la práctica deportiva",
-    "summary": "30% de los gastos en servicios deportivos (gimnasios, entidades del Registro del Deporte de La Rioja, clases, licencias federativas riojanas) del contribuyente, cónyuge y personas con derecho al mínimo. 100% para mayores de 65 años y personas con discapacidad ≥33%. Límite 300 €/año. Servicios en territorio de La Rioja.",
+    "what_covers": "Deducción por los gastos en servicios deportivos del contribuyente, su cónyuge y personas con derecho al mínimo personal/familiar (gimnasios, entidades del Registro del Deporte, clases o licencias federativas).",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Servicios deportivos prestados en territorio de La Rioja.",
+      "Tipo de servicio admisible: gimnasio/instalación, entidad del Registro del Deporte de La Rioja, clases para práctica deportiva o licencia federativa riojana.",
+      "Se deduce el 30% de los gastos del ejercicio con carácter general.",
+      "Porcentaje del 100% cuando el beneficiario es mayor de 65 años o tiene discapacidad ≥ 33%.",
+      "Límite: 300 € al año."
+    ],
     "legal_reference": "Art. 32.17 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -627,7 +815,15 @@
     "id": "rio-enfermos-ela",
     "ccaa_code": "ES-RI",
     "title": "Destinada a los enfermos de ELA",
-    "summary": "50% de los gastos del contribuyente, cónyuge o personas con derecho al mínimo personal/familiar relacionados con el diagnóstico y tratamiento de la esclerosis lateral amiotrófica (ELA). Límite 2.000 €/año. Justificación con factura completa u ordinaria.",
+    "what_covers": "Deducción por los gastos vinculados al diagnóstico y tratamiento de la esclerosis lateral amiotrófica (ELA) sufrida por el contribuyente, su cónyuge o personas con derecho al mínimo personal/familiar.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "La persona afectada debe ser el contribuyente, su cónyuge o una persona con derecho al mínimo personal/familiar.",
+      "Gastos relacionados con el diagnóstico, tratamiento, servicios sanitarios o cuidados paliativos por ELA.",
+      "Justificación con factura completa u ordinaria.",
+      "Se deduce el 50% de los gastos satisfechos.",
+      "Límite: 2.000 € al año."
+    ],
     "legal_reference": "Art. 32.18 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -650,7 +846,14 @@
     "id": "rio-cuotas-organizaciones-agrarias",
     "ccaa_code": "ES-RI",
     "title": "De cuotas satisfechas a organizaciones profesionales agrarias",
-    "summary": "100% de las cuotas abonadas (inscripción, periódicas o extraordinarias) a una organización profesional agraria constituida al amparo de la Ley 19/1977. Límite 100 €/año por contribuyente. Justificación documental mediante certificación de la organización.",
+    "what_covers": "Deducción por las cuotas (de inscripción, periódicas o extraordinarias) abonadas a una organización profesional agraria constituida al amparo de la Ley 19/1977.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "Cuotas abonadas a una organización profesional agraria constituida al amparo de la Ley 19/1977.",
+      "Disponer del certificado anual emitido por la organización con su NIF.",
+      "Se deduce el 100% de las cuotas pagadas.",
+      "Límite: 100 € al año por contribuyente."
+    ],
     "legal_reference": "Art. 32.19 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -670,7 +873,14 @@
     "id": "rio-enfermedad-celiaca",
     "ccaa_code": "ES-RI",
     "title": "Por enfermedad celíaca diagnosticada",
-    "summary": "250 € por cada persona integrante del núcleo familiar (contribuyente, cónyuge, ascendientes y descendientes con derecho al mínimo) con enfermedad celíaca diagnosticada. Acreditación mediante certificado médico con diagnóstico definitivo. Si varios contribuyentes tienen derecho por la misma persona, se prorratea.",
+    "what_covers": "Deducción de cuantía fija por cada miembro del núcleo familiar (contribuyente, cónyuge, ascendientes y descendientes con derecho al mínimo) con enfermedad celíaca diagnosticada.",
+    "requirements": [
+      "Residencia habitual en La Rioja.",
+      "La persona celíaca debe pertenecer al núcleo familiar (contribuyente, cónyuge, ascendientes o descendientes con derecho al mínimo).",
+      "Diagnóstico definitivo de celiaquía acreditado mediante certificado médico (con nº de colegiado).",
+      "Importe: 250 € por cada persona del núcleo familiar con celiaquía diagnosticada.",
+      "Si varios contribuyentes tienen derecho a la deducción por la misma persona, el importe se prorratea."
+    ],
     "legal_reference": "Art. 32.20 Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [
@@ -689,7 +899,17 @@
     "id": "rio-intereses-hipotecarios-vivienda",
     "ccaa_code": "ES-RI",
     "title": "Para paliar la subida de los intereses de los préstamos hipotecarios destinados a la adquisición de vivienda habitual",
-    "summary": "15% de los intereses satisfechos en el ejercicio por préstamos/créditos hipotecarios destinados a la adquisición de vivienda habitual en La Rioja (adquirida desde 01/01/2013). Base máxima 5.000 €/vivienda habitual. Aplicable en 2023, 2024 y 2025. Incompatible con pequeños municipios, jóvenes <36 y deducción estatal por inversión en vivienda.",
+    "what_covers": "Deducción por los intereses de préstamos o créditos hipotecarios pagados en el ejercicio para la adquisición de la vivienda habitual situada en La Rioja.",
+    "requirements": [
+      "Vivienda habitual en propiedad situada en La Rioja.",
+      "Vivienda adquirida a partir del 01/01/2013.",
+      "Préstamo o crédito hipotecario suscrito con entidad financiera identificada.",
+      "Se deduce el 15% de los intereses satisfechos en el ejercicio.",
+      "Las cantidades obtenidas por instrumentos de cobertura del tipo variable minoran la base.",
+      "Base máxima: 5.000 € por vivienda habitual.",
+      "Aplicable en los ejercicios 2023, 2024 y 2025.",
+      "Incompatible con las deducciones por vivienda en pequeños municipios, jóvenes menores de 36 años y con la deducción estatal por inversión en vivienda habitual."
+    ],
     "legal_reference": "Disp. adicional segunda Ley 10/2017 de La Rioja",
     "eligibility_rule": {
       "all_of": [

@@ -977,10 +977,20 @@ function SubmissionDeductionsDump({
                   {def?.title ?? deductionId}
                 </h5>
               </div>
-              {def?.summary && (
+              {def?.what_covers && (
                 <p className="text-xs text-text-muted mt-2 leading-relaxed pl-4">
-                  {def.summary}
+                  {def.what_covers}
                 </p>
+              )}
+              {def?.requirements && def.requirements.length > 0 && (
+                <ul className="mt-2 space-y-1 pl-4 text-xs text-text-muted">
+                  {def.requirements.map((req, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span aria-hidden className="mt-1.5 inline-block w-1 h-1 rounded-full bg-brand-teal/60 shrink-0" />
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
               {payloadEntries.length > 0 && (
                 <dl className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">

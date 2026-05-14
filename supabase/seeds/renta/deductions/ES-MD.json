@@ -3,7 +3,15 @@
     "id": "mad-nacimiento-adopcion-hijos",
     "ccaa_code": "ES-MD",
     "title": "Por nacimiento o adopción de hijos",
-    "summary": "721,70 € por cada hijo nacido o adoptado a partir del 1 de enero de 2023 (600 € para anteriores). Aplica en el ejercicio del nacimiento/adopción y los dos siguientes.",
+    "what_covers": "Deducción autonómica por cada hijo nacido o adoptado. Se aplica en el ejercicio del nacimiento/adopción y en los dos siguientes.",
+    "requirements": [
+      "Hijo nacido o adoptado a partir del 1 de enero de 2023: 721,70 € por hijo",
+      "Hijos nacidos/adoptados antes de 2023: 600 € por hijo",
+      "Residencia habitual en la Comunidad de Madrid",
+      "Aplicable en el año del nacimiento/adopción y los dos siguientes",
+      "Si el parto/adopción es múltiple, el importe se incrementa según normativa",
+      "En tributación individual de ambos progenitores, la deducción se prorratea al 50%"
+    ],
     "legal_reference": "Arts. 4 y 18.1 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -23,7 +31,14 @@
     "id": "mad-adopcion-internacional",
     "ccaa_code": "ES-MD",
     "title": "Por adopción internacional de niños",
-    "summary": "721,70 € por cada hijo adoptado en adopción internacional. Compatible con la deducción por nacimiento/adopción.",
+    "what_covers": "Deducción adicional por cada hijo adoptado en el marco de un procedimiento de adopción internacional. Es compatible con la deducción general por nacimiento/adopción.",
+    "requirements": [
+      "721,70 € por cada hijo adoptado internacionalmente",
+      "La adopción debe haberse formalizado conforme a la legislación vigente y los tratados internacionales suscritos por España",
+      "Residencia habitual en la Comunidad de Madrid",
+      "Aportar resolución o certificado oficial de la adopción internacional",
+      "Compatible con la deducción por nacimiento/adopción de hijos"
+    ],
     "legal_reference": "Art. 5 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -42,7 +57,15 @@
     "id": "mad-acogimiento-familiar-menores",
     "ccaa_code": "ES-MD",
     "title": "Por acogimiento familiar de menores",
-    "summary": "618,60 € / 773,25 € / 927,90 € por el primer, segundo y tercer/sucesivo menor en acogimiento familiar. Requiere base imponible ≤ 26.414,22 € (individual) o 37.322,20 € (conjunta).",
+    "what_covers": "Deducción por tener menores en régimen de acogimiento familiar formalizado por la Comunidad de Madrid (urgencia, temporal, permanente o delegación de guarda preadoptiva).",
+    "requirements": [
+      "618,60 € por el primer menor en acogimiento, 773,25 € por el segundo y 927,90 € por el tercero o sucesivos",
+      "Base imponible ≤ 26.414,22 € en tributación individual",
+      "Base imponible ≤ 37.322,20 € en tributación conjunta",
+      "El acogimiento debe ser formalizado por la Consejería competente de la Comunidad de Madrid",
+      "Modalidades válidas: urgencia, temporal, permanente o delegación de guarda para convivencia preadoptiva",
+      "Disponer del certificado emitido por la Consejería"
+    ],
     "legal_reference": "Arts. 6 y 18.1 y 4.a) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -78,7 +101,16 @@
     "id": "mad-acogimiento-mayores-65-discapacidad",
     "ccaa_code": "ES-MD",
     "title": "Por acogimiento no remunerado de mayores de 65 años y/o con discapacidad",
-    "summary": "1.546,50 € por cada persona mayor de 65 años o con discapacidad ≥ 33% en acogimiento sin contraprestación durante más de 183 días al año.",
+    "what_covers": "Deducción para quienes acogen sin contraprestación a personas mayores de 65 años o con discapacidad reconocida, conviviendo más de la mitad del año.",
+    "requirements": [
+      "1.546,50 € por cada persona acogida",
+      "La persona acogida debe tener más de 65 años o un grado de discapacidad ≥ 33%",
+      "Convivencia mínima de 184 días al año en el domicilio del contribuyente",
+      "El acogimiento debe ser sin contraprestación económica",
+      "La persona acogida no puede dar derecho al mínimo por ascendientes",
+      "No haber recibido ayudas o subvenciones de la Comunidad de Madrid vinculadas al acogimiento",
+      "Base imponible ≤ 26.414,22 € (individual) o 37.322,20 € (conjunta)"
+    ],
     "legal_reference": "Arts. 7 y 18.1 y 4.b) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -110,7 +142,13 @@
     "id": "mad-cuidado-ascendientes",
     "ccaa_code": "ES-MD",
     "title": "Por cuidado de ascendientes",
-    "summary": "515,50 € por cada ascendiente mayor de 65 años o con discapacidad ≥ 33% por el que pueda aplicarse el mínimo por ascendientes.",
+    "what_covers": "Deducción por cada ascendiente (padre, madre, abuelos) mayor de 65 años o con discapacidad reconocida que dé derecho al mínimo por ascendientes.",
+    "requirements": [
+      "515,50 € por cada ascendiente con derecho a la deducción",
+      "El ascendiente debe ser mayor de 65 años o tener grado de discapacidad ≥ 33%",
+      "Debe poder aplicarse el mínimo por ascendientes regulado en la normativa estatal del IRPF",
+      "Residencia habitual del contribuyente en la Comunidad de Madrid"
+    ],
     "legal_reference": "Art. 7 bis Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -128,7 +166,16 @@
     "id": "mad-alquiler-vivienda-habitual",
     "ccaa_code": "ES-MD",
     "title": "Por arrendamiento de la vivienda habitual",
-    "summary": "30% de las cantidades pagadas por alquiler, hasta 1.237,20 €. Inquilino menor de 40 años con base ≤ 26.414,22 € (individual) o 37.322,20 € (conjunta) y el alquiler ha de superar el 20% de la base.",
+    "what_covers": "Deducción por las cantidades pagadas en concepto de alquiler de la vivienda habitual para inquilinos jóvenes con ingresos moderados.",
+    "requirements": [
+      "30% de las cantidades satisfechas por el alquiler, con límite de 1.237,20 €",
+      "El contribuyente debe ser menor de 40 años",
+      "Base imponible ≤ 26.414,22 € en tributación individual",
+      "Base imponible ≤ 37.322,20 € en tributación conjunta",
+      "Las cantidades pagadas por alquiler deben superar el 20% de la base imponible",
+      "Aportar NIF del arrendador",
+      "Disponer del resguardo del depósito de la fianza ante el IVIMA / Agencia de Vivienda Social"
+    ],
     "legal_reference": "Arts. 8 y 18.1 y 4.c) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -162,7 +209,14 @@
     "id": "mad-gastos-arrendamiento-arrendador",
     "ccaa_code": "ES-MD",
     "title": "Por gastos derivados del arrendamiento de viviendas (arrendador)",
-    "summary": "10% de gastos de reparación, formalización del contrato, primas de seguros o certificados de eficiencia energética en inmuebles arrendados como vivienda. Límite 154,65 €.",
+    "what_covers": "Deducción para propietarios que arriendan viviendas, sobre determinados gastos relacionados con la formalización y mantenimiento del contrato de alquiler.",
+    "requirements": [
+      "10% de los gastos deducibles, con límite de 154,65 €",
+      "Gastos válidos: reparación y conservación, formalización del contrato, primas de seguros de la vivienda o certificados de eficiencia energética",
+      "El inmueble debe estar arrendado como vivienda habitual del inquilino",
+      "Conservar facturas y justificantes de los gastos",
+      "El arrendador debe ser contribuyente del IRPF con residencia en la Comunidad de Madrid"
+    ],
     "legal_reference": "Arts. 8 bis y 18.4.c) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -181,7 +235,16 @@
     "id": "mad-arrendamiento-viviendas-vacias",
     "ccaa_code": "ES-MD",
     "title": "Por arrendamiento de viviendas vacías",
-    "summary": "1.000 € por cada vivienda vacía que pase a arrendarse como vivienda habitual mediante contrato LAU de al menos 3 años, hasta un máximo de 5 inmuebles.",
+    "what_covers": "Incentivo para propietarios que pongan en el mercado del alquiler viviendas que estaban vacías, mediante contratos de duración estable.",
+    "requirements": [
+      "1.000 € por cada vivienda vacía puesta en alquiler",
+      "Máximo 5 inmuebles deducibles por contribuyente",
+      "El contrato debe ser un arrendamiento de vivienda conforme a la LAU",
+      "Duración pactada de al menos 3 años",
+      "La vivienda debe destinarse a vivienda habitual del arrendatario",
+      "Disponer del resguardo del depósito de fianza ante la Agencia de Vivienda Social",
+      "Se prorratea según el porcentaje de propiedad si hay cotitulares"
+    ],
     "legal_reference": "Arts. 8 ter y 18.4.c) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -201,7 +264,14 @@
     "id": "mad-donativos-fundaciones-clubes-deportivos",
     "ccaa_code": "ES-MD",
     "title": "Por donativos a fundaciones y clubes deportivos",
-    "summary": "15% de donativos a fundaciones inscritas en el Registro de Fundaciones de la Comunidad de Madrid o a clubes deportivos elementales/básicos madrileños. Base limitada al 10% de la base liquidable.",
+    "what_covers": "Deducción por donativos en metálico realizados a fundaciones madrileñas inscritas en el Registro autonómico o a clubes deportivos elementales y básicos de la Comunidad de Madrid.",
+    "requirements": [
+      "15% de las cantidades donadas",
+      "La base de la deducción no puede superar el 10% de la base liquidable del contribuyente",
+      "Las fundaciones deben estar inscritas en el Registro de Fundaciones de la Comunidad de Madrid",
+      "Los clubes deportivos deben ser elementales o básicos conforme a la normativa deportiva madrileña",
+      "Aportar certificado del donativo emitido por la entidad receptora con su NIF"
+    ],
     "legal_reference": "Arts. 9 y 18.3 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -223,7 +293,16 @@
     "id": "mad-financiacion-vivienda-tipos-interes",
     "ccaa_code": "ES-MD",
     "title": "Por el incremento de los costes de la financiación ajena para la inversión en vivienda habitual derivado del alza de los tipos de interés",
-    "summary": "25% sobre el exceso de intereses respecto al euríbor de diciembre 2022. Préstamo a tipo variable formalizado antes del ejercicio, vivienda con precio ≤ 390.000 €. Límite 300 €.",
+    "what_covers": "Deducción que mitiga el sobrecoste de los intereses de hipotecas a tipo variable sobre la vivienda habitual como consecuencia de la subida del euríbor.",
+    "requirements": [
+      "25% del exceso de intereses pagados en el ejercicio respecto al euríbor de diciembre de 2022",
+      "Límite máximo de deducción: 300 €",
+      "El préstamo debe estar formalizado a tipo de interés variable",
+      "El préstamo debe haberse contratado antes del inicio del ejercicio fiscal",
+      "Destinado a la adquisición de la vivienda habitual del contribuyente",
+      "Precio de adquisición de la vivienda ≤ 390.000 €",
+      "Conservar el cuadro de amortización y los justificantes bancarios"
+    ],
     "legal_reference": "Arts. 10 y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -245,7 +324,14 @@
     "id": "mad-cambio-residencia-despoblacion",
     "ccaa_code": "ES-MD",
     "title": "Por cambio de residencia a un municipio en riesgo de despoblación",
-    "summary": "1.000 € en el ejercicio del traslado y en el siguiente. Contribuyente <35 años que traslade su residencia habitual a un municipio madrileño con población <2.500 habitantes, manteniéndola 3 ejercicios.",
+    "what_covers": "Incentivo al traslado de la residencia habitual a municipios pequeños de la Comunidad de Madrid en riesgo de despoblación, dirigido a contribuyentes jóvenes.",
+    "requirements": [
+      "1.000 € en el ejercicio del traslado y en el siguiente",
+      "El contribuyente debe ser menor de 35 años",
+      "Trasladar la residencia habitual a un municipio madrileño con menos de 2.500 habitantes",
+      "Mantener la nueva residencia habitual durante al menos 3 ejercicios consecutivos",
+      "El cambio de residencia puede realizarse mediante adquisición onerosa o arrendamiento (LAU)"
+    ],
     "legal_reference": "Arts. 10 bis y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -269,7 +355,15 @@
     "id": "mad-vivienda-municipios-despoblacion",
     "ccaa_code": "ES-MD",
     "title": "Por adquisición de vivienda habitual en municipios en riesgo de despoblación",
-    "summary": "10% del precio de adquisición de vivienda habitual en municipio madrileño con <2.500 habitantes, prorrateado en 10 ejercicios. Contribuyente <35 años. Límite 1.546,50 €/año.",
+    "what_covers": "Deducción por la compra de la vivienda habitual en municipios madrileños pequeños, dirigida a contribuyentes jóvenes que quieran asentarse en zonas en riesgo de despoblación.",
+    "requirements": [
+      "10% del precio de adquisición, prorrateado en 10 ejercicios fiscales",
+      "Límite máximo de deducción: 1.546,50 € por año",
+      "El contribuyente debe ser menor de 35 años",
+      "La vivienda debe constituir la vivienda habitual",
+      "El municipio debe ser de la Comunidad de Madrid y tener menos de 2.500 habitantes",
+      "La adquisición debe ser a partir del 1 de enero de 2024"
+    ],
     "legal_reference": "Arts. 10 ter y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -292,7 +386,17 @@
     "id": "mad-gastos-educativos",
     "ccaa_code": "ES-MD",
     "title": "Por gastos educativos",
-    "summary": "15% gastos de escolaridad, 15% enseñanza de idiomas y 5% vestuario escolar de hijos. Aplica a 2º ciclo de Infantil, EBO y FP Básica. Límites por descendiente: 412,40 € (idiomas+vestuario), 927,90 € o 1.031 € (escolaridad).",
+    "what_covers": "Deducción por los gastos de escolaridad, enseñanza de idiomas y vestuario escolar de hijos en niveles obligatorios y de Formación Profesional Básica.",
+    "requirements": [
+      "15% de los gastos de escolaridad (solo centros privados no concertados)",
+      "15% de los gastos de enseñanza de idiomas (curricular o extraescolar)",
+      "5% de los gastos de vestuario escolar de uso exclusivo",
+      "Niveles aplicables: 2º ciclo de Educación Infantil, Educación Básica Obligatoria y Formación Profesional Básica",
+      "Límite por descendiente: 412,40 € (idiomas + vestuario)",
+      "Límite por descendiente: 927,90 € (escolaridad) o 1.031 € si concurren idiomas/vestuario",
+      "Conservar facturas a nombre del contribuyente",
+      "Se descuentan las becas o ayudas recibidas que cubran los mismos gastos"
+    ],
     "legal_reference": "Arts. 11 y 18.2 y 4.d) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -314,7 +418,15 @@
     "id": "mad-cuidado-hijos-mayores-dependientes",
     "ccaa_code": "ES-MD",
     "title": "Por cuidado de hijos menores de 3 años, mayores dependientes y personas con discapacidad",
-    "summary": "25% (40% si familia numerosa) de las cotizaciones al Sistema Especial de Empleados de Hogar. Límite 463,95 € (618,60 € en familias numerosas).",
+    "what_covers": "Deducción sobre las cotizaciones al Sistema Especial de Empleados de Hogar cuando se contrata a una persona para el cuidado de hijos pequeños, personas dependientes o con discapacidad.",
+    "requirements": [
+      "25% de las cuotas a la Seguridad Social del Sistema Especial de Empleados de Hogar",
+      "40% si el contribuyente forma parte de una familia numerosa",
+      "Límite máximo: 463,95 € (618,60 € en familias numerosas)",
+      "Concurrir al menos una circunstancia: hijo menor de 3 años, convivencia con persona dependiente o con discapacidad ≥ 33%, o que el propio contribuyente tenga reconocida dependencia/discapacidad",
+      "El empleado/a del hogar debe estar dado de alta y cotizar de forma efectiva",
+      "Suele exigirse una dedicación mínima en horas mensuales contratadas (40 horas)"
+    ],
     "legal_reference": "Arts. 11 bis y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -346,7 +458,15 @@
     "id": "mad-intereses-prestamos-vivienda-jovenes",
     "ccaa_code": "ES-MD",
     "title": "Por el pago de intereses de préstamos para la adquisición de vivienda por jóvenes menores de treinta años",
-    "summary": "25% de intereses de préstamos hipotecarios para vivienda habitual. Contribuyente <30 años. Límite 1.031 €.",
+    "what_covers": "Deducción sobre los intereses satisfechos por préstamos hipotecarios destinados a la adquisición de la vivienda habitual por contribuyentes jóvenes.",
+    "requirements": [
+      "25% de los intereses satisfechos en el ejercicio",
+      "Límite máximo: 1.031 €",
+      "El contribuyente debe ser menor de 30 años",
+      "El préstamo debe estar destinado a la adquisición de la vivienda habitual",
+      "El préstamo debe haber sido concedido por una entidad financiera",
+      "Disponer de los justificantes bancarios de pago de intereses"
+    ],
     "legal_reference": "Art. 12 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -368,7 +488,14 @@
     "id": "mad-intereses-prestamos-estudios",
     "ccaa_code": "ES-MD",
     "title": "Por el pago de intereses de préstamos a estudios de Grado, Máster y Doctorado",
-    "summary": "Importe de los intereses satisfechos por préstamos concedidos por entidades de crédito para cursar estudios universitarios (Grado, Máster o Doctorado).",
+    "what_covers": "Deducción por los intereses pagados por préstamos concedidos por entidades de crédito para financiar estudios universitarios.",
+    "requirements": [
+      "100% del importe de los intereses satisfechos en el ejercicio",
+      "El préstamo debe haber sido concedido por una entidad de crédito",
+      "Destinado a estudios de Grado, Máster Universitario o Doctorado",
+      "Beneficiario: el propio contribuyente, su cónyuge o un descendiente con derecho al mínimo por descendientes",
+      "Conservar el contrato del préstamo y los justificantes bancarios de pago"
+    ],
     "legal_reference": "Arts. 12 bis y 18.4.e) Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -396,7 +523,15 @@
     "id": "mad-vivienda-habitual-nacimiento-adopcion",
     "ccaa_code": "ES-MD",
     "title": "Por adquisición de vivienda habitual por nacimiento o adopción de hijos",
-    "summary": "10% del precio de adquisición de la vivienda habitual cuando esta se adquiere por nacimiento o adopción de hijos (desde 1 de enero de 2023). Prorrateo en 10 ejercicios. Límite 1.546,50 €/año.",
+    "what_covers": "Deducción por la compra de la vivienda habitual cuando se motiva por el nacimiento o adopción de hijos a partir de 2023.",
+    "requirements": [
+      "10% del precio de adquisición de la vivienda, prorrateado en 10 ejercicios",
+      "Límite anual: 1.546,50 €",
+      "La vivienda debe constituir la vivienda habitual",
+      "El nacimiento o adopción debe haber ocurrido a partir del 1 de enero de 2023",
+      "La adquisición debe estar vinculada al nacimiento/adopción que motiva la deducción",
+      "Conservar escritura de compraventa y certificados de nacimiento/adopción"
+    ],
     "legal_reference": "Arts. 13 y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -418,7 +553,16 @@
     "id": "mad-familia-numerosa",
     "ccaa_code": "ES-MD",
     "title": "Por la obtención de la condición de familia numerosa de categoría general o especial",
-    "summary": "50% de la cuota íntegra autonómica (familia numerosa general) o 100% (especial), con límites 6.186 € / 12.372 € (individual) o 12.372 € / 24.744 € (conjunta). Aplica en el período en que surte efectos el reconocimiento y los dos siguientes.",
+    "what_covers": "Deducción de una parte de la cuota íntegra autonómica para contribuyentes que obtienen el reconocimiento como familia numerosa.",
+    "requirements": [
+      "50% de la cuota íntegra autonómica si es familia numerosa de categoría general",
+      "100% de la cuota íntegra autonómica si es familia numerosa de categoría especial",
+      "Límites (general/especial) en tributación individual: 6.186 € / 12.372 €",
+      "Límites (general/especial) en tributación conjunta: 12.372 € / 24.744 €",
+      "El reconocimiento de la condición de familia numerosa debe surtir efectos a partir del 1 de enero de 2023",
+      "Aplica en el ejercicio del reconocimiento y los dos siguientes",
+      "Disponer del título oficial de familia numerosa en vigor"
+    ],
     "legal_reference": "Arts. 13 bis y 18.2 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -441,7 +585,13 @@
     "id": "mad-familias-dos-descendientes-ingresos-reducidos",
     "ccaa_code": "ES-MD",
     "title": "Para familias con dos o más descendientes e ingresos reducidos",
-    "summary": "10% de la cuota íntegra autonómica menos otras deducciones, para contribuyentes con dos o más descendientes y base imponible ≤ 24.744 €.",
+    "what_covers": "Deducción complementaria para familias con dos o más hijos a su cargo cuyos ingresos no superen un determinado umbral.",
+    "requirements": [
+      "10% de la cuota íntegra autonómica una vez descontadas el resto de deducciones autonómicas",
+      "Tener al menos 2 descendientes que den derecho al mínimo por descendientes",
+      "Suma de bases imponibles general y del ahorro ≤ 24.744 €",
+      "Residencia habitual en la Comunidad de Madrid"
+    ],
     "legal_reference": "Art. 14 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -460,7 +610,17 @@
     "id": "mad-inversion-nuevas-entidades",
     "ccaa_code": "ES-MD",
     "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
-    "summary": "40% (límite 9.279 €) en SA/SL de nueva creación; 50% (límite 12.372 €) en SAL/SLL/cooperativas; 50% (límite 12.372 €) en sociedades de universidades/centros de investigación. Entidad con domicilio en Madrid y actividad económica, mantener 3 años.",
+    "what_covers": "Deducción por invertir en el capital de sociedades madrileñas de nueva creación o reciente creación, fomentando el emprendimiento y la captación de inversión privada.",
+    "requirements": [
+      "40% de la inversión en SA/SL de nueva creación (límite 9.279 €)",
+      "50% de la inversión en SAL/SLL o cooperativas (límite 12.372 €)",
+      "50% de la inversión en sociedades creadas o participadas por universidades o centros de investigación (límite 12.372 €)",
+      "La entidad participada debe tener su domicilio social y fiscal en la Comunidad de Madrid",
+      "La entidad debe desarrollar una actividad económica (no mera gestión de patrimonio)",
+      "Mantener las acciones o participaciones al menos 3 años",
+      "Participación máxima (incluido entorno familiar) ≤ 40% del capital",
+      "La inversión debe efectuarse en la constitución o en una ampliación de capital realizada en los 3 años siguientes"
+    ],
     "legal_reference": "Art. 15 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -485,7 +645,14 @@
     "id": "mad-autoempleo-jovenes-35",
     "ccaa_code": "ES-MD",
     "title": "Para el fomento del autoempleo de jóvenes menores de 35 años",
-    "summary": "1.031 € por el alta como autónomo o partícipe en una entidad en atribución de rentas por primera vez en el Censo. Edad <35 años, actividad principal en Madrid y mantenimiento del alta al menos un año.",
+    "what_covers": "Deducción de cuantía fija para incentivar a los jóvenes que inician una actividad económica como autónomos o como partícipes en entidades en atribución de rentas.",
+    "requirements": [
+      "1.031 € por el alta como autónomo o partícipe en entidad en atribución de rentas",
+      "El contribuyente debe ser menor de 35 años en la fecha de alta",
+      "Debe tratarse de la primera vez que se causa alta en el Censo de Empresarios, Profesionales y Retenedores",
+      "La actividad económica debe desarrollarse principalmente en el territorio de la Comunidad de Madrid",
+      "Se debe mantener el alta y la actividad al menos un año desde su inicio"
+    ],
     "legal_reference": "Art. 16 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -505,7 +672,16 @@
     "id": "mad-inversion-mercado-alternativo-bursatil",
     "ccaa_code": "ES-MD",
     "title": "Por inversiones realizadas en entidades cotizadas en el mercado alternativo bursátil",
-    "summary": "20% de cantidades invertidas en ampliaciones de capital u OPV en el segmento de empresas en expansión del MAB. Límite 10.310 €. Mantenimiento 2 años, participación ≤ 10%, entidad con domicilio en Madrid 2 años.",
+    "what_covers": "Deducción por inversión en acciones de empresas en expansión cotizadas en el Mercado Alternativo Bursátil (segmento BME Growth), bien en ampliaciones de capital o en ofertas públicas de valores.",
+    "requirements": [
+      "20% del importe invertido en el ejercicio",
+      "Límite máximo de deducción: 10.310 €",
+      "La operación debe ser una ampliación de capital o una oferta pública de valores",
+      "La entidad debe cotizar en el segmento de empresas en expansión del MAB (BME Growth)",
+      "Participación máxima del contribuyente: ≤ 10% del capital",
+      "La entidad debe tener su domicilio social y fiscal en la Comunidad de Madrid durante al menos 2 años",
+      "Mantener las acciones al menos 2 años"
+    ],
     "legal_reference": "Art. 17 Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [
@@ -527,7 +703,15 @@
     "id": "mad-nuevos-contribuyentes-extranjero",
     "ccaa_code": "ES-MD",
     "title": "Por inversiones de nuevos contribuyentes procedentes del extranjero",
-    "summary": "20% del valor de adquisición de valores de cesión a terceros, fondos propios u otros activos. Persona física no residente en España durante los 5 años previos que traslade su residencia a Madrid desde 01/01/2024. Mantenimiento 6 años.",
+    "what_covers": "Deducción para personas físicas que trasladan su residencia fiscal desde el extranjero a la Comunidad de Madrid y realizan inversiones financieras o patrimoniales en España.",
+    "requirements": [
+      "20% del valor de adquisición de los elementos patrimoniales invertidos",
+      "Inversión válida: valores representativos de cesión a terceros, fondos propios u otros activos previstos por la norma",
+      "No haber sido residente fiscal en España durante los 5 años anteriores al traslado",
+      "Trasladar la residencia fiscal a la Comunidad de Madrid a partir del 1 de enero de 2024",
+      "Mantener la residencia en Madrid y los elementos patrimoniales al menos 6 años",
+      "Conservar la documentación que acredite la inversión y el cambio de residencia"
+    ],
     "legal_reference": "Art. 17 bis Texto Refundido Decreto Legislativo 1/2010 de la Comunidad de Madrid",
     "eligibility_rule": {
       "all_of": [

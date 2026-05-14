@@ -3,7 +3,14 @@
     "id": "val-nacimiento-adopcion-acogimiento",
     "ccaa_code": "ES-VC",
     "title": "Por nacimiento, adopción, delegación de guarda con fines de adopción o acogimiento familiar",
-    "summary": "600 € (primer hijo), 750 € (segundo) y 900 € (tercero y sucesivos) por nacimiento/adopción o por persona acogida durante todo el periodo. Aplicable también en los dos ejercicios siguientes al nacimiento/adopción. Para fallecidos antes del 1-jun-2025: importe único de 300 €. Bases máximas: 30.000 € individual / 47.000 € conjunta; minoración progresiva entre 27.000–30.000 € / 44.000–47.000 €.",
+    "what_covers": "Deducción por hijos nacidos, adoptados o acogidos por el contribuyente en el periodo. También cubre los dos ejercicios siguientes al nacimiento o adopción.",
+    "requirements": [
+      "Que se haya producido un nacimiento, adopción, delegación de guarda con fines de adopción o acogimiento familiar durante el ejercicio (o en los dos anteriores).",
+      "Importe: 600 € por el primer hijo, 750 € por el segundo y 900 € por el tercero y sucesivos.",
+      "Si el contribuyente falleció antes del 1 de junio de 2025, el importe es único de 300 €.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta (minoración progresiva entre 27.000–30.000 € y 44.000–47.000 €).",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.a) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -40,7 +47,13 @@
     "id": "val-nacimiento-adopcion-multiples",
     "ccaa_code": "ES-VC",
     "title": "Por nacimiento o adopción múltiples",
-    "summary": "246 € por parto múltiple o por dos o más adopciones constituidas en la misma fecha del período impositivo. Bases máximas: 30.000 € individual / 47.000 € conjunta; minoración progresiva entre 27.000–30.000 € / 44.000–47.000 €.",
+    "what_covers": "Deducción por parto múltiple o por dos o más adopciones constituidas en la misma fecha del periodo impositivo.",
+    "requirements": [
+      "Parto múltiple o dos o más adopciones simultáneas durante el ejercicio.",
+      "Importe: 246 €.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta (minoración progresiva entre 27.000–30.000 € y 44.000–47.000 €).",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.b) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -71,7 +84,14 @@
     "id": "val-nacimiento-adopcion-discapacidad",
     "ccaa_code": "ES-VC",
     "title": "Por nacimiento, adopción, acogimiento o delegación de guarda de personas con discapacidad",
-    "summary": "246 € por hijo único con discapacidad física/sensorial ≥ 65% o intelectual/mental ≥ 33%. 303 € si el hijo con discapacidad tiene además un hermano con discapacidad equivalente, o si convive con otra persona que dé derecho a la deducción. Bases máximas: 30.000 € individual / 47.000 € conjunta.",
+    "what_covers": "Deducción por hijos o acogidos con discapacidad física/sensorial ≥ 65% o intelectual/mental ≥ 33%.",
+    "requirements": [
+      "Hijo, adoptado o acogido con discapacidad física/sensorial ≥ 65% o intelectual/mental ≥ 33% permanente.",
+      "Importe: 246 € por hijo único con discapacidad.",
+      "Importe: 303 € si convive con otro hermano o persona con discapacidad equivalente que dé derecho a la deducción.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.c) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -106,7 +126,13 @@
     "id": "val-familia-numerosa-monoparental",
     "ccaa_code": "ES-VC",
     "title": "Por familia numerosa o monoparental",
-    "summary": "330 € (categoría general) o 660 € (categoría especial). Bases máximas: 30.000/47.000 € (general) o 35.000/58.000 € (especial); minoración progresiva.",
+    "what_covers": "Deducción por ostentar el título de familia numerosa o monoparental, en categoría general o especial.",
+    "requirements": [
+      "Disponer del título oficial de familia numerosa o monoparental en vigor.",
+      "Importe: 330 € en categoría general y 660 € en categoría especial.",
+      "Base liquidable ≤ 30.000 €/47.000 € (general) o ≤ 35.000 €/58.000 € (especial), con minoración progresiva en los tramos superiores.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.d) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -137,7 +163,14 @@
     "id": "val-guarderia-primer-ciclo-infantil",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades destinadas a la custodia no ocasional en guarderías y centros de primer ciclo de educación infantil",
-    "summary": "15% de cantidades pagadas por la custodia de hijos/acogidos menores de 3 años en guarderías o centros de primer ciclo de educación infantil. Límite máximo 297 €/hijo. Bases máximas: 30.000 €/47.000 €; minoración progresiva. Padres/acogedores deben realizar actividad por cuenta propia o ajena.",
+    "what_covers": "Deducción por los gastos pagados por la custodia no ocasional en guarderías o centros de primer ciclo de educación infantil para hijos o acogidos menores de 3 años.",
+    "requirements": [
+      "Hijo, adoptado o acogido menor de 3 años escolarizado en guardería o centro de primer ciclo de educación infantil.",
+      "Importe: 15% de las cantidades satisfechas, con un máximo de 297 € por hijo.",
+      "Ambos progenitores o acogedores deben realizar actividad por cuenta propia o ajena.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta (minoración progresiva).",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.e) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -169,7 +202,15 @@
     "id": "val-conciliacion-trabajo-vida-familiar",
     "ccaa_code": "ES-VC",
     "title": "Por conciliación del trabajo con la vida familiar",
-    "summary": "460 € por cada hijo, acogido o persona con delegación de guarda mayor de 3 años y menor de 5 años. La aplica la madre/acogedora/guardadora si está dada de alta en la Seguridad Social/mutualidad. Límite global: cotizaciones totales del periodo. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción para madres, acogedoras o guardadoras con hijos o acogidos mayores de 3 y menores de 5 años, como ayuda a la conciliación laboral.",
+    "requirements": [
+      "Hijo, acogido o persona en delegación de guarda mayor de 3 años y menor de 5 años.",
+      "La aplica la madre, acogedora o guardadora (o supuesto asimilado).",
+      "Estar dada de alta en la Seguridad Social o mutualidad correspondiente.",
+      "Importe: 460 € por cada hijo/acogido, limitado al total de cotizaciones del periodo.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.f) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -201,7 +242,15 @@
     "id": "val-discapacidad-65-mayores",
     "ccaa_code": "ES-VC",
     "title": "Por contribuyentes con discapacidad ≥ 33%, de edad ≥ 65 años",
-    "summary": "197 € por cada contribuyente con discapacidad ≥ 33% y edad ≥ 65 años. No procede si percibe prestación exenta del IRPF derivada de esa discapacidad. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción para contribuyentes mayores de 65 años con discapacidad reconocida igual o superior al 33%.",
+    "requirements": [
+      "Edad ≥ 65 años a la fecha del devengo.",
+      "Grado de discapacidad reconocido ≥ 33%.",
+      "No percibir prestación exenta del IRPF derivada de esa discapacidad.",
+      "Importe: 197 € por cada contribuyente que cumpla los requisitos.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.g) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -232,7 +281,15 @@
     "id": "val-ascendientes-mayores",
     "ccaa_code": "ES-VC",
     "title": "Por ascendientes mayores de 75 años o mayores de 65 años con discapacidad",
-    "summary": "197 € por cada ascendiente en línea directa mayor de 75 años, o mayor de 65 años con discapacidad ≥ 65% (o intelectual/mental ≥ 33%). Requiere convivencia ≥ mitad del periodo, rentas del ascendiente ≤ 8.000 € y que no presente declaración con rentas > 1.800 €. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción por convivencia con ascendientes en línea directa mayores de 75 años, o mayores de 65 años con discapacidad reconocida.",
+    "requirements": [
+      "Ascendiente en línea directa > 75 años, o > 65 años con discapacidad ≥ 65% (o intelectual/mental ≥ 33%).",
+      "Convivencia con el contribuyente durante al menos la mitad del periodo impositivo.",
+      "Rentas anuales del ascendiente ≤ 8.000 € y que no presente declaración de IRPF con rentas > 1.800 €.",
+      "Importe: 197 € por cada ascendiente que dé derecho a la deducción.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.h) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -263,7 +320,15 @@
     "id": "val-empleado-hogar-cuidado-personas",
     "ccaa_code": "ES-VC",
     "title": "Por contratar de manera indefinida a personas en el Sistema Especial de Empleados de Hogar para el cuidado de personas",
-    "summary": "50% de las cuotas de Seguridad Social abonadas por contratación indefinida de empleado/a de hogar para cuidado de descendientes (< 5 años) o ascendientes (> 75 años o > 65 con discapacidad). Límites máximos: 660 €/1.100 € (descendientes), 330 €/550 € (ascendientes). Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción por las cuotas de Seguridad Social pagadas al contratar de forma indefinida a personas empleadas de hogar para el cuidado de descendientes menores de 5 años o ascendientes mayores.",
+    "requirements": [
+      "Contrato indefinido con una persona en el Sistema Especial de Empleados de Hogar.",
+      "Destinada al cuidado de descendientes < 5 años o ascendientes > 75 años (o > 65 con discapacidad).",
+      "Importe: 50% de las cuotas de Seguridad Social pagadas por el empleador.",
+      "Límites: hasta 660 € (1.100 € familia monoparental) si se cuida a descendientes; 330 € (550 € monoparental) si se cuida a ascendientes.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.i) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -295,7 +360,16 @@
     "id": "val-arrendador-precio-referencia",
     "ccaa_code": "ES-VC",
     "title": "Por obtención de rentas de arrendamientos de vivienda con renta no superior al precio de referencia (arrendador)",
-    "summary": "5% de los rendimientos íntegros del arrendamiento de vivienda habitual del inquilino, siempre que la renta mensual no supere el precio de referencia de los alquileres privados de la Comunitat Valenciana, el contrato sea LAU, se haya constituido fianza en favor de la Generalitat y se cumplan los requisitos sobre contratos anteriores. Base máxima 3.300 €.",
+    "what_covers": "Deducción para arrendadores que alquilan vivienda habitual del inquilino a un precio no superior al precio de referencia de los alquileres privados de la Comunitat Valenciana.",
+    "requirements": [
+      "Ser arrendador de una vivienda destinada a vivienda habitual del inquilino.",
+      "La renta mensual pactada no supera el precio de referencia de los alquileres privados de la Comunitat Valenciana.",
+      "Contrato celebrado bajo la Ley de Arrendamientos Urbanos (LAU).",
+      "Depósito de la fianza en favor de la Generalitat dentro del plazo.",
+      "Cumplimiento de los requisitos sobre contratos anteriores.",
+      "Importe: 5% de los rendimientos íntegros del arrendamiento, con base máxima de 3.300 €.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.j) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -317,7 +391,15 @@
     "id": "val-primera-vivienda-habitual-jovenes",
     "ccaa_code": "ES-VC",
     "title": "Por primera adquisición de vivienda habitual por contribuyentes ≤ 35 años",
-    "summary": "5% de las cantidades satisfechas para la primera adquisición de vivienda habitual (excepto intereses) por contribuyente con edad ≤ 35 años. Bases máximas: 30.000 €/47.000 €; minoración progresiva.",
+    "what_covers": "Deducción para jóvenes de hasta 35 años por la primera adquisición de su vivienda habitual.",
+    "requirements": [
+      "Edad ≤ 35 años a la fecha del devengo.",
+      "Que sea la primera adquisición de la vivienda habitual del contribuyente.",
+      "Vivienda en propiedad y con carácter de habitual.",
+      "Importe: 5% de las cantidades satisfechas en el ejercicio (excluidos intereses).",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta (minoración progresiva).",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.k) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -351,7 +433,14 @@
     "id": "val-vivienda-habitual-discapacidad",
     "ccaa_code": "ES-VC",
     "title": "Por adquisición de vivienda habitual por personas con discapacidad",
-    "summary": "5% de las cantidades satisfechas para la adquisición de vivienda habitual (excepto intereses) por contribuyentes con discapacidad ≥ 65% (o intelectual/mental ≥ 33%). Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción para personas con discapacidad reconocida por la adquisición de su vivienda habitual.",
+    "requirements": [
+      "Discapacidad física/sensorial ≥ 65% o intelectual/mental ≥ 33% permanente.",
+      "Vivienda en propiedad y con carácter de habitual.",
+      "Importe: 5% de las cantidades satisfechas en el ejercicio (excluidos intereses).",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.l) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -388,7 +477,13 @@
     "id": "val-vivienda-habitual-ayudas-publicas",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades destinadas a la adquisición o rehabilitación de vivienda habitual, procedentes de ayudas públicas",
-    "summary": "112 € por contribuyente o, alternativamente, el resultado de aplicar el tipo medio de gravamen general autonómico sobre la cuantía de la ayuda pública concedida por la Generalitat para la adquisición o rehabilitación de la vivienda habitual.",
+    "what_covers": "Deducción para quienes reciben ayudas públicas de la Generalitat destinadas a la adquisición o rehabilitación de la vivienda habitual.",
+    "requirements": [
+      "Haber recibido una ayuda pública concedida por la Generalitat para adquirir o rehabilitar la vivienda habitual.",
+      "Que la vivienda tenga carácter de habitual.",
+      "Importe: 112 € por contribuyente o, alternativamente, el resultado de aplicar el tipo medio de gravamen general autonómico sobre la cuantía de la ayuda recibida.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.m) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -411,7 +506,16 @@
     "id": "val-arrendamiento-vivienda-habitual",
     "ccaa_code": "ES-VC",
     "title": "Por arrendamiento o pago por la cesión en uso de la vivienda habitual",
-    "summary": "20% (límite 800 €). 25% (límite 950 €) si el arrendatario es ≤ 35 años, tiene discapacidad ≥ 65% (o intelectual/mental ≥ 33%) o es víctima de violencia de género. 30% (límite 1.100 €) si reúne dos o más condiciones. Contrato posterior a 23-04-1998 y duración ≥ 1 año. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción para inquilinos por el pago del alquiler o de la cesión de uso de la vivienda habitual.",
+    "requirements": [
+      "Vivienda en régimen de alquiler con carácter de habitual.",
+      "Contrato de arrendamiento posterior al 23-04-1998 y con duración ≥ 1 año.",
+      "Importe: 20% (límite 800 €) con carácter general.",
+      "Importe: 25% (límite 950 €) si el arrendatario tiene ≤ 35 años, discapacidad ≥ 65% (o intelectual/mental ≥ 33%) o es víctima de violencia de género.",
+      "Importe: 30% (límite 1.100 €) si concurren dos o más de las circunstancias anteriores.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.n) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -450,7 +554,14 @@
     "id": "val-arrendamiento-actividad-distinto-municipio",
     "ccaa_code": "ES-VC",
     "title": "Por arrendamiento de vivienda por realización de actividad en distinto municipio",
-    "summary": "10% de las cantidades satisfechas por el arrendamiento de una vivienda en la Comunitat Valenciana situada a más de 50 km de aquella en la que residía antes, motivado por la realización de una actividad por cuenta propia o ajena. Límite 224 €. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción para quienes alquilan una vivienda en otro municipio de la Comunitat Valenciana por motivos laborales o profesionales.",
+    "requirements": [
+      "Alquiler de una vivienda situada en la Comunitat Valenciana por motivo de actividad por cuenta propia o ajena.",
+      "Distancia entre el municipio de la nueva vivienda y el de residencia anterior > 50 km.",
+      "Importe: 10% de las cantidades satisfechas por el arrendamiento, con un límite máximo de 224 €.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.ñ) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -487,7 +598,15 @@
     "id": "val-instalaciones-autoconsumo-renovables",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades invertidas en instalaciones de autoconsumo o generación de energía eléctrica o térmica a través de fuentes renovables",
-    "summary": "40% para inversiones en la vivienda habitual o instalaciones colectivas del edificio destinadas a autoconsumo eléctrico, generación eléctrica solar/eólica para viviendas aisladas o generación térmica solar/biomasa/geotérmica. 20% si la inversión es en una segunda residencia no afecta a actividad económica. Base máxima 8.800 €/vivienda/año.",
+    "what_covers": "Deducción por inversiones en instalaciones de autoconsumo o generación de energía eléctrica/térmica a partir de fuentes renovables en la vivienda.",
+    "requirements": [
+      "Inversión en instalaciones de autoconsumo eléctrico, solar/eólica para viviendas aisladas o térmica renovable (solar, biomasa, geotérmica).",
+      "Importe: 40% si la instalación está en la vivienda habitual o es colectiva del edificio.",
+      "Importe: 20% si la inversión es en una segunda residencia no afecta a actividad económica.",
+      "Base máxima 8.800 € por vivienda y ejercicio.",
+      "Las subvenciones públicas recibidas se descuentan de la base de la deducción.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.o) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -514,7 +633,12 @@
     "id": "val-donaciones-ecologicas",
     "ccaa_code": "ES-VC",
     "title": "Por donaciones con finalidad ecológica",
-    "summary": "20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto, por donaciones a la Generalitat, corporaciones locales valencianas, entidades públicas dependientes con objeto medioambiental o entidades sin fines lucrativos con fin exclusivo de defensa del medio ambiente.",
+    "what_covers": "Deducción por donaciones realizadas a entidades públicas o sin fines lucrativos cuyo objeto sea la defensa y conservación del medio ambiente.",
+    "requirements": [
+      "Donación dirigida a la Generalitat, corporaciones locales valencianas, entidades públicas dependientes con objeto medioambiental, o entidades sin fines lucrativos con fin exclusivo de defensa del medio ambiente.",
+      "Importe: 20% sobre los primeros 250 € donados (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.p) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -532,7 +656,13 @@
     "id": "val-donaciones-patrimonio-cultural-valenciano",
     "ccaa_code": "ES-VC",
     "title": "Por donaciones de bienes integrantes del Patrimonio Cultural Valenciano",
-    "summary": "20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto del valor de las donaciones puras y simples de bienes inscritos en el Inventario General del Patrimonio Cultural Valenciano realizadas a entidades sin ánimo de lucro, administraciones, universidades y centros valencianos.",
+    "what_covers": "Deducción por donaciones puras y simples de bienes inscritos en el Inventario General del Patrimonio Cultural Valenciano.",
+    "requirements": [
+      "Donación pura y simple de bienes inscritos en el Inventario General del Patrimonio Cultural Valenciano.",
+      "Beneficiario: entidades sin ánimo de lucro, administraciones públicas, universidades o centros valencianos.",
+      "Importe: 20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto del valor donado.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.q) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -551,7 +681,12 @@
     "id": "val-donativos-conservacion-patrimonio-cultural",
     "ccaa_code": "ES-VC",
     "title": "Por donativos para la conservación, reparación y restauración de bienes del Patrimonio Cultural Valenciano",
-    "summary": "20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto del valor de las donaciones dinerarias destinadas a la conservación, reparación y restauración de bienes inscritos en el Inventario General del Patrimonio Cultural Valenciano.",
+    "what_covers": "Deducción por donaciones dinerarias destinadas a la conservación, reparación y restauración de bienes del Patrimonio Cultural Valenciano.",
+    "requirements": [
+      "Donación dineraria con destino a la conservación, reparación o restauración de bienes inscritos en el Inventario General del Patrimonio Cultural Valenciano.",
+      "Importe: 20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.q) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -569,7 +704,13 @@
     "id": "val-conservacion-bienes-titulares-patrimonio-cultural",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades destinadas por sus titulares a la conservación, reparación y restauración de bienes del Patrimonio Cultural Valenciano",
-    "summary": "20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto, por cantidades destinadas por los titulares a la conservación, reparación y restauración de bienes pertenecientes al Patrimonio Cultural Valenciano inscritos en el Inventario General.",
+    "what_covers": "Deducción para los titulares de bienes inscritos en el Patrimonio Cultural Valenciano por las cantidades destinadas a su conservación, reparación o restauración.",
+    "requirements": [
+      "Ser titular de un bien inscrito en el Inventario General del Patrimonio Cultural Valenciano.",
+      "Destinar cantidades del propio bolsillo a la conservación, reparación o restauración del bien.",
+      "Importe: 20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto de las cantidades destinadas.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.q) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -587,7 +728,12 @@
     "id": "val-donaciones-lengua-valenciana",
     "ccaa_code": "ES-VC",
     "title": "Por donaciones destinadas al fomento de la Lengua Valenciana",
-    "summary": "20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto, por donaciones dinerarias en favor de la Generalitat, entidades locales valencianas, universidades, centros superiores de enseñanzas artísticas o entidades inscritas en el Censo de entidades de fomento del valenciano.",
+    "what_covers": "Deducción por donaciones dinerarias destinadas al fomento de la lengua valenciana.",
+    "requirements": [
+      "Donación dineraria en favor de la Generalitat, entidades locales valencianas, universidades, centros superiores de enseñanzas artísticas o entidades inscritas en el Censo de entidades de fomento del valenciano.",
+      "Importe: 20% sobre los primeros 250 € (150 € para fallecidos antes del 1-jun-2025) y 25% sobre el resto.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.r) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -605,7 +751,13 @@
     "id": "val-mecenazgo-cultural-cientifico-deportivo",
     "ccaa_code": "ES-VC",
     "title": "Por donaciones o cesiones de uso o comodatos para fines culturales, científicos o deportivos no profesionales",
-    "summary": "25% sobre el valor de las donaciones, préstamos de uso o comodatos a proyectos o actividades culturales, científicas o deportivas no profesionales declaradas de interés social. Si la donación se acoge a la Ley 49/2002, los primeros 250 € disfrutan del 20% (150 € para fallecidos antes del 1-jun-2025).",
+    "what_covers": "Deducción por mecenazgo: donaciones, préstamos de uso o comodatos a proyectos o actividades culturales, científicas o deportivas no profesionales declaradas de interés social.",
+    "requirements": [
+      "Donación, cesión de uso o comodato dirigido a un proyecto o actividad cultural, científica o deportiva no profesional declarada de interés social.",
+      "Importe general: 25% sobre el valor de la donación, cesión o comodato.",
+      "Si la donación se acoge a la Ley 49/2002, los primeros 250 € disfrutan del 20% (150 € para fallecidos antes del 1-jun-2025).",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.s) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -628,7 +780,13 @@
     "id": "val-dos-mas-descendientes",
     "ccaa_code": "ES-VC",
     "title": "Por contribuyentes con dos o más descendientes",
-    "summary": "10% del importe de la cuota íntegra autonómica, una vez deducidas las minoraciones, cuando el contribuyente tenga al menos dos descendientes que generen derecho al mínimo por descendientes y la suma de bases imponibles de la unidad familiar no supere los 30.000 €.",
+    "what_covers": "Deducción para contribuyentes que conviven con dos o más descendientes que generan derecho al mínimo por descendientes.",
+    "requirements": [
+      "Tener al menos dos descendientes que generen derecho al mínimo por descendientes.",
+      "Suma de bases imponibles de toda la unidad familiar ≤ 30.000 €.",
+      "Importe: 10% sobre la cuota íntegra autonómica, una vez deducidas las minoraciones.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.t) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -647,7 +805,15 @@
     "id": "val-incremento-costes-financiacion-vivienda",
     "ccaa_code": "ES-VC",
     "title": "Por el incremento de los costes de la financiación ajena en la inversión en vivienda habitual",
-    "summary": "50% de la diferencia positiva entre los importes de préstamo hipotecario pagados durante el ejercicio y los del año anterior, siempre que no se haya aplicado la deducción estatal por inversión en vivienda habitual. Importe máximo 100 €. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción que compensa el incremento de los pagos del préstamo hipotecario de la vivienda habitual respecto al año anterior.",
+    "requirements": [
+      "Vivienda en propiedad y con carácter de habitual financiada mediante préstamo ajeno.",
+      "No haber aplicado la deducción estatal por inversión en vivienda habitual.",
+      "Importe: 50% de la diferencia positiva entre los pagos del préstamo del ejercicio y los del año anterior.",
+      "Importe máximo: 100 €.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.u) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -680,7 +846,14 @@
     "id": "val-material-escolar",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades destinadas a la adquisición de material escolar",
-    "summary": "110 € por cada hijo / persona acogida / persona con delegación de guarda escolarizada en centro público o privado concertado de la Comunitat Valenciana en Primaria, ESO o educación especial. Requiere que el contribuyente esté en situación de desempleo e inscrito como demandante de empleo. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción para contribuyentes en desempleo por la adquisición de material escolar para hijos o acogidos escolarizados en la Comunitat Valenciana.",
+    "requirements": [
+      "Tener hijo, acogido o persona en delegación de guarda escolarizado en centro público o privado concertado de la Comunitat Valenciana, en Primaria, ESO o educación especial.",
+      "Estar en situación de desempleo e inscrito como demandante de empleo.",
+      "Importe: 110 € por cada hijo/acogido escolarizado.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.v) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -712,7 +885,16 @@
     "id": "val-obras-conservacion-mejora-vivienda",
     "ccaa_code": "ES-VC",
     "title": "Por obras de conservación o mejora de la calidad, sostenibilidad y accesibilidad en la vivienda habitual",
-    "summary": "20% de las cantidades satisfechas por obras de conservación/mejora realizadas a partir del 1-ene-2017. 50% si las obras están dirigidas a mejorar la accesibilidad de personas con discapacidad ≥ 33% (a partir de 2022). Base máxima anual 5.500 €/vivienda; base acumulada máxima 5.000 €. Bases imponibles ≤ 30.000 €/47.000 €.",
+    "what_covers": "Deducción por las cantidades satisfechas en obras de conservación o mejora (calidad, sostenibilidad y accesibilidad) en la vivienda habitual.",
+    "requirements": [
+      "Vivienda con carácter de habitual.",
+      "Obras realizadas a partir del 1 de enero de 2017.",
+      "Importe general: 20% de las cantidades satisfechas.",
+      "Importe: 50% si las obras se dirigen a mejorar la accesibilidad para personas con discapacidad ≥ 33% (a partir de 2022).",
+      "Base máxima anual 5.500 € por vivienda; base acumulada máxima 5.000 €.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.w) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -748,7 +930,13 @@
     "id": "val-abonos-culturales",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades destinadas a abonos culturales",
-    "summary": "21% de las cantidades satisfechas por la adquisición de abonos culturales de empresas o instituciones adheridas al Abono Cultural Valenciano (CulturArts Generalitat). Base máxima 165 €. Solo para rentas (base liquidable general + ahorro) inferiores a 50.000 €.",
+    "what_covers": "Deducción por la adquisición de abonos culturales de empresas o instituciones adheridas al Abono Cultural Valenciano (CulturArts Generalitat).",
+    "requirements": [
+      "Adquisición de abonos culturales en empresas o instituciones adheridas al Abono Cultural Valenciano (CulturArts Generalitat).",
+      "Renta del contribuyente (base liquidable general + ahorro) < 50.000 €.",
+      "Importe: 21% de las cantidades satisfechas, con base máxima de 165 €.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.x) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -767,7 +955,15 @@
     "id": "val-vehiculos-bicicletas-electricos",
     "ccaa_code": "ES-VC",
     "title": "Por adquisición de vehículos nuevos (bicicletas urbanas, eléctricas o VMP de la Orden 5/2020)",
-    "summary": "10% de las cantidades destinadas a la adquisición de un vehículo nuevo de las categorías de la Orden 5/2020 (bicicletas convencionales urbanas, bicicletas eléctricas, kits de electrificación o vehículos de movilidad personal). Bases máximas por tipología: 550/750 € (convencionales), 1.540 € (eléctricas), 660 € (kits), 495 € (VMP). Solo un vehículo por contribuyente y ejercicio. Bases imponibles ≤ 30.000 €/47.000 €.",
+    "what_covers": "Deducción por la adquisición de un vehículo nuevo de movilidad sostenible: bicicletas urbanas convencionales o familiares, bicicletas eléctricas, kits de electrificación o vehículos de movilidad personal (VMP).",
+    "requirements": [
+      "Adquisición de un vehículo nuevo incluido en la Orden 5/2020 (bicicleta urbana convencional, bicicleta familiar con carga, bicicleta eléctrica, kit de electrificación o VMP).",
+      "Solo se admite un vehículo por contribuyente y ejercicio.",
+      "Importe: 10% del precio de adquisición.",
+      "Bases máximas por tipología: 550 €/750 € (bicis convencionales), 1.540 € (bicis eléctricas), 660 € (kits) y 495 € (VMP).",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.y) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -805,7 +1001,15 @@
     "id": "val-inversion-entidades-nuevas",
     "ccaa_code": "ES-VC",
     "title": "Por inversión en adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
-    "summary": "30% de las cantidades invertidas en suscripción/desembolso de acciones o participaciones de SA, SL, SAL, SLL o cooperativas, con domicilio en la Comunidad Valenciana, en constitución o ampliación de capital. Incremento adicional del 15% si la entidad es PYME innovadora, está en municipio en riesgo de despoblamiento o es Empresa Emergente CV. Límites: 6.600 € general y hasta 15.000 € con incremento.",
+    "what_covers": "Deducción por inversión en la suscripción o desembolso de acciones o participaciones de SA, SL, SAL, SLL o cooperativas con domicilio en la Comunitat Valenciana, en constitución o ampliación de capital.",
+    "requirements": [
+      "Inversión en suscripción/desembolso de acciones o participaciones de SA, SL, SAL, SLL o cooperativas.",
+      "Domicilio social y fiscal de la entidad en la Comunitat Valenciana.",
+      "Operación de constitución o ampliación de capital.",
+      "Importe general: 30% de las cantidades invertidas, con límite de 6.600 €.",
+      "Incremento del 15% adicional (límite combinado hasta 15.000 €) si la entidad es PYME innovadora, está en municipio en riesgo de despoblamiento o es Empresa Emergente CV.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.z) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -834,7 +1038,13 @@
     "id": "val-residencia-municipio-despoblamiento",
     "ccaa_code": "ES-VC",
     "title": "Por residir habitualmente en un municipio en riesgo de despoblamiento",
-    "summary": "330 € por residencia habitual en municipio beneficiario del Fondo de Cooperación Municipal contra el despoblamiento de la Comunitat Valenciana. Incremento de 132 €, 198 € o 264 € si el contribuyente tiene derecho al mínimo por 1, 2 o 3+ descendientes.",
+    "what_covers": "Deducción por tener la residencia habitual en un municipio beneficiario del Fondo de Cooperación Municipal contra el despoblamiento de la Comunitat Valenciana.",
+    "requirements": [
+      "Residencia habitual durante el ejercicio en un municipio incluido como beneficiario del Fondo de Cooperación Municipal contra el despoblamiento.",
+      "Importe base: 330 € por contribuyente.",
+      "Incremento adicional: 132 € (1 descendiente), 198 € (2 descendientes) o 264 € (3 o más descendientes) con derecho al mínimo por descendientes.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.aa) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -853,7 +1063,14 @@
     "id": "val-tratamientos-fertilidad",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades satisfechas en tratamientos de fertilidad realizados en clínicas o centros autorizados",
-    "summary": "100 € por tratamientos de fertilidad realizados en clínicas o centros autorizados. La contribuyente debe ser mujer con edad entre 40 y 45 años. Bases máximas: 30.000 €/47.000 €.",
+    "what_covers": "Deducción por los gastos pagados en tratamientos de fertilidad realizados en clínicas o centros autorizados.",
+    "requirements": [
+      "Ser mujer con edad entre 40 y 45 años (ambos incluidos) en el ejercicio.",
+      "Tratamiento realizado en clínica o centro sanitario debidamente autorizado.",
+      "Importe: 100 € por contribuyente.",
+      "Base liquidable ≤ 30.000 € en tributación individual o ≤ 47.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.ab) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -885,7 +1102,16 @@
     "id": "val-gastos-salud",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades satisfechas en determinados gastos de salud",
-    "summary": "Hasta 100 € (150 € en familias numerosas/monoparentales) por gastos de tratamiento de enfermedades crónicas de alta complejidad o raras, y de daño cerebral adquirido / alzhéimer. 30% por gastos de salud bucodental no estética (límite 150 €), salud mental (límite 150 €) o lentes graduadas (límite 100 €). Bases máximas: 60.000 €/78.000 €.",
+    "what_covers": "Deducción por determinados gastos de salud: tratamiento de enfermedades crónicas de alta complejidad o raras, daño cerebral/alzhéimer, salud bucodental no estética, salud mental y lentes graduadas.",
+    "requirements": [
+      "Gastos satisfechos por: enfermedades crónicas de alta complejidad o raras, daño cerebral adquirido/alzhéimer, salud bucodental no estética, salud mental o lentes graduadas/de contacto.",
+      "Hasta 100 € por enfermedades crónicas/raras o daño cerebral/alzhéimer (150 € en familias numerosas o monoparentales).",
+      "30% en salud bucodental no estética (límite 150 €).",
+      "30% en salud mental (límite 150 €).",
+      "30% en lentes graduadas o de contacto (límite 100 €).",
+      "Base liquidable ≤ 60.000 € en tributación individual o ≤ 78.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.ac) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -923,7 +1149,16 @@
     "id": "val-deporte-actividades-saludables",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades satisfechas en gastos asociados a la práctica del deporte y actividades saludables",
-    "summary": "30% de los gastos por cuotas de gimnasios/clubes/federaciones, equipamiento deportivo federado, servicios de entrenamiento, traumatología, dietética, fisioterapia o podología. 50% si el declarante > 65 años o discapacidad ≥ 33%. 100% si > 75 años o discapacidad ≥ 65%. Límite 150 €/año/contribuyente. Bases máximas: 60.000 €/78.000 €.",
+    "what_covers": "Deducción por los gastos asociados a la práctica del deporte y actividades saludables: gimnasios, clubes/federaciones, equipamiento federado, entrenadores y servicios de fisioterapia, traumatología, dietética o podología.",
+    "requirements": [
+      "Gastos por cuotas de gimnasios, clubes deportivos, federaciones, equipamiento deportivo federado, entrenadores personales, traumatología, dietética, fisioterapia o podología.",
+      "Importe general: 30% de los gastos satisfechos.",
+      "Importe: 50% si el contribuyente tiene > 65 años o discapacidad ≥ 33%.",
+      "Importe: 100% si el contribuyente tiene > 75 años o discapacidad ≥ 65%.",
+      "Límite máximo: 150 € por año y contribuyente.",
+      "Base liquidable ≤ 60.000 € en tributación individual o ≤ 78.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.ad) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -958,7 +1193,14 @@
     "id": "val-fomento-formacion-musical",
     "ccaa_code": "ES-VC",
     "title": "Por cantidades satisfechas en gastos vinculados con el fomento y formación musicales",
-    "summary": "100% de las cantidades satisfechas por tasas y cuotas de conservatorios y escuelas de música inscritos, cuotas como socios de sociedades musicales federadas, formación musical en centros oficiales, instrumentos y partituras adquiridos en el marco de estas actividades, y entradas para conciertos de las entidades anteriores. Límite 150 €/año/contribuyente. Bases máximas: 60.000 €/78.000 €.",
+    "what_covers": "Deducción por los gastos vinculados con la formación musical y el fomento de la música: tasas y cuotas de conservatorios y escuelas, cuotas de sociedades musicales federadas, instrumentos, partituras y entradas a conciertos de estas entidades.",
+    "requirements": [
+      "Gastos en tasas/cuotas de conservatorios y escuelas de música inscritos, cuotas como socio de sociedades musicales federadas, formación musical en centros oficiales, instrumentos y partituras adquiridos para estas actividades, o entradas a conciertos organizados por dichas entidades.",
+      "Importe: 100% de las cantidades satisfechas.",
+      "Límite máximo: 150 € por año y contribuyente.",
+      "Base liquidable ≤ 60.000 € en tributación individual o ≤ 78.000 € en conjunta.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4.Uno.ae) Ley 13/1997, de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -988,7 +1230,16 @@
     "id": "val-dana-vivienda-habitual",
     "ccaa_code": "ES-VC",
     "title": "Por destinar cantidades a paliar los daños materiales sobre la vivienda habitual derivados de la DANA de octubre de 2024",
-    "summary": "100% de los gastos de reparación acometidos por daños causados por el temporal DANA de octubre de 2024 en viviendas habituales situadas en municipios incluidos en el Anexo del Acuerdo del Consell 4-11-2024 (no cubiertos por seguros). Límite máximo 2.000 €. Bases máximas: 45.000 €/60.000 €. Aplicable exclusivamente en ejercicios 2024 y 2025.",
+    "what_covers": "Deducción por las cantidades destinadas a reparar los daños materiales sobre la vivienda habitual producidos por el temporal DANA de octubre de 2024 en los municipios afectados.",
+    "requirements": [
+      "Vivienda habitual situada en un municipio incluido en el Anexo del Acuerdo del Consell de 4 de noviembre de 2024.",
+      "Gastos de reparación efectivamente satisfechos por los daños del temporal DANA de octubre de 2024 y no cubiertos por seguro.",
+      "Importe: 100% de los gastos no cubiertos por seguros ni por ayudas públicas.",
+      "Límite máximo: 2.000 €.",
+      "Base liquidable ≤ 45.000 € en tributación individual o ≤ 60.000 € en conjunta.",
+      "Aplicable exclusivamente en los ejercicios 2024 y 2025.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 4 Decreto Ley 12/2024 de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [
@@ -1020,7 +1271,17 @@
     "id": "val-dana-fondos-propios-entidades",
     "ccaa_code": "ES-VC",
     "title": "Por aportaciones a los fondos propios de entidades que desarrollen actividades económicas (DANA 2024)",
-    "summary": "45% de las cantidades invertidas en la suscripción/desembolso de acciones o participaciones de SA/SL/SAL u aportaciones a cooperativas con domicilio social en el ámbito territorial de la DANA, que hayan solicitado ERTE como consecuencia del temporal. Límite máximo 9.900 € por contribuyente. Base máxima 30% de la base liquidable. Aplicable a inversiones efectuadas entre el 13-nov-2024 y el 31-dic-2025.",
+    "what_covers": "Deducción por inversión en fondos propios de entidades situadas en el ámbito territorial de la DANA de octubre de 2024 que hayan solicitado ERTE como consecuencia del temporal.",
+    "requirements": [
+      "Suscripción/desembolso de acciones o participaciones de SA, SL, SAL o aportaciones a cooperativas.",
+      "Domicilio social de la entidad en el ámbito territorial de la DANA de octubre de 2024.",
+      "La entidad debe haber solicitado ERTE como consecuencia del temporal.",
+      "Inversión efectuada entre el 13-11-2024 y el 31-12-2025.",
+      "Importe: 45% de las cantidades invertidas.",
+      "Límite máximo: 9.900 € por contribuyente.",
+      "Base máxima: 30% de la base liquidable.",
+      "Residencia fiscal en la Comunitat Valenciana."
+    ],
     "legal_reference": "Art. 5 Decreto Ley 12/2024 de la Comunitat Valenciana",
     "eligibility_rule": {
       "all_of": [

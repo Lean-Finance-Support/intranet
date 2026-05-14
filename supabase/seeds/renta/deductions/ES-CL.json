@@ -3,7 +3,13 @@
     "id": "cyl-familia-numerosa",
     "ccaa_code": "ES-CL",
     "title": "Por familia numerosa",
-    "summary": "600 € con carácter general por la condición de familia numerosa; 1.500 € con cuatro descendientes y 2.500 € con cinco (incremento de 1.000 € por cada descendiente a partir del sexto). Incremento adicional de 600 € si algún cónyuge o descendiente tiene discapacidad ≥ 65%.",
+    "what_covers": "Deducción autonómica fija para contribuyentes que tienen reconocida la condición de familia numerosa en Castilla y León, con incrementos según el número de descendientes y la existencia de miembros con discapacidad.",
+    "requirements": [
+      "Tener reconocida la condición de familia numerosa (categoría general o especial) y disponer del título expedido por la Comunidad",
+      "Cuantías: 600 € con carácter general; 1.500 € si hay 4 descendientes; 2.500 € si hay 5; +1.000 € por cada descendiente a partir del 6º",
+      "Incremento adicional de 600 € si algún cónyuge o descendiente tiene un grado de discapacidad ≥ 65%",
+      "Indicar el número de descendientes que dan derecho al mínimo (mínimo 3)"
+    ],
     "legal_reference": "Arts. 3 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -27,7 +33,15 @@
     "id": "cyl-nacimiento-adopcion-hijos",
     "ccaa_code": "ES-CL",
     "title": "Por nacimiento o adopción de hijos",
-    "summary": "1.010 € (1er hijo), 1.475 € (2º) o 2.351 € (3º o sucesivos) por cada hijo nacido o adoptado en el período. En municipios o entidades locales menores con población ≤ 5.000 habitantes: 1.420 €, 2.070 € y 3.300 € respectivamente. Las cuantías se duplican si el menor tiene discapacidad ≥ 33%. Incompatible con la percepción del Bono Nacimiento de la Junta.",
+    "what_covers": "Deducción por cada hijo nacido o adoptado durante el ejercicio, con cuantías incrementadas en municipios pequeños y duplicadas si el menor tiene discapacidad. Incompatible con el Bono Nacimiento de la Junta.",
+    "requirements": [
+      "Haber tenido un hijo nacido o adoptado durante 2025 con derecho al mínimo por descendientes",
+      "Cuantías generales: 1.010 € (1er hijo), 1.475 € (2º) o 2.351 € (3º o sucesivos)",
+      "Cuantías en municipios o entidades locales menores con ≤ 5.000 habitantes: 1.420 €, 2.070 € y 3.300 € respectivamente",
+      "Importes duplicados si el menor tiene reconocido un grado de discapacidad ≥ 33%",
+      "Indicar nombre, fecha de nacimiento/adopción y orden de cada hijo",
+      "No haber solicitado ni percibido el Bono Nacimiento de la Junta por ese hijo (incompatible)"
+    ],
     "legal_reference": "Arts. 4.1 a 3 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -54,7 +68,15 @@
     "id": "cyl-partos-adopciones-multiples",
     "ccaa_code": "ES-CL",
     "title": "Por partos o adopciones múltiples",
-    "summary": "50% de la deducción por nacimiento/adopción si el parto/adopción simultánea es de 2 hijos; 100% si es de 3 o más. También aplica a nacimientos/adopciones independientes en un período de 12 meses. Deducción adicional de 901 € durante los dos años siguientes para partos múltiples o adopciones simultáneas producidos en 2023 y/o 2024.",
+    "what_covers": "Deducción adicional que complementa la deducción por nacimiento/adopción cuando se trata de un parto o adopción simultánea de varios hijos, o de nacimientos/adopciones independientes producidos en un periodo corto de tiempo.",
+    "requirements": [
+      "Parto o adopción simultánea de 2 hijos: 50% de la deducción por nacimiento/adopción",
+      "Parto o adopción simultánea de 3 o más hijos: 100% de la deducción por nacimiento/adopción",
+      "También aplica a nacimientos/adopciones independientes producidos en un periodo de 12 meses",
+      "Deducción adicional de 901 € durante los dos años siguientes para partos múltiples o adopciones simultáneas ocurridos en 2023 y/o 2024",
+      "Indicar fecha del parto/adopción múltiple",
+      "No haber percibido el Bono Nacimiento por esos hijos (incompatible)"
+    ],
     "legal_reference": "Arts. 4.4 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -79,7 +101,14 @@
     "id": "cyl-gastos-adopcion",
     "ccaa_code": "ES-CL",
     "title": "Por gastos de adopción",
-    "summary": "784 € por cada adopción realizada en el período impositivo de hijos que generen derecho al mínimo por descendientes; 3.625 € en adopción internacional. Aplica en el período de la inscripción en el Registro Civil. Incompatible con el Bono Nacimiento.",
+    "what_covers": "Deducción por los gastos derivados de la adopción de hijos formalizada en el ejercicio, con cuantía mayor para adopciones internacionales. Es incompatible con el Bono Nacimiento.",
+    "requirements": [
+      "Adopción realizada durante el ejercicio que dé derecho al mínimo por descendientes",
+      "Cuantías: 784 € por cada adopción; 3.625 € si es adopción internacional",
+      "Aplicable en el ejercicio en que se produzca la inscripción en el Registro Civil",
+      "Indicar número de adopciones, fecha de inscripción y datos del menor",
+      "No haber percibido el Bono Nacimiento por ese hijo (incompatible)"
+    ],
     "legal_reference": "Arts. 4.5 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -100,7 +129,16 @@
     "id": "cyl-cuidado-hijos-menores",
     "ccaa_code": "ES-CL",
     "title": "Por cuidado de hijos menores",
-    "summary": "30% de las cantidades pagadas a persona empleada del hogar (límite 322 €) o 100% de los gastos de preinscripción, matrícula, asistencia y alimentación en escuelas/guarderías de Castilla y León inscritas en el Registro de Centros (límite 1.320 €). Hijos < 4 años y ambos padres con actividad por cuenta propia/ajena. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta).",
+    "what_covers": "Deducción por los gastos derivados del cuidado de hijos menores de 4 años cuando ambos progenitores trabajan, bien contratando a una persona empleada del hogar, bien matriculándolos en escuelas o guarderías inscritas en el Registro de la Junta.",
+    "requirements": [
+      "Tener hijos menores de 4 años con derecho al mínimo por descendientes",
+      "Ambos padres deben realizar una actividad por cuenta propia o ajena",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "Modalidad empleado del hogar: 30% de lo pagado, límite 322 €",
+      "Modalidad guardería/escuela en Castilla y León inscrita en el Registro de la Junta: 100% de los gastos de preinscripción, matrícula, asistencia y alimentación, límite 1.320 €",
+      "Aportar NIF de la persona empleada / centro / guardería",
+      "Minorar de la base las subvenciones y ayudas públicas recibidas por este concepto"
+    ],
     "legal_reference": "Arts. 5.1 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -138,7 +176,14 @@
     "id": "cyl-cuotas-seguridad-social-empleados-hogar",
     "ccaa_code": "ES-CL",
     "title": "Por cuotas a la Seguridad Social de empleados del hogar",
-    "summary": "15% de las cuotas a la Seguridad Social de un trabajador incluido en el Sistema Especial de Empleados del Hogar, con límite de 300 €. Requiere hijo menor de 4 años con derecho al mínimo por descendientes y base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) / 31.500 € (conjunta).",
+    "what_covers": "Deducción por las cuotas a la Seguridad Social satisfechas por la contratación de una persona en el Sistema Especial de Empleados del Hogar, ligada al cuidado de un hijo menor de 4 años.",
+    "requirements": [
+      "Tener al menos un hijo menor de 4 años con derecho al mínimo por descendientes",
+      "Figurar como empleador en el Sistema Especial de Empleados del Hogar de la Seguridad Social",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "Importe: 15% de las cuotas pagadas, con límite máximo de 300 €",
+      "Aportar NIF de la persona empleada"
+    ],
     "legal_reference": "Arts. 5.2 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -170,7 +215,13 @@
     "id": "cyl-contribuyentes-discapacidad",
     "ccaa_code": "ES-CL",
     "title": "Por contribuyentes con discapacidad",
-    "summary": "300 € si el contribuyente ≥ 65 años tiene discapacidad ≥ 33%; 656 € si ≥ 65 años con discapacidad ≥ 65%; 300 € si < 65 años con discapacidad ≥ 65%. Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) / 31.500 € (conjunta). No ser usuario de residencias públicas/concertadas de Castilla y León.",
+    "what_covers": "Deducción dirigida a contribuyentes con un grado de discapacidad reconocido, con cuantías graduadas según edad y porcentaje de discapacidad, siempre que no sean usuarios de residencias públicas o concertadas de la Comunidad.",
+    "requirements": [
+      "Tener reconocido un grado de discapacidad ≥ 33% (las incapacidades declaradas judicialmente se consideran ≥ 65%)",
+      "Cuantías: 300 € si ≥ 65 años con discapacidad ≥ 33%; 656 € si ≥ 65 años con discapacidad ≥ 65%; 300 € si < 65 años con discapacidad ≥ 65%",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "No ser usuario de residencias públicas o concertadas de Castilla y León"
+    ],
     "legal_reference": "Arts. 6 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -203,7 +254,16 @@
     "id": "cyl-vivienda-jovenes-medio-rural",
     "ccaa_code": "ES-CL",
     "title": "Por adquisición o rehabilitación de vivienda habitual por jóvenes en el medio rural",
-    "summary": "15% de las cantidades satisfechas por adquisición o rehabilitación (también construcción si finaliza en 4 años) de la primera vivienda habitual en municipio o entidad local menor de Castilla y León con ≤ 10.000 habitantes (o ≤ 3.000 si dista menos de 30 km de la capital de provincia). Contribuyente < 36 años, valor de la vivienda < 150.000 €, adquisición desde 01/01/2023. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta). Base máxima 10.000 €.",
+    "what_covers": "Deducción para jóvenes que adquieren, rehabilitan o construyen su primera vivienda habitual en pequeños municipios de Castilla y León, con el objetivo de fijar población en el medio rural.",
+    "requirements": [
+      "Ser menor de 36 años en el momento del devengo",
+      "Que la vivienda sea la primera vivienda habitual del contribuyente (sin propiedad anterior ≥ 50%)",
+      "Que esté situada en municipio o entidad local menor de Castilla y León con ≤ 10.000 habitantes (o ≤ 3.000 si dista menos de 30 km de la capital de provincia)",
+      "Valor de la vivienda a efectos del impuesto < 150.000 €",
+      "Adquisición, rehabilitación o inicio de construcción a partir del 01/01/2023 (construcción: finalización en 4 años)",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "Deducción: 15% de las cantidades satisfechas, con base máxima de 10.000 € anuales"
+    ],
     "legal_reference": "Arts. 7.1 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -246,7 +306,15 @@
     "id": "cyl-rehabilitacion-eficiencia-energetica",
     "ccaa_code": "ES-CL",
     "title": "Por actuaciones de rehabilitación subvencionadas (planes estatales/autonómicos de vivienda) — eficiencia energética, sostenibilidad y accesibilidad",
-    "summary": "15% de las inversiones en actuaciones de rehabilitación de la vivienda habitual subvencionadas en el marco de planes estatales o autonómicos de vivienda gestionados por la Dirección General de Vivienda de la Junta de Castilla y León: paneles solares, mejora de instalaciones térmicas, ahorro de agua/aguas grises, obras de accesibilidad para personas con discapacidad. Base máxima 20.000 €.",
+    "what_covers": "Deducción por inversiones en la vivienda habitual destinadas a eficiencia energética, sostenibilidad o accesibilidad, cuando han sido subvencionadas en el marco de planes estatales o autonómicos gestionados por la Dirección General de Vivienda de la Junta de Castilla y León.",
+    "requirements": [
+      "Inversiones realizadas en la vivienda habitual del contribuyente",
+      "Que la actuación esté subvencionada por la Dirección General de Vivienda de la Junta dentro de un plan estatal o autonómico de vivienda",
+      "Tipos de actuación cubiertos: paneles solares, mejora de instalaciones térmicas, ahorro de agua/aguas grises, accesibilidad para personas con discapacidad",
+      "Convocatoria de la subvención: Orden 27/10/2021, 14/10/2022, 17/10/2023 o 22/10/2024",
+      "Aportar fecha de cobro de la subvención y, si se dispone, referencia del justificante de transferencia bancaria de la Junta",
+      "Deducción: 15% de las inversiones, con base máxima de 20.000 €"
+    ],
     "legal_reference": "Arts. 7.2 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -273,7 +341,16 @@
     "id": "cyl-rehabilitacion-vivienda-rural-alquiler",
     "ccaa_code": "ES-CL",
     "title": "Por rehabilitación de viviendas en el medio rural destinadas a su alquiler",
-    "summary": "15% de las cantidades invertidas en la rehabilitación de viviendas situadas en municipios o entidades locales menores de Castilla y León con ≤ 10.000 habitantes (o ≤ 3.000 si distan < 30 km de la capital de provincia), valor < 150.000 €, que durante los 5 años siguientes se alquilen a terceros (no familiares) con renta mensual ≤ 300 €. Base máxima 20.000 €.",
+    "what_covers": "Deducción por las inversiones realizadas en la rehabilitación de viviendas situadas en pequeños municipios de Castilla y León, condicionada a que se alquilen a terceros en condiciones asequibles durante los cinco años siguientes.",
+    "requirements": [
+      "Vivienda situada en municipio o entidad local menor de Castilla y León con ≤ 10.000 habitantes (o ≤ 3.000 si dista < 30 km de capital de provincia)",
+      "Valor de la vivienda a efectos del impuesto < 150.000 €",
+      "Durante los 5 años siguientes la vivienda debe alquilarse a terceros",
+      "El inquilino no puede ser cónyuge, ascendiente, descendiente ni familiar hasta el 3er grado",
+      "Renta mensual del alquiler ≤ 300 €",
+      "Disponer del justificante de depósito de la fianza",
+      "Deducción: 15% de las cantidades invertidas, con base máxima de 20.000 €"
+    ],
     "legal_reference": "Arts. 7.3 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -296,7 +373,17 @@
     "id": "cyl-arrendamiento-vivienda-jovenes",
     "ccaa_code": "ES-CL",
     "title": "Por arrendamiento de vivienda habitual por jóvenes",
-    "summary": "20% (límite 459 €) de las cantidades satisfechas por alquiler de la vivienda habitual en Castilla y León; 25% (límite 612 €) si la vivienda está en municipio o entidad local menor con ≤ 10.000 habitantes (o ≤ 3.000 si dista < 30 km de la capital de provincia). Contribuyente < 36 años. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta). El importe deducible se minora en las ayudas públicas (bono alquiler joven) recibidas.",
+    "what_covers": "Deducción para jóvenes contribuyentes por las cantidades satisfechas en concepto de alquiler de su vivienda habitual en Castilla y León, con un porcentaje mayor cuando la vivienda se encuentra en un municipio pequeño del medio rural.",
+    "requirements": [
+      "Ser menor de 36 años en el momento del devengo",
+      "Vivienda habitual en alquiler situada en Castilla y León",
+      "Ser titular del contrato de arrendamiento",
+      "Aportar el NIF del arrendador",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "Deducción general: 20% de lo pagado, con límite 459 €",
+      "Deducción incrementada: 25%, con límite 612 €, si la vivienda está en municipio o entidad local menor con ≤ 10.000 habitantes (o ≤ 3.000 si dista < 30 km de capital)",
+      "Restar del importe deducible las ayudas públicas recibidas (p. ej. Bono Alquiler Joven)"
+    ],
     "legal_reference": "Arts. 7.4, 7.5 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -332,7 +419,16 @@
     "id": "cyl-fomento-emprendimiento",
     "ccaa_code": "ES-CL",
     "title": "Para el fomento de emprendimiento",
-    "summary": "20% (límite 10.000 €) de las cantidades invertidas en la adquisición de acciones/participaciones por constitución o ampliación de capital de sociedades anónimas, limitadas o laborales con domicilio social y fiscal en Castilla y León (o sociedades-vehículo que canalicen la inversión a éstas). Participación mínima 0,5% y máxima 45%, mantener 3 años. La sociedad debe crear empleo (incrementar plantilla, autónomos económicamente dependientes o familiares colaboradores).",
+    "what_covers": "Deducción por la inversión en la constitución o ampliación de capital de sociedades con domicilio social y fiscal en Castilla y León (o sociedades-vehículo que canalicen la inversión hacia ellas) que cumplan requisitos de creación de empleo.",
+    "requirements": [
+      "Adquisición de acciones o participaciones por constitución o ampliación de capital",
+      "La sociedad debe ser SA, SL, SA Laboral o SL Laboral con domicilio social y fiscal en Castilla y León, o una sociedad-vehículo que canalice la inversión a una de éstas",
+      "Participación mínima del 0,5% y máxima del 45% del capital",
+      "Mantener la participación durante al menos 3 años",
+      "La entidad debe crear empleo: incrementar plantilla, contratar autónomos económicamente dependientes o familiares colaboradores",
+      "Disponer de certificación de la entidad acreditando que cumple los requisitos",
+      "Deducción: 20% de las cantidades invertidas, con límite de 10.000 €"
+    ],
     "legal_reference": "Arts. 8 y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -365,7 +461,16 @@
     "id": "cyl-patrimonio-historico-cultural-natural",
     "ccaa_code": "ES-CL",
     "title": "Por cantidades invertidas en la recuperación del patrimonio histórico, cultural y natural de Castilla y León",
-    "summary": "15% de las cantidades invertidas por titulares de bienes inmuebles ubicados en Castilla y León en restauración, rehabilitación o reparación de bienes inscritos como BIC o inventariados conforme a la Ley de Patrimonio Cultural; o de bienes naturales en Espacios Naturales o Red Natura 2000, siempre que las actuaciones estén autorizadas. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta). Límite conjunto con las otras deducciones por donativos: 10% de la base liquidable.",
+    "what_covers": "Deducción por las cantidades que el titular de un bien inmueble o natural de Castilla y León invierte en su restauración, rehabilitación o reparación, cuando se trata de bienes protegidos por la normativa de patrimonio cultural o por la red de espacios naturales.",
+    "requirements": [
+      "Ser titular del bien inmueble o natural ubicado en Castilla y León",
+      "Inmuebles: estar inscritos como BIC o inventariados conforme a la Ley de Patrimonio Cultural",
+      "Bienes naturales: situados en Espacios Naturales o Red Natura 2000",
+      "Actuaciones autorizadas por el órgano competente",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "Deducción: 15% de las cantidades invertidas",
+      "Límite conjunto con las otras deducciones por donativos: 10% de la base liquidable"
+    ],
     "legal_reference": "Arts. 9.a) y b) y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -401,7 +506,13 @@
     "id": "cyl-donaciones-fundaciones-patrimonio",
     "ccaa_code": "ES-CL",
     "title": "Por cantidades donadas a fundaciones de Castilla y León y para la recuperación del patrimonio histórico, cultural y natural",
-    "summary": "15% de las cantidades donadas a Administraciones Públicas, Iglesia Católica y otras confesiones con acuerdo de cooperación, fundaciones o asociaciones del Título II Ley 49/2002 con fines de patrimonio histórico, recuperación de espacios Red Natura 2000 en Castilla y León, o Fundaciones inscritas en el Registro de Fundaciones de Castilla y León con fines culturales/asistenciales/ecológicos. Base imponible ≤ 18.900 € (individual) / 31.500 € (conjunta).",
+    "what_covers": "Deducción por las donaciones realizadas a Administraciones Públicas, confesiones religiosas con acuerdo de cooperación, fundaciones u otras entidades sin ánimo de lucro vinculadas al patrimonio histórico, cultural o natural de Castilla y León.",
+    "requirements": [
+      "Entidades receptoras válidas: Administraciones Públicas o entes dependientes; Iglesia Católica y confesiones con acuerdo de cooperación; fundaciones/asociaciones del Título II Ley 49/2002 con fines de patrimonio histórico; entidades que conserven Red Natura 2000 en Castilla y León; Fundaciones inscritas en el Registro de Fundaciones de CyL con fines culturales, asistenciales o ecológicos",
+      "Base imponible total - mínimo personal y familiar ≤ 18.900 € (individual) o ≤ 31.500 € (conjunta)",
+      "Disponer del justificante documental de la donación conforme al art. 24 Ley 49/2002",
+      "Deducción: 15% de las cantidades donadas"
+    ],
     "legal_reference": "Arts. 9.c), d) y e) y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -439,7 +550,13 @@
     "id": "cyl-donaciones-investigacion-desarrollo-innovacion",
     "ccaa_code": "ES-CL",
     "title": "Por cantidades donadas para el fomento de la investigación, el desarrollo y la innovación",
-    "summary": "15% de las cantidades donadas a universidades públicas de Castilla y León y a fundaciones u otras instituciones cuya actividad principal sea la I+D+i empresarial para proyectos desarrollados en Castilla y León. Límite conjunto con las otras dos deducciones afines: 10% de la base liquidable.",
+    "what_covers": "Deducción por las donaciones realizadas a universidades públicas de Castilla y León y a fundaciones o instituciones cuya actividad principal sea la I+D+i empresarial en proyectos desarrollados en la Comunidad.",
+    "requirements": [
+      "Donar a universidades públicas de Castilla y León o a fundaciones/instituciones de I+D+i empresarial cuya actividad principal se desarrolle en Castilla y León",
+      "Disponer del justificante documental de la donación",
+      "Deducción: 15% de las cantidades donadas",
+      "Límite conjunto con las otras dos deducciones por donativos: 10% de la base liquidable"
+    ],
     "legal_reference": "Art. 9.f) Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -462,7 +579,17 @@
     "id": "cyl-movilidad-sostenible",
     "ccaa_code": "ES-CL",
     "title": "Para el fomento de la movilidad sostenible",
-    "summary": "15% de las cantidades destinadas a la adquisición de un vehículo turismo nuevo (eléctrico puro, eléctrico con autonomía extendida o híbrido enchufable con > 40 km en modo eléctrico). Límite 4.000 € por vehículo. Valor de adquisición ≤ 40.000 € (impuestos incluidos), no afecto a actividad económica, mantener 4 años. Solo en el ejercicio de matriculación.",
+    "what_covers": "Deducción por la adquisición de un vehículo turismo nuevo de bajas emisiones (eléctrico puro, eléctrico con autonomía extendida o híbrido enchufable de alta autonomía eléctrica) para uso particular.",
+    "requirements": [
+      "Vehículo turismo nuevo de uno de estos tipos: eléctrico puro, eléctrico con autonomía extendida o híbrido enchufable con > 40 km de autonomía en modo eléctrico",
+      "Valor de adquisición ≤ 40.000 € (impuestos incluidos)",
+      "El vehículo no puede estar afecto a actividad económica o profesional",
+      "Mantener el vehículo durante al menos 4 años",
+      "La factura debe emitirse a nombre del contribuyente",
+      "Solo aplica en el ejercicio de matriculación; aportar fecha y matrícula",
+      "Indicar, si procede, el importe de la deducción estatal por vehículo eléctrico aplicada",
+      "Deducción: 15% del importe satisfecho, con límite de 4.000 € por vehículo"
+    ],
     "legal_reference": "Arts. 9.g) y 10 Texto Refundido Decreto Legislativo 1/2013 de Castilla y León",
     "eligibility_rule": {
       "all_of": [
@@ -489,7 +616,15 @@
     "id": "cyl-vivienda-nueva-construccion-residencia-habitual",
     "ccaa_code": "ES-CL",
     "title": "Por adquisición de vivienda de nueva construcción para residencia habitual",
-    "summary": "7,5% de las cantidades satisfechas por la adquisición de la primera vivienda habitual nueva en Castilla y León cuyo visado de proyecto se obtuvo entre 01/09/2011 y 31/12/2012. Base máxima 9.040 €/año. Aplicable en el ejercicio en que se satisface la primera cantidad y los 4 siguientes (régimen transitorio para inversiones de 2011-2012).",
+    "what_covers": "Régimen transitorio que permite a contribuyentes que adquirieron su primera vivienda habitual nueva en Castilla y León con visado de proyecto entre 2011 y 2012 seguir deduciéndose un porcentaje en los ejercicios siguientes.",
+    "requirements": [
+      "Vivienda de nueva construcción situada en Castilla y León",
+      "Que sea la primera vivienda habitual del contribuyente",
+      "Visado del proyecto obtenido entre el 01/09/2011 y el 31/12/2012",
+      "Aplicable en el ejercicio en que se satisface la primera cantidad y los 4 ejercicios siguientes (5 en total)",
+      "Deducción: 7,5% de las cantidades satisfechas",
+      "Base máxima de deducción: 9.040 € anuales"
+    ],
     "legal_reference": "Disposición transitoria quinta Texto Refundido Decreto Legislativo 1/2008 de Castilla y León",
     "eligibility_rule": {
       "all_of": [

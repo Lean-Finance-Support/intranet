@@ -3,7 +3,13 @@
     "id": "ext-trabajo-dependiente",
     "ccaa_code": "ES-EX",
     "title": "Por trabajo dependiente",
-    "summary": "75 € por contribuyente con rendimientos del trabajo íntegros ≤ 12.000 € anuales y resto de rendimientos netos, ganancias y pérdidas e imputaciones de renta que no excedan de 300 €. Incompatible (para viudos) con la deducción 'Para contribuyentes viudos'.",
+    "what_covers": "Deducción de 75 € por contribuyente con rendimientos del trabajo bajos y rentas adicionales muy reducidas.",
+    "requirements": [
+      "Rendimientos íntegros del trabajo ≤ 12.000 € anuales",
+      "Resto de rendimientos netos, ganancias/pérdidas e imputaciones de renta ≤ 300 €",
+      "Residencia habitual en Extremadura",
+      "Incompatible (para viudos) con la deducción 'Para contribuyentes viudos'"
+    ],
     "legal_reference": "Art. 2 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -21,7 +27,14 @@
     "id": "ext-partos-multiples",
     "ccaa_code": "ES-EX",
     "title": "Por partos múltiples",
-    "summary": "300 € por cada hijo nacido en parto múltiple en el período impositivo, siempre que conviva con el progenitor. Límite de bases: 19.000 / 24.000 € (individual/conjunta); 28.000 / 45.000 € si reside en municipio < 3.000 habitantes (sin límite si además familia numerosa o monoparental con dos hijos).",
+    "what_covers": "Deducción de 300 € por cada hijo nacido en parto múltiple durante el ejercicio que conviva con el progenitor.",
+    "requirements": [
+      "Parto múltiple (≥ 2 hijos) en el período impositivo",
+      "Convivencia de los hijos con el progenitor",
+      "Bases imponibles ≤ 19.000 € (individual) / 24.000 € (conjunta)",
+      "Límites elevados a 28.000 / 45.000 € si reside en municipio < 3.000 habitantes",
+      "Sin límite de renta si además se es familia numerosa o monoparental con dos hijos"
+    ],
     "legal_reference": "Arts. 3 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -41,7 +54,13 @@
     "id": "ext-acogimiento-menores",
     "ccaa_code": "ES-EX",
     "title": "Por acogimiento de menores",
-    "summary": "250 € por cada menor en régimen de acogimiento familiar temporal, permanente o de urgencia con convivencia ≥ 183 días en el período impositivo (125 € si la convivencia es entre 90 y 183 días).",
+    "what_covers": "Deducción para quienes acogen menores en régimen familiar (temporal, permanente o de urgencia), modulada según los días de convivencia.",
+    "requirements": [
+      "Menor en régimen de acogimiento familiar temporal, permanente o de urgencia",
+      "250 € por menor si la convivencia es ≥ 183 días en el período impositivo",
+      "125 € por menor si la convivencia es entre 90 y 183 días",
+      "Residencia habitual en Extremadura"
+    ],
     "legal_reference": "Art. 4 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -64,7 +83,14 @@
     "id": "ext-cuidado-familiares-discapacidad",
     "ccaa_code": "ES-EX",
     "title": "Por cuidado de familiares con discapacidad",
-    "summary": "150 € (con carácter general) o 220 € (si tiene reconocido el derecho a una ayuda a la dependencia aún no percibida) por cada ascendiente o descendiente con grado de discapacidad ≥ 65% o judicialmente incapacitado. Requiere convivencia ≥ mitad del periodo y límites de renta del familiar e ingresos del contribuyente.",
+    "what_covers": "Deducción por cuidado de ascendientes o descendientes con discapacidad reconocida igual o superior al 65% o judicialmente incapacitados.",
+    "requirements": [
+      "Ascendiente o descendiente con discapacidad ≥ 65% o incapacitado judicialmente",
+      "150 € por familiar con carácter general",
+      "220 € por familiar si tiene reconocido el derecho a una ayuda a la dependencia aún no percibida",
+      "Convivencia ininterrumpida con el contribuyente al menos la mitad del período impositivo",
+      "Cumplir los límites de renta del familiar y del contribuyente establecidos en el TR"
+    ],
     "legal_reference": "Arts. 5, 12 bis y 13 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -87,7 +113,15 @@
     "id": "ext-cuidado-hijos-menores-14",
     "ccaa_code": "ES-EX",
     "title": "Por cuidado de hijos menores de hasta 14 años inclusive",
-    "summary": "10% de las cantidades satisfechas por cuidado de hijos ≤ 14 años (persona empleada del hogar o guardería/centro de ocio/campamento urbano/ludoteca autorizado). Límite 400 € anuales por unidad familiar. Requiere ambos progenitores activos, mínimo por descendientes y bases ≤ 28.000 / 45.000 € (salvo residencia en municipio <3.000 hab. con familia numerosa o monoparental).",
+    "what_covers": "Deducción del 10% de los gastos de cuidado de hijos de hasta 14 años (empleada del hogar o guardería/centro autorizado) para familias en las que ambos progenitores trabajan.",
+    "requirements": [
+      "Hijo/a de hasta 14 años inclusive con derecho al mínimo por descendientes",
+      "Gasto en persona empleada del hogar o guardería/centro de ocio/campamento urbano/ludoteca autorizado",
+      "Ambos progenitores realizan actividad por cuenta propia o ajena",
+      "Límite máximo 400 € anuales por unidad familiar",
+      "Bases ≤ 28.000 € (individual) / 45.000 € (conjunta)",
+      "Sin límite de renta si reside en municipio < 3.000 hab. y es familia numerosa o monoparental"
+    ],
     "legal_reference": "Arts. 6 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -111,7 +145,16 @@
     "id": "ext-contribuyentes-viudos",
     "ccaa_code": "ES-EX",
     "title": "Para contribuyentes viudos",
-    "summary": "100 € con carácter general. 200 € si el contribuyente viudo tiene a su cargo uno o más descendientes que computen para el mínimo por descendientes y no perciban renta alguna. Bases ≤ 19.000 / 24.000 € (individual/conjunta); 28.000 / 45.000 € en municipios < 3.000 hab. (sin límite si además familia numerosa o monoparental). Incompatible con 'Por trabajo dependiente' y excluye a condenados por violencia de género al cónyuge fallecido.",
+    "what_covers": "Deducción a tanto alzado para contribuyentes en estado civil de viudez, con importe mayor si tienen descendientes a su cargo.",
+    "requirements": [
+      "Estado civil de viudo/a",
+      "100 € con carácter general",
+      "200 € si tiene a cargo descendientes con derecho al mínimo y sin rentas propias",
+      "Bases ≤ 19.000 / 24.000 € (individual/conjunta), o 28.000 / 45.000 € en municipios < 3.000 hab.",
+      "Sin límite de renta si además es familia numerosa o monoparental",
+      "Incompatible con la deducción 'Por trabajo dependiente'",
+      "No aplicable a condenados por violencia de género al cónyuge fallecido"
+    ],
     "legal_reference": "Arts. 7 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -130,7 +173,15 @@
     "id": "ext-vivienda-jovenes-victimas-terrorismo",
     "ccaa_code": "ES-EX",
     "title": "Por adquisición o rehabilitación de vivienda habitual para jóvenes y para víctimas del terrorismo",
-    "summary": "3% (o 5% en municipios < 3.000 hab., adquisición/rehabilitación desde 01/01/2015) de las cantidades satisfechas (excluidos intereses) en la adquisición o rehabilitación de vivienda nueva que constituya la primera residencia habitual. Jóvenes <36 años o víctimas del terrorismo. Base máxima 9.040 €. Bases ≤ 19.000 / 24.000 € (28.000 / 45.000 € en municipios < 3.000 hab.).",
+    "what_covers": "Deducción por la adquisición o rehabilitación de la primera vivienda habitual nueva para contribuyentes jóvenes o víctimas del terrorismo.",
+    "requirements": [
+      "Ser menor de 36 años o víctima del terrorismo (sin requisito de edad)",
+      "Vivienda nueva que constituya la primera residencia habitual del contribuyente",
+      "3% de las cantidades satisfechas con carácter general",
+      "5% si la vivienda está en municipio < 3.000 hab. (adquisiciones/rehabilitaciones desde 01/01/2015)",
+      "Excluidos los intereses; base máxima 9.040 € anuales",
+      "Bases ≤ 19.000 / 24.000 € (individual/conjunta), o 28.000 / 45.000 € en municipios < 3.000 hab."
+    ],
     "legal_reference": "Arts. 8, 12, 12 bis y 13 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -160,7 +211,16 @@
     "id": "ext-arrendamiento-vivienda-habitual",
     "ccaa_code": "ES-EX",
     "title": "Por arrendamiento de vivienda habitual",
-    "summary": "30% de las cantidades satisfechas en el período en concepto de alquiler de vivienda habitual, con límite de 1.000 € anuales (o 1.500 € si la vivienda está en medio rural — municipio < 3.000 hab. de Extremadura). Requiere ser <36 años, familia numerosa/monoparental con dos hijos o discapacidad ≥ 65%. Bases ≤ 28.000 / 45.000 €. No haber aplicado deducción por inversión en vivienda habitual ni poseer otra vivienda < 75 km.",
+    "what_covers": "Deducción del 30% del alquiler pagado por la vivienda habitual del contribuyente, con un límite anual elevado si la vivienda está en medio rural.",
+    "requirements": [
+      "Contrato de alquiler de la vivienda habitual del contribuyente",
+      "Pertenecer a uno de estos colectivos: <36 años, familia numerosa o monoparental con dos hijos, o discapacidad ≥ 65%",
+      "Bases ≤ 28.000 € (individual) / 45.000 € (conjunta)",
+      "Límite 1.000 € anuales (o 1.500 € si la vivienda está en municipio < 3.000 hab. de Extremadura)",
+      "No haber aplicado deducción estatal/autonómica por inversión en vivienda habitual",
+      "No poseer otra vivienda a menos de 75 km de la arrendada",
+      "Haber pagado el ITP/AJD del contrato o estar exento"
+    ],
     "legal_reference": "Arts. 9, 12 bis y 13 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -202,7 +262,16 @@
     "id": "ext-arrendadores-viviendas-vacias",
     "ccaa_code": "ES-EX",
     "title": "Para arrendadores de viviendas vacías",
-    "summary": "100% del rendimiento neto reducido obtenido por el arrendamiento de viviendas que hayan estado vacías y en desuso ≥ 1 año, con destino a vivienda habitual del arrendatario. Límite 1.200 € por contribuyente. Vivienda en Extremadura, contrato ≥ 3 años, no más de 3 viviendas en propiedad.",
+    "what_covers": "Deducción para propietarios que ponen en alquiler como vivienda habitual una vivienda que estaba previamente vacía y en desuso.",
+    "requirements": [
+      "Vivienda situada en Extremadura",
+      "La vivienda estuvo vacía y en desuso ≥ 1 año antes del contrato",
+      "Destinada a vivienda habitual del arrendatario",
+      "Contrato con duración pactada ≥ 3 años",
+      "100% del rendimiento neto reducido del arrendamiento",
+      "Límite máximo 1.200 € por contribuyente",
+      "El contribuyente no puede tener más de 3 viviendas en propiedad/usufructo"
+    ],
     "legal_reference": "Art. 9 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -223,7 +292,14 @@
     "id": "ext-rehabilitacion-viviendas-rurales-alquiler",
     "ccaa_code": "ES-EX",
     "title": "Por inversiones en la rehabilitación de viviendas en zonas rurales para ser destinadas a su alquiler",
-    "summary": "15% de las cantidades invertidas en rehabilitación de viviendas situadas en municipios/entidades locales menores de Extremadura con < 3.000 habitantes destinadas a alquiler como vivienda habitual. Base máxima total 180.000 €/vivienda, 9.040 €/ejercicio. Vivienda alquilada durante 5 años a personas no familiares hasta 3er grado.",
+    "what_covers": "Deducción del 15% de la inversión en rehabilitación de viviendas en municipios rurales de Extremadura que se destinen al alquiler como vivienda habitual.",
+    "requirements": [
+      "Vivienda situada en municipio/entidad local menor de Extremadura con < 3.000 habitantes",
+      "Obras de rehabilitación ejecutadas en el ejercicio",
+      "Compromiso de alquiler como vivienda habitual durante 5 años",
+      "Arrendatarios no familiares hasta el 3er grado de parentesco",
+      "Base máxima total 180.000 € por vivienda; máximo 9.040 € por ejercicio"
+    ],
     "legal_reference": "Art. 9 ter Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -245,7 +321,14 @@
     "id": "ext-compra-material-escolar",
     "ccaa_code": "ES-EX",
     "title": "Por la compra de material escolar",
-    "summary": "15 € por compra de material escolar para cada hijo o descendiente en edad escolar obligatoria (6-15 años) con derecho al mínimo por descendientes. Bases ≤ 19.000 / 24.000 € (individual/conjunta); 28.000 / 45.000 € en municipios < 3.000 hab. (sin límite si además familia numerosa o monoparental).",
+    "what_covers": "Deducción a tanto alzado por la compra de material escolar para hijos o descendientes en edad de educación obligatoria.",
+    "requirements": [
+      "Hijo/descendiente en edad escolar obligatoria (6-15 años)",
+      "Derecho al mínimo por descendientes respecto del menor",
+      "15 € de deducción por cada hijo/descendiente con derecho",
+      "Bases ≤ 19.000 / 24.000 € (individual/conjunta), o 28.000 / 45.000 € en municipios < 3.000 hab.",
+      "Sin límite de renta si reside en municipio < 3.000 hab. y es familia numerosa o monoparental"
+    ],
     "legal_reference": "Arts. 10 y 12 bis Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -265,7 +348,16 @@
     "id": "ext-inversion-acciones-participaciones",
     "ccaa_code": "ES-EX",
     "title": "Por inversión en la adquisición de acciones y participaciones sociales de nuevas entidades o de reciente creación",
-    "summary": "20% de las cantidades invertidas en adquisición de acciones o participaciones en SA/SL/SAL/SLL o cooperativas como consecuencia de constitución de sociedades o ampliación de capital. Límite 4.000 € anuales. Entidad con domicilio en Extremadura, actividad económica, participación familiar < 40%, mantenimiento 3 años.",
+    "what_covers": "Deducción del 20% por invertir en la creación o ampliación de capital de SA/SL/SAL/SLL o cooperativas extremeñas con actividad económica.",
+    "requirements": [
+      "Inversión en acciones/participaciones de SA, SL, SAL, SLL o cooperativa",
+      "Operación de constitución de la sociedad o ampliación de capital",
+      "Entidad con domicilio social y fiscal en Extremadura",
+      "Entidad debe desarrollar una actividad económica (no mera gestión patrimonial)",
+      "Participación del contribuyente y entorno familiar < 40% del capital",
+      "Mantenimiento de la inversión durante al menos 3 años",
+      "Límite máximo 4.000 € anuales de deducción"
+    ],
     "legal_reference": "Art. 11 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -294,7 +386,16 @@
     "id": "ext-vivienda-habitual-zonas-rurales",
     "ccaa_code": "ES-EX",
     "title": "Por adquisición o rehabilitación de la vivienda habitual en zonas rurales",
-    "summary": "10% de las cantidades satisfechas por adquisición o rehabilitación de vivienda habitual situada en municipios/entidades locales menores de Extremadura con < 3.000 habitantes, adquirida desde el 01/01/2022. Base máxima total 180.000 €/vivienda, 9.040 €/ejercicio. Incompatible con 'Por adquisición de vivienda habitual para jóvenes' y 'Por intereses de financiación ajena para vivienda habitual para jóvenes'.",
+    "what_covers": "Deducción del 10% de lo invertido en adquirir o rehabilitar la vivienda habitual situada en un municipio rural de Extremadura.",
+    "requirements": [
+      "Vivienda situada en municipio/entidad local menor de Extremadura con < 3.000 habitantes",
+      "Adquisición desde el 01/01/2022",
+      "La vivienda debe constituir la residencia habitual del contribuyente",
+      "Base máxima total 180.000 € por vivienda; máximo 9.040 € por ejercicio",
+      "Las subvenciones recibidas de la Junta minoran la base de la deducción",
+      "Incompatible con 'Por adquisición o rehabilitación de vivienda habitual para jóvenes y víctimas del terrorismo'",
+      "Incompatible con 'Por intereses de financiación ajena para vivienda habitual para jóvenes'"
+    ],
     "legal_reference": "Arts. 11 bis y 12 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -321,7 +422,11 @@
     "id": "ext-residencia-municipios-despoblacion",
     "ccaa_code": "ES-EX",
     "title": "Por residir habitualmente en municipios y entidades locales menores de Extremadura con población inferior a 3.000 habitantes",
-    "summary": "15% de la cuota íntegra autonómica para contribuyentes que residan habitualmente en municipios/entidades locales menores de Extremadura con población < 3.000 habitantes. Bases ≤ 28.000 / 45.000 € (individual/conjunta).",
+    "what_covers": "Deducción del 15% de la cuota íntegra autonómica para quienes residen habitualmente en municipios rurales de Extremadura, como medida frente a la despoblación.",
+    "requirements": [
+      "Residencia habitual en municipio/entidad local menor de Extremadura con < 3.000 habitantes",
+      "Bases imponibles ≤ 28.000 € (individual) / 45.000 € (conjunta)"
+    ],
     "legal_reference": "Art. 11 ter Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -352,7 +457,15 @@
     "id": "ext-intereses-financiacion-vivienda-jovenes",
     "ccaa_code": "ES-EX",
     "title": "Por intereses de financiación ajena para la inversión en vivienda habitual para jóvenes",
-    "summary": "25% de los intereses satisfechos por préstamos hipotecarios para adquisición de la vivienda habitual. Contribuyente <36 años, primera vivienda. Base máxima 1.000 €/año. Bases ≤ 28.000 / 45.000 € (individual/conjunta). Compatible con 'Por adquisición o rehabilitación de vivienda habitual para jóvenes'.",
+    "what_covers": "Deducción del 25% de los intereses de préstamos hipotecarios pagados por jóvenes para adquirir su primera vivienda habitual.",
+    "requirements": [
+      "Ser menor de 36 años",
+      "Préstamo hipotecario destinado a adquirir la vivienda habitual",
+      "Que sea la primera vivienda del contribuyente",
+      "Base máxima 1.000 € de intereses anuales",
+      "Bases ≤ 28.000 / 45.000 € (individual/conjunta)",
+      "Compatible con 'Por adquisición o rehabilitación de vivienda habitual para jóvenes'"
+    ],
     "legal_reference": "Arts. 11 quater y 12 Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -386,7 +499,14 @@
     "id": "ext-donaciones-culturales-deportistas",
     "ccaa_code": "ES-EX",
     "title": "Por donaciones de dinero a entidades culturales, artísticas y para patrocinio a deportistas",
-    "summary": "20% de las cantidades donadas a entidades con domicilio fiscal en Extremadura que desarrollen actividades culturales/artísticas o a deportistas con domicilio fiscal en Extremadura (art. 21.2 Ley 39/2022 del Deporte). Límite máximo conjunto 500 € anuales por contribuyente. Donaciones puras, simples e irrevocables, formalizadas por escrito.",
+    "what_covers": "Deducción del 20% de los importes donados a entidades culturales/artísticas extremeñas o como patrocinio a deportistas con domicilio fiscal en Extremadura.",
+    "requirements": [
+      "Donación en dinero (no en especie)",
+      "Receptor: entidad con domicilio fiscal en Extremadura que desarrolle actividad cultural o artística, o deportista con domicilio fiscal en Extremadura (art. 21.2 Ley 39/2022 del Deporte)",
+      "Donación pura, simple e irrevocable",
+      "Formalización por escrito",
+      "Límite máximo conjunto 500 € anuales por contribuyente"
+    ],
     "legal_reference": "Art. 11 quinquies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -408,7 +528,14 @@
     "id": "ext-traslado-residencia-extremadura",
     "ccaa_code": "ES-EX",
     "title": "Para contribuyentes que trasladen su residencia habitual a Extremadura",
-    "summary": "50% de la cuota íntegra autonómica con carácter general; 75% si el contribuyente tiene <36 años a la fecha de devengo. Requiere trasladar la residencia habitual a Extremadura desde el 01/01/2025 y mantenerla 3 años. Aplica en el período del traslado y los dos siguientes.",
+    "what_covers": "Deducción sobre la cuota íntegra autonómica para quienes trasladen su residencia habitual a Extremadura desde 2025 y se comprometan a mantenerla.",
+    "requirements": [
+      "Trasladar la residencia habitual a Extremadura a partir del 01/01/2025",
+      "50% de la cuota íntegra autonómica con carácter general",
+      "75% de la cuota íntegra autonómica si el contribuyente tiene <36 años en la fecha de devengo",
+      "Compromiso de mantener la residencia habitual en Extremadura al menos 3 años",
+      "Aplica en el período impositivo del traslado y en los dos siguientes"
+    ],
     "legal_reference": "Art. 11 sexies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -428,7 +555,13 @@
     "id": "ext-ayudas-ela",
     "ccaa_code": "ES-EX",
     "title": "Por la obtención de ayudas o subvenciones otorgadas por la Comunidad Autónoma a personas con Esclerosis Lateral Amiotrófica",
-    "summary": "Resultado de aplicar los tipos medios de gravamen a la cuantía de la subvención o ayuda pública otorgada por la Comunidad Autónoma de Extremadura a enfermos de ELA e integrada en la base imponible general.",
+    "what_covers": "Compensa la tributación de las subvenciones/ayudas que la Junta de Extremadura concede a personas con ELA y que se integran en la base imponible general.",
+    "requirements": [
+      "Diagnóstico confirmado de Esclerosis Lateral Amiotrófica",
+      "Subvención o ayuda pública otorgada por la Comunidad Autónoma de Extremadura",
+      "La ayuda debe estar integrada en la base imponible general del IRPF",
+      "La deducción es el resultado de aplicar los tipos medios de gravamen al importe de la ayuda"
+    ],
     "legal_reference": "Art. 11 septies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [
@@ -447,7 +580,15 @@
     "id": "ext-enfermos-ela-familiares",
     "ccaa_code": "ES-EX",
     "title": "Destinada a los enfermos de Esclerosis Lateral Amiotrófica y sus familiares",
-    "summary": "2.000 € anuales por contribuyente. Aplicable a: (1) contribuyentes diagnosticados de ELA y (2) contribuyentes cuyo cónyuge, pareja de hecho, descendiente o ascendiente conviva con ellos o esté a su cargo y haya sido diagnosticado de ELA. Cuando varios contribuyentes tengan derecho respecto de una misma persona enferma, el importe se prorratea por partes iguales (el propio enfermo siempre recibe los 2.000 € sin prorrateo).",
+    "what_covers": "Deducción anual fija para personas diagnosticadas de ELA y para los familiares directos que convivan con ellos o los tengan a su cargo.",
+    "requirements": [
+      "Importe de 2.000 € anuales por contribuyente con derecho",
+      "Aplicable al propio contribuyente diagnosticado de ELA",
+      "También aplicable a cónyuge, pareja de hecho, descendiente o ascendiente diagnosticado que conviva o esté a cargo del contribuyente",
+      "Los descendientes/ascendientes deben dar derecho al mínimo familiar correspondiente",
+      "Si varios contribuyentes tienen derecho respecto de la misma persona enferma, el importe se prorratea por partes iguales entre los familiares",
+      "El propio enfermo siempre percibe los 2.000 € íntegros, sin prorrateo"
+    ],
     "legal_reference": "Art. 11 octies Texto Refundido Decreto Legislativo 1/2018 de la Comunidad Autónoma de Extremadura",
     "eligibility_rule": {
       "all_of": [

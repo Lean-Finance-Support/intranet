@@ -80,14 +80,15 @@ const sql = `-- Seed del catálogo de deducciones autonómicas.
 TRUNCATE TABLE renta.deductions;
 
 INSERT INTO renta.deductions (
-  id, ccaa_code, title, summary, legal_reference,
+  id, ccaa_code, title, what_covers, requirements, legal_reference,
   eligibility_rule, extra_fields, display_order, is_active
 )
 SELECT
   (row->>'id')::text,
   (row->>'ccaa_code')::text,
   (row->>'title')::text,
-  (row->>'summary')::text,
+  (row->>'what_covers')::text,
+  COALESCE(row->'requirements', '[]'::jsonb),
   (row->>'legal_reference')::text,
   COALESCE(row->'eligibility_rule', '{"all_of":[]}'::jsonb),
   COALESCE(row->'extra_fields', '[]'::jsonb),

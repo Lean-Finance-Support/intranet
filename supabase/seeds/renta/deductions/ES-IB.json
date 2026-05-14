@@ -3,7 +3,15 @@
     "id": "bal-inversiones-sostenibilidad-vivienda",
     "ccaa_code": "ES-IB",
     "title": "Por determinadas inversiones de mejora de la sostenibilidad en la vivienda habitual",
-    "summary": "50% del importe de las inversiones que mejoren la calidad y la sostenibilidad de la vivienda habitual (energías renovables, eficiencia energética, ahorro de agua). Base máxima 10.000 €/año. Base imponible total ≤ 33.000 € (individual) / 52.800 € (conjunta). Requiere registro de certificados de eficiencia energética antes y después.",
+    "what_covers": "Deducción por inversiones realizadas en la vivienda habitual para mejorar su calidad y sostenibilidad (energías renovables, eficiencia energética y ahorro de agua).",
+    "requirements": [
+      "Realizar inversiones en energías renovables, eficiencia energética o ahorro de agua sobre la vivienda habitual",
+      "La deducción es del 50% del importe satisfecho, con base máxima de 10.000 €/año",
+      "Ser propietario de la vivienda habitual o arrendador (si la vivienda es habitual del inquilino)",
+      "Base imponible total ≤ 33.000 € en declaración individual o ≤ 52.800 € en conjunta",
+      "Disponer de certificado de eficiencia energética anterior y posterior a las obras debidamente registrado",
+      "Conservar las facturas y justificantes del pago de las inversiones"
+    ],
     "legal_reference": "Art. 3 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -40,7 +48,16 @@
     "id": "bal-arrendamiento-vivienda-habitual",
     "ccaa_code": "ES-IB",
     "title": "Por arrendamiento de la vivienda habitual en el territorio de las Illes Balears",
-    "summary": "15% (máx. 530 €) si <36 años, >65 sin actividad. 20% (máx. 650 €) si <30 años, discapacidad ≥33%, familia numerosa, monoparental, autónomo ≥183 días. Requiere depósito de fianza en IBAVI, sin otra vivienda <70 km, base ≤ 33.000/52.800 € (general).",
+    "what_covers": "Deducción para el inquilino por las rentas pagadas por el alquiler de su vivienda habitual situada en Illes Balears.",
+    "requirements": [
+      "La vivienda alquilada debe estar en Illes Balears y constituir la vivienda habitual del contribuyente",
+      "Porcentaje del 15% (límite 530 €/año) si el inquilino es menor de 36 años o mayor de 65 sin actividad laboral/profesional",
+      "Porcentaje incrementado al 20% (límite 650 €/año) si concurre alguna circunstancia: menor de 30 años, discapacidad ≥33%, mínimo por discapacidad de ascendientes/descendientes, familia numerosa, familia monoparental con ≥2 hijos o trabajador autónomo con alta ≥183 días",
+      "Depósito de la fianza en el Instituto Balear de la Vivienda (IBAVI)",
+      "El contribuyente no puede ser titular de otra vivienda a menos de 70 km de la arrendada",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Identificar el NIF/NIE del arrendador"
+    ],
     "legal_reference": "Art. 3 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -83,7 +100,13 @@
     "id": "bal-subvenciones-emergencia-proteccion-civil",
     "ccaa_code": "ES-IB",
     "title": "Por determinadas subvenciones y ayudas otorgadas por razón de una declaración de zona afectada gravemente por una emergencia de protección civil",
-    "summary": "Importe resultante de aplicar el tipo medio de gravamen al importe de la subvención en la base liquidable. Aplica cuando se integran en la base imponible general subvenciones o ayudas otorgadas por la CCAA de las Illes Balears por daños derivados de emergencias declaradas zona gravemente afectada (Ley 17/2015).",
+    "what_covers": "Deducción que compensa la tributación de las subvenciones o ayudas autonómicas percibidas por daños derivados de emergencias declaradas zona gravemente afectada (Ley 17/2015).",
+    "requirements": [
+      "Haber percibido subvenciones o ayudas de la CCAA de Illes Balears por daños causados por una emergencia declarada zona gravemente afectada por el Consejo de Ministros",
+      "Integrar el importe de la ayuda en la base imponible general del IRPF",
+      "El importe deducible resulta de aplicar el tipo medio de gravamen a la cuantía integrada",
+      "Conservar el acuerdo de concesión y la resolución que declara la zona afectada"
+    ],
     "legal_reference": "Art. 3 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -102,7 +125,15 @@
     "id": "bal-libros-texto",
     "ccaa_code": "ES-IB",
     "title": "Por gastos de adquisición de libros de texto",
-    "summary": "100% de los importes destinados a la adquisición de libros de texto por hijo escolarizado (2º ciclo infantil, primaria, ESO, bachillerato y FP específica). Límite 220 €/hijo (350 €/hijo si <30 años, discapacidad ≥33%, familia numerosa, monoparental ≥2 hijos o autónomo ≥183 días). Base ≤ 33.000/52.800 € general.",
+    "what_covers": "Deducción por los gastos satisfechos en la compra de libros de texto editados para enseñanzas regladas no universitarias por cada hijo escolarizado.",
+    "requirements": [
+      "Tener hijos/descendientes escolarizados en 2º ciclo de educación infantil, primaria, ESO, bachillerato o FP específica",
+      "El 100% del gasto en libros de texto es deducible con los siguientes límites por hijo",
+      "Límite general: 220 € por hijo",
+      "Límite incrementado a 350 €/hijo si concurre: menor de 30 años, discapacidad ≥33%, mínimo por discapacidad de ascendientes/descendientes, familia numerosa, monoparental con ≥2 hijos o autónomo (≥183 días)",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Conservar facturas o justificantes del centro/proveedor"
+    ],
     "legal_reference": "Art. 4 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -142,7 +173,14 @@
     "id": "bal-aprendizaje-idiomas-extraescolar",
     "ccaa_code": "ES-IB",
     "title": "Por gastos de aprendizaje extraescolar de idiomas extranjeros",
-    "summary": "15% de los importes destinados al aprendizaje extraescolar de idiomas extranjeros para hijos en 2º ciclo infantil, primaria, ESO, bachillerato y FP específica. Límite 110 €/hijo. Base ≤ 33.000/52.800 €.",
+    "what_covers": "Deducción por las cantidades pagadas para el aprendizaje extraescolar de idiomas extranjeros por hijos escolarizados en enseñanzas regladas no universitarias.",
+    "requirements": [
+      "Tener hijos cursando 2º ciclo de educación infantil, primaria, ESO, bachillerato o FP específica",
+      "Pagar clases o cursos de idiomas extranjeros fuera del horario lectivo",
+      "El 15% del gasto es deducible con límite de 110 € por hijo",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Conservar la factura del centro o escuela de idiomas"
+    ],
     "legal_reference": "Art. 4 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -174,7 +212,15 @@
     "id": "bal-estudios-superiores-fuera-isla",
     "ccaa_code": "ES-IB",
     "title": "Para cursar estudios de educación superior fuera de la isla de residencia habitual",
-    "summary": "1.800 € por cada descendiente que curse estudios de educación superior fuera de la isla de residencia habitual del contribuyente. Límite 50% de la cuota íntegra autonómica. Renta del descendiente ≤ 8.000 €. Base ≤ 33.000 € (individual) / 52.800 € (conjunta).",
+    "what_covers": "Deducción a tanto alzado por cada descendiente que se desplace para cursar estudios de educación superior fuera de la isla en la que el contribuyente tiene su residencia habitual.",
+    "requirements": [
+      "Tener uno o varios descendientes cursando estudios de educación superior (universitarios, artísticos superiores, FP de grado superior, artes plásticas/diseño superior, deportivos superiores u otros equivalentes)",
+      "Los estudios deben cursarse en una isla distinta a la de la residencia habitual del contribuyente",
+      "1.800 € por cada descendiente, con límite del 50% de la cuota íntegra autonómica",
+      "Renta del descendiente ≤ 8.000 € (no debe presentar declaración por rentas superiores)",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Indicar el curso académico iniciado y conservar la matrícula"
+    ],
     "legal_reference": "Art. 4 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -214,7 +260,16 @@
     "id": "bal-arrendador-primas-seguros",
     "ccaa_code": "ES-IB",
     "title": "Para el arrendador de bienes inmuebles destinados a vivienda permanente. Primas de seguros",
-    "summary": "75% de los gastos satisfechos en concepto de primas de seguros que cubran el impago de las rentas del arrendamiento. Límite 440 €/año. Contrato ≥ 1 año, depósito de fianza en IBAVI, declarar rendimiento como capital inmobiliario, base ≤ 84.480 € conjunta / 52.800 € individual.",
+    "what_covers": "Deducción para arrendadores de viviendas permanentes en Illes Balears por las primas pagadas en seguros que cubren el impago de las rentas del alquiler.",
+    "requirements": [
+      "Ser arrendador de uno o varios inmuebles destinados a vivienda permanente del inquilino",
+      "Haber pagado primas de seguros que cubran específicamente el impago de rentas",
+      "Deducción del 75% de las primas con límite de 440 €/año",
+      "Contrato de arrendamiento con duración mínima de 1 año",
+      "Depósito de la fianza en el Instituto Balear de la Vivienda (IBAVI)",
+      "Declarar los ingresos del alquiler como rendimiento del capital inmobiliario",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta"
+    ],
     "legal_reference": "Art. 4 quater.1 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -246,7 +301,17 @@
     "id": "bal-arrendador-otros-gastos",
     "ccaa_code": "ES-IB",
     "title": "Para el arrendador de bienes inmuebles destinados a vivienda permanente. Otros gastos",
-    "summary": "50% de gastos del arrendador: primas de seguros de daños, reparación y conservación, comunidad, tributarios, formalización del contrato y certificados de eficiencia energética. Límite 1.500 €/año (1.800 € si se arrienda a la Administración para Alquiler Seguro). Renta máx. 15 €/m² mensual. Aplicable una sola vez. Compatible con la deducción por primas de seguros.",
+    "what_covers": "Deducción para arrendadores de viviendas permanentes en Illes Balears por otros gastos asociados al arrendamiento distintos a las primas de seguro de impago.",
+    "requirements": [
+      "Ser arrendador de inmueble destinado a vivienda permanente del inquilino",
+      "Pagar gastos del tipo: primas de seguros de daños, reparación y conservación, comunidad, tributarios, formalización del contrato o certificados de eficiencia energética",
+      "Deducción del 50% de los gastos con límite de 1.500 €/año",
+      "Límite incrementado a 1.800 €/año si la vivienda se arrienda a la Administración de Illes Balears (programa Alquiler Seguro)",
+      "Renta mensual ≤ 15 €/m² de superficie útil",
+      "Aplicable una sola vez por inmueble",
+      "Compatible con la deducción por primas de seguros de impago",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta"
+    ],
     "legal_reference": "Art. 4 quater.2 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -280,7 +345,16 @@
     "id": "bal-arrendamiento-traslado-laboral-isla",
     "ccaa_code": "ES-IB",
     "title": "Por arrendamiento de vivienda en el territorio de las Illes Balears derivado del traslado temporal de residencia por motivos laborales",
-    "summary": "15% de los gastos pagados en concepto de renta de alquiler por traslado temporal de isla (en una misma relación laboral por cuenta ajena). Límite 440 €/año. Traslado ≤ 3 años. Depósito en IBAVI, base ≤ 33.000/52.800 €.",
+    "what_covers": "Deducción por el alquiler de una vivienda en otra isla de Illes Balears cuando el contribuyente se traslada temporalmente por motivos laborales dentro de la misma relación laboral por cuenta ajena.",
+    "requirements": [
+      "El contribuyente es trabajador por cuenta ajena y, dentro de la misma relación laboral, se traslada temporalmente a otra isla de Illes Balears",
+      "Tener un contrato de alquiler de la vivienda en la isla de destino",
+      "Deducción del 15% de la renta pagada con límite de 440 €/año",
+      "Duración prevista del traslado no superior a 3 años",
+      "Depósito de la fianza en el IBAVI",
+      "Identificar el NIF/NIE del arrendador",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta"
+    ],
     "legal_reference": "Art. 4 quinquies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -325,7 +399,15 @@
     "id": "bal-vivienda-ocupada-ilegalmente",
     "ccaa_code": "ES-IB",
     "title": "Para compensar los gastos derivados de una vivienda ocupada ilegalmente o por razón de suspensión del lanzamiento",
-    "summary": "40% de los gastos pagados (IBI, tasa de residuos, suministros, comunidad, conservación y mantenimiento, gastos judiciales para recuperar la posesión). Límite 500 €/declaración. Base ≤ 33.000 € (individual) / 52.800 € (conjunta). No aplica a contribuyentes fallecidos antes del 25-jul-2025.",
+    "what_covers": "Deducción para compensar los gastos que el propietario continúa asumiendo cuando su vivienda está ocupada ilegalmente o cuando se ha decretado judicialmente la suspensión del lanzamiento.",
+    "requirements": [
+      "Ser titular de una vivienda ocupada ilegalmente o sobre la que se haya decretado la suspensión del lanzamiento por vulnerabilidad económica",
+      "Haber pagado gastos: IBI, tasa de residuos, suministros, comunidad, conservación y mantenimiento, o gastos judiciales para recuperar la posesión",
+      "Deducción del 40% de los gastos pagados con límite de 500 € por declaración",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "No aplica a contribuyentes fallecidos antes del 25 de julio de 2025",
+      "Conservar justificantes de los gastos y, si procede, referencia del procedimiento judicial"
+    ],
     "legal_reference": "Art. 4 sexies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -361,7 +443,15 @@
     "id": "bal-donaciones-investigacion-id",
     "ccaa_code": "ES-IB",
     "title": "Por donaciones a determinadas entidades destinadas a la investigación, el desarrollo científico o tecnológico, o la innovación",
-    "summary": "25% de las donaciones dinerarias destinadas a I+D+i a favor de la Administración de las Illes Balears, la UIB, entidades sin ánimo de lucro inscritas en el Registro de Fundaciones de Baleares con fin de I+D+i, o entidades parcialmente exentas del IS (Art. 9.3 LIS). Límite 15% de la cuota íntegra autonómica.",
+    "what_covers": "Deducción por las donaciones dinerarias realizadas a entidades públicas o sin ánimo de lucro de Illes Balears cuyo objeto es la investigación, el desarrollo científico-tecnológico o la innovación.",
+    "requirements": [
+      "Realizar donaciones dinerarias destinadas a I+D+i",
+      "La entidad receptora debe ser: la Administración de Illes Balears (o entidades instrumentales), la UIB, una entidad sin ánimo de lucro inscrita en el Registro de Fundaciones de Baleares con fin de I+D+i, o una entidad parcialmente exenta del IS (Art. 9.3 LIS)",
+      "Deducción del 25% del importe donado",
+      "Límite: 15% de la cuota íntegra autonómica",
+      "Disponer del certificado emitido por la entidad donataria",
+      "Identificar entidades receptoras y su NIF"
+    ],
     "legal_reference": "Art. 5 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -386,7 +476,15 @@
     "id": "bal-mecenazgo-cultural-cientifico",
     "ccaa_code": "ES-IB",
     "title": "Por donaciones, cesiones de uso o contratos de comodato y convenios de colaboración empresarial, relativos al mecenazgo cultural, científico y de desarrollo tecnológico y al consumo cultural",
-    "summary": "15% (límite 660 €/año) de donaciones, cesiones o convenios de mecenazgo cultural/científico (Ley 3/2015). 25% (límite 1.200 €/año) si el beneficiario es la Administración IB u organismos vinculados y el proyecto es propio. Base ≤ 33.000/52.800 € para el supuesto del 15% (no aplica al 25%).",
+    "what_covers": "Deducción por aportaciones (dinerarias, cesiones de uso, comodato o convenios de colaboración) destinadas al mecenazgo cultural, científico, de desarrollo tecnológico y al consumo cultural en Illes Balears (Ley 3/2015).",
+    "requirements": [
+      "Realizar donación, cesión de uso, contrato de comodato o convenio de colaboración empresarial calificado como mecenazgo cultural, científico o de desarrollo tecnológico",
+      "Porcentaje general: 15% con límite de 660 €/año",
+      "Porcentaje incrementado: 25% con límite de 1.200 €/año si el beneficiario es la Administración de Illes Balears u organismos vinculados Y la aportación se destina a un proyecto propio",
+      "Identificar a la entidad beneficiaria y su NIF",
+      "Para el supuesto del 15%: base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta (no aplica al supuesto del 25%)",
+      "Si es cesión/comodato con duración inferior a un año, indicar los días de duración"
+    ],
     "legal_reference": "Art. 5 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -412,7 +510,13 @@
     "id": "bal-mecenazgo-deportivo",
     "ccaa_code": "ES-IB",
     "title": "Por donaciones, cesiones de uso o contratos de comodato y convenios de colaboración, relativos al mecenazgo deportivo",
-    "summary": "15% de donaciones, cesiones de uso, comodato o convenios de colaboración a favor de entidades de mecenazgo deportivo (Ley 6/2015). Límite 660 €/año. Base ≤ 33.000 € (individual) / 52.800 € (conjunta).",
+    "what_covers": "Deducción por aportaciones (dinerarias, cesiones de uso, comodato o convenios de colaboración) destinadas al mecenazgo deportivo en Illes Balears (Ley 6/2015).",
+    "requirements": [
+      "Realizar donación, cesión de uso, contrato de comodato o convenio de colaboración a favor de entidades que cumplan la Ley 6/2015 de mecenazgo deportivo",
+      "Deducción del 15% del importe aportado con límite de 660 €/año",
+      "Identificar a la entidad beneficiaria y su NIF",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta"
+    ],
     "legal_reference": "Art. 5 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -448,7 +552,15 @@
     "id": "bal-donaciones-lengua-catalana",
     "ccaa_code": "ES-IB",
     "title": "Por donaciones a determinadas entidades que tengan por objeto el fomento de la lengua catalana",
-    "summary": "15% de las donaciones dinerarias para el fomento de la lengua catalana (Administración IB, UIB, centros superiores de enseñanzas artísticas IB, entidades sin ánimo de lucro inscritas en Registro de Fundaciones IB, o entidades parcialmente exentas del IS). Límite 10% de la cuota íntegra autonómica.",
+    "what_covers": "Deducción por donaciones dinerarias destinadas al fomento de la lengua catalana a través de la Administración, la UIB u otras entidades culturales/educativas de Illes Balears.",
+    "requirements": [
+      "Realizar donación dineraria con el objeto de fomentar la lengua catalana",
+      "La entidad receptora debe ser: la Administración de Illes Balears, la UIB, centros de investigación y enseñanzas artísticas superiores de IB, entidad sin ánimo de lucro inscrita en el Registro de Fundaciones IB, o entidad parcialmente exenta del IS (Art. 9.3 LIS)",
+      "Deducción del 15% del importe donado",
+      "Límite: 10% de la cuota íntegra autonómica",
+      "Identificar a la entidad receptora y su NIF",
+      "Disponer del certificado de la entidad donataria"
+    ],
     "legal_reference": "Art. 5 quater Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -473,7 +585,14 @@
     "id": "bal-donaciones-tercer-sector",
     "ccaa_code": "ES-IB",
     "title": "Por donaciones a entidades del tercer sector",
-    "summary": "25% del importe de las donaciones dinerarias a entidades sin ánimo de lucro del tercer sector de acción social (Ley 3/2018) inscritas en el registro de la Consejería de Familias y Asuntos Sociales. Base máxima 165 €/año.",
+    "what_covers": "Deducción por donaciones dinerarias realizadas a entidades sin ánimo de lucro del tercer sector de acción social inscritas en el registro de la Consejería de Familias y Asuntos Sociales.",
+    "requirements": [
+      "Realizar donación dineraria a entidad sin ánimo de lucro del tercer sector de acción social (Ley 3/2018)",
+      "La entidad debe estar inscrita en el registro de la Consejería de Familias y Asuntos Sociales de Illes Balears",
+      "Deducción del 25% del importe donado, sobre una base máxima de 165 €/año",
+      "Identificar a la entidad receptora y su NIF",
+      "Conservar el certificado emitido por la entidad beneficiaria"
+    ],
     "legal_reference": "Art. 5 quinquies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -492,7 +611,14 @@
     "id": "bal-discapacidad",
     "ccaa_code": "ES-IB",
     "title": "Para los declarantes con discapacidad física, psíquica o sensorial o con descendientes con esta condición",
-    "summary": "88 € (discapacidad física/sensorial 33%-65%), 165 € (física/sensorial ≥65%) o 165 € (psíquica ≥33%) por cada contribuyente o miembro de la unidad familiar con discapacidad. Base ≤ 33.000 € (individual) / 52.800 € (conjunta).",
+    "what_covers": "Deducción por la condición de discapacidad del propio contribuyente o de miembros de su unidad familiar (descendientes o ascendientes con discapacidad acreditada).",
+    "requirements": [
+      "Que el contribuyente o algún miembro de su unidad familiar tenga reconocida una discapacidad ≥33%",
+      "Importes según tipo y grado: 88 € para discapacidad física o sensorial entre 33% y <65%; 165 € si la discapacidad física o sensorial es ≥65%; 165 € en caso de discapacidad psíquica ≥33%",
+      "La deducción se aplica por cada miembro con discapacidad",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Disponer de certificado oficial de reconocimiento de la discapacidad"
+    ],
     "legal_reference": "Art. 6 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -528,7 +654,16 @@
     "id": "bal-conciliacion-menores-6-anos",
     "ccaa_code": "ES-IB",
     "title": "Por gastos relativos a los descendientes o acogidos menores de seis años por motivos de conciliación",
-    "summary": "40% de gastos en escuelas infantiles (0-3 años), guarderías, custodia/comedor/extraescolares (3-6 años) o contratación laboral para cuidar al menor. Límite 660 €/año. 50% (límite 900 €/año) si el contribuyente es <36 años, discapacidad ≥33%, familia numerosa, monoparental ≥2 hijos o autónomo. Pago bancario obligatorio. Base ≤ 33.000/52.800 €.",
+    "what_covers": "Deducción para facilitar la conciliación familiar por los gastos pagados en escuelas infantiles, guarderías, custodia, comedor, extraescolares o contratación laboral para cuidar a descendientes o acogidos menores de 6 años.",
+    "requirements": [
+      "Tener descendientes o acogidos menores de 6 años",
+      "Pagar gastos en: escuelas infantiles o guarderías (0-3 años); custodia/comedor/extraescolares (3-6 años); o contratación laboral de persona para cuidar al menor",
+      "Porcentaje general: 40% con límite de 660 €/año",
+      "Porcentaje incrementado: 50% con límite de 900 €/año si concurre alguna circunstancia (menor de 36 años, discapacidad ≥33%, mínimo por discapacidad de ascendientes/descendientes, familia numerosa, monoparental con ≥2 hijos o autónomo ≥183 días)",
+      "Los pagos deben realizarse a través de entidad bancaria",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Detallar los menores beneficiarios y conservar facturas"
+    ],
     "legal_reference": "Art. 6 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -573,7 +708,17 @@
     "id": "bal-nacimiento",
     "ccaa_code": "ES-IB",
     "title": "Por nacimiento",
-    "summary": "800 € (1º hijo), 1.000 € (2º), 1.200 € (3º), 1.400 € (4º y siguientes). Requiere residencia fiscal en IB el ejercicio anterior y derecho al mínimo por descendientes. Base ≤ 52.800 € (individual) / 84.480 € (conjunta) en general; 63.360/101.376 € para familia numerosa o monoparental ≥2 hijos. Quienes superen el límite tienen derecho al 50%. Abono anticipado posible.",
+    "what_covers": "Deducción a tanto alzado por el nacimiento de cada hijo en el ejercicio, con cuantía creciente según el número de orden del hijo.",
+    "requirements": [
+      "Que se haya producido el nacimiento de un hijo en el ejercicio",
+      "Tener derecho al mínimo por descendientes respecto del recién nacido",
+      "El contribuyente debe haber tenido residencia fiscal en Illes Balears el ejercicio anterior",
+      "Cuantía según orden del hijo: 800 € (1º), 1.000 € (2º), 1.200 € (3º), 1.400 € (4º o siguientes)",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta (régimen general)",
+      "Límites incrementados a 63.360/101.376 € si es familia numerosa o monoparental con ≥2 hijos",
+      "Quienes superen el límite de base pueden aplicar el 50% del importe",
+      "Posibilidad de solicitar el abono anticipado (Orden 37/2024)"
+    ],
     "legal_reference": "Art. 6 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -600,7 +745,16 @@
     "id": "bal-adopcion",
     "ccaa_code": "ES-IB",
     "title": "Por adopción",
-    "summary": "800 € (1º hijo), 1.000 € (2º), 1.200 € (3º), 1.400 € (4º y siguientes). Requiere derecho al mínimo por descendientes. Base ≤ 33.000 € (individual) / 52.800 € (conjunta) general; 39.600/63.360 € para familia numerosa o monoparental ≥2 hijos. Solo en el período en que se inscribe la adopción en Registro Civil. No aplica a adopción del hijo del cónyuge.",
+    "what_covers": "Deducción a tanto alzado por la adopción de un hijo formalizada en el ejercicio, con cuantía creciente según el número de orden del hijo adoptado.",
+    "requirements": [
+      "Haber formalizado la adopción y haberla inscrito en el Registro Civil en el ejercicio",
+      "Tener derecho al mínimo por descendientes respecto del adoptado",
+      "Cuantía según orden del hijo: 800 € (1º), 1.000 € (2º), 1.200 € (3º), 1.400 € (4º o siguientes)",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta (régimen general)",
+      "Límites incrementados a 39.600/63.360 € si es familia numerosa o monoparental con ≥2 hijos",
+      "Solo aplicable en el período en que se inscribe la adopción",
+      "No aplica a la adopción del hijo del cónyuge o pareja de hecho"
+    ],
     "legal_reference": "Art. 6 quater Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -638,7 +792,16 @@
     "id": "bal-gastos-mayores-65-discapacidad",
     "ccaa_code": "ES-IB",
     "title": "Por determinados gastos relativos a personas mayores de 65 años o a personas con discapacidad",
-    "summary": "40% de gastos pagados (estancias en residencias/centros de día, custodia, comedor, actividades en centros de día, contratación laboral para su cuidado) por contribuyentes >65 años, contribuyentes <65 con discapacidad ≥33%, ascendientes/descendientes con discapacidad ≥33% o ascendientes >65 con derecho al mínimo. Límite 660 €/año por persona. Pago bancario, base ≤ 33.000/52.800 €.",
+    "what_covers": "Deducción por gastos asistenciales (residencias, centros de día, custodia, comedor, actividades o contratación laboral para el cuidado) de personas mayores de 65 años o con discapacidad, ya sea el propio contribuyente o ascendientes/descendientes a cargo.",
+    "requirements": [
+      "Pagar gastos por: estancias en residencias o centros de día; custodia/comedor/actividades en centros de día; o contratación laboral para el cuidado",
+      "La persona beneficiaria del cuidado debe ser una de: contribuyente >65 años; contribuyente <65 con discapacidad ≥33%; ascendiente o descendiente con discapacidad ≥33%; o ascendiente >65 con derecho al mínimo",
+      "Deducción del 40% de los gastos pagados",
+      "Límite de 660 €/año por persona que da derecho a la deducción",
+      "Los pagos deben efectuarse a través de entidad bancaria",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Conservar facturas y, en su caso, certificado de discapacidad"
+    ],
     "legal_reference": "Art. 6 quinquies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -679,7 +842,15 @@
     "id": "bal-ela",
     "ccaa_code": "ES-IB",
     "title": "Por gastos derivados de la esclerosis lateral amiotrófica (ELA)",
-    "summary": "100% de los gastos pagados derivados de la ELA del contribuyente, descendientes o ascendientes a cargo. Límite conjunto 3.500 €. Base ≤ 52.800 € (individual) / 84.480 € (conjunta). No incluye primas de seguros de salud ni gastos no relacionados con la ELA.",
+    "what_covers": "Deducción por los gastos asistenciales y sanitarios derivados de la esclerosis lateral amiotrófica (ELA) padecida por el propio contribuyente, descendientes o ascendientes a su cargo.",
+    "requirements": [
+      "Que el contribuyente, un descendiente o un ascendiente con derecho al mínimo padezcan ELA acreditada médicamente",
+      "Haber pagado gastos directamente relacionados con la enfermedad",
+      "Deducción del 100% de los gastos con límite conjunto de 3.500 €",
+      "No incluye primas de seguros de salud ni gastos no relacionados con la ELA",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta",
+      "Disponer del certificado médico que acredite el diagnóstico de ELA y conservar facturas"
+    ],
     "legal_reference": "Art. 6 sexies Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -714,7 +885,19 @@
     "id": "bal-inversion-nuevas-entidades",
     "ccaa_code": "ES-IB",
     "title": "Por inversión en la adquisición de acciones o de participaciones sociales de nuevas entidades o de reciente creación",
-    "summary": "30% (límite 6.000 €/año) de inversiones en SA/SL/SAL/SLL/Cooperativas de nueva creación o ampliación. 50% (límite 12.000 €) si la sociedad está participada por centros de investigación o universidades. Mantenimiento 4 años, domicilio en IB, plantilla mínima de 1 persona en IB, cifra anual ≤ 2.000.000 €, participación ≤ 40% (incl. entorno familiar). Aplica en el ejercicio y los dos siguientes.",
+    "what_covers": "Deducción por la inversión realizada en la suscripción de acciones o participaciones de sociedades de nueva creación o de reciente creación (constitución o ampliación de capital) con domicilio fiscal en Illes Balears.",
+    "requirements": [
+      "Suscribir acciones o participaciones de una SA, SL, SAL, SLL o Cooperativa de nueva creación o en ampliación de capital",
+      "La entidad debe tener domicilio social y fiscal en Illes Balears",
+      "Porcentaje general: 30% con límite de 6.000 €/año",
+      "Porcentaje incrementado: 50% con límite de 12.000 €/año si la sociedad está participada por universidades o centros de investigación",
+      "La sociedad debe contar con al menos 1 persona empleada con contrato laboral a jornada completa en IB",
+      "Cifra anual de negocios de la sociedad ≤ 2.000.000 €",
+      "Participación del contribuyente (incluyendo entorno familiar) no superior al 40% del capital",
+      "Mantener la participación durante un mínimo de 4 años",
+      "La deducción puede aplicarse en el ejercicio de la inversión y en los dos siguientes",
+      "La inversión debe formalizarse en escritura pública"
+    ],
     "legal_reference": "Art. 7 Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -739,7 +922,15 @@
     "id": "bal-fomento-autoocupacion",
     "ccaa_code": "ES-IB",
     "title": "Para el fomento de la autoocupación",
-    "summary": "1.000 € por cada contribuyente que se dé de alta por primera vez en el Censo de Empresarios, Profesionales y Retenedores. Actividad principalmente desarrollada en Illes Balears, mantenimiento del alta mínimo 1 año, base ≤ 33.000 € (individual) / 52.800 € (conjunta).",
+    "what_covers": "Deducción por iniciar una actividad económica por cuenta propia mediante el alta por primera vez en el Censo de Empresarios, Profesionales y Retenedores, principalmente desarrollada en Illes Balears.",
+    "requirements": [
+      "Causar alta por primera vez en el Censo de Empresarios, Profesionales y Retenedores (modelo 036/037)",
+      "Importe: 1.000 € por contribuyente",
+      "La actividad económica debe desarrollarse principalmente en Illes Balears",
+      "Mantener el alta en el censo durante al menos 1 año",
+      "Base imponible total ≤ 33.000 € en individual o ≤ 52.800 € en conjunta",
+      "Indicar la fecha de alta y descripción de la actividad económica"
+    ],
     "legal_reference": "Art. 7 bis Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [
@@ -771,7 +962,17 @@
     "id": "bal-plazas-dificil-cobertura",
     "ccaa_code": "ES-IB",
     "title": "Por ocupación de plazas declaradas de difícil cobertura en las Illes Balears",
-    "summary": "40% de gastos de adquisición/construcción/alquiler de vivienda en IB o transporte aéreo/marítimo interinsular. Aplica a empleados públicos con complemento de difícil cobertura y Policía Nacional/Guardia Civil con destino en IB. Límites por declaración: general 2.000 € (base ≤33.000/52.800) o 1.000 € (≤52.800/84.480); Mallorca PN/GC 1.400/700 €; Formentera PN/GC 2.600/1.300 €. Base ≤ 52.800/84.480 €.",
+    "what_covers": "Deducción para empleados públicos con complemento de difícil cobertura y para miembros de Policía Nacional o Guardia Civil destinados en Illes Balears, por gastos de vivienda y transporte interinsular asociados al destino.",
+    "requirements": [
+      "Ostentar una de las categorías profesionales: personal público con complemento de difícil/muy difícil cobertura; o Policía Nacional / Guardia Civil destinado en Illes Balears",
+      "Haber pagado gastos de adquisición, construcción o alquiler de vivienda en Illes Balears, o gastos de transporte aéreo/marítimo interinsular",
+      "Deducción del 40% de los gastos",
+      "Límites por declaración (general personal público): 2.000 € (base ≤33.000/52.800) o 1.000 € (≤52.800/84.480)",
+      "Límites Policía Nacional/Guardia Civil en Mallorca: 1.400 € / 700 € según tramos",
+      "Límites Policía Nacional/Guardia Civil en Formentera: 2.600 € / 1.300 € según tramos",
+      "Base imponible total ≤ 52.800 € en individual o ≤ 84.480 € en conjunta",
+      "Indicar los días en el destino durante el ejercicio"
+    ],
     "legal_reference": "Art. 7 ter Texto Refundido aprobado por Decreto Legislativo 1/2014, de 6 de junio, de la Comunidad Autónoma de las Illes Balears",
     "eligibility_rule": {
       "all_of": [

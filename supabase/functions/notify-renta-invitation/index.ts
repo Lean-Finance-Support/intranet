@@ -78,6 +78,9 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ sent: 0, failed: 0, reason: "no active invitation" });
   }
   const publicUrl = `${APP_URL}/renta/${invitation.token}`;
+  // URL al apartado en el portal cliente. Pre-resuelve la cookie de empresa
+  // activa via /set-company para usuarios con más de una empresa contratada.
+  const portalUrl = `${APP_URL}/set-company?companyId=${payload.company_id}&next=${encodeURIComponent("/informes/renta")}`;
 
   // DNIs autorizados (para el listado dentro del email).
   const { data: filers } = await supabase
@@ -106,6 +109,7 @@ Deno.serve(async (req: Request) => {
   const html = buildHtml({
     companyName,
     publicUrl,
+    portalUrl,
     expiresAt: invitation.expires_at as string,
     recipientNames,
     filers: (filers ?? []) as { dni: string; full_name: string }[],
@@ -113,6 +117,7 @@ Deno.serve(async (req: Request) => {
   const text = buildText({
     companyName,
     publicUrl,
+    portalUrl,
     recipientNames,
     filers: (filers ?? []) as { dni: string; full_name: string }[],
   });
@@ -174,6 +179,7 @@ function joinNames(names: string[]): string {
 function buildHtml(ctx: {
   companyName: string;
   publicUrl: string;
+  portalUrl: string;
   expiresAt: string;
   recipientNames: string[];
   filers: { dni: string; full_name: string }[];
@@ -233,6 +239,12 @@ function buildHtml(ctx: {
 
           <p style="margin:24px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">Comparte el enlace con las personas de la lista para que entren cada una con su DNI. El enlace expira el <strong>${expires}</strong>.</p>
 
+          <div style="margin:32px 0 0;padding:20px;background-color:#f4f9fa;border:1px solid #d4ecee;border-radius:10px;">
+            <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#0f2444;">Más información en tu portal de clientes</p>
+            <p style="margin:0 0 12px;font-size:13px;color:#4b5563;line-height:1.6;">Desde tu cuenta puedes consultar en cualquier momento el enlace activo, los DNIs autorizados y las declaraciones ya enviadas.</p>
+            <a href="${ctx.portalUrl}" style="display:inline-block;font-size:13px;font-weight:600;color:#00B0B7;text-decoration:none;">Abrir el apartado en mi portal →</a>
+          </div>
+
           <p style="margin:24px 0 0;font-size:13px;color:#9ca3af;line-height:1.5;">Si el botón no funciona, copia y pega este enlace:<br/><a href="${ctx.publicUrl}" style="color:#00B0B7;word-break:break-all;">${ctx.publicUrl}</a></p>
         </td></tr>
         <tr><td style="padding:24px 0 0;text-align:center;">
@@ -248,6 +260,7 @@ function buildHtml(ctx: {
 function buildText(ctx: {
   companyName: string;
   publicUrl: string;
+  portalUrl: string;
   recipientNames: string[];
   filers: { dni: string; full_name: string }[];
 }): string {
@@ -269,6 +282,10 @@ DNIs autorizados (si falta alguna persona por añadir, escríbenos para incluirl
 ${filersText}
 
 Comparte el enlace con las personas de la lista para que entren cada una con su DNI.
+
+MÁS INFORMACIÓN EN TU PORTAL DE CLIENTES
+Desde tu cuenta puedes consultar en cualquier momento el enlace activo, los DNIs autorizados y las declaraciones ya enviadas:
+${ctx.portalUrl}
 
 — Lean Finance · Asesoría fiscal y contable
 `;

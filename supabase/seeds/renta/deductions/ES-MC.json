@@ -3,7 +3,15 @@
     "id": "mur-inversion-vivienda-jovenes-40",
     "ccaa_code": "ES-MC",
     "title": "Por inversión en vivienda habitual por jóvenes de edad igual o inferior a 40 años",
-    "summary": "5% de las cantidades satisfechas por adquisición, construcción, ampliación o rehabilitación de la vivienda habitual (incluidos gastos de financiación ajena). Contribuyente ≤40 años, base imponible <40.000 € (con base del ahorro ≤1.800 €). Límite máximo 300 €/año. Base máxima 9.040 € menos lo aplicado en la deducción estatal.",
+    "what_covers": "Cantidades satisfechas por adquisición, construcción, ampliación o rehabilitación de la vivienda habitual (incluidos los gastos de financiación ajena) por contribuyentes jóvenes en la Región de Murcia.",
+    "requirements": [
+      "Tener una edad igual o inferior a 40 años a fecha de devengo del impuesto",
+      "Que la vivienda sea de propiedad y tenga la consideración de habitual",
+      "Base imponible general menos mínimo personal y familiar inferior a 40.000 €, con base imponible del ahorro ≤ 1.800 €",
+      "Porcentaje de deducción: 5% de las cantidades satisfechas en el ejercicio",
+      "Base máxima de deducción: 9.040 € menos las cantidades aplicadas en la deducción estatal por inversión en vivienda",
+      "Límite máximo de deducción: 300 € al año"
+    ],
     "legal_reference": "Art. 1.Uno Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -33,7 +41,14 @@
     "id": "mur-donativos-patrimonio-cultural",
     "ccaa_code": "ES-MC",
     "title": "Por donativos para la protección del patrimonio cultural de la Región de Murcia o la promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales",
-    "summary": "50% de las donaciones dinerarias puras y simples destinadas a la protección del patrimonio cultural de Murcia o a la promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales, a favor de los titulares de proyectos de la Ley 4/2022 de mecenazgo.",
+    "what_covers": "Donaciones dinerarias puras y simples destinadas a la protección del patrimonio cultural de Murcia o a la promoción de actividades culturales, artísticas, sociales, científico-tecnológicas y medioambientales, realizadas a favor de los titulares de proyectos amparados por la Ley 4/2022 de mecenazgo.",
+    "requirements": [
+      "Que la donación sea dineraria, pura y simple",
+      "Que se destine a alguna de las finalidades amparadas: patrimonio cultural, actividades culturales/artísticas, sociales, científico-tecnológicas o medioambientales",
+      "Que el receptor sea titular de un proyecto reconocido al amparo de la Ley 4/2022 de mecenazgo de la Región de Murcia",
+      "Porcentaje de deducción: 50% de las cantidades donadas",
+      "Disponer de certificación de la entidad beneficiaria con los datos requeridos por la normativa"
+    ],
     "legal_reference": "Art. 1.Dos.1 Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -59,7 +74,14 @@
     "id": "mur-donativos-investigacion-biosanitaria",
     "ccaa_code": "ES-MC",
     "title": "Por donativos para la investigación biosanitaria",
-    "summary": "50% de las donaciones dinerarias puras y simples destinadas a la investigación biosanitaria a la que se refiere la Ley 4/1994 de Salud de Murcia, a favor de la CCAA, entidades públicas autonómicas, universidades públicas o entidades sin fines lucrativos inscritas en la Región.",
+    "what_covers": "Donaciones dinerarias puras y simples destinadas a la investigación biosanitaria a la que se refiere la Ley 4/1994 de Salud de Murcia, realizadas a determinadas entidades públicas y sin ánimo de lucro de la Región.",
+    "requirements": [
+      "Que la donación sea dineraria, pura y simple",
+      "Que se destine a investigación biosanitaria al amparo de la Ley 4/1994 de Salud de Murcia",
+      "Que el receptor sea la CCAA de Murcia o sus entidades del sector público, una universidad pública de la Región o una entidad sin fines lucrativos (Ley 49/2002) inscrita en la Región con fin de investigación biosanitaria",
+      "Porcentaje de deducción: 50% de las cantidades donadas",
+      "Disponer de certificación de la entidad beneficiaria"
+    ],
     "legal_reference": "Art. 1.Dos.2 Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -83,7 +105,14 @@
     "id": "mur-donaciones-bienes-inventario-patrimonio",
     "ccaa_code": "ES-MC",
     "title": "Por donaciones de bienes inscritos en el Inventario del Patrimonio Cultural de la Comunidad Autónoma de la Región de Murcia",
-    "summary": "15% de las donaciones puras y simples de bienes que, formando parte del patrimonio cultural de Murcia, estén inscritos en el Inventario del Patrimonio Cultural. La base es el valor contable del bien (o valor según el Impuesto sobre el Patrimonio), con tope en el valor de mercado.",
+    "what_covers": "Donaciones puras y simples de bienes que, formando parte del patrimonio cultural de Murcia, estén inscritos en el Inventario del Patrimonio Cultural de la Región.",
+    "requirements": [
+      "Que la donación sea pura y simple, de un bien (no dineraria)",
+      "Que el bien donado esté inscrito en el Inventario del Patrimonio Cultural de la Región de Murcia",
+      "Que el receptor sea la CCAA, corporaciones locales, universidades públicas o entidades sin fines lucrativos",
+      "Porcentaje de deducción: 15% del valor contable del bien (o del valor a efectos del Impuesto sobre el Patrimonio), con tope en el valor de mercado",
+      "Disponer de la documentación acreditativa de la inscripción en el Inventario y de la transmisión"
+    ],
     "legal_reference": "Art. 1.Dos.3 Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -104,7 +133,15 @@
     "id": "mur-gastos-guarderia",
     "ccaa_code": "ES-MC",
     "title": "Por gastos de guardería",
-    "summary": "20% de los gastos satisfechos en guarderías y centros de educación infantil por hijos o descendientes en Primer Ciclo de Educación Infantil. Límite 1.000 €/hijo. Suma de bases ≤30.000 € (individual) o 50.000 € (conjunta). La base incluye custodia, alimentación y vestuario escolar, minorada por becas.",
+    "what_covers": "Gastos satisfechos en guarderías y centros de educación infantil por hijos o descendientes matriculados en el Primer Ciclo de Educación Infantil, incluyendo custodia, alimentación y vestuario escolar.",
+    "requirements": [
+      "Tener hijos o descendientes menores de 4 años matriculados en Primer Ciclo de Educación Infantil",
+      "Suma de bases imponibles general y del ahorro ≤ 30.000 € en tributación individual o ≤ 50.000 € en conjunta",
+      "Porcentaje de deducción: 20% de los gastos satisfechos",
+      "Límite máximo de deducción: 1.000 € por hijo",
+      "La base incluye custodia, alimentación y vestuario escolar, minorada por las becas/ayudas públicas recibidas",
+      "En casos de guarda y custodia compartida, la deducción se prorratea por mitad"
+    ],
     "legal_reference": "Art. 1.Tres Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -138,7 +175,15 @@
     "id": "mur-dispositivos-ahorro-agua",
     "ccaa_code": "ES-MC",
     "title": "Por inversiones en dispositivos domésticos de ahorro de agua",
-    "summary": "20% de las inversiones realizadas en dispositivos domésticos de ahorro de agua en la vivienda habitual (Ley 6/2006). Límite máximo de deducción 60 €/año. Base máxima 300 €. Requiere reconocimiento previo de la Administración regional.",
+    "what_covers": "Inversiones efectuadas en la adquisición e instalación de dispositivos domésticos de ahorro de agua en la vivienda habitual, conforme a la Ley 6/2006 de Murcia.",
+    "requirements": [
+      "Que la inversión se realice en la vivienda habitual del contribuyente",
+      "Que se trate de dispositivos domésticos de ahorro de agua de los amparados por la Ley 6/2006",
+      "Disponer del reconocimiento previo de la Administración regional sobre la procedencia de la deducción",
+      "Porcentaje de deducción: 20% del importe satisfecho",
+      "Base máxima: 300 € al año",
+      "Límite máximo de deducción: 60 € al año"
+    ],
     "legal_reference": "Art. 1.Cuatro Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -158,7 +203,15 @@
     "id": "mur-inversion-energias-renovables",
     "ccaa_code": "ES-MC",
     "title": "Por inversión en instalaciones de recursos energéticos renovables",
-    "summary": "Inversión en sistemas de aprovechamiento de energías renovables en la vivienda habitual o destinada a arrendamiento. Porcentaje variable según base imponible (50% hasta 34.999,99 €; 37,5% entre 35.000-44.999,99 €; 25% entre 45.000-59.999,99 €; sin derecho desde 60.000 € — tramos superiores en conjunta). Límite 7.000 €.",
+    "what_covers": "Inversión en sistemas de aprovechamiento de energías renovables (fotovoltaica, solar térmica, biomasa, geotérmica, aerotérmica, eólica u otras) en la vivienda habitual o destinada a arrendamiento sin actividad económica.",
+    "requirements": [
+      "Que la instalación se realice en la vivienda habitual del contribuyente o en una vivienda destinada al arrendamiento (sin actividad económica)",
+      "Base imponible: en individual < 60.000 € (50% hasta 34.999,99 €; 37,5% entre 35.000 y 44.999,99 €; 25% entre 45.000 y 59.999,99 €). En conjunta < 95.000 €",
+      "Sin derecho a deducción si la base imponible es igual o superior a 60.000 € (95.000 € en conjunta)",
+      "Base máxima de deducción: 7.000 € por instalación",
+      "Disponer de factura del instalador habilitado",
+      "El pago debe realizarse mediante tarjeta, transferencia, cheque o ingreso bancario (no efectivo)"
+    ],
     "legal_reference": "Art. 1.Cinco Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -202,7 +255,17 @@
     "id": "mur-inversion-entidades-nuevas",
     "ccaa_code": "ES-MC",
     "title": "Por inversión en la adquisición de acciones o participaciones sociales en entidades nuevas o de reciente creación",
-    "summary": "20% de las cantidades invertidas en la constitución o ampliación de capital de SA, SL, SAL, SLL o cooperativas con domicilio en Murcia. Límite 4.000 €. Participación máxima 40% (con familia), mantener 3 años, requisitos de plantilla y actividad económica.",
+    "what_covers": "Cantidades invertidas en la constitución o ampliación de capital de sociedades anónimas, limitadas, laborales o cooperativas con domicilio en la Región de Murcia.",
+    "requirements": [
+      "Que la inversión se realice en una SA, SL, SAL, SLL o cooperativa con domicilio social y fiscal en Murcia",
+      "Que la entidad sea de nueva creación o de reciente creación",
+      "Que la participación del contribuyente (junto con cónyuge y familiares hasta 3er grado) no supere el 40% del capital",
+      "Mantener la participación durante al menos 3 años",
+      "La entidad debe cumplir requisitos de plantilla y desarrollar una actividad económica real",
+      "Formalización de la inversión en escritura pública",
+      "Porcentaje de deducción: 20% de las cantidades invertidas",
+      "Límite máximo de deducción: 4.000 €"
+    ],
     "legal_reference": "Art. 1.Seis Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -228,7 +291,16 @@
     "id": "mur-inversion-mercado-alternativo-bursatil",
     "ccaa_code": "ES-MC",
     "title": "Por inversión en acciones de entidades que cotizan en el segmento de empresas en expansión del mercado alternativo bursátil",
-    "summary": "20% de las cantidades invertidas en ampliaciones de capital en el segmento de empresas en expansión del MAB. Límite 10.000 €. Participación máxima 10%, mantener 2 años, entidad con domicilio en Murcia y actividad económica.",
+    "what_covers": "Cantidades invertidas en ampliaciones de capital de entidades que cotizan en el segmento de empresas en expansión del Mercado Alternativo Bursátil (MAB).",
+    "requirements": [
+      "Que la entidad cotice en el segmento de empresas en expansión del MAB",
+      "Que la entidad tenga domicilio social y fiscal en la Región de Murcia y desarrolle una actividad económica",
+      "Que la participación adquirida no supere el 10% del capital",
+      "Mantener la participación durante al menos 2 años",
+      "Formalización de la inversión en escritura pública",
+      "Porcentaje de deducción: 20% de las cantidades invertidas",
+      "Límite máximo de deducción: 10.000 €"
+    ],
     "legal_reference": "Art. 1.Siete Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -249,7 +321,14 @@
     "id": "mur-material-escolar-libros-texto",
     "ccaa_code": "ES-MC",
     "title": "Por gastos en la adquisición de material escolar y libros de texto",
-    "summary": "120 € por cada descendiente por adquisición de material escolar y libros de texto en 2º ciclo de Educación Infantil, Primaria y ESO. Suma de bases: ≤20.000 € (individual) o 40.000 € (conjunta); 33.000/53.000 € en familias numerosas. Se minora por becas recibidas.",
+    "what_covers": "Adquisición de material escolar y libros de texto para hijos o descendientes que cursen 2º ciclo de Educación Infantil, Educación Primaria o Educación Secundaria Obligatoria.",
+    "requirements": [
+      "Tener hijos/descendientes que cursen 2º ciclo de Infantil, Primaria o ESO",
+      "Suma de bases imponibles ≤ 20.000 € (individual) o 40.000 € (conjunta)",
+      "Si es familia numerosa (general o especial): suma de bases ≤ 33.000 € (individual) o 53.000 € (conjunta)",
+      "Importe de deducción: 120 € por cada descendiente",
+      "El importe se minora por las becas y ayudas públicas recibidas para libros o material escolar"
+    ],
     "legal_reference": "Art. 1.Ocho Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -292,7 +371,13 @@
     "id": "mur-nacimiento-adopcion",
     "ccaa_code": "ES-MC",
     "title": "Por nacimiento o adopción",
-    "summary": "100 € por el primer hijo nacido o adoptado, 200 € por el segundo y 300 € por el tercero o sucesivos. Suma de bases ≤30.000 € (individual) o 50.000 € (conjunta). Se prorratea entre los progenitores en tributación individual.",
+    "what_covers": "Deducción por cada hijo nacido o adoptado en el período impositivo que conviva con el contribuyente, con importe creciente según el orden del hijo.",
+    "requirements": [
+      "Que el hijo haya nacido o sido adoptado en el período impositivo y conviva con el contribuyente",
+      "Suma de bases imponibles ≤ 30.000 € (individual) o 50.000 € (conjunta)",
+      "Importes: 100 € por el primer hijo, 200 € por el segundo y 300 € por el tercero o sucesivos",
+      "En tributación individual con convivencia de ambos progenitores, la deducción se prorratea al 50% entre ellos"
+    ],
     "legal_reference": "Art. 1.Nueve Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -324,7 +409,13 @@
     "id": "mur-contribuyentes-discapacidad",
     "ccaa_code": "ES-MC",
     "title": "Para contribuyentes con discapacidad",
-    "summary": "150 € por cada contribuyente con grado de discapacidad acreditado ≥ 33%. Suma de bases imponibles general y del ahorro ≤ 40.000 € en tributación individual o conjunta.",
+    "what_covers": "Deducción de cuota íntegra autonómica para contribuyentes que tengan reconocido un grado de discapacidad significativo.",
+    "requirements": [
+      "Tener reconocido un grado de discapacidad igual o superior al 33%",
+      "Suma de bases imponibles general y del ahorro ≤ 40.000 € (individual o conjunta)",
+      "Importe de deducción: 150 € por contribuyente con discapacidad",
+      "Disponer de resolución/certificado acreditativo del grado de discapacidad"
+    ],
     "legal_reference": "Art. 1.Diez Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -344,7 +435,15 @@
     "id": "mur-conciliacion-cuidado-descendientes-ascendientes",
     "ccaa_code": "ES-MC",
     "title": "Por conciliación (cuidado de descendientes y ascendientes)",
-    "summary": "20% de las cuotas al Sistema Especial de Empleados de Hogar por personas contratadas para cuidar descendientes <12 años o ascendientes >65 años. Límite 400 € por modalidad (800 € si se aplican ambas con personas distintas). Suma de bases de la unidad familiar ≤ 34.000 €.",
+    "what_covers": "Cuotas pagadas al Sistema Especial de Empleados de Hogar de la Seguridad Social por personas contratadas para cuidar descendientes menores de 12 años o ascendientes mayores de 65 años.",
+    "requirements": [
+      "Estar dado de alta como empleador titular del hogar familiar en la Seguridad Social",
+      "Percibir rendimientos del trabajo o de actividades económicas",
+      "Convivir con descendientes menores de 12 años (modalidad A) o ascendientes mayores de 65 años (modalidad B)",
+      "Suma de bases imponibles de la unidad familiar ≤ 34.000 €",
+      "Porcentaje de deducción: 20% de las cuotas pagadas",
+      "Límite máximo de deducción: 400 € por modalidad (hasta 800 € si se aplican ambas con personas contratadas distintas)"
+    ],
     "legal_reference": "Art. 1.Once Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -369,7 +468,16 @@
     "id": "mur-acogimiento-no-remunerado-mayores-discapacidad",
     "ccaa_code": "ES-MC",
     "title": "Por acogimiento no remunerado de mayores de sesenta y cinco años y/o personas con discapacidad",
-    "summary": "600 € por cada persona >65 años o con grado de discapacidad ≥33% en acogimiento sin contraprestación que conviva con el contribuyente más de 183 días al año. No procede si hay parentesco hasta 4º grado o se reciben ayudas autonómicas vinculadas.",
+    "what_covers": "Acogimiento no remunerado en el domicilio del contribuyente de personas mayores de 65 años o con discapacidad reconocida que no tengan vínculo de parentesco cercano con él.",
+    "requirements": [
+      "Que la persona acogida sea mayor de 65 años o tenga reconocido un grado de discapacidad ≥ 33%",
+      "Que la convivencia en el domicilio del contribuyente supere los 183 días al año",
+      "Que el acogimiento sea no remunerado, sin contraprestación",
+      "No tener con la persona acogida parentesco hasta el 4º grado de consanguinidad o afinidad",
+      "No recibir ayudas o subvenciones de la CCAA de Murcia vinculadas al acogimiento",
+      "Disponer de certificado expedido por el órgano competente de la CCAA",
+      "Importe de deducción: 600 € por cada persona acogida"
+    ],
     "legal_reference": "Art. 1.Doce Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -391,7 +499,18 @@
     "id": "mur-arrendamiento-vivienda-habitual",
     "ccaa_code": "ES-MC",
     "title": "Por arrendamiento de vivienda habitual",
-    "summary": "10% de las cantidades no subvencionadas pagadas por alquiler de la vivienda habitual en Murcia. Límite máximo 300 €/año por contrato. Requiere edad ≤40, ser familia numerosa o tener discapacidad ≥65%. Base imponible general menos mínimo personal/familiar <40.000 € (con base del ahorro ≤1.800 €).",
+    "what_covers": "Cantidades pagadas (no subvencionadas) en concepto de alquiler de vivienda habitual situada en la Región de Murcia por contribuyentes en situaciones específicas (jóvenes, familias numerosas o personas con discapacidad).",
+    "requirements": [
+      "Que la vivienda alquilada tenga consideración de habitual y esté en la Región de Murcia",
+      "Cumplir al menos una circunstancia: edad ≤ 40 años, familia numerosa (general o especial) o grado de discapacidad ≥ 65%",
+      "Base imponible general menos mínimo personal y familiar < 40.000 €, con base imponible del ahorro ≤ 1.800 €",
+      "Presentación del modelo de ITP-AJD por el arrendamiento (o aplicación de la exención del art. 45.1.B.26)",
+      "Que ni el contribuyente ni su unidad familiar sean titulares de más del 50% de otra vivienda",
+      "No aplicar simultáneamente la deducción por inversión en vivienda habitual",
+      "Pago mediante tarjeta, transferencia, cheque o ingreso bancario (no efectivo)",
+      "Porcentaje de deducción: 10% de las cantidades pagadas no subvencionadas",
+      "Límite máximo de deducción: 300 € al año por contrato"
+    ],
     "legal_reference": "Art. 1.Trece Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -427,7 +546,14 @@
     "id": "mur-mujeres-trabajadoras",
     "ccaa_code": "ES-MC",
     "title": "Para mujeres trabajadoras",
-    "summary": "300 € por el primer hijo, 350 € por el segundo, 400 € por el tercero o sucesivos, y 400 € por persona dependiente a cargo. Solo mujeres trabajadoras dadas de alta en la Seguridad Social/mutualidad. Suma de bases ≤20.000 € (individual) o 40.000 € (conjunta). Se calcula proporcional a los días trabajados.",
+    "what_covers": "Deducción para mujeres trabajadoras dadas de alta en la Seguridad Social o mutualidad alternativa, con hijos menores de 18 años o personas dependientes a cargo.",
+    "requirements": [
+      "Ser mujer y realizar una actividad por cuenta propia o ajena, dada de alta en la Seguridad Social o mutualidad",
+      "Tener hijos menores de 18 años y/o personas dependientes a cargo (ascendientes >75 años o descendientes con discapacidad ≥ 65%)",
+      "Suma de bases imponibles ≤ 20.000 € (individual) o 40.000 € (conjunta)",
+      "Importes: 300 € primer hijo, 350 € segundo, 400 € tercero o sucesivos, y 400 € por persona dependiente a cargo",
+      "La deducción se calcula proporcional a los días trabajados en el período impositivo"
+    ],
     "legal_reference": "Art. 1.Catorce Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -459,7 +585,16 @@
     "id": "mur-vivienda-familias-numerosas",
     "ccaa_code": "ES-MC",
     "title": "Por adquisición de nueva vivienda habitual o ampliación de la vivienda habitual actual por familias numerosas",
-    "summary": "10% (general) o 15% (especial) de las cantidades destinadas a adquirir nueva vivienda habitual o ampliar la actual, para familias numerosas. Base máxima 5.000 €/año. Aplicable durante 15 años; nueva vivienda debe tener >10% más superficie útil y adquirirse dentro de 5 años desde la consideración de familia numerosa.",
+    "what_covers": "Cantidades destinadas a la adquisición de una nueva vivienda habitual o a la ampliación de la actual por familias numerosas reconocidas oficialmente.",
+    "requirements": [
+      "Tener la condición de familia numerosa (categoría general o especial)",
+      "Que la vivienda sea de propiedad y tenga consideración de habitual",
+      "En caso de nueva adquisición, la vivienda debe tener una superficie útil más del 10% superior a la anterior",
+      "La nueva vivienda debe adquirirse dentro de los 5 años desde la consideración como familia numerosa",
+      "Porcentaje de deducción: 10% (categoría general) o 15% (categoría especial)",
+      "Base máxima de deducción: 5.000 € al año",
+      "Aplicable durante un máximo de 15 años"
+    ],
     "legal_reference": "Art. 1.Quince Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -491,7 +626,14 @@
     "id": "mur-familia-monoparental",
     "ccaa_code": "ES-MC",
     "title": "Por familia monoparental",
-    "summary": "303 € para contribuyentes con descendientes a cargo, sin convivir con otra persona ajena (salvo ascendientes que generen mínimo). Suma de bases imponibles + anualidades por alimentos exentas ≤ 35.240 €. Los descendientes deben tener rentas anuales ≤ 8.000 €.",
+    "what_covers": "Deducción para contribuyentes que constituyen una familia monoparental, conviviendo únicamente con descendientes que dan derecho al mínimo familiar.",
+    "requirements": [
+      "Ser familia monoparental: convivencia con descendientes a cargo sin convivir con otra persona ajena (se admiten ascendientes que generen mínimo)",
+      "Que los descendientes sean menores de edad, mayores con discapacidad o dependientes internados",
+      "Que las rentas anuales de los descendientes (excluidas las exentas) sean ≤ 8.000 €",
+      "Suma de bases imponibles más anualidades por alimentos exentas ≤ 35.240 €",
+      "Importe de deducción: 303 €"
+    ],
     "legal_reference": "Art. 1.Dieciséis Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -514,7 +656,15 @@
     "id": "mur-ensenanza-idiomas",
     "ccaa_code": "ES-MC",
     "title": "Por gastos de enseñanza de idiomas",
-    "summary": "15% de los gastos en aprendizaje extraescolar de idiomas extranjeros por hijos en 2º ciclo de Infantil, Primaria, ESO, Bachillerato o FP. Límite 300 €/hijo. Suma de bases <25.000 € (individual) o <40.000 € (conjunta). Solo hijos que den derecho al mínimo por descendientes.",
+    "what_covers": "Gastos satisfechos por el aprendizaje extraescolar de idiomas extranjeros por hijos que cursen 2º ciclo de Infantil, Primaria, ESO, Bachillerato o Formación Profesional.",
+    "requirements": [
+      "Tener hijos que cursen 2º ciclo de Infantil, Primaria, ESO, Bachillerato o FP y que den derecho al mínimo por descendientes",
+      "Que los gastos correspondan a aprendizaje extraescolar de idiomas extranjeros",
+      "Suma de bases imponibles < 25.000 € (individual) o < 40.000 € (conjunta)",
+      "Porcentaje de deducción: 15% de los gastos satisfechos",
+      "Límite máximo de deducción: 300 € por hijo",
+      "Disponer de justificantes/facturas acreditativos del pago"
+    ],
     "legal_reference": "Art. 1.Diecisiete Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -546,7 +696,15 @@
     "id": "mur-acceso-internet",
     "ccaa_code": "ES-MC",
     "title": "Por gastos de acceso a Internet",
-    "summary": "30% de las cantidades satisfechas (cuota de alta y mensualidades) por contratación de líneas de alta velocidad. Límite 300 €. Residencia habitual en municipio de Murcia <15.000 habitantes. Solo en el ejercicio del contrato; uso exclusivo en vivienda habitual.",
+    "what_covers": "Cuota de alta y mensualidades pagadas por la contratación de líneas de alta velocidad para acceso a Internet, por contribuyentes residentes en pequeños municipios de la Región de Murcia.",
+    "requirements": [
+      "Residir habitualmente en un municipio de la Región de Murcia con menos de 15.000 habitantes",
+      "Que el contrato de conexión se haya celebrado en el ejercicio en que se aplica la deducción",
+      "Que la línea sea de uso exclusivo en la vivienda habitual (no afecta a actividad profesional)",
+      "Que no se trate de un mero cambio de compañía con un contrato anterior en otro ejercicio",
+      "Porcentaje de deducción: 30% de las cuotas de alta y mensualidades pagadas",
+      "Límite máximo de deducción: 300 €"
+    ],
     "legal_reference": "Art. 1.Dieciocho Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -568,7 +726,17 @@
     "id": "mur-adquisicion-vehiculos-electricos",
     "ccaa_code": "ES-MC",
     "title": "Por gastos en la adquisición de vehículos eléctricos",
-    "summary": "30%/22,5%/15% del valor de adquisición de vehículos eléctricos (BEV, EREV, PHEV, FCV, FCHV) según base imponible. Bases máximas por vehículo: 45.000/53.000 € turismos, 10.000 € motocicletas, 3.000 € ciclomotores. Límite máximo 7.000 €/vehículo. Un único vehículo por período y contribuyente. Mantener 5 años (2 en renting).",
+    "what_covers": "Importes satisfechos por la adquisición de vehículos eléctricos nuevos (BEV, EREV, PHEV, FCV, FCHV) en sus distintas categorías (turismos, motocicletas, ciclomotores).",
+    "requirements": [
+      "Suma de bases imponibles < 60.000 € (individual) o < 95.000 € (conjunta)",
+      "Porcentaje de deducción: 30% / 22,5% / 15% del valor de adquisición según tramos de base imponible",
+      "Bases máximas por vehículo: 45.000 € turismos M1 (53.000 € BEV de 8-9 plazas), 10.000 € motocicletas, 3.000 € ciclomotores",
+      "Límite máximo de deducción: 7.000 € por vehículo",
+      "Un único vehículo por período impositivo y contribuyente",
+      "El vehículo no puede estar afecto a actividad económica",
+      "Debe ser vehículo nuevo, de importación o demostración (≤18 meses), matriculado por primera vez en España",
+      "Mantenimiento del vehículo durante 5 años (2 años en renting)"
+    ],
     "legal_reference": "Art. 1.Diecinueve Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -618,7 +786,17 @@
     "id": "mur-infraestructura-recarga-electrica",
     "ccaa_code": "ES-MC",
     "title": "Por gastos en la instalación de infraestructuras de recarga de vehículos eléctricos",
-    "summary": "100% de las cantidades satisfechas por la instalación de infraestructura de recarga de vehículos eléctricos (Programa MOVES III, RD 266/2021), minoradas con subvenciones públicas. Límite máximo 4.000 €/infraestructura y contribuyente. Una sola infraestructura por período. Mantenimiento 2 años. Finca propia o garaje comunitario.",
+    "what_covers": "Cantidades satisfechas por la instalación de infraestructura de recarga de vehículos eléctricos en finca propia o en garaje comunitario, conforme al Programa MOVES III (RD 266/2021).",
+    "requirements": [
+      "Que la instalación se realice en finca propia del contribuyente o en garaje comunitario",
+      "Que la infraestructura cumpla los requisitos del Programa MOVES III (RD 266/2021)",
+      "Que la infraestructura esté destinada al uso particular del vehículo (no profesional)",
+      "Disponer de factura acreditativa de la inversión",
+      "Una única infraestructura por período impositivo y contribuyente",
+      "Mantenimiento de la instalación durante al menos 2 años",
+      "Porcentaje de deducción: 100% del importe satisfecho, minorado por las subvenciones públicas recibidas",
+      "Límite máximo de deducción: 4.000 € por infraestructura y contribuyente"
+    ],
     "legal_reference": "Art. 1.Veinte Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -642,7 +820,12 @@
     "id": "mur-cristales-graduados-lentes-contacto",
     "ccaa_code": "ES-MC",
     "title": "Por cristales graduados, lentes de contacto y soluciones de limpieza",
-    "summary": "30% de las cantidades satisfechas en cristales graduados, lentes de contacto y soluciones de limpieza para menores de 12 años por los que se aplique el mínimo por descendientes. Límite máximo 100 €/declaración.",
+    "what_covers": "Cantidades satisfechas en la adquisición de cristales graduados, lentes de contacto y soluciones de limpieza para hijos menores de 12 años por los que se aplique el mínimo por descendientes.",
+    "requirements": [
+      "Tener hijos menores de 12 años por los que se aplique el mínimo por descendientes",
+      "Porcentaje de deducción: 30% de las cantidades satisfechas",
+      "Límite máximo de deducción: 100 € por declaración"
+    ],
     "legal_reference": "Art. 1.Veintiuno Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -662,7 +845,14 @@
     "id": "mur-deporte-actividades-saludables",
     "ccaa_code": "ES-MC",
     "title": "Por gastos asociados a la práctica del deporte y actividades saludables",
-    "summary": "30% de los gastos en gimnasios, federaciones deportivas, técnicos y entrenadores, pilates y yoga, para el contribuyente, cónyuge y familiares que den derecho al mínimo familiar (100% si los paga un mayor de 65 años). Límite 150 €/año. Suma de bases ≤25.000 € (individual) o 40.000 € (conjunta).",
+    "what_covers": "Gastos satisfechos en gimnasios, federaciones deportivas, servicios de entrenadores y técnicos deportivos, o práctica de pilates y yoga, para el contribuyente, su cónyuge y familiares que den derecho al mínimo familiar.",
+    "requirements": [
+      "Suma de bases imponibles ≤ 25.000 € (individual) o 40.000 € (conjunta)",
+      "Que los gastos correspondan al contribuyente, cónyuge o familiares que den derecho al mínimo familiar",
+      "Disponer de factura conforme al RD 1619/2012",
+      "Porcentaje de deducción: 30% con carácter general (100% si quien paga es mayor de 65 años)",
+      "Límite máximo de deducción: 150 € al año"
+    ],
     "legal_reference": "Art. 1.Veintidós Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -699,7 +889,13 @@
     "id": "mur-enfermedades-raras",
     "ccaa_code": "ES-MC",
     "title": "Por gastos asociados a las Enfermedades Raras",
-    "summary": "100% de las cantidades satisfechas con destino al tratamiento y cuidado de personas afectadas por enfermedades raras. Límite máximo 300 €/declaración. Aplica a gastos del contribuyente, su cónyuge y personas que den derecho a los mínimos familiares.",
+    "what_covers": "Cantidades satisfechas con destino al tratamiento y cuidado de personas afectadas por enfermedades raras, ya sean el propio contribuyente, su cónyuge o personas que den derecho al mínimo familiar.",
+    "requirements": [
+      "Que el afectado por enfermedad rara sea el contribuyente, su cónyuge o una persona que dé derecho al mínimo familiar",
+      "Disponer de factura acreditativa del gasto",
+      "Porcentaje de deducción: 100% de las cantidades satisfechas",
+      "Límite máximo de deducción: 300 € por declaración"
+    ],
     "legal_reference": "Art. 1.Veintitrés Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -724,7 +920,16 @@
     "id": "mur-inversion-economia-social",
     "ccaa_code": "ES-MC",
     "title": "Por inversión en entidades de economía social",
-    "summary": "20% de las cantidades invertidas como aportaciones para ser socio en entidades de economía social (Ley 5/2011). Límite máximo 4.000 €. Participación máxima 40% (con familia), entidad con domicilio en Murcia, al menos un trabajador a jornada completa, mantenimiento 5 años.",
+    "what_covers": "Cantidades invertidas en concepto de aportaciones para adquirir la condición de socio en entidades de economía social, conforme a la Ley 5/2011.",
+    "requirements": [
+      "Que la entidad sea una entidad de economía social conforme a la Ley 5/2011 y tenga domicilio social y fiscal en Murcia",
+      "Que la entidad cuente con al menos un trabajador con contrato laboral a jornada completa",
+      "Que la participación del contribuyente (junto con cónyuge y familiares hasta 3er grado) no supere el 40% del capital",
+      "Mantener la participación durante al menos 5 años",
+      "Formalización de la inversión en escritura pública",
+      "Porcentaje de deducción: 20% de las cantidades invertidas",
+      "Límite máximo de deducción: 4.000 €"
+    ],
     "legal_reference": "Art. 1.Veinticuatro Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
@@ -745,7 +950,14 @@
     "id": "mur-gastos-veterinarios",
     "ccaa_code": "ES-MC",
     "title": "Por gastos veterinarios",
-    "summary": "30% de los gastos en servicios veterinarios prestados a animales domésticos. Límite máximo 100 €/año por declaración. Suma de la base imponible general y del ahorro ≤ 25.000 € (individual) o 40.000 € (conjunta). Justificación mediante factura.",
+    "what_covers": "Gastos satisfechos en servicios veterinarios prestados a animales domésticos del contribuyente.",
+    "requirements": [
+      "Que los gastos correspondan a servicios veterinarios a animales domésticos",
+      "Suma de bases imponibles general y del ahorro ≤ 25.000 € (individual) o 40.000 € (conjunta)",
+      "Disponer de factura acreditativa del gasto",
+      "Porcentaje de deducción: 30% de los gastos satisfechos",
+      "Límite máximo de deducción: 100 € al año por declaración"
+    ],
     "legal_reference": "Art. 1.Veinticinco Texto Refundido Decreto Legislativo 1/2010 de la Región de Murcia",
     "eligibility_rule": {
       "all_of": [
