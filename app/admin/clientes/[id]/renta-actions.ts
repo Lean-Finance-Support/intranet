@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/server";
+import { invalidateNotifications } from "@/lib/actions/notifications";
 import { generateInvitationToken } from "@/lib/renta/catalog";
 import { normalizeDni, isValidDni } from "@/lib/renta/dni";
 import { SERVICE_SLUGS } from "@/lib/types/services";
@@ -280,6 +281,34 @@ export async function sendRentaInvitationEmail(
   if (data && typeof data === "object" && "error" in data) {
     return { ok: false, error: String((data as { error: unknown }).error) };
   }
+
+  // Notificación in-app a las cuentas asociadas a la empresa. Se hace tras el
+  // envío exitoso del email para que el cliente reciba el aviso también dentro
+  // del portal (badge en la campana). Wrappeamos en try/catch porque el email
+  // ya se envió correctamente — un fallo aquí no debe propagarse.
+  try {
+    const rows = profileIds.map((profileId) => ({
+      recipient_id: profileId,
+      company_id: companyId,
+      title: "Formulario de la renta disponible",
+      message:
+        "Tu asesor ha habilitado el formulario para calcular las deducciones autonómicas. Ábrelo desde aquí o compártelo con las personas vinculadas al servicio.",
+      link: "/informes/renta",
+    }));
+    if (rows.length > 0) {
+      const { error: notifError } = await supabase
+        .from("notifications")
+        .insert(rows);
+      if (notifError) {
+        console.error("[sendRentaInvitationEmail] notif insert error:", notifError);
+      } else {
+        await invalidateNotifications(profileIds);
+      }
+    }
+  } catch (err) {
+    console.error("[sendRentaInvitationEmail] notif fatal:", err);
+  }
+
   return { ok: true };
 }
 

@@ -89,6 +89,22 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     gate: (ctx) => ctx.hasTaxModels,
   },
   {
+    id: "client:informes",
+    space: "client",
+    label: "Informes / Formularios",
+    path: "/informes",
+    icon: "document",
+    keywords: [
+      "informes",
+      "formularios",
+      "renta",
+      "irpf",
+      "deducciones",
+      "declaración",
+    ],
+    gate: (ctx) => ctx.hasDeclaracionRenta,
+  },
+  {
     id: "client:empresa",
     space: "client",
     label: "Mi empresa",

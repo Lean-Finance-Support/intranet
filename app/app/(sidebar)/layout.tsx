@@ -48,6 +48,7 @@ export default async function AppSidebarLayout({
 
   const hasTaxModels = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
   const hasDashboard = serviceSlugs.includes(SERVICE_SLUGS.TAX_ACCOUNTING_ADVICE);
+  const hasDeclaracionRenta = serviceSlugs.includes(SERVICE_SLUGS.DECLARACION_RENTA);
   const unreadCount = allNotifications.filter((n) => !n.is_read).length;
   const activeCompany = companies.find((c) => c.id === resolvedCompanyId) ?? companies[0] ?? null;
 
@@ -68,6 +69,7 @@ export default async function AppSidebarLayout({
         role: "client",
         hasTaxModels,
         hasDashboard,
+        hasDeclaracionRenta,
         canViewClientDashboard: false,
         canCreateOnboarding: false,
         canRequestDocumentation: false,
@@ -83,6 +85,7 @@ export default async function AppSidebarLayout({
           }}
           hasTaxModels={hasTaxModels}
           hasDashboard={hasDashboard}
+          hasDeclaracionRenta={hasDeclaracionRenta}
           loginPath={`${prefix}/login`}
           linkPrefix={prefix}
           userId={user.id}
