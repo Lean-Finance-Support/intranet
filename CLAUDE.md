@@ -117,6 +117,14 @@ Si alguien intenta logearse con una cuenta Google no dada de alta → `/unauthor
 - Se mantiene por compatibilidad con consumidores que aún la leen (listar técnicos de una empresa en la UI del dept).
 - La fuente de verdad para autorización es ahora `profile_roles` con el rol "Técnico" y scope `company_service`.
 
+### `public.company_team_members` — equipo responsable de cada cliente
+- `company_id` uuid FK → companies.id (ON DELETE CASCADE)
+- `profile_id` uuid FK → profiles.id (ON DELETE CASCADE)
+- `added_at` timestamptz, `added_by` uuid FK → profiles.id (ON DELETE SET NULL)
+- PRIMARY KEY (company_id, profile_id)
+- RLS: lectura/escritura solo admins (`is_admin`); la autorización fina vive en los server actions.
+- Fuente de verdad del equipo responsable. Ver sección "Equipo responsable (gestión post-onboarding)".
+
 ### Sistema de permisos (admin)
 
 Autorización basada en **permisos atómicos + roles**. Cada permiso declara qué `scope_type` admite
@@ -214,18 +222,27 @@ Email de bienvenida: edge function `notify-client-onboarding-welcome` (un único
 
 ## Equipo responsable (gestión post-onboarding)
 
-El "equipo responsable" de un cliente se computa derivado a partir de `profile_roles`: **solo técnicos** (rol Técnico en `company_service`) + los chiefs de los dptos de esos servicios. Helper `getCompanyResponsibleTeam` en `lib/team-queries.ts`, cacheado por `companyId`.
+El equipo responsable es una **entidad explícita**: la tabla `public.company_team_members (company_id, profile_id, added_at, added_by)` es la fuente de verdad de quién está en el equipo de un cliente. Hasta el rediseño se derivaba de quién tenía rol Técnico, lo que impedía representar a un miembro sin asignaciones y mezclaba tres conceptos. Helper `getCompanyResponsibleTeam` en `lib/team-queries.ts` (lee de `company_team_members`, agrupa por dpto, anota técnico/chief), cacheado por `companyId`.
 
-**Ser supervisor de apartados NO mete a nadie en el equipo responsable** (cambio de política). El rol "Supervisor de apartado" se sigue gestionando — al añadir un empleado al equipo se le asigna automáticamente como supervisor de los apartados que le atañen, y al quitarlo se le quita — pero esas filas de supervisor no se reflejan en `getCompanyResponsibleTeam`. Consecuencia: si se añade al equipo a un empleado de un dpto sin servicios contratados para esa empresa, queda como supervisor pero no aparece en el equipo (no es técnico de nada).
+**Invariantes del modelo:**
 
-En la ficha del cliente (`/admin/clientes/[id]` tab "Equipo responsable") se ofrecen dos operaciones masivas:
+- **Técnico ⟹ equipo.** No se puede ser técnico de un servicio de un cliente sin estar en su equipo. Asignar un técnico que no estaba (`assignTechnicianAdmin`, `assignAllTechniciansAdmin`) lo inserta automáticamente en `company_team_members` (helper `addCompanyTeamMembers` en `lib/team-queries.ts`).
+- **Supervisor ⇏ equipo.** Se puede ser supervisor de un apartado sin estar en el equipo; asignar supervisor (`addSupervisor`, asignación múltiple) no toca `company_team_members`.
+- **Granularidad intacta.** Técnico (por servicio) y supervisor (por apartado) siguen siendo asignaciones finas editables una a una en los tabs "Servicios contratados" y "Documentación". El equipo no las elimina; las contiene.
 
-- **Añadir empleado al equipo** (`addTeamMemberToCompany`): toma un `profileId`, resuelve sus dpts (rol Miembro/Chief), filtra a los dpts donde el actor tiene `assign_technician`, y le crea filas `profile_roles` como técnico de cada servicio contratado del dpto + supervisor de cada apartado del cliente vinculado al dpto.
-- **Quitar empleado del equipo** (`removeTeamMemberFromCompany`): elimina todas sus filas en `profile_roles` para este cliente (técnicos + supervisores), acotado por los dpts donde el actor tiene permiso.
+Operaciones en la ficha del cliente (`/admin/clientes/[id]` tab "Equipo responsable"):
 
-Hook automático: al contratar un servicio nuevo a una empresa que ya tiene equipo (`addServiceToCompany`), los miembros del equipo del dpto del nuevo servicio se autoasignan como técnicos del nuevo `company_service` (idempotente vía `ignoreDuplicates`). La granularidad fina (asignar/quitar técnicos uno a uno) sigue editable desde el tab "Servicios contratados".
+- **Añadir empleado al equipo** (`addTeamMemberToCompany`): inserta en `company_team_members` y **siembra** filas `profile_roles` — técnico de cada servicio contratado de su(s) dpto(s) + supervisor de cada apartado del cliente vinculado a su(s) dpto(s) y de los globales. Tras sembrar, todo es editable de forma fina.
+- **Quitar empleado del equipo** (`removeTeamMemberFromCompany`): borra la fila de `company_team_members` y **todas** sus filas `profile_roles` de este cliente (técnico de cualquier servicio + supervisor de cualquier apartado), sin acotar por dpto.
 
-Permiso: `assign_technician` con scope `department` — un chief solo puede gestionar empleados de su propio dpto. Si el empleado pertenece a varios dpts y el actor solo tiene permiso en uno, la operación se ejecuta sobre el subset autorizado (no falla globalmente).
+Hooks automáticos de siembra:
+- Al contratar un servicio nuevo (`addServiceToCompany` → `autoAssignTechniciansForNewService`): los miembros del equipo que pertenecen a alguno de los dpts del servicio se autoasignan como técnicos del nuevo `company_service`. No se mete a nadie nuevo en el equipo.
+- Al añadir un apartado de doc. a un cliente (`addApartadoToClient` → `getTeamSupervisorsForApartado`): los miembros del equipo de los dpts del apartado se autoasignan como supervisores; si el apartado es global, todo el equipo.
+- En la pantalla de asignación múltiple (`/admin/documentacion/asignacion-multiple`): el paso 3 (supervisores) viene **pre-seleccionado** con los miembros del equipo de las empresas elegidas que son elegibles para cada apartado, y el usuario puede editarlo. La sugerencia se deriva en cliente desde `BulkAssignmentData.teamMembers`; al tocar un apartado, su selección pasa a ser manual.
+
+Permiso: `write_dept_service` con scope `department` — el actor solo puede añadir/quitar empleados de los dpts que gestiona. `addTeamMemberToCompany` siembra sobre el subset de dpts autorizados; `removeTeamMemberFromCompany` exige permiso en ≥1 dpto del empleado y entonces desvincula por completo.
+
+Backfill: la migración `20260515130000_company_team_members.sql` pobló la tabla con los técnicos existentes (Opción A — los supervisores puros no entraron).
 
 ## Documentación por cliente (schema `documentation`)
 

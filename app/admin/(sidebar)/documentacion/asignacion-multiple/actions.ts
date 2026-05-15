@@ -45,6 +45,10 @@ export interface BulkAssignmentData {
   tags: DocumentationTag[];
   companies: BulkAssignmentCompany[];
   admins: BulkAssignmentEligibleAdmin[];
+  // Pertenencia al equipo responsable por empresa. El wizard la usa para
+  // pre-seleccionar como supervisores a los miembros del equipo del dpto del
+  // apartado (punto 7 del rediseño del equipo responsable).
+  teamMembers: { company_id: string; profile_id: string }[];
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -100,10 +104,13 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
       .eq("scope_type", "department"),
   ]);
 
-  // Conteo de perfiles cliente por empresa (para estimar emails en el preview).
-  const { data: profileCompanyLinks } = await admin
-    .from("profile_companies")
-    .select("company_id");
+  // Conteo de perfiles cliente por empresa (para estimar emails en el preview)
+  // y pertenencia al equipo responsable por empresa.
+  const [{ data: profileCompanyLinks }, { data: teamMemberRows }] =
+    await Promise.all([
+      admin.from("profile_companies").select("company_id"),
+      admin.from("company_team_members").select("company_id, profile_id"),
+    ]);
   const clientCountByCompany = new Map<string, number>();
   for (const link of profileCompanyLinks ?? []) {
     const cid = link.company_id as string;
@@ -243,6 +250,10 @@ export async function loadBulkAssignmentData(): Promise<BulkAssignmentData> {
     tags: tagsList,
     companies: companyList,
     admins: adminsList,
+    teamMembers: (teamMemberRows ?? []).map((r) => ({
+      company_id: r.company_id as string,
+      profile_id: r.profile_id as string,
+    })),
   };
 }
 

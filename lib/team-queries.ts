@@ -259,11 +259,51 @@ export interface ResponsibleTeam {
   byDepartment: ResponsibleTeamDepartment[];
 }
 
+/** Profile_ids que pertenecen al equipo responsable de una empresa. */
+export async function getCompanyTeamMemberIds(
+  supabase: DB,
+  companyId: string
+): Promise<string[]> {
+  const { data } = await supabase
+    .from("company_team_members")
+    .select("profile_id")
+    .eq("company_id", companyId);
+  return [...new Set((data ?? []).map((r) => r.profile_id as string))];
+}
+
 /**
- * Devuelve el equipo responsable de una empresa cliente, agrupado por el
- * departamento que motiva la asignación (dept del servicio para técnicos;
- * dept(s) del apartado para supervisores). Un mismo admin puede aparecer
- * en varios depts si tiene asignaciones en varios.
+ * Inserta perfiles en el equipo responsable de una empresa (idempotente).
+ * Ser técnico de un servicio del cliente implica estar en el equipo: las
+ * server actions que asignan técnicos llaman aquí. Ser supervisor NO implica
+ * pertenencia, así que esas acciones no la usan.
+ */
+export async function addCompanyTeamMembers(
+  supabase: DB,
+  companyId: string,
+  profileIds: string[],
+  addedBy?: string | null
+): Promise<void> {
+  const ids = [...new Set(profileIds)];
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("company_team_members").upsert(
+    ids.map((profile_id) => ({
+      company_id: companyId,
+      profile_id,
+      added_by: addedBy ?? null,
+    })),
+    { onConflict: "company_id,profile_id", ignoreDuplicates: true }
+  );
+  if (error) throw new Error(`Error al añadir al equipo: ${error.message}`);
+}
+
+/**
+ * Devuelve el equipo responsable de una empresa cliente.
+ *
+ * La fuente de verdad de la pertenencia es `company_team_members`. Cada
+ * miembro se agrupa bajo los departamentos a los que pertenece (rol
+ * Miembro/Chief) y bajo los dpts de los servicios de los que es técnico; si es
+ * técnico de un servicio transversal aparece también bajo "Sin departamento".
+ * Un miembro del equipo sin asignaciones de técnico se muestra igualmente.
  *
  * `is_chief` se calcula contra el dept del agrupador (no contra el dept
  * "natural" del admin).
@@ -272,7 +312,11 @@ export async function getCompanyResponsibleTeam(
   supabase: DB,
   companyId: string
 ): Promise<ResponsibleTeam> {
-  // 1. Servicios contratados activos de la company
+  // 1. Miembros del equipo — fuente de verdad.
+  const memberIds = await getCompanyTeamMemberIds(supabase, companyId);
+  if (memberIds.length === 0) return { byDepartment: [] };
+
+  // 2. Servicios contratados activos y mapeo service → department.
   const { data: companyServices } = await supabase
     .from("company_services")
     .select("id, service_id")
@@ -281,12 +325,11 @@ export async function getCompanyResponsibleTeam(
 
   const csList = companyServices ?? [];
   const csIds = csList.map((cs) => cs.id as string);
-  const csById = new Map<string, { service_id: string }>();
+  const serviceByCsId = new Map<string, string>();
   for (const cs of csList) {
-    csById.set(cs.id as string, { service_id: cs.service_id as string });
+    serviceByCsId.set(cs.id as string, cs.service_id as string);
   }
 
-  // 2. Servicios meta y mapeo service → department
   const serviceIds = [...new Set(csList.map((cs) => cs.service_id as string))];
   const [{ data: services }, { data: deptSvc }] =
     serviceIds.length > 0
@@ -305,9 +348,6 @@ export async function getCompanyResponsibleTeam(
     serviceById.set(s.id as string, { id: s.id as string, name: s.name as string });
   }
   // Un servicio puede pertenecer a varios departamentos (cardinalidad 0..N).
-  // Mapeamos a TODOS sus dpts: quedarnos solo con el primero hacía que un
-  // técnico apareciese bajo un dpto arbitrario (orden de query no determinista)
-  // y, p.ej., un chief no viese en su sección al técnico que él mismo asignó.
   const serviceToDepts = new Map<string, string[]>();
   for (const ds of deptSvc ?? []) {
     const sid = ds.service_id as string;
@@ -316,10 +356,7 @@ export async function getCompanyResponsibleTeam(
     serviceToDepts.set(sid, arr);
   }
 
-  // 3. Técnicos. Son la ÚNICA fuente del equipo responsable: solo aparecen
-  // en el equipo quienes tienen rol Técnico en algún servicio del cliente.
-  // Ser supervisor de apartados no mete a nadie en el equipo (ver cambio de
-  // política en el README de la feature).
+  // 3. Filas Técnico de los miembros del equipo sobre los servicios del cliente.
   const tecnicoRoleId = await fetchTecnicoRoleId();
   const techRoles =
     csIds.length > 0 && tecnicoRoleId
@@ -330,17 +367,51 @@ export async function getCompanyResponsibleTeam(
             .eq("role_id", tecnicoRoleId)
             .eq("scope_type", "company_service")
             .in("scope_id", csIds)
+            .in("profile_id", memberIds)
         ).data ?? []
       : [];
 
-  // 7. Profiles meta de los técnicos (única fuente del equipo).
-  const allProfileIds = [...new Set(techRoles.map((r) => r.profile_id as string))];
+  // 4. Pertenencia a departamento (rol Miembro/Chief) de cada miembro.
+  const [miembroRoleId, chiefRoleId] = await Promise.all([
+    getCachedRoleIdByName("Miembro de departamento"),
+    fetchChiefRoleId(),
+  ]);
+  const deptRoleIds = [miembroRoleId, chiefRoleId].filter(
+    (x): x is string => !!x
+  );
+  const deptRoleRows =
+    deptRoleIds.length > 0
+      ? (
+          await supabase
+            .from("profile_roles")
+            .select("profile_id, scope_id, role_id")
+            .eq("scope_type", "department")
+            .in("profile_id", memberIds)
+            .in("role_id", deptRoleIds)
+        ).data ?? []
+      : [];
+
+  const naturalDeptsByProfile = new Map<string, Set<string>>();
+  const chiefSet = new Set<string>();
+  for (const r of deptRoleRows) {
+    const pid = r.profile_id as string;
+    const did = r.scope_id as string;
+    let set = naturalDeptsByProfile.get(pid);
+    if (!set) {
+      set = new Set();
+      naturalDeptsByProfile.set(pid, set);
+    }
+    set.add(did);
+    if (chiefRoleId && r.role_id === chiefRoleId) chiefSet.add(`${did}|${pid}`);
+  }
+
+  // 5. Perfiles meta.
   const profileMap = new Map<string, { full_name: string | null; email: string }>();
-  if (allProfileIds.length > 0) {
+  {
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, full_name, email")
-      .in("id", allProfileIds);
+      .in("id", memberIds);
     for (const p of profiles ?? []) {
       profileMap.set(p.id as string, {
         full_name: (p.full_name as string | null) ?? null,
@@ -349,37 +420,38 @@ export async function getCompanyResponsibleTeam(
     }
   }
 
-  // 8. Departments meta y chiefs por dept. Solo nos interesan los dpts que
-  // tocan algún servicio contratado (resto del modelo se ignora porque ya no
-  // contamos supervisores).
-  const allDeptIds = [...new Set(Array.from(serviceToDepts.values()).flat())];
-  const [{ data: depts }, chiefRows] = await Promise.all([
-    allDeptIds.length === 0
-      ? Promise.resolve({ data: [] as { id: string; name: string }[] })
-      : supabase.from("departments").select("id, name").in("id", allDeptIds),
-    (async () => {
-      const chiefRoleId = await fetchChiefRoleId();
-      if (!chiefRoleId || allDeptIds.length === 0) return [] as { profile_id: string; scope_id: string }[];
-      const { data } = await supabase
-        .from("profile_roles")
-        .select("profile_id, scope_id")
-        .eq("role_id", chiefRoleId)
-        .eq("scope_type", "department")
-        .in("scope_id", allDeptIds);
-      return (data ?? []) as { profile_id: string; scope_id: string }[];
-    })(),
-  ]);
+  // 6. Servicios de los que es técnico cada miembro.
+  const techServicesByProfile = new Map<string, Map<string, string>>();
+  for (const tr of techRoles) {
+    const serviceId = serviceByCsId.get(tr.scope_id as string);
+    if (!serviceId) continue;
+    const svc = serviceById.get(serviceId);
+    if (!svc) continue;
+    const pid = tr.profile_id as string;
+    let m = techServicesByProfile.get(pid);
+    if (!m) {
+      m = new Map();
+      techServicesByProfile.set(pid, m);
+    }
+    m.set(svc.id, svc.name);
+  }
 
-  // Clave virtual para agrupar técnicos de servicios sin dpto.
+  // 7. Departments meta — dpts de los servicios + dpts naturales de los miembros.
   const NO_DEPT_KEY = "__no_dept__";
+  const allDeptIds = new Set<string>();
+  for (const depts of serviceToDepts.values()) for (const d of depts) allDeptIds.add(d);
+  for (const set of naturalDeptsByProfile.values()) for (const d of set) allDeptIds.add(d);
   const deptMap = new Map<string, string>();
-  for (const d of depts ?? []) deptMap.set(d.id as string, d.name as string);
+  if (allDeptIds.size > 0) {
+    const { data: depts } = await supabase
+      .from("departments")
+      .select("id, name")
+      .in("id", [...allDeptIds]);
+    for (const d of depts ?? []) deptMap.set(d.id as string, d.name as string);
+  }
   deptMap.set(NO_DEPT_KEY, "Sin departamento");
 
-  const chiefSet = new Set<string>();
-  for (const c of chiefRows) chiefSet.add(`${c.scope_id}|${c.profile_id}`);
-
-  // 9. Construir agrupación dept → profile → miembro
+  // 8. Construir agrupación dept → profile → miembro.
   const memberByDept = new Map<string, Map<string, ResponsibleTeamMember>>();
 
   function ensureMember(deptId: string, profileId: string): ResponsibleTeamMember {
@@ -405,20 +477,38 @@ export async function getCompanyResponsibleTeam(
     return m;
   }
 
-  for (const tr of techRoles) {
-    const csInfo = csById.get(tr.scope_id as string);
-    if (!csInfo) continue;
-    // El técnico aparece bajo CADA dpto al que pertenece su servicio. Si el
-    // servicio no tiene dpto, lo agrupamos en "Sin departamento" — el técnico
-    // igualmente está en el equipo.
-    const svcDepts = serviceToDepts.get(csInfo.service_id);
-    const targetDepts = svcDepts && svcDepts.length > 0 ? svcDepts : [NO_DEPT_KEY];
-    const svc = serviceById.get(csInfo.service_id);
-    for (const deptId of targetDepts) {
-      const m = ensureMember(deptId, tr.profile_id as string);
-      m.is_technician = true;
-      if (svc && !m.technician_services.some((ts) => ts.service_id === svc.id)) {
-        m.technician_services.push({ service_id: svc.id, service_name: svc.name });
+  for (const profileId of memberIds) {
+    const techServices =
+      techServicesByProfile.get(profileId) ?? new Map<string, string>();
+    // dpt → servicios de los que es técnico bajo ese dpt (NO_DEPT si transversal)
+    const techDeptToServices = new Map<
+      string,
+      { service_id: string; service_name: string }[]
+    >();
+    for (const [serviceId, serviceName] of techServices) {
+      const depts = serviceToDepts.get(serviceId);
+      const targets = depts && depts.length > 0 ? depts : [NO_DEPT_KEY];
+      for (const did of targets) {
+        const arr = techDeptToServices.get(did) ?? [];
+        if (!arr.some((s) => s.service_id === serviceId)) {
+          arr.push({ service_id: serviceId, service_name: serviceName });
+        }
+        techDeptToServices.set(did, arr);
+      }
+    }
+    const naturalDepts = naturalDeptsByProfile.get(profileId) ?? new Set<string>();
+    const displayDepts = new Set<string>([
+      ...techDeptToServices.keys(),
+      ...naturalDepts,
+    ]);
+    if (displayDepts.size === 0) displayDepts.add(NO_DEPT_KEY);
+
+    for (const deptId of displayDepts) {
+      const m = ensureMember(deptId, profileId);
+      const svcs = techDeptToServices.get(deptId) ?? [];
+      if (svcs.length > 0) {
+        m.is_technician = true;
+        m.technician_services = svcs;
       }
     }
   }
