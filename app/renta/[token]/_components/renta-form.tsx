@@ -12,6 +12,8 @@ interface Props {
   companyId: string;
   invitationId: string;
   deductions: RentaDeduction[];
+  /** Emails de los técnicos del servicio para el botón "Contacta con tu asesor". */
+  advisorEmails: string[];
 }
 
 // Steps lineales del formulario. Cada step de perfil se reparte en una pantalla
@@ -32,7 +34,7 @@ type Step =
 const TOTAL_PROFILE_STEPS = 5; // location, personal, family, income, deductions, review
 const TOTAL_STEPS = 6;
 
-export default function RentaForm({ token, deductions }: Props) {
+export default function RentaForm({ token, deductions, advisorEmails }: Props) {
   const [step, setStep] = useState<Step>("dni");
   const [authorizedFilerId, setAuthorizedFilerId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
@@ -41,6 +43,8 @@ export default function RentaForm({ token, deductions }: Props) {
     disability_pct: 0,
   });
   const [deductionsResponse, setDeductionsResponse] = useState<Record<string, Record<string, unknown>>>({});
+  // IDs de deducciones marcadas como "No estoy seguro" (sin extra_fields).
+  const [uncertainIds, setUncertainIds] = useState<string[]>([]);
 
   const applicableDeductions = useMemo(() => {
     if (!profile.ccaa) return [];
@@ -49,8 +53,9 @@ export default function RentaForm({ token, deductions }: Props) {
       .filter((d) => evaluateRule(d.eligibility_rule, profile));
   }, [deductions, profile]);
 
+  let content: React.ReactNode;
   if (step === "dni") {
-    return (
+    content = (
       <DniStep
         token={token}
         onVerified={(filerId, name) => {
@@ -60,10 +65,8 @@ export default function RentaForm({ token, deductions }: Props) {
         }}
       />
     );
-  }
-
-  if (step === "location") {
-    return (
+  } else if (step === "location") {
+    content = (
       <LocationStep
         fullName={fullName}
         profile={profile}
@@ -72,10 +75,8 @@ export default function RentaForm({ token, deductions }: Props) {
         onNext={() => setStep("personal")}
       />
     );
-  }
-
-  if (step === "personal") {
-    return (
+  } else if (step === "personal") {
+    content = (
       <PersonalStep
         profile={profile}
         onChange={setProfile}
@@ -83,10 +84,8 @@ export default function RentaForm({ token, deductions }: Props) {
         onNext={() => setStep("family")}
       />
     );
-  }
-
-  if (step === "family") {
-    return (
+  } else if (step === "family") {
+    content = (
       <FamilyStep
         profile={profile}
         onChange={setProfile}
@@ -94,10 +93,8 @@ export default function RentaForm({ token, deductions }: Props) {
         onNext={() => setStep("income")}
       />
     );
-  }
-
-  if (step === "income") {
-    return (
+  } else if (step === "income") {
+    content = (
       <IncomeStep
         profile={profile}
         onChange={setProfile}
@@ -105,37 +102,70 @@ export default function RentaForm({ token, deductions }: Props) {
         onNext={() => setStep("deductions")}
       />
     );
-  }
-
-  if (step === "deductions") {
-    return (
+  } else if (step === "deductions") {
+    content = (
       <DeductionsWizardStep
         deductions={applicableDeductions}
         ccaa={profile.ccaa!}
         deductionsResponse={deductionsResponse}
         onChange={setDeductionsResponse}
+        uncertainIds={uncertainIds}
+        onChangeUncertain={setUncertainIds}
         onBack={() => setStep("income")}
         onNext={() => setStep("review")}
       />
     );
-  }
-
-  if (step === "review") {
-    return (
+  } else if (step === "review") {
+    content = (
       <ReviewStep
         token={token}
         authorizedFilerId={authorizedFilerId!}
         fullName={fullName}
         profile={profile as RentaProfileResponse}
         deductionsResponse={deductionsResponse}
+        uncertainIds={uncertainIds}
         applicableDeductions={applicableDeductions}
         onBack={() => setStep("deductions")}
         onSubmitted={() => setStep("done")}
       />
     );
+  } else {
+    content = <DoneStep fullName={fullName} />;
   }
 
-  return <DoneStep fullName={fullName} />;
+  return (
+    <div className="space-y-4">
+      {content}
+      {step !== "done" && <AdvisorContactFooter advisorEmails={advisorEmails} />}
+    </div>
+  );
+}
+
+/**
+ * Enlace persistente al pie del formulario que abre el cliente de correo del
+ * usuario con los técnicos del servicio en destinatario (igual que el botón
+ * "Contacta con tu asesor" de Modelos fiscales). Si no hay técnicos resueltos
+ * para la empresa, no se muestra nada.
+ */
+function AdvisorContactFooter({ advisorEmails }: { advisorEmails: string[] }) {
+  if (advisorEmails.length === 0) return null;
+  const href = `mailto:${advisorEmails.join(",")}?subject=${encodeURIComponent(
+    "Consulta sobre el formulario de la declaración de la renta",
+  )}`;
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+      <p className="text-sm text-text-muted">¿Tienes dudas mientras rellenas el formulario?</p>
+      <a
+        href={href}
+        className="inline-flex items-center gap-2 text-sm font-semibold text-brand-teal hover:underline"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        Contacta con tu asesor
+      </a>
+    </div>
+  );
 }
 
 // ===========================================================================
@@ -795,11 +825,15 @@ function HousingEditor({
 // Step 6: Wizard de deducciones (una pregunta por pantalla)
 // ===========================================================================
 
+type DeductionDecision = "yes" | "uncertain";
+
 function DeductionsWizardStep({
   deductions,
   ccaa,
   deductionsResponse,
   onChange,
+  uncertainIds,
+  onChangeUncertain,
   onBack,
   onNext,
 }: {
@@ -807,16 +841,18 @@ function DeductionsWizardStep({
   ccaa: CCAACode;
   deductionsResponse: Record<string, Record<string, unknown>>;
   onChange: (r: Record<string, Record<string, unknown>>) => void;
+  uncertainIds: string[];
+  onChangeUncertain: (ids: string[]) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
   // Índice de la deducción que se está mostrando. Si supera la longitud,
   // saltamos a review. Si retrocede de 0, volvemos al step anterior (ingresos).
   const [currentIdx, setCurrentIdx] = useState(0);
-  // Estado "¿te aplica?" pendiente para la pantalla actual cuando aún no se
-  // ha decidido (se inicializa undefined; al elegir Sí, se persiste y se
-  // muestran los extra_fields; al elegir No, se avanza directamente).
-  const [pendingApplies, setPendingApplies] = useState<boolean | undefined>(undefined);
+  // Decisión pendiente para la pantalla actual cuando aún no se ha resuelto:
+  // "yes" persiste la deducción y muestra los extra_fields; "uncertain" la
+  // registra como dudosa y avanza; "No me aplica" avanza directamente.
+  const [pendingDecision, setPendingDecision] = useState<DeductionDecision | undefined>(undefined);
 
   // Caso borde: no hay deducciones aplicables → mostramos un mensaje y un único
   // botón "Continuar al envío" que salta al review.
@@ -845,13 +881,18 @@ function DeductionsWizardStep({
 
   const deduction = deductions[currentIdx];
   const savedResponse = deductionsResponse[deduction.id];
-  const alreadyDecided = savedResponse !== undefined;
-  // Resolución del estado mostrado: si ya se decidió antes, partimos de ese
-  // valor; si no, del pending state local.
-  const applies = alreadyDecided ? true : pendingApplies;
+  const isAccepted = savedResponse !== undefined;
+  const isUncertain = uncertainIds.includes(deduction.id);
+  // Resolución de la decisión mostrada: una decisión ya guardada (al volver
+  // atrás) tiene prioridad sobre la pendiente local de esta pantalla.
+  const decision: DeductionDecision | undefined = isAccepted
+    ? "yes"
+    : isUncertain
+      ? "uncertain"
+      : pendingDecision;
 
   function goPrev() {
-    setPendingApplies(undefined);
+    setPendingDecision(undefined);
     if (currentIdx === 0) {
       onBack();
     } else {
@@ -860,7 +901,7 @@ function DeductionsWizardStep({
   }
 
   function goNext() {
-    setPendingApplies(undefined);
+    setPendingDecision(undefined);
     if (currentIdx + 1 >= deductions.length) {
       onNext();
     } else {
@@ -868,18 +909,46 @@ function DeductionsWizardStep({
     }
   }
 
-  function acceptDeduction() {
-    // Marcar como aplicable: crea (o conserva) la entrada en el response map.
-    onChange({ ...deductionsResponse, [deduction.id]: savedResponse ?? {} });
-    setPendingApplies(true);
+  function removeFromUncertain() {
+    if (isUncertain) onChangeUncertain(uncertainIds.filter((id) => id !== deduction.id));
   }
 
-  function rejectDeduction() {
-    // Marcar como no aplicable: borra la entrada y avanza.
+  function acceptDeduction() {
+    // "Sí me aplica": crea (o conserva) la entrada en el response map y la
+    // saca de la lista de dudosas si estaba ahí.
+    removeFromUncertain();
+    onChange({ ...deductionsResponse, [deduction.id]: savedResponse ?? {} });
+    setPendingDecision("yes");
+  }
+
+  function markUncertain() {
+    // "No estoy seguro": registra el id como dudoso (sin extra_fields) y avanza.
     const next = { ...deductionsResponse };
     delete next[deduction.id];
     onChange(next);
+    if (!uncertainIds.includes(deduction.id)) {
+      onChangeUncertain([...uncertainIds, deduction.id]);
+    }
     goNext();
+  }
+
+  function rejectDeduction() {
+    // "No me aplica": borra cualquier rastro de la deducción y avanza.
+    const next = { ...deductionsResponse };
+    delete next[deduction.id];
+    onChange(next);
+    removeFromUncertain();
+    goNext();
+  }
+
+  function resetDecision() {
+    // Permite cambiar de opinión: limpia respuestas/dudas y vuelve a mostrar
+    // el selector de tres opciones.
+    const next = { ...deductionsResponse };
+    delete next[deduction.id];
+    onChange(next);
+    removeFromUncertain();
+    setPendingDecision(undefined);
   }
 
   function setField(key: string, value: unknown) {
@@ -887,8 +956,8 @@ function DeductionsWizardStep({
     onChange({ ...deductionsResponse, [deduction.id]: { ...current, [key]: value } });
   }
 
-  // Cuando se han marcado como aplicables Y se ha completado el formulario,
-  // permitimos avanzar.
+  // Cuando la deducción se marca "Sí" y se completan los campos obligatorios,
+  // permitimos avanzar. Las dudosas avanzan sin requisitos.
   const response = savedResponse ?? {};
   const requiredFieldsOk = deduction.extra_fields
     .filter((f) => f.required)
@@ -896,12 +965,13 @@ function DeductionsWizardStep({
       const v = response[f.key];
       return v !== undefined && v !== null && v !== "";
     });
+  const canAdvance = decision === "uncertain" || (decision === "yes" && requiredFieldsOk);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (applies === true && requiredFieldsOk) goNext();
+        if (canAdvance) goNext();
       }}
       className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
     >
@@ -924,29 +994,63 @@ function DeductionsWizardStep({
         requirements={deduction.requirements}
       />
 
-      {applies === undefined && (
+      {decision === undefined && (
         <div className="space-y-3">
           <p className="text-sm font-medium text-brand-navy">¿Te aplica esta deducción?</p>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2.5">
             <button
               type="button"
               onClick={acceptDeduction}
-              className="flex-1 sm:flex-none text-sm font-medium py-3 px-6 rounded-lg bg-brand-teal text-white hover:opacity-90"
+              className="text-sm font-medium py-3 px-5 rounded-lg bg-brand-teal text-white hover:opacity-90"
             >
               Sí, me aplica
             </button>
             <button
               type="button"
+              onClick={markUncertain}
+              className="text-sm font-medium py-3 px-5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+            >
+              No estoy seguro
+            </button>
+            <button
+              type="button"
               onClick={rejectDeduction}
-              className="flex-1 sm:flex-none text-sm font-medium py-3 px-6 rounded-lg border border-gray-200 text-brand-navy hover:bg-gray-50"
+              className="text-sm font-medium py-3 px-5 rounded-lg border border-gray-200 text-brand-navy hover:bg-gray-50"
             >
               No me aplica
             </button>
           </div>
+          <p className="text-xs text-text-muted">
+            Si no lo tienes claro, marca{" "}
+            <span className="font-medium text-amber-700">«No estoy seguro»</span>: tu asesor lo
+            revisará y te dirá si te corresponde.
+          </p>
         </div>
       )}
 
-      {applies === true && (
+      {decision === "uncertain" && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-800">
+            <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-xs">
+              ?
+            </span>
+            <span>Marcada como «No estoy seguro»</span>
+            <button
+              type="button"
+              onClick={resetDecision}
+              className="ml-auto text-[11px] font-normal text-amber-700 hover:underline"
+            >
+              cambiar
+            </button>
+          </div>
+          <p className="text-xs text-amber-800/90">
+            Tu asesor de Lean Finance revisará esta deducción y valorará si te corresponde. No
+            necesitas rellenar nada más aquí.
+          </p>
+        </div>
+      )}
+
+      {decision === "yes" && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs text-brand-teal">
             <span className="inline-flex w-4 h-4 items-center justify-center rounded-full bg-brand-teal/15">
@@ -955,15 +1059,7 @@ function DeductionsWizardStep({
             <span>Marcada como aplicable. Completa los datos abajo.</span>
             <button
               type="button"
-              onClick={() => {
-                // Permite cambiar de opinión y declarar la deducción como no
-                // aplicable: limpiamos respuestas y mostramos de nuevo el
-                // selector.
-                const next = { ...deductionsResponse };
-                delete next[deduction.id];
-                onChange(next);
-                setPendingApplies(undefined);
-              }}
+              onClick={resetDecision}
               className="ml-auto text-[11px] text-text-muted hover:underline"
             >
               cambiar
@@ -997,18 +1093,16 @@ function DeductionsWizardStep({
         >
           ← Atrás
         </button>
-        {applies === true ? (
+        {decision === undefined ? (
+          <span className="text-xs text-text-muted">Elige una opción para continuar</span>
+        ) : (
           <button
             type="submit"
-            disabled={!requiredFieldsOk}
+            disabled={!canAdvance}
             className="text-sm font-medium px-4 py-2 rounded-lg bg-brand-teal text-white hover:opacity-90 disabled:opacity-50"
           >
             {currentIdx + 1 >= deductions.length ? "Revisar y enviar" : "Continuar"}
           </button>
-        ) : (
-          <span className="text-xs text-text-muted">
-            Elige una opción para continuar
-          </span>
         )}
       </div>
 
@@ -1157,6 +1251,7 @@ function ReviewStep({
   fullName,
   profile,
   deductionsResponse,
+  uncertainIds,
   applicableDeductions,
   onBack,
   onSubmitted,
@@ -1166,6 +1261,7 @@ function ReviewStep({
   fullName: string;
   profile: RentaProfileResponse;
   deductionsResponse: Record<string, Record<string, unknown>>;
+  uncertainIds: string[];
   applicableDeductions: RentaDeduction[];
   onBack: () => void;
   onSubmitted: () => void;
@@ -1181,6 +1277,7 @@ function ReviewStep({
         authorized_filer_id: authorizedFilerId,
         profile_response: profile,
         deductions_response: deductionsResponse,
+        uncertain_deduction_ids: uncertainIds,
       });
       if (res.ok) {
         onSubmitted();
@@ -1198,6 +1295,7 @@ function ReviewStep({
   }
 
   const selectedDeductions = applicableDeductions.filter((d) => d.id in deductionsResponse);
+  const uncertainDeductions = applicableDeductions.filter((d) => uncertainIds.includes(d.id));
 
   return (
     <form
@@ -1248,6 +1346,22 @@ function ReviewStep({
           </ul>
         )}
       </section>
+
+      {uncertainDeductions.length > 0 && (
+        <section className="space-y-1.5">
+          <h2 className="text-sm font-semibold text-brand-navy">
+            Deducciones con dudas ({uncertainDeductions.length})
+          </h2>
+          <p className="text-xs text-text-muted">
+            Tu asesor revisará estas deducciones y valorará si te corresponden.
+          </p>
+          <ul className="text-sm text-text-muted list-disc list-inside space-y-0.5">
+            {uncertainDeductions.map((d) => (
+              <li key={d.id}>{d.title}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {error && (
         <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
