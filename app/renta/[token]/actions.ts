@@ -16,7 +16,7 @@ import {
 } from "@/lib/renta/catalog";
 import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { checkAndRecord } from "@/lib/renta/rate-limit";
-import { evaluateRule } from "@/lib/renta/rule-engine";
+import { isPotentiallyApplicable } from "@/lib/renta/rule-engine";
 import { validateProfile } from "@/lib/renta/profile-schema";
 import { SERVICE_SLUGS } from "@/lib/types/services";
 import type {
@@ -107,7 +107,9 @@ export async function submitRenta(input: SubmitRentaInput): Promise<SubmitRentaR
   // para no aceptar deducciones inelegibles inyectadas por el cliente.
   const deductions = await loadActiveDeductions(profile.ccaa);
   const applicableIds = new Set(
-    deductions.filter((d) => evaluateRule(d.eligibility_rule, profile)).map((d) => d.id),
+    deductions
+      .filter((d) => isPotentiallyApplicable(d.eligibility_rule, profile))
+      .map((d) => d.id),
   );
   const filteredDeductionsResponse: Record<string, Record<string, unknown>> = {};
   for (const [id, payload] of Object.entries(input.deductions_response ?? {})) {
@@ -143,6 +145,9 @@ export async function submitRenta(input: SubmitRentaInput): Promise<SubmitRentaR
       // Propuesta inicial editable por el asesor: las deducciones que el
       // contribuyente marcó "Sí". El asesor las refina al revisar.
       confirmed_deductions: Object.keys(filteredDeductionsResponse),
+      // Los extra_fields confirmados arrancan como copia de lo aportado por
+      // el contribuyente; el asesor los corrige desde el panel.
+      confirmed_deductions_response: filteredDeductionsResponse,
       submitted_ip: ip,
       submitted_user_agent: userAgent,
     })

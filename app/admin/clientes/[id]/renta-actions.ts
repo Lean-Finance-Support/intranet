@@ -465,9 +465,69 @@ export async function setConfirmedDeductions(
     ...new Set((deductionIds ?? []).filter((id) => typeof id === "string" && id.length > 0)),
   ];
 
+  // Al cambiar la lista confirmada, podamos `confirmed_deductions_response`
+  // para que no queden extra_fields huérfanos de deducciones ya retiradas.
+  const { data: current } = await supabase
+    .from("submissions")
+    .select("confirmed_deductions_response")
+    .eq("id", submissionId)
+    .single();
+  const cleanSet = new Set(clean);
+  const prunedResponse: Record<string, unknown> = {};
+  for (const [id, payload] of Object.entries(
+    (current?.confirmed_deductions_response ?? {}) as Record<string, unknown>,
+  )) {
+    if (cleanSet.has(id)) prunedResponse[id] = payload;
+  }
+
   const { data, error } = await supabase
     .from("submissions")
-    .update({ confirmed_deductions: clean })
+    .update({ confirmed_deductions: clean, confirmed_deductions_response: prunedResponse })
+    .eq("id", submissionId)
+    .select("company_id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
+  return { ok: true };
+}
+
+/**
+ * Guarda los extra_fields que el asesor ha rellenado/corregido para una
+ * deducción confirmada concreta. Solo se permite mientras la submission no
+ * esté en estado 'revisada' (los envíos revisados quedan bloqueados).
+ */
+export async function setConfirmedDeductionResponse(
+  submissionId: string,
+  deductionId: string,
+  payload: Record<string, unknown>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireAdmin();
+  if (!deductionId || typeof deductionId !== "string") {
+    return { ok: false, error: "Deducción inválida." };
+  }
+  const supabase = createAdminClient().schema("renta");
+
+  const { data: current, error: readErr } = await supabase
+    .from("submissions")
+    .select("status, confirmed_deductions, confirmed_deductions_response")
+    .eq("id", submissionId)
+    .single();
+  if (readErr) return { ok: false, error: readErr.message };
+  if (current.status === "revisada") {
+    return { ok: false, error: "El envío está revisado: márcalo como pendiente para editarlo." };
+  }
+  if (!(current.confirmed_deductions ?? []).includes(deductionId)) {
+    return { ok: false, error: "Esa deducción no está en la lista de confirmadas." };
+  }
+
+  const nextResponse = {
+    ...((current.confirmed_deductions_response ?? {}) as Record<string, unknown>),
+    [deductionId]: payload && typeof payload === "object" ? payload : {},
+  };
+
+  const { data, error } = await supabase
+    .from("submissions")
+    .update({ confirmed_deductions_response: nextResponse })
     .eq("id", submissionId)
     .select("company_id")
     .single();

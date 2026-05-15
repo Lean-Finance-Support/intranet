@@ -16,6 +16,7 @@ import {
   revokeSubmission,
   getDeductionsCatalog,
   setConfirmedDeductions,
+  setConfirmedDeductionResponse,
 } from "@/app/admin/clientes/[id]/renta-actions";
 import ConfirmDialog from "@/components/confirm-dialog";
 import { DeductionCollapsible } from "@/components/renta/deduction-collapsible";
@@ -1039,35 +1040,29 @@ function ConfirmedDeductionsEditor({
     (d) => !confirmedSet.has(d.id) && !pendingUncertainSet.has(d.id),
   );
 
-  // Datos que aportó el contribuyente para una deducción que marcó "Sí".
-  function payloadExtra(d: RentaDeduction): React.ReactNode {
-    const payload = (appliedResponse[d.id] ?? {}) as Record<string, unknown>;
-    const entries = Object.entries(payload);
-    if (entries.length === 0) return undefined;
-    const fieldsByKey = new Map<string, RentaExtraField>();
-    for (const f of d.extra_fields ?? []) fieldsByKey.set(f.key, f);
+  const confirmedResponse = useMemo(
+    () => submission.confirmed_deductions_response ?? {},
+    [submission.confirmed_deductions_response],
+  );
+
+  // Editor de extra_fields para una deducción confirmada. Mientras el envío no
+  // esté revisado, el asesor puede corregir/rellenar los datos; si está
+  // revisado se muestran en solo lectura.
+  function deductionFields(d: RentaDeduction): React.ReactNode {
+    if (!d.extra_fields || d.extra_fields.length === 0) return undefined;
+    const initial =
+      (confirmedResponse[d.id] as Record<string, unknown> | undefined) ??
+      (appliedResponse[d.id] as Record<string, unknown> | undefined) ??
+      {};
     return (
-      <div>
-        <p className="text-[11px] uppercase tracking-wider font-semibold text-text-muted mb-1">
-          Datos aportados por el contribuyente
-        </p>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
-          {entries.map(([k, v]) => {
-            const field = fieldsByKey.get(k);
-            const label = field?.label ?? k;
-            return (
-              <div key={k} className="flex flex-col gap-0.5 min-w-0">
-                <dt className="text-[10px] uppercase tracking-wide text-text-muted/80 font-medium">
-                  {label}
-                </dt>
-                <dd className="text-brand-navy font-medium break-words">
-                  {formatExtraFieldValue(v, field, label)}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
-      </div>
+      <ConfirmedDeductionFields
+        key={`fields-${d.id}`}
+        deduction={d}
+        submissionId={submission.id}
+        initialValues={initial}
+        locked={locked}
+        onSaved={onChanged}
+      />
     );
   }
 
@@ -1116,7 +1111,7 @@ function ConfirmedDeductionsEditor({
                 whatCovers={d.what_covers}
                 requirements={d.requirements}
                 legalReference={d.legal_reference}
-                extra={payloadExtra(d)}
+                extra={deductionFields(d)}
                 trailing={
                   locked ? undefined : (
                     <button
@@ -1230,6 +1225,238 @@ function ConfirmedDeductionsEditor({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Editor de los `extra_fields` de una deducción confirmada. El asesor puede
+ * corregir lo que aportó el contribuyente y rellenar los datos de deducciones
+ * que él mismo ha añadido. Por defecto los datos se muestran en solo lectura;
+ * hay que pulsar "Editar" para tocarlos. En modo edición cada campo se
+ * autoguarda al perder el foco (inputs) o al cambiar (select/boolean). Si el
+ * envío está revisado no se puede editar.
+ */
+function ConfirmedDeductionFields({
+  deduction,
+  submissionId,
+  initialValues,
+  locked,
+  onSaved,
+}: {
+  deduction: RentaDeduction;
+  submissionId: string;
+  initialValues: Record<string, unknown>;
+  locked: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const [values, setValues] = useState<Record<string, unknown>>(initialValues);
+  const [editing, setEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function flush(next: Record<string, unknown>) {
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      const res = await setConfirmedDeductionResponse(submissionId, deduction.id, next);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setSaved(true);
+      await onSaved();
+    });
+  }
+
+  const fieldsByKey = new Map<string, RentaExtraField>();
+  for (const f of deduction.extra_fields) fieldsByKey.set(f.key, f);
+  const filledEntries = Object.entries(values).filter(
+    ([, v]) => v !== undefined && v !== null && v !== "",
+  );
+
+  const readOnlyBody =
+    filledEntries.length > 0 ? (
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+        {filledEntries.map(([k, v]) => {
+          const field = fieldsByKey.get(k);
+          const label = field?.label ?? k;
+          return (
+            <div key={k} className="flex flex-col gap-0.5 min-w-0">
+              <dt className="text-[10px] uppercase tracking-wide text-text-muted/80 font-medium">
+                {label}
+              </dt>
+              <dd className="text-brand-navy font-medium break-words">
+                {formatExtraFieldValue(v, field, label)}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    ) : (
+      <p className="text-xs text-text-muted italic">Sin datos rellenados.</p>
+    );
+
+  // Envío revisado: solo lectura, sin botón Editar. Si no hay datos, no
+  // mostramos nada para no ensuciar la tarjeta.
+  if (locked) {
+    if (filledEntries.length === 0) return undefined;
+    return (
+      <div>
+        <p className="text-[11px] uppercase tracking-wider font-semibold text-text-muted mb-1">
+          Datos de la deducción
+        </p>
+        {readOnlyBody}
+      </div>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-[11px] uppercase tracking-wider font-semibold text-text-muted">
+            Datos de la deducción
+          </p>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-[11px] font-medium text-brand-teal hover:bg-brand-teal/10 rounded-md px-2 py-1"
+          >
+            Editar
+          </button>
+        </div>
+        {readOnlyBody}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <p className="text-[11px] uppercase tracking-wider font-semibold text-text-muted">
+          Datos de la deducción
+        </p>
+        <div className="flex items-center gap-2">
+          {isPending ? (
+            <span className="text-[11px] text-text-muted">Guardando…</span>
+          ) : saved ? (
+            <span className="text-[11px] font-medium text-emerald-600">Guardado ✓</span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              flush(values);
+              setEditing(false);
+            }}
+            className="text-[11px] font-semibold text-brand-teal hover:bg-brand-teal/10 rounded-md px-2 py-1"
+          >
+            Listo
+          </button>
+        </div>
+      </div>
+      {error && (
+        <p className="text-[11px] text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1 mb-2">
+          {error}
+        </p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {deduction.extra_fields.map((field) => (
+          <AdminExtraFieldInput
+            key={field.key}
+            field={field}
+            value={values[field.key]}
+            onChange={(v) => {
+              const next = { ...values, [field.key]: v };
+              setValues(next);
+              if (field.kind === "select" || field.kind === "boolean") flush(next);
+            }}
+            onCommit={() => flush(values)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Input de un extra_field en el panel del asesor. Mismo set de tipos que el
+ * formulario público. `onChange` actualiza el estado local; `onCommit` se
+ * dispara al perder el foco para autoguardar los campos de texto/número.
+ */
+function AdminExtraFieldInput({
+  field,
+  value,
+  onChange,
+  onCommit,
+}: {
+  field: RentaExtraField;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  onCommit: () => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-medium text-text-muted">
+        {field.label}
+        {field.required && <span className="text-red-500"> *</span>}
+      </span>
+      {field.kind === "select" ? (
+        <select
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value || undefined)}
+          className="text-xs px-2 py-1 border border-gray-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+        >
+          <option value="">— Selecciona —</option>
+          {field.options?.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      ) : field.kind === "boolean" ? (
+        <select
+          value={value === undefined || value === null ? "" : value ? "true" : "false"}
+          onChange={(e) =>
+            onChange(e.target.value === "" ? undefined : e.target.value === "true")
+          }
+          className="text-xs px-2 py-1 border border-gray-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+        >
+          <option value="">— Selecciona —</option>
+          <option value="true">Sí</option>
+          <option value="false">No</option>
+        </select>
+      ) : field.kind === "textarea" ? (
+        <textarea
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value || undefined)}
+          onBlur={onCommit}
+          rows={2}
+          className="text-xs px-2 py-1 border border-gray-200 rounded resize-none focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+        />
+      ) : (
+        <input
+          type={field.kind === "date" ? "date" : field.kind === "number" ? "number" : "text"}
+          value={value === undefined || value === null ? "" : String(value)}
+          min={field.min}
+          max={field.max}
+          onChange={(e) =>
+            onChange(
+              e.target.value === ""
+                ? undefined
+                : field.kind === "number"
+                  ? Number(e.target.value)
+                  : e.target.value,
+            )
+          }
+          onBlur={onCommit}
+          className="text-xs px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+        />
+      )}
+      {field.help_text && (
+        <span className="text-[11px] text-text-muted/80">{field.help_text}</span>
+      )}
+    </label>
   );
 }
 

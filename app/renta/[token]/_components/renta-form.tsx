@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { submitRenta, verifyDni } from "../actions";
-import { evaluateRule } from "@/lib/renta/rule-engine";
+import { isPotentiallyApplicable } from "@/lib/renta/rule-engine";
 import { PROFILE_QUESTIONS } from "@/lib/renta/profile-schema";
 import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { CCAA_LABELS, type CCAACode, type RentaDeduction, type RentaProfileResponse } from "@/lib/types/renta";
@@ -50,7 +50,7 @@ export default function RentaForm({ token, deductions, advisorEmails }: Props) {
     if (!profile.ccaa) return [];
     return deductions
       .filter((d) => d.ccaa_code === profile.ccaa)
-      .filter((d) => evaluateRule(d.eligibility_rule, profile));
+      .filter((d) => isPotentiallyApplicable(d.eligibility_rule, profile));
   }, [deductions, profile]);
 
   let content: React.ReactNode;
