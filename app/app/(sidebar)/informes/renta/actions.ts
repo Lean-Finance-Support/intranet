@@ -102,10 +102,19 @@ export async function getClientRentaSummary(
 }
 
 // ---------------------------------------------------------------------------
-// Submissions seguras para el cliente: solo metadatos. NUNCA exponemos
-// profile_response, deductions_response ni admin_notes (eso es privado entre
-// el familiar y el asesor).
+// Submissions seguras para el cliente: metadatos + las deducciones que el
+// asesor ha confirmado (solo cuando la submission está 'revisada'). NUNCA
+// exponemos profile_response, deductions_response, uncertain_deductions ni
+// admin_notes (eso es privado entre el familiar y el asesor).
 // ---------------------------------------------------------------------------
+export interface ClientRentaDeduction {
+  id: string;
+  title: string;
+  what_covers: string | null;
+  requirements: string[];
+  legal_reference: string | null;
+}
+
 export interface ClientRentaSubmissionMeta {
   id: string;
   full_name: string;
@@ -113,6 +122,11 @@ export interface ClientRentaSubmissionMeta {
   status: RentaSubmissionStatus;
   created_at: string;
   reviewed_at: string | null;
+  /**
+   * Deducciones confirmadas por el asesor. Solo se rellena cuando la
+   * submission está 'revisada' — mientras esté pendiente va vacío.
+   */
+  confirmed_deductions: ClientRentaDeduction[];
 }
 
 export async function getClientRentaSubmissions(
@@ -122,11 +136,60 @@ export async function getClientRentaSubmissions(
   const renta = createAdminClient().schema("renta");
   const { data } = await renta
     .from("submissions")
-    .select("id, full_name, dni, status, created_at, reviewed_at")
+    .select("id, full_name, dni, status, created_at, reviewed_at, confirmed_deductions")
     .eq("company_id", companyId)
     .is("revoked_at", null)
     .order("created_at", { ascending: false });
-  return (data as ClientRentaSubmissionMeta[]) ?? [];
+
+  const rows = (data ?? []) as {
+    id: string;
+    full_name: string;
+    dni: string;
+    status: RentaSubmissionStatus;
+    created_at: string;
+    reviewed_at: string | null;
+    confirmed_deductions: string[] | null;
+  }[];
+
+  // Resolvemos los detalles de las deducciones confirmadas solo para las
+  // submissions revisadas (las pendientes no exponen nada de deducciones).
+  const idsToResolve = new Set<string>();
+  for (const r of rows) {
+    if (r.status === "revisada") {
+      for (const id of r.confirmed_deductions ?? []) idsToResolve.add(id);
+    }
+  }
+  const deductionById = new Map<string, ClientRentaDeduction>();
+  if (idsToResolve.size > 0) {
+    const { data: deductions } = await renta
+      .from("deductions")
+      .select("id, title, what_covers, requirements, legal_reference")
+      .in("id", [...idsToResolve]);
+    for (const d of deductions ?? []) {
+      deductionById.set(d.id as string, {
+        id: d.id as string,
+        title: d.title as string,
+        what_covers: (d.what_covers as string | null) ?? null,
+        requirements: (d.requirements as string[] | null) ?? [],
+        legal_reference: (d.legal_reference as string | null) ?? null,
+      });
+    }
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    full_name: r.full_name,
+    dni: r.dni,
+    status: r.status,
+    created_at: r.created_at,
+    reviewed_at: r.reviewed_at,
+    confirmed_deductions:
+      r.status === "revisada"
+        ? (r.confirmed_deductions ?? [])
+            .map((id) => deductionById.get(id))
+            .filter((d): d is ClientRentaDeduction => d != null)
+        : [],
+  }));
 }
 
 // ---------------------------------------------------------------------------

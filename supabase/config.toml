@@ -45,3 +45,9 @@ verify_jwt = false
 # pulsa "Enviar formulario" en el panel de Declaración de la renta del cliente.
 [functions.notify-renta-invitation]
 verify_jwt = false
+
+# Invocada desde la server action submitRenta cuando un familiar/empleado envía
+# el formulario público de Declaración de la renta. Avisa por email a los
+# técnicos del servicio (chiefs del dpto como fallback).
+[functions.notify-renta-submission]
+verify_jwt = false

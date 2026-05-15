@@ -449,6 +449,34 @@ export async function updateSubmissionNotes(
 }
 
 /**
+ * Fija la lista de deducciones confirmadas por el asesor para una submission.
+ * Es la lista definitiva que verá el cliente cuando la submission esté en
+ * estado 'revisada'. El asesor la edita libremente: añade deducciones, quita
+ * las que no apliquen y resuelve las marcadas "No estoy seguro".
+ */
+export async function setConfirmedDeductions(
+  submissionId: string,
+  deductionIds: string[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await requireAdmin();
+  const supabase = createAdminClient().schema("renta");
+
+  const clean = [
+    ...new Set((deductionIds ?? []).filter((id) => typeof id === "string" && id.length > 0)),
+  ];
+
+  const { data, error } = await supabase
+    .from("submissions")
+    .update({ confirmed_deductions: clean })
+    .eq("id", submissionId)
+    .select("company_id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
+  return { ok: true };
+}
+
+/**
  * Revoca una submission para que el filer pueda volver a rellenar el formulario.
  * Soft-delete: la fila se conserva como histórico (revoked_at + revoked_by) y la
  * unique index parcial libera el slot para una nueva submission del mismo DNI.

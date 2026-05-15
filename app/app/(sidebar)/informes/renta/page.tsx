@@ -9,6 +9,7 @@ import {
   listClientAuthorizedFilers,
 } from "./actions";
 import CopyUrlButton from "./_components/copy-url-button";
+import SubmissionsList from "./_components/submissions-list";
 
 /**
  * Vista cliente del servicio "Declaración de la renta".
@@ -189,57 +190,13 @@ export default async function ClientRentaPage() {
             Envíos recibidos
           </h2>
           <p className="text-xs text-text-muted mt-1 max-w-lg">
-            Los datos que cada persona ha aportado son confidenciales entre
-            ella y tu asesor. Aquí solo verás el registro de quién ha enviado
-            el formulario y en qué estado está.
+            Despliega cada envío para ver su estado. Cuando tu asesor termine de
+            revisar uno, verás aquí las deducciones a las que esa persona tiene
+            derecho. Los datos personales que cada persona aporta son
+            confidenciales entre ella y tu asesor.
           </p>
 
-          {submissions.length === 0 ? (
-            <div className="mt-5 rounded-xl bg-surface-gray border border-dashed border-gray-200 p-4 text-xs text-text-muted">
-              Todavía no se ha recibido ningún envío.
-            </div>
-          ) : (
-            <div className="mt-5 overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-[11px] uppercase tracking-wider text-text-muted border-b border-gray-100">
-                    <th className="text-left font-semibold py-2 pr-3">
-                      Nombre
-                    </th>
-                    <th className="text-left font-semibold py-2 pr-3">DNI</th>
-                    <th className="text-left font-semibold py-2 pr-3">
-                      Enviado
-                    </th>
-                    <th className="text-left font-semibold py-2">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {submissions.map((s) => (
-                    <tr key={s.id}>
-                      <td className="py-2.5 pr-3 text-brand-navy font-medium">
-                        {s.full_name}
-                      </td>
-                      <td className="py-2.5 pr-3 text-text-muted">{s.dni}</td>
-                      <td className="py-2.5 pr-3 text-text-muted">
-                        {formatDate(s.created_at)}
-                      </td>
-                      <td className="py-2.5">
-                        {s.status === "revisada" ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-                            Revisada
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
-                            Pendiente
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <SubmissionsList submissions={submissions} />
         </section>
       </div>
     </div>

@@ -89,6 +89,16 @@ export interface RentaSubmission {
    * `extra_fields` que el contribuyente haya cumplimentado.
    */
   deductions_response: Record<string, Record<string, unknown>>;
+  /**
+   * IDs de deducciones que el contribuyente marcó como "No estoy seguro".
+   * No llevan extra_fields — el asesor decide manualmente si aplican.
+   */
+  uncertain_deductions: string[];
+  /**
+   * IDs de deducciones confirmadas por el asesor. Lista definitiva visible
+   * para el cliente cuando `status = 'revisada'`. Editable desde el panel admin.
+   */
+  confirmed_deductions: string[];
   status: RentaSubmissionStatus;
   admin_notes: string | null;
   submitted_ip: string | null;
@@ -207,6 +217,8 @@ export interface SubmitRentaInput {
   authorized_filer_id: string;
   profile_response: RentaProfileResponse;
   deductions_response: Record<string, Record<string, unknown>>;
+  /** IDs de deducciones que el contribuyente marcó como "No estoy seguro". */
+  uncertain_deduction_ids: string[];
 }
 
 export type SubmitRentaResult =

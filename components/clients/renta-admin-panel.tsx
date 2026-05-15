@@ -15,8 +15,10 @@ import {
   updateSubmissionNotes,
   revokeSubmission,
   getDeductionsCatalog,
+  setConfirmedDeductions,
 } from "@/app/admin/clientes/[id]/renta-actions";
 import ConfirmDialog from "@/components/confirm-dialog";
+import { DeductionCollapsible } from "@/components/renta/deduction-collapsible";
 import { isValidDni, normalizeDni } from "@/lib/renta/dni";
 import { CCAA_LABELS, type CCAACode } from "@/lib/types/renta";
 import type {
@@ -705,11 +707,6 @@ function SubmissionsSection({
   onChanged: () => Promise<void>;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const catalogIndex = useMemo(() => {
-    const map = new Map<string, RentaDeduction>();
-    for (const d of deductionsCatalog) map.set(d.id, d);
-    return map;
-  }, [deductionsCatalog]);
 
   if (submissions.length === 0) {
     return (
@@ -730,7 +727,7 @@ function SubmissionsSection({
         <SubmissionCard
           key={s.id}
           submission={s}
-          deductionsIndex={catalogIndex}
+          deductionsCatalog={deductionsCatalog}
           expanded={expandedId === s.id}
           onToggle={() => setExpandedId((id) => (id === s.id ? null : s.id))}
           onChanged={onChanged}
@@ -742,13 +739,13 @@ function SubmissionsSection({
 
 function SubmissionCard({
   submission,
-  deductionsIndex,
+  deductionsCatalog,
   expanded,
   onToggle,
   onChanged,
 }: {
   submission: RentaSubmission;
-  deductionsIndex: Map<string, RentaDeduction>;
+  deductionsCatalog: RentaDeduction[];
   expanded: boolean;
   onToggle: () => void;
   onChanged: () => Promise<void>;
@@ -824,9 +821,11 @@ function SubmissionCard({
       {expanded && (
         <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-4">
           <SubmissionProfileDump profile={submission.profile_response} />
-          <SubmissionDeductionsDump
-            deductionsResponse={submission.deductions_response}
-            deductionsIndex={deductionsIndex}
+          <ConfirmedDeductionsEditor
+            submission={submission}
+            deductionsCatalog={deductionsCatalog}
+            locked={isReviewed}
+            onChanged={onChanged}
           />
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-text-muted">Notas internas</span>
@@ -930,95 +929,306 @@ function describeHousing(h: RentaSubmission["profile_response"]["housing"]): str
   return "Otro";
 }
 
-function SubmissionDeductionsDump({
-  deductionsResponse,
-  deductionsIndex,
+/**
+ * Editor de las deducciones confirmadas por el asesor.
+ *
+ * El asesor produce aquí `confirmed_deductions`: la lista definitiva de
+ * deducciones a las que el cliente tiene derecho, visible para el cliente
+ * cuando la submission pasa a 'revisada'. Cada acción se guarda al instante
+ * y la lista se puede seguir editando también después de marcar el envío
+ * como revisado.
+ *
+ * Dos listas + buscador:
+ *   1. Confirmadas — cada una con su botón "Quitar".
+ *   2. Las marcadas "No estoy seguro" sin decidir — con "Sí, le corresponde" /
+ *      "No le corresponde".
+ *   + Un buscador del catálogo de la CCAA para añadir cualquier otra.
+ */
+function ConfirmedDeductionsEditor({
+  submission,
+  deductionsCatalog,
+  locked,
+  onChanged,
 }: {
-  deductionsResponse: Record<string, Record<string, unknown>>;
-  deductionsIndex: Map<string, RentaDeduction>;
+  submission: RentaSubmission;
+  deductionsCatalog: RentaDeduction[];
+  /** Envío ya revisado → la lista se muestra en solo lectura. */
+  locked: boolean;
+  onChanged: () => Promise<void>;
 }) {
-  const entries = Object.entries(deductionsResponse ?? {});
-  if (entries.length === 0) {
+  const ccaa = submission.profile_response.ccaa as CCAACode;
+  const appliedResponse = useMemo(
+    () => submission.deductions_response ?? {},
+    [submission.deductions_response],
+  );
+  const uncertainIds = useMemo(
+    () => submission.uncertain_deductions ?? [],
+    [submission.uncertain_deductions],
+  );
+  const catalogIndex = useMemo(() => {
+    const m = new Map<string, RentaDeduction>();
+    for (const d of deductionsCatalog) m.set(d.id, d);
+    return m;
+  }, [deductionsCatalog]);
+  const ccaaActive = useMemo(
+    () =>
+      deductionsCatalog
+        .filter((d) => d.ccaa_code === ccaa && d.is_active)
+        .sort((a, b) => a.display_order - b.display_order),
+    [deductionsCatalog, ccaa],
+  );
+
+  // `confirmed` es estado local optimista; se persiste en cada cambio.
+  const [confirmed, setConfirmed] = useState<string[]>(
+    () => submission.confirmed_deductions ?? [],
+  );
+  // Dudosas que el asesor ha marcado "No le corresponde" en esta sesión.
+  const [discarded, setDiscarded] = useState<Set<string>>(new Set());
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const confirmedSet = useMemo(() => new Set(confirmed), [confirmed]);
+
+  function persist(next: string[]) {
+    const prev = confirmed;
+    setConfirmed(next);
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      const res = await setConfirmedDeductions(submission.id, next);
+      if (!res.ok) {
+        setConfirmed(prev);
+        setError("No se pudo guardar el cambio. Inténtalo de nuevo.");
+        return;
+      }
+      setSaved(true);
+      await onChanged();
+    });
+  }
+
+  function confirmDeduction(id: string) {
+    setDiscarded((prev) => {
+      if (!prev.has(id)) return prev;
+      const n = new Set(prev);
+      n.delete(id);
+      return n;
+    });
+    if (!confirmedSet.has(id)) persist([...confirmed, id]);
+  }
+  function removeDeduction(id: string) {
+    persist(confirmed.filter((x) => x !== id));
+  }
+  function discardDeduction(id: string) {
+    setDiscarded((prev) => new Set(prev).add(id));
+    if (confirmedSet.has(id)) persist(confirmed.filter((x) => x !== id));
+  }
+
+  // Listas derivadas.
+  const confirmedDeductions = confirmed
+    .map((id) => catalogIndex.get(id))
+    .filter((d): d is RentaDeduction => d != null)
+    .sort((a, b) => a.display_order - b.display_order);
+  const pendingUncertain = uncertainIds
+    .filter((id) => !confirmedSet.has(id) && !discarded.has(id))
+    .map((id) => catalogIndex.get(id))
+    .filter((d): d is RentaDeduction => d != null);
+  const pendingUncertainSet = new Set(pendingUncertain.map((d) => d.id));
+  const addable = ccaaActive.filter(
+    (d) => !confirmedSet.has(d.id) && !pendingUncertainSet.has(d.id),
+  );
+
+  // Datos que aportó el contribuyente para una deducción que marcó "Sí".
+  function payloadExtra(d: RentaDeduction): React.ReactNode {
+    const payload = (appliedResponse[d.id] ?? {}) as Record<string, unknown>;
+    const entries = Object.entries(payload);
+    if (entries.length === 0) return undefined;
+    const fieldsByKey = new Map<string, RentaExtraField>();
+    for (const f of d.extra_fields ?? []) fieldsByKey.set(f.key, f);
     return (
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-          Deducciones aplicables
+        <p className="text-[11px] uppercase tracking-wider font-semibold text-text-muted mb-1">
+          Datos aportados por el contribuyente
         </p>
-        <p className="text-sm text-text-muted italic">
-          El contribuyente no marcó ninguna deducción aplicable.
-        </p>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+          {entries.map(([k, v]) => {
+            const field = fieldsByKey.get(k);
+            const label = field?.label ?? k;
+            return (
+              <div key={k} className="flex flex-col gap-0.5 min-w-0">
+                <dt className="text-[10px] uppercase tracking-wide text-text-muted/80 font-medium">
+                  {label}
+                </dt>
+                <dd className="text-brand-navy font-medium break-words">
+                  {formatExtraFieldValue(v, field, label)}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
       </div>
     );
   }
+
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-        Deducciones aplicables ({entries.length})
-      </p>
-      <ul className="space-y-3">
-        {entries.map(([deductionId, payload]) => {
-          const def = deductionsIndex.get(deductionId);
-          const fieldsByKey = new Map<string, RentaExtraField>();
-          if (def) for (const f of def.extra_fields ?? []) fieldsByKey.set(f.key, f);
+    <div className="space-y-5">
+      {/* Deducciones confirmadas */}
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+            Deducciones confirmadas ({confirmedDeductions.length})
+          </p>
+          {!locked && isPending ? (
+            <span className="text-[11px] text-text-muted">Guardando…</span>
+          ) : !locked && saved ? (
+            <span className="text-[11px] font-medium text-emerald-600">Guardado ✓</span>
+          ) : null}
+        </div>
+        {locked ? (
+          <p className="text-xs text-text-muted bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-3">
+            Este envío está revisado, así que las deducciones están bloqueadas. Para cambiarlas,
+            márcalo como pendiente con el botón de abajo.
+          </p>
+        ) : (
+          <p className="text-xs text-text-muted mb-3">
+            Lista de deducciones a las que el cliente tiene derecho. La verá en su portal cuando
+            marques el envío como revisado.
+          </p>
+        )}
 
-          const payloadEntries = Object.entries(payload ?? {});
+        {error && (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2">
+            {error}
+          </p>
+        )}
 
-          return (
-            <li
-              key={deductionId}
-              className="rounded-xl border border-gray-100 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+        {confirmedDeductions.length === 0 ? (
+          <p className="text-sm text-text-muted italic">
+            Todavía no has confirmado ninguna deducción.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {confirmedDeductions.map((d) => (
+              <DeductionCollapsible
+                key={d.id}
+                title={d.title}
+                whatCovers={d.what_covers}
+                requirements={d.requirements}
+                legalReference={d.legal_reference}
+                extra={payloadExtra(d)}
+                trailing={
+                  locked ? undefined : (
+                    <button
+                      type="button"
+                      onClick={() => removeDeduction(d.id)}
+                      className="text-xs font-medium text-red-600 hover:bg-red-50 rounded-md px-2 py-1 shrink-0"
+                    >
+                      Quitar
+                    </button>
+                  )
+                }
+              />
+            ))}
+          </div>
+        )}
+
+        {!locked && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setPickerOpen((o) => !o)}
+              className="text-sm font-medium text-brand-teal hover:underline"
             >
-              <div className="flex items-start gap-2">
-                <span
-                  aria-hidden
-                  className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-teal flex-shrink-0"
-                />
-                <h5 className="text-sm font-semibold text-brand-navy leading-snug">
-                  {def?.title ?? deductionId}
-                </h5>
+              {pickerOpen ? "Cerrar el catálogo" : "+ Añadir una deducción"}
+            </button>
+          </div>
+        )}
+
+        {!locked && pickerOpen && (
+          <div className="mt-2 rounded-xl border border-gray-200 p-3">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-xs font-semibold text-brand-navy">
+                Catálogo de {CCAA_LABELS[ccaa] ?? ccaa}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(false)}
+                className="text-xs text-text-muted hover:text-brand-navy whitespace-nowrap"
+              >
+                Cerrar ✕
+              </button>
+            </div>
+            {addable.length === 0 ? (
+              <p className="text-xs text-text-muted italic">
+                No quedan más deducciones en el catálogo de esta comunidad.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {addable.map((d) => (
+                  <DeductionCollapsible
+                    key={d.id}
+                    title={d.title}
+                    whatCovers={d.what_covers}
+                    requirements={d.requirements}
+                    legalReference={d.legal_reference}
+                    trailing={
+                      <button
+                        type="button"
+                        onClick={() => confirmDeduction(d.id)}
+                        className="text-xs font-semibold text-brand-teal hover:bg-brand-teal/10 rounded-md px-2 py-1 shrink-0"
+                      >
+                        + Añadir
+                      </button>
+                    }
+                  />
+                ))}
               </div>
-              {def?.what_covers && (
-                <p className="text-xs text-text-muted mt-2 leading-relaxed pl-4">
-                  {def.what_covers}
-                </p>
-              )}
-              {def?.requirements && def.requirements.length > 0 && (
-                <ul className="mt-2 space-y-1 pl-4 text-xs text-text-muted">
-                  {def.requirements.map((req, i) => (
-                    <li key={i} className="flex items-start gap-1.5">
-                      <span aria-hidden className="mt-1.5 inline-block w-1 h-1 rounded-full bg-brand-teal/60 shrink-0" />
-                      <span>{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {payloadEntries.length > 0 && (
-                <dl className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
-                  {payloadEntries.map(([k, v]) => {
-                    const field = fieldsByKey.get(k);
-                    const label = field?.label ?? k;
-                    return (
-                      <div key={k} className="flex flex-col gap-0.5 min-w-0">
-                        <dt className="text-[10px] uppercase tracking-wide text-text-muted/80 font-medium">
-                          {label}
-                        </dt>
-                        <dd className="text-brand-navy font-medium break-words">
-                          {formatExtraFieldValue(v, field, label)}
-                        </dd>
-                      </div>
-                    );
-                  })}
-                </dl>
-              )}
-              {def?.legal_reference && (
-                <p className="mt-3 text-[10px] font-mono italic text-text-muted/70 text-right">
-                  {def.legal_reference}
-                </p>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Dudas pendientes de decidir */}
+      {!locked && pendingUncertain.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-1">
+            El contribuyente no lo tenía claro ({pendingUncertain.length})
+          </p>
+          <p className="text-xs text-text-muted mb-3">
+            Decide si cada una le corresponde. Las que confirmes pasan a la lista de arriba.
+          </p>
+          <div className="space-y-2">
+            {pendingUncertain.map((d) => (
+              <DeductionCollapsible
+                key={d.id}
+                title={d.title}
+                whatCovers={d.what_covers}
+                requirements={d.requirements}
+                legalReference={d.legal_reference}
+                footer={
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => confirmDeduction(d.id)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-teal text-white hover:opacity-90"
+                    >
+                      Sí, le corresponde
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => discardDeduction(d.id)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-text-muted hover:bg-gray-50"
+                    >
+                      No le corresponde
+                    </button>
+                  </div>
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
