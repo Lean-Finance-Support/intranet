@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, unstable_cache, updateTag } from "next/cache";
+import { revalidatePath, unstable_cache, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
@@ -572,7 +572,7 @@ function getCachedClientDocumentation(
 }
 
 function invalidateClientDocumentation(companyId: string): void {
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   revalidatePath(`/admin/clientes/${companyId}`);
 }
 

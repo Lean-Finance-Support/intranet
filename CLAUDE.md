@@ -214,7 +214,9 @@ Email de bienvenida: edge function `notify-client-onboarding-welcome` (un único
 
 ## Equipo responsable (gestión post-onboarding)
 
-El "equipo responsable" de un cliente se computa derivado a partir de `profile_roles` (técnicos en `company_service` + supervisores en `client_apartado` + chiefs del dpto). Helper `getCompanyResponsibleTeam` en `lib/team-queries.ts`, cacheado por `companyId`.
+El "equipo responsable" de un cliente se computa derivado a partir de `profile_roles`: **solo técnicos** (rol Técnico en `company_service`) + los chiefs de los dptos de esos servicios. Helper `getCompanyResponsibleTeam` en `lib/team-queries.ts`, cacheado por `companyId`.
+
+**Ser supervisor de apartados NO mete a nadie en el equipo responsable** (cambio de política). El rol "Supervisor de apartado" se sigue gestionando — al añadir un empleado al equipo se le asigna automáticamente como supervisor de los apartados que le atañen, y al quitarlo se le quita — pero esas filas de supervisor no se reflejan en `getCompanyResponsibleTeam`. Consecuencia: si se añade al equipo a un empleado de un dpto sin servicios contratados para esa empresa, queda como supervisor pero no aparece en el equipo (no es técnico de nada).
 
 En la ficha del cliente (`/admin/clientes/[id]` tab "Equipo responsable") se ofrecen dos operaciones masivas:
 

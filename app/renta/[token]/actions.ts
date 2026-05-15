@@ -1,6 +1,6 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import { invalidateNotifications } from "@/lib/actions/notifications";
@@ -142,7 +142,7 @@ export async function submitRenta(input: SubmitRentaInput): Promise<SubmitRentaR
     return { ok: false, reason: "invalid_payload", message: error.message };
   }
 
-  updateTag(`renta:submissions:${invitation.company_id}`);
+  revalidateTag(`renta:submissions:${invitation.company_id}`, { expire: 0 });
 
   // Notificación in-app a técnicos asignados (+ chiefs del dpto fallback)
   // del servicio "Declaración de la renta". No bloqueamos la respuesta al

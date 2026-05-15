@@ -1,6 +1,6 @@
 "use server";
 
-import { updateTag, unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
 import { invalidateNotifications } from "@/lib/actions/notifications";
@@ -1073,7 +1073,7 @@ export async function removeServiceFromCompany(
       .from("client_dashboards")
       .delete()
       .eq("company_id", companyId);
-    updateTag(`dashboard:${companyId}`);
+    revalidateTag(`dashboard:${companyId}`, { expire: 0 });
   }
 }
 
@@ -1528,7 +1528,7 @@ export async function setDashboardSheet(
     );
   if (error) throw new Error("No se pudo guardar la configuración del dashboard.");
 
-  updateTag(`dashboard:${companyId}`);
+  revalidateTag(`dashboard:${companyId}`, { expire: 0 });
   return { ok: true, sheet_id: parsed.sheetId };
 }
 
@@ -1544,7 +1544,7 @@ export async function clearDashboardSheet(companyId: string): Promise<void> {
     .eq("company_id", companyId);
   if (error) throw new Error("No se pudo eliminar la configuración del dashboard.");
 
-  updateTag(`dashboard:${companyId}`);
+  revalidateTag(`dashboard:${companyId}`, { expire: 0 });
 }
 
 export interface NotifyClientDashboardReadyResult {
@@ -1670,7 +1670,7 @@ export async function notifyClientDashboardReady(
     throw new Error("No se pudo registrar la notificación. Revisa el log.");
   }
 
-  updateTag(`dashboard:${companyId}`);
+  revalidateTag(`dashboard:${companyId}`, { expire: 0 });
 
   return {
     ok: true,
@@ -2005,7 +2005,7 @@ export async function addTeamMemberToCompany(
   invalidateResponsibleTeam(companyId);
   // Los supervisores asignados arriba viven en el cache de getClientDocumentation;
   // sin esta invalidación, router.refresh() devuelve docs viejas.
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   return {
     added_to_dept_ids: allowedDeptIds,
     tech_count: techRows.length,
@@ -2147,6 +2147,6 @@ export async function removeTeamMemberFromCompany(
   }
 
   invalidateResponsibleTeam(companyId);
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   return { removed_from_dept_ids: allowedDeptIds };
 }

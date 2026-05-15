@@ -1,6 +1,6 @@
 "use server";
 
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/server";
 import { invalidateNotifications } from "@/lib/actions/notifications";
@@ -102,7 +102,7 @@ export async function addAuthorizedFiler(
     }
     return { ok: false, error: error.message };
   }
-  updateTag(`renta:filers:${companyId}`);
+  revalidateTag(`renta:filers:${companyId}`, { expire: 0 });
   return { ok: true, filer: data as RentaAuthorizedFiler };
 }
 
@@ -129,7 +129,7 @@ export async function updateAuthorizedFiler(
     .select("company_id")
     .single();
   if (error) return { ok: false, error: error.message };
-  if (data?.company_id) updateTag(`renta:filers:${data.company_id}`);
+  if (data?.company_id) revalidateTag(`renta:filers:${data.company_id}`, { expire: 0 });
   return { ok: true };
 }
 
@@ -157,7 +157,7 @@ export async function deleteAuthorizedFiler(
 
   const { error } = await supabase.from("authorized_filers").delete().eq("id", filerId);
   if (error) return { ok: false, error: error.message };
-  updateTag(`renta:filers:${filer.company_id}`);
+  revalidateTag(`renta:filers:${filer.company_id}`, { expire: 0 });
   return { ok: true };
 }
 
@@ -203,7 +203,7 @@ export async function ensureRentaInvitation(
     .single();
   if (error) return { ok: false, error: error.message };
 
-  updateTag(`renta:invitation:${companyId}`);
+  revalidateTag(`renta:invitation:${companyId}`, { expire: 0 });
   return { ok: true, invitation: data as RentaInvitation, url: buildPublicUrl(data.token) };
 }
 
@@ -218,7 +218,7 @@ export async function revokeRentaInvitation(
     .eq("company_id", companyId)
     .eq("status", "activa");
   if (error) return { ok: false, error: error.message };
-  updateTag(`renta:invitation:${companyId}`);
+  revalidateTag(`renta:invitation:${companyId}`, { expire: 0 });
   return { ok: true };
 }
 
@@ -350,7 +350,7 @@ export async function setSubmissionStatus(
     .select("company_id")
     .single();
   if (error) return { ok: false, error: error.message };
-  if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
+  if (data?.company_id) revalidateTag(`renta:submissions:${data.company_id}`, { expire: 0 });
   return { ok: true };
 }
 
@@ -444,7 +444,7 @@ export async function updateSubmissionNotes(
     .select("company_id")
     .single();
   if (error) return { ok: false, error: error.message };
-  if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
+  if (data?.company_id) revalidateTag(`renta:submissions:${data.company_id}`, { expire: 0 });
   return { ok: true };
 }
 
@@ -471,6 +471,6 @@ export async function revokeSubmission(
     .select("company_id")
     .single();
   if (error) return { ok: false, error: error.message };
-  if (data?.company_id) updateTag(`renta:submissions:${data.company_id}`);
+  if (data?.company_id) revalidateTag(`renta:submissions:${data.company_id}`, { expire: 0 });
   return { ok: true };
 }

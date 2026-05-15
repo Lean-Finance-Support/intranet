@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireClient } from "@/lib/require-client";
 
 // Invalida tanto la ruta del portal cliente como el caché del listado admin
@@ -8,7 +8,7 @@ import { requireClient } from "@/lib/require-client";
 // los técnicos/supervisores vean el cambio en `/admin/clientes/[id]` sin
 // esperar al TTL del cache.
 function invalidateDocumentationForCompany(companyId: string): void {
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   revalidatePath("/app/empresa");
 }
 import { createAdminClient } from "@/lib/supabase/server";

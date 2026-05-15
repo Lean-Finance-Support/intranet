@@ -13,7 +13,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { unstable_cache, updateTag } from "next/cache";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getCachedRoleIdByName } from "@/lib/cached-queries";
 
@@ -304,11 +304,16 @@ export async function getCompanyResponsibleTeam(
   for (const s of services ?? []) {
     serviceById.set(s.id as string, { id: s.id as string, name: s.name as string });
   }
-  const serviceToDept = new Map<string, string>();
+  // Un servicio puede pertenecer a varios departamentos (cardinalidad 0..N).
+  // Mapeamos a TODOS sus dpts: quedarnos solo con el primero hacía que un
+  // técnico apareciese bajo un dpto arbitrario (orden de query no determinista)
+  // y, p.ej., un chief no viese en su sección al técnico que él mismo asignó.
+  const serviceToDepts = new Map<string, string[]>();
   for (const ds of deptSvc ?? []) {
-    if (!serviceToDept.has(ds.service_id as string)) {
-      serviceToDept.set(ds.service_id as string, ds.department_id as string);
-    }
+    const sid = ds.service_id as string;
+    const arr = serviceToDepts.get(sid) ?? [];
+    arr.push(ds.department_id as string);
+    serviceToDepts.set(sid, arr);
   }
 
   // 3. Técnicos. Son la ÚNICA fuente del equipo responsable: solo aparecen
@@ -347,7 +352,7 @@ export async function getCompanyResponsibleTeam(
   // 8. Departments meta y chiefs por dept. Solo nos interesan los dpts que
   // tocan algún servicio contratado (resto del modelo se ignora porque ya no
   // contamos supervisores).
-  const allDeptIds = [...new Set(Array.from(serviceToDept.values()))];
+  const allDeptIds = [...new Set(Array.from(serviceToDepts.values()).flat())];
   const [{ data: depts }, chiefRows] = await Promise.all([
     allDeptIds.length === 0
       ? Promise.resolve({ data: [] as { id: string; name: string }[] })
@@ -403,14 +408,18 @@ export async function getCompanyResponsibleTeam(
   for (const tr of techRoles) {
     const csInfo = csById.get(tr.scope_id as string);
     if (!csInfo) continue;
-    // Si el servicio del técnico no tiene dpto, lo agrupamos en
-    // "Sin departamento" — el técnico igualmente está en el equipo.
-    const deptId = serviceToDept.get(csInfo.service_id) ?? NO_DEPT_KEY;
-    const m = ensureMember(deptId, tr.profile_id as string);
-    m.is_technician = true;
+    // El técnico aparece bajo CADA dpto al que pertenece su servicio. Si el
+    // servicio no tiene dpto, lo agrupamos en "Sin departamento" — el técnico
+    // igualmente está en el equipo.
+    const svcDepts = serviceToDepts.get(csInfo.service_id);
+    const targetDepts = svcDepts && svcDepts.length > 0 ? svcDepts : [NO_DEPT_KEY];
     const svc = serviceById.get(csInfo.service_id);
-    if (svc && !m.technician_services.some((ts) => ts.service_id === svc.id)) {
-      m.technician_services.push({ service_id: svc.id, service_name: svc.name });
+    for (const deptId of targetDepts) {
+      const m = ensureMember(deptId, tr.profile_id as string);
+      m.is_technician = true;
+      if (svc && !m.technician_services.some((ts) => ts.service_id === svc.id)) {
+        m.technician_services.push({ service_id: svc.id, service_name: svc.name });
+      }
     }
   }
 
@@ -471,13 +480,16 @@ export async function getCachedCompanyResponsibleTeam(
  * invalidar todas (usar solo cuando una mutación afecta a varias empresas —
  * p.ej. cambio de chief de dept que altera todos los clientes con servicios
  * de ese dept).
+ *
+ * Usa `revalidateTag` (no `updateTag`): los caches del equipo son
+ * `unstable_cache`, y `updateTag` solo invalida tags de `fetch` o `'use cache'`.
  */
 export function invalidateResponsibleTeam(companyId?: string): void {
   if (companyId) {
-    updateTag(`responsible-team:${companyId}`);
-    updateTag(`team-candidates:${companyId}`);
+    revalidateTag(`responsible-team:${companyId}`, { expire: 0 });
+    revalidateTag(`team-candidates:${companyId}`, { expire: 0 });
   } else {
-    updateTag("responsible-team");
-    updateTag("team-candidates");
+    revalidateTag("responsible-team", { expire: 0 });
+    revalidateTag("team-candidates", { expire: 0 });
   }
 }

@@ -12,7 +12,7 @@ import { invalidateNotifications } from "@/lib/actions/notifications";
 //   sortea el caché de `getNotifications` (TTL 60 s, ver
 //   `lib/actions/notifications.ts`). Además invalida el tag para que el
 //   próximo SSR / apertura del drawer reciba datos frescos (cubre inserciones
-//   desde DB triggers / edge functions, que no pueden invocar updateTag).
+//   desde DB triggers / edge functions, que no pueden invocar revalidateTag).
 export function useUnreadNotifications(
   userId: string | null,
   initialCount: number,

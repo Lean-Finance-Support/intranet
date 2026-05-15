@@ -1,6 +1,6 @@
 "use server";
 
-import { unstable_cache, updateTag } from "next/cache";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/cached-queries";
 import { getActiveCompanyId } from "@/lib/active-company";
@@ -8,7 +8,7 @@ import type { Notification } from "@/lib/types/notifications";
 
 // Caché 60 s con invalidación por tag. La fuente de verdad para latencia baja
 // es el canal Realtime del cliente — el caché protege del SSR repetido en
-// cada navegación. updateTag se llama al marcar como leído, al insertar
+// cada navegación. revalidateTag se llama al marcar como leído, al insertar
 // notificaciones desde server actions, y desde el cliente cuando Realtime
 // recibe un evento ajeno (DB trigger / edge function).
 async function fetchNotifications(
@@ -65,7 +65,7 @@ export async function markNotificationRead(id: string): Promise<void> {
     .eq("id", id)
     .eq("recipient_id", user.id);
 
-  updateTag(`notifs:${user.id}`);
+  revalidateTag(`notifs:${user.id}`, { expire: 0 });
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
@@ -78,7 +78,7 @@ export async function markAllNotificationsRead(): Promise<void> {
     .eq("recipient_id", user.id)
     .eq("is_read", false);
 
-  updateTag(`notifs:${user.id}`);
+  revalidateTag(`notifs:${user.id}`, { expire: 0 });
 }
 
 /**
@@ -91,6 +91,6 @@ export async function markAllNotificationsRead(): Promise<void> {
 export async function invalidateNotifications(recipientIds: string[]): Promise<void> {
   for (const id of recipientIds) {
     if (!id) continue;
-    updateTag(`notifs:${id}`);
+    revalidateTag(`notifs:${id}`, { expire: 0 });
   }
 }

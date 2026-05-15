@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission } from "@/lib/require-permission";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -551,7 +551,7 @@ export async function bulkAssign(input: BulkAssignInput): Promise<BulkAssignResu
   // documentación (al asignar bloques/apartados cambia el listado del cliente).
   for (const companyId of input.companyIds) {
     invalidateResponsibleTeam(companyId);
-    updateTag(`doc:client:${companyId}`);
+    revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   }
 
   // Revalidar páginas que muestran apartados/clientes
