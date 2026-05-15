@@ -60,6 +60,14 @@ export default function SearchPalette({
     }));
   }, [flatResults]);
 
+  // Orden plano que recorre el teclado. DEBE coincidir con el orden visual
+  // (agrupado), no con el orden por score que devuelve `rankDestinations`:
+  // si no, las flechas saltan por la lista sin seguir el orden de arriba-abajo.
+  const navResults = useMemo<SearchDestination[]>(
+    () => grouped.flatMap((g) => g.items),
+    [grouped],
+  );
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -70,15 +78,21 @@ export default function SearchPalette({
     lastInteractionRef.current = "keyboard";
   }, []);
 
+  // `activeIndex` es la "intención" del usuario; puede quedar fuera de rango si
+  // la lista encoge sin teclear (p.ej. `ctx` async). El valor efectivo se
+  // clampa siempre en render — sin setState dentro de un efecto.
+  const clampedActiveIndex =
+    navResults.length === 0 ? 0 : Math.min(activeIndex, navResults.length - 1);
+
   // Refs estables para que el listener de teclado no se reasigne en cada render.
-  const activeIndexRef = useRef(activeIndex);
-  const flatResultsRef = useRef(flatResults);
+  const activeIndexRef = useRef(clampedActiveIndex);
+  const navResultsRef = useRef(navResults);
   useEffect(() => {
-    activeIndexRef.current = activeIndex;
-  }, [activeIndex]);
+    activeIndexRef.current = clampedActiveIndex;
+  }, [clampedActiveIndex]);
   useEffect(() => {
-    flatResultsRef.current = flatResults;
-  }, [flatResults]);
+    navResultsRef.current = navResults;
+  }, [navResults]);
 
   const navigate = useCallback(
     (destination: SearchDestination) => {
@@ -103,22 +117,24 @@ export default function SearchPalette({
       if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter") {
         lastInteractionRef.current = "keyboard";
       }
-      const total = flatResultsRef.current.length;
+      const total = navResultsRef.current.length;
       if (e.key === "ArrowDown") {
         e.preventDefault();
         if (total === 0) return;
-        setActiveIndex((i) => (i + 1) % total);
+        // Clampa `i` antes de avanzar: si quedó fuera de rango la flecha se
+        // mueve desde la posición visible, no desde la stale.
+        setActiveIndex((i) => (Math.min(i, total - 1) + 1) % total);
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
         if (total === 0) return;
-        setActiveIndex((i) => (i - 1 + total) % total);
+        setActiveIndex((i) => (Math.min(i, total - 1) - 1 + total) % total);
         return;
       }
       if (e.key === "Enter") {
         e.preventDefault();
-        const destination = flatResultsRef.current[activeIndexRef.current];
+        const destination = navResultsRef.current[activeIndexRef.current];
         if (destination) navigate(destination);
       }
     }
@@ -141,9 +157,11 @@ export default function SearchPalette({
   // viene de teclado (si fue ratón, ya está visible).
   useEffect(() => {
     if (lastInteractionRef.current !== "keyboard") return;
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
+    const el = listRef.current?.querySelector<HTMLElement>(
+      `[data-index="${clampedActiveIndex}"]`,
+    );
     if (el) el.scrollIntoView({ block: "nearest" });
-  }, [activeIndex]);
+  }, [clampedActiveIndex]);
 
   const handleHoverIndex = useCallback((idx: number) => {
     if (lastInteractionRef.current === "keyboard") return;
@@ -173,17 +191,17 @@ export default function SearchPalette({
         </div>
 
         <div ref={listRef} className="overflow-y-auto max-h-[60vh]">
-          {flatResults.length === 0 ? (
+          {navResults.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-text-muted">
               Sin resultados para <span className="font-medium text-brand-navy">{query}</span>.
             </div>
           ) : (
             <SearchResultList
               groups={grouped}
-              activeIndex={activeIndex}
+              activeIndex={clampedActiveIndex}
               onHover={handleHoverIndex}
               onSelect={navigate}
-              flatResults={flatResults}
+              flatResults={navResults}
               query={query}
             />
           )}
@@ -206,7 +224,7 @@ export default function SearchPalette({
             </span>
           </div>
           <span className="text-[10px] text-text-muted">
-            {flatResults.length} resultado{flatResults.length === 1 ? "" : "s"}
+            {navResults.length} resultado{navResults.length === 1 ? "" : "s"}
           </span>
         </div>
       </div>
