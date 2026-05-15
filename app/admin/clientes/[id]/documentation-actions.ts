@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, unstable_cache, updateTag } from "next/cache";
+import { revalidatePath, unstable_cache, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, userScopeIds } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
@@ -17,7 +17,10 @@ import {
   getActorAndApartadoLabel,
   notifyDocumentationClients,
 } from "@/lib/notifications/documentation";
-import { invalidateResponsibleTeam } from "@/lib/team-queries";
+import {
+  getCompanyTeamMemberIds,
+  invalidateResponsibleTeam,
+} from "@/lib/team-queries";
 import type {
   ApartadoStatus,
   ApartadoSupervisor,
@@ -67,63 +70,41 @@ async function getApartadoMeta(apartadoId: string): Promise<{
 }
 
 /**
- * Profile_ids del equipo responsable que deberían supervisar este apartado:
- *  - Apartado no-global: técnicos del cliente cuyos servicios pertenecen a
- *    alguno de los dpts del apartado.
- *  - Apartado global: todos los técnicos del cliente.
- * El equipo se computa exclusivamente desde técnicos (rol Técnico scope
- * company_service) — los servicios sin dpto también entran en el cómputo
- * para apartados globales.
+ * Profile_ids del equipo responsable que se auto-asignan como supervisores de
+ * este apartado al añadirlo a un cliente (punto 7 del rediseño):
+ *  - Apartado no-global: miembros del equipo (`company_team_members`) que
+ *    pertenecen (rol Miembro/Chief) a alguno de los dpts del apartado.
+ *  - Apartado global: todos los miembros del equipo del cliente.
+ * No se mete a nadie nuevo en el equipo: ser supervisor no implica pertenencia.
  */
 async function getTeamSupervisorsForApartado(
   companyId: string,
   meta: { is_global: boolean; department_ids: string[] }
 ): Promise<string[]> {
   const admin = createAdminClient();
-  const { data: tecnicoRoleRow } = await admin
-    .from("roles")
-    .select("id")
-    .eq("name", "Técnico")
-    .maybeSingle();
-  const tecnicoRoleId = tecnicoRoleRow?.id as string | undefined;
-  if (!tecnicoRoleId) return [];
+  const teamIds = await getCompanyTeamMemberIds(admin, companyId);
+  if (teamIds.length === 0) return [];
+  if (meta.is_global) return teamIds;
+  if (meta.department_ids.length === 0) return [];
 
-  const { data: csRows } = await admin
-    .from("company_services")
-    .select("id, service_id")
-    .eq("company_id", companyId)
-    .eq("is_active", true);
-  if (!csRows || csRows.length === 0) return [];
+  const [{ data: miembroRole }, { data: chiefRole }] = await Promise.all([
+    admin.from("roles").select("id").eq("name", "Miembro de departamento").maybeSingle(),
+    admin.from("roles").select("id").eq("name", "Chief").maybeSingle(),
+  ]);
+  const deptRoleIds = [miembroRole?.id, chiefRole?.id].filter(
+    (x): x is string => !!x
+  );
+  if (deptRoleIds.length === 0) return [];
 
-  let scopeCsIds: string[];
-  if (meta.is_global) {
-    scopeCsIds = csRows.map((cs) => cs.id as string);
-  } else {
-    if (meta.department_ids.length === 0) return [];
-    const serviceIds = csRows.map((cs) => cs.service_id as string);
-    const { data: deptSvcLinks } = await admin
-      .from("department_services")
-      .select("service_id")
-      .in("service_id", serviceIds)
-      .eq("is_active", true)
-      .in("department_id", meta.department_ids);
-    const matching = new Set(
-      (deptSvcLinks ?? []).map((l) => l.service_id as string)
-    );
-    scopeCsIds = csRows
-      .filter((cs) => matching.has(cs.service_id as string))
-      .map((cs) => cs.id as string);
-  }
-  if (scopeCsIds.length === 0) return [];
-
-  const { data: techRoles } = await admin
+  const { data: deptRoles } = await admin
     .from("profile_roles")
     .select("profile_id")
-    .eq("role_id", tecnicoRoleId)
-    .eq("scope_type", "company_service")
-    .in("scope_id", scopeCsIds);
+    .eq("scope_type", "department")
+    .in("scope_id", meta.department_ids)
+    .in("role_id", deptRoleIds)
+    .in("profile_id", teamIds);
 
-  return [...new Set((techRoles ?? []).map((r) => r.profile_id as string))];
+  return [...new Set((deptRoles ?? []).map((r) => r.profile_id as string))];
 }
 
 async function logStatusChange(
@@ -572,7 +553,7 @@ function getCachedClientDocumentation(
 }
 
 function invalidateClientDocumentation(companyId: string): void {
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   revalidatePath(`/admin/clientes/${companyId}`);
 }
 

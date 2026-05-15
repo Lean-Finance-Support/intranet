@@ -326,27 +326,22 @@ export default function ClientDetailWorkspace({
     const teamSnapshot = localTeam;
     const candidatesSnapshot = teamData;
 
-    // Optimistic: insertar el miembro en cada dpt afectado. Si el dpt no
-    // estaba en `byDepartment` (porque no había nadie en él), lo creamos —
-    // con tal de que la empresa tenga al menos un servicio en ese dpt
-    // (de lo contrario el empleado no será técnico y no entra al equipo;
-    // los supervisores por sí solos no cuentan).
+    // Optimistic: insertar el miembro en cada dpt afectado. Solo entra al
+    // equipo quien será técnico de algún servicio contratado del dpt; ser
+    // supervisor de apartados NO mete a nadie en el equipo responsable (misma
+    // política que `getCompanyResponsibleTeam`). Por eso un dpt sin servicios
+    // contratados no añade al empleado ni se crea como sección.
     setLocalTeam((prev) => {
       const existingDeptIds = new Set(prev.byDepartment.map((d) => d.department_id));
       const buildMember = (deptId: string) => {
         const techServices = company.services.filter((s) => s.department_id === deptId);
-        const willBeSupervisor = docState.blocks.some((b) =>
-          b.apartados.some(
-            (a) => a.is_global || a.department_ids.includes(deptId)
-          )
-        );
         return {
           profile_id: profileId,
           full_name: candidate.full_name,
           email: candidate.email,
           is_chief: false,
           is_technician: techServices.length > 0,
-          is_supervisor: willBeSupervisor,
+          is_supervisor: false,
           technician_services: techServices.map((s) => ({
             service_id: s.service_id,
             service_name: s.service_name,
@@ -357,7 +352,10 @@ export default function ClientDetailWorkspace({
       const updated = prev.byDepartment.map((dept) => {
         if (!targetDeptIds.includes(dept.department_id)) return dept;
         if (dept.members.some((m) => m.profile_id === profileId)) return dept;
-        return { ...dept, members: [...dept.members, buildMember(dept.department_id)] };
+        const member = buildMember(dept.department_id);
+        // Sin servicios contratados en el dpt → no será técnico → no entra.
+        if (!member.is_technician) return dept;
+        return { ...dept, members: [...dept.members, member] };
       });
 
       // Crear dpts que no existían pero tienen al menos un servicio contratado.

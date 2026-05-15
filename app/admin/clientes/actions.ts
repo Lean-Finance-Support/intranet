@@ -1,13 +1,15 @@
 "use server";
 
-import { updateTag, unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission, userScopeIds } from "@/lib/require-permission";
 import { invalidateNotifications } from "@/lib/actions/notifications";
 import {
+  addCompanyTeamMembers,
   fetchSupervisorCompanyIds,
   fetchTechniciansByServiceIds,
   getCachedCompanyResponsibleTeam,
+  getCompanyTeamMemberIds,
   invalidateResponsibleTeam,
   type ResponsibleTeam,
 } from "@/lib/team-queries";
@@ -905,9 +907,9 @@ export async function addServiceToCompany(
     .single();
   if (error || !upserted) throw new Error("Error al añadir el servicio.");
 
-  // Auto-asignación: para cada dpto del servicio, los miembros del equipo de
-  // ese dpto en este cliente (= técnicos de OTROS servicios del dpto o
-  // supervisores de apartados del dpto) se vuelven técnicos del nuevo cs.
+  // Auto-asignación (punto 6): los miembros del equipo responsable del cliente
+  // que pertenecen a alguno de los dpts del servicio se vuelven técnicos del
+  // nuevo company_service. No se mete a nadie nuevo en el equipo.
   if (deptIds.length > 0) {
     const newCsId = upserted.id as string;
     await autoAssignTechniciansForNewService({
@@ -952,10 +954,10 @@ async function autoAssignTechniciansForNewService(args: {
 }
 
 /**
- * Profile_ids que ya forman parte del equipo del cliente en alguno de los
- * dpts dados. "Equipo" = técnico en cualquier company_service del cliente cuyo
- * service pertenece al dpto, o supervisor en cualquier client_apartado del
- * cliente cuyo apartado-template está vinculado al dpto.
+ * Profile_ids que ya forman parte del equipo responsable del cliente
+ * (`company_team_members`) y además pertenecen (rol Miembro/Chief) a alguno de
+ * los dpts dados. Es el conjunto que se auto-asigna como técnico al contratar
+ * un servicio nuevo de esos dpts (punto 6 del rediseño).
  */
 async function getTeamMemberIdsForDepts(
   admin: ReturnType<typeof createAdminClient>,
@@ -963,77 +965,22 @@ async function getTeamMemberIdsForDepts(
   deptIds: string[]
 ): Promise<string[]> {
   if (deptIds.length === 0) return [];
-  const out = new Set<string>();
+  const teamIds = await getCompanyTeamMemberIds(admin, companyId);
+  if (teamIds.length === 0) return [];
 
-  // Técnicos: company_services del cliente cuyos services están en deptIds.
-  const { data: deptSvcLinks } = await admin
-    .from("department_services")
-    .select("service_id")
-    .in("department_id", deptIds)
-    .eq("is_active", true);
-  const dptoSvcIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
-  if (dptoSvcIds.length > 0) {
-    const { data: csRows } = await admin
-      .from("company_services")
-      .select("id")
-      .eq("company_id", companyId)
-      .eq("is_active", true)
-      .in("service_id", dptoSvcIds);
-    const csIds = (csRows ?? []).map((r) => r.id as string);
-    if (csIds.length > 0) {
-      const tecnicoRoleId = await lookupRoleId(admin, "Técnico");
-      const { data: techRoles } = await admin
-        .from("profile_roles")
-        .select("profile_id")
-        .eq("role_id", tecnicoRoleId)
-        .eq("scope_type", "company_service")
-        .in("scope_id", csIds);
-      for (const r of techRoles ?? []) out.add(r.profile_id as string);
-    }
-  }
+  const [miembroRoleId, chiefRoleId] = await Promise.all([
+    lookupRoleId(admin, "Miembro de departamento"),
+    lookupRoleId(admin, "Chief"),
+  ]);
+  const { data: deptRoles } = await admin
+    .from("profile_roles")
+    .select("profile_id")
+    .eq("scope_type", "department")
+    .in("scope_id", deptIds)
+    .in("role_id", [miembroRoleId, chiefRoleId])
+    .in("profile_id", teamIds);
 
-  // Supervisores: client_apartados del cliente cuyo apartado-template está
-  // vinculado a alguno de los dpts.
-  const { data: clientBlocks } = await admin
-    .schema("documentation")
-    .from("client_blocks")
-    .select("id")
-    .eq("company_id", companyId);
-  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
-  if (blockIds.length > 0) {
-    const { data: cas } = await admin
-      .schema("documentation")
-      .from("client_apartados")
-      .select("id, apartado_id")
-      .in("client_block_id", blockIds);
-    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
-    if (allCatalogIds.length > 0) {
-      const { data: aptDeptLinks } = await admin
-        .schema("documentation")
-        .from("apartado_departments")
-        .select("apartado_id")
-        .in("apartado_id", allCatalogIds)
-        .in("department_id", deptIds);
-      const catalogIdsInDept = new Set(
-        (aptDeptLinks ?? []).map((l) => l.apartado_id as string)
-      );
-      const caIds = (cas ?? [])
-        .filter((ca) => catalogIdsInDept.has(ca.apartado_id as string))
-        .map((ca) => ca.id as string);
-      if (caIds.length > 0) {
-        const supervisorRoleId = await lookupRoleId(admin, "Supervisor de apartado");
-        const { data: supRoles } = await admin
-          .from("profile_roles")
-          .select("profile_id")
-          .eq("role_id", supervisorRoleId)
-          .eq("scope_type", "client_apartado")
-          .in("scope_id", caIds);
-        for (const r of supRoles ?? []) out.add(r.profile_id as string);
-      }
-    }
-  }
-
-  return [...out];
+  return [...new Set((deptRoles ?? []).map((r) => r.profile_id as string))];
 }
 
 export async function removeServiceFromCompany(
@@ -1073,7 +1020,7 @@ export async function removeServiceFromCompany(
       .from("client_dashboards")
       .delete()
       .eq("company_id", companyId);
-    updateTag(`dashboard:${companyId}`);
+    revalidateTag(`dashboard:${companyId}`, { expire: 0 });
   }
 }
 
@@ -1148,6 +1095,11 @@ export async function assignTechnicianAdmin(
     scope_id: csId,
   });
   if (tErr && tErr.code !== "23505") throw new Error("Error al asignar el técnico.");
+
+  // Ser técnico implica estar en el equipo responsable: si no lo estaba, se
+  // inserta automáticamente.
+  await addCompanyTeamMembers(supabase, companyId, [technicianId]);
+
   invalidateResponsibleTeam(companyId);
 }
 
@@ -1228,6 +1180,10 @@ export async function assignAllTechniciansAdmin(
     { onConflict: "profile_id,role_id,scope_type,scope_id", ignoreDuplicates: true }
   );
   if (error && error.code !== "23505") throw new Error("Error al asignar técnicos.");
+
+  // Ser técnico implica estar en el equipo responsable.
+  await addCompanyTeamMembers(supabase, companyId, toInsert);
+
   invalidateResponsibleTeam(companyId);
 }
 
@@ -1528,7 +1484,7 @@ export async function setDashboardSheet(
     );
   if (error) throw new Error("No se pudo guardar la configuración del dashboard.");
 
-  updateTag(`dashboard:${companyId}`);
+  revalidateTag(`dashboard:${companyId}`, { expire: 0 });
   return { ok: true, sheet_id: parsed.sheetId };
 }
 
@@ -1544,7 +1500,7 @@ export async function clearDashboardSheet(companyId: string): Promise<void> {
     .eq("company_id", companyId);
   if (error) throw new Error("No se pudo eliminar la configuración del dashboard.");
 
-  updateTag(`dashboard:${companyId}`);
+  revalidateTag(`dashboard:${companyId}`, { expire: 0 });
 }
 
 export interface NotifyClientDashboardReadyResult {
@@ -1670,7 +1626,7 @@ export async function notifyClientDashboardReady(
     throw new Error("No se pudo registrar la notificación. Revisa el log.");
   }
 
-  updateTag(`dashboard:${companyId}`);
+  revalidateTag(`dashboard:${companyId}`, { expire: 0 });
 
   return {
     ok: true,
@@ -1769,9 +1725,9 @@ export interface TeamMemberCandidate {
 /**
  * Empleados disponibles para añadir al equipo de un cliente: cualquier admin
  * con rol Miembro/Chief en alguno de los dpts donde el actor tiene
- * `write_dept_service`. Excluye a los que ya son miembros del equipo (técnicos
- * o supervisores activos en este cliente). Devuelve también los dpts donde el
- * actor puede gestionar (para que la UI sepa en qué miembros mostrar X).
+ * `write_dept_service`. Excluye a los que ya están en `company_team_members`
+ * de este cliente. Devuelve también los dpts donde el actor puede gestionar
+ * (para que la UI sepa en qué miembros mostrar X).
  */
 async function fetchTeamCandidatesForDepts(
   companyId: string,
@@ -1807,8 +1763,8 @@ async function fetchTeamCandidatesForDepts(
     return { candidates: [], manageableDeptIds: allowedDeptIds };
   }
 
-  // Excluir los que ya están en el equipo del cliente.
-  const existingTeam = await getTeamMemberIdsForDepts(admin, companyId, allowedDeptIds);
+  // Excluir los que ya están en el equipo responsable del cliente.
+  const existingTeam = await getCompanyTeamMemberIds(admin, companyId);
   const existingSet = new Set(existingTeam);
 
   const [{ data: profiles }, { data: depts }] = await Promise.all([
@@ -1871,7 +1827,7 @@ export async function addTeamMemberToCompany(
   companyId: string,
   profileId: string
 ): Promise<{ added_to_dept_ids: string[]; tech_count: number; supervisor_count: number }> {
-  await requireAdmin();
+  const { user } = await requireAdmin();
 
   const admin = createAdminClient();
 
@@ -1988,7 +1944,7 @@ export async function addTeamMemberToCompany(
     }
   }
 
-  // 5. Upsert idempotente.
+  // 5. Upsert idempotente de las filas Técnico/Supervisor sembradas.
   const allRows = [...techRows, ...supRows];
   if (allRows.length > 0) {
     const { error } = await admin
@@ -2002,10 +1958,14 @@ export async function addTeamMemberToCompany(
     }
   }
 
+  // 6. Pertenencia explícita al equipo responsable — fuente de verdad. Se
+  //    inserta aunque no haya servicios/apartados que sembrar.
+  await addCompanyTeamMembers(admin, companyId, [profileId], user.id);
+
   invalidateResponsibleTeam(companyId);
   // Los supervisores asignados arriba viven en el cache de getClientDocumentation;
   // sin esta invalidación, router.refresh() devuelve docs viejas.
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   return {
     added_to_dept_ids: allowedDeptIds,
     tech_count: techRows.length,
@@ -2054,72 +2014,17 @@ export async function removeTeamMemberFromCompany(
     throw new Error("No tienes permiso para quitar empleados de este departamento del equipo.");
   }
 
-  // company_services scope IDs a limpiar.
-  const { data: deptSvcLinks } = await admin
-    .from("department_services")
-    .select("service_id")
-    .in("department_id", allowedDeptIds)
-    .eq("is_active", true);
-  const serviceIds = [...new Set((deptSvcLinks ?? []).map((r) => r.service_id as string))];
+  // Quitar del equipo desvincula al empleado de ESTE cliente por completo
+  // (punto 5): técnico de cualquier servicio + supervisor de cualquier
+  // apartado, sin acotar por dpto. El gate de permiso de arriba solo controla
+  // que el actor pueda actuar sobre este empleado.
 
-  const csIds: string[] = [];
-  if (serviceIds.length > 0) {
-    const { data: csRows } = await admin
-      .from("company_services")
-      .select("id")
-      .eq("company_id", companyId)
-      .in("service_id", serviceIds);
-    for (const r of csRows ?? []) csIds.push(r.id as string);
-  }
-
-  // client_apartados scope IDs a limpiar: los del dpto del empleado +
-  // todos los apartados globales (un miembro del equipo es supervisor de los
-  // globales mientras esté en el equipo).
-  const { data: clientBlocks } = await admin
-    .schema("documentation")
-    .from("client_blocks")
+  // 1. Borrar filas Técnico de cualquier company_service del cliente.
+  const { data: csRows } = await admin
+    .from("company_services")
     .select("id")
     .eq("company_id", companyId);
-  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
-  const caIds: string[] = [];
-  if (blockIds.length > 0) {
-    const { data: cas } = await admin
-      .schema("documentation")
-      .from("client_apartados")
-      .select("id, apartado_id")
-      .in("client_block_id", blockIds);
-    const allCatalogIds = [...new Set((cas ?? []).map((ca) => ca.apartado_id as string))];
-    if (allCatalogIds.length > 0) {
-      const [{ data: aptDeptLinks }, { data: globalApartados }] = await Promise.all([
-        admin
-          .schema("documentation")
-          .from("apartado_departments")
-          .select("apartado_id")
-          .in("apartado_id", allCatalogIds)
-          .in("department_id", allowedDeptIds),
-        admin
-          .schema("documentation")
-          .from("apartados")
-          .select("id")
-          .in("id", allCatalogIds)
-          .eq("is_global", true),
-      ]);
-      const catalogIdsInScope = new Set<string>();
-      for (const l of aptDeptLinks ?? []) {
-        catalogIdsInScope.add(l.apartado_id as string);
-      }
-      for (const a of globalApartados ?? []) {
-        catalogIdsInScope.add(a.id as string);
-      }
-      for (const ca of cas ?? []) {
-        if (catalogIdsInScope.has(ca.apartado_id as string)) {
-          caIds.push(ca.id as string);
-        }
-      }
-    }
-  }
-
-  // Borrar técnicos.
+  const csIds = (csRows ?? []).map((r) => r.id as string);
   if (csIds.length > 0) {
     const { error } = await admin
       .from("profile_roles")
@@ -2132,21 +2037,46 @@ export async function removeTeamMemberFromCompany(
       throw new Error(`Error al quitar técnicos: ${error.message}`);
     }
   }
-  // Borrar supervisores.
-  if (caIds.length > 0) {
-    const { error } = await admin
-      .from("profile_roles")
-      .delete()
-      .eq("profile_id", profileId)
-      .eq("role_id", supervisorRoleId)
-      .eq("scope_type", "client_apartado")
-      .in("scope_id", caIds);
-    if (error) {
-      throw new Error(`Error al quitar supervisores: ${error.message}`);
+
+  // 2. Borrar filas Supervisor de cualquier client_apartado del cliente.
+  const { data: clientBlocks } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId);
+  const blockIds = (clientBlocks ?? []).map((b) => b.id as string);
+  if (blockIds.length > 0) {
+    const { data: cas } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .select("id")
+      .in("client_block_id", blockIds);
+    const caIds = (cas ?? []).map((ca) => ca.id as string);
+    if (caIds.length > 0) {
+      const { error } = await admin
+        .from("profile_roles")
+        .delete()
+        .eq("profile_id", profileId)
+        .eq("role_id", supervisorRoleId)
+        .eq("scope_type", "client_apartado")
+        .in("scope_id", caIds);
+      if (error) {
+        throw new Error(`Error al quitar supervisores: ${error.message}`);
+      }
     }
   }
 
+  // 3. Quitar la pertenencia explícita al equipo responsable.
+  const { error: teamErr } = await admin
+    .from("company_team_members")
+    .delete()
+    .eq("company_id", companyId)
+    .eq("profile_id", profileId);
+  if (teamErr) {
+    throw new Error(`Error al quitar del equipo: ${teamErr.message}`);
+  }
+
   invalidateResponsibleTeam(companyId);
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   return { removed_from_dept_ids: allowedDeptIds };
 }

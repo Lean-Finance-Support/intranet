@@ -1,11 +1,14 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { hasPermission, requirePermission } from "@/lib/require-permission";
 import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
-import { invalidateResponsibleTeam } from "@/lib/team-queries";
+import {
+  addCompanyTeamMembers,
+  invalidateResponsibleTeam,
+} from "@/lib/team-queries";
 import type {
   ApartadoTemplate,
   BlockTemplate,
@@ -500,6 +503,11 @@ export async function finalizeOnboarding(
     }
   }
 
+  // Pertenencia explícita al equipo responsable — fuente de verdad. Cada
+  // miembro elegido en el wizard entra al equipo, sea o no técnico de algo.
+  const teamMemberIds = [...new Set(Object.values(input.team_by_dept).flat())];
+  await addCompanyTeamMembers(admin, companyId, teamMemberIds, user.id);
+
   // 2. Cuentas bancarias (idempotente; la primera marcada is_default)
   if (input.bank_accounts.length > 0) {
     const rows = input.bank_accounts.map((ba, idx) => ({
@@ -709,7 +717,7 @@ export async function finalizeOnboarding(
   }
 
   invalidateResponsibleTeam(companyId);
-  updateTag(`doc:client:${companyId}`);
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
   revalidatePath("/admin/clientes");
   revalidatePath(`/admin/clientes/${companyId}`);
 

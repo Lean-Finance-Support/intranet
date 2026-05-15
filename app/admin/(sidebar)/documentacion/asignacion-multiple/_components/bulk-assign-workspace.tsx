@@ -113,6 +113,54 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
     return data.admins.filter((adm) => adm.department_ids.some((d) => apt.has(d)));
   }
 
+  // ─── Pre-selección de supervisores desde el equipo responsable ────────────
+  // Profile_ids que están en el equipo responsable de ALGUNA empresa elegida.
+  const teamByCompany = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const tm of data.teamMembers) {
+      let set = m.get(tm.company_id);
+      if (!set) {
+        set = new Set();
+        m.set(tm.company_id, set);
+      }
+      set.add(tm.profile_id);
+    }
+    return m;
+  }, [data.teamMembers]);
+
+  const selectedTeamMemberIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of selectedCompanyList) {
+      const team = teamByCompany.get(c.id);
+      if (team) for (const id of team) s.add(id);
+    }
+    return s;
+  }, [selectedCompanyList, teamByCompany]);
+
+  // Supervisores efectivos por apartado: si el usuario ya tocó el apartado
+  // (clave presente en `supervisorsByApartado`) manda su selección; si no, la
+  // sugerencia del equipo (miembros del equipo de las empresas elegidas que
+  // son elegibles para el apartado). Esto es lo que se muestra y lo que se
+  // envía en el submit.
+  const effectiveSupervisorsByApartado = useMemo(() => {
+    const out: Record<string, string[]> = {};
+    for (const a of selectedApartadoList) {
+      if (supervisorsByApartado[a.id]) {
+        out[a.id] = supervisorsByApartado[a.id];
+        continue;
+      }
+      const eligibles = a.is_global
+        ? data.admins.filter((adm) => adm.department_ids.length > 0)
+        : data.admins.filter((adm) =>
+            adm.department_ids.some((d) => a.department_ids.includes(d))
+          );
+      out[a.id] = eligibles
+        .filter((adm) => selectedTeamMemberIds.has(adm.id))
+        .map((adm) => adm.id);
+    }
+    return out;
+  }, [selectedApartadoList, supervisorsByApartado, selectedTeamMemberIds, data.admins]);
+
   // ─── Handlers ────────────────────────────────────────────────────────────
   function toggleApartado(id: string) {
     const wasSelected = !!selectedApartados[id];
@@ -226,7 +274,9 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
 
   function toggleSupervisor(apartadoId: string, profileId: string) {
     setSupervisorsByApartado((prev) => {
-      const list = prev[apartadoId] ?? [];
+      // Si el apartado aún no se tocó, partimos de la sugerencia del equipo
+      // (lo que se está mostrando) y el toggle la convierte en selección manual.
+      const list = prev[apartadoId] ?? effectiveSupervisorsByApartado[apartadoId] ?? [];
       const exists = list.includes(profileId);
       const nextList = exists ? list.filter((id) => id !== profileId) : [...list, profileId];
       return { ...prev, [apartadoId]: nextList };
@@ -278,7 +328,7 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
         const res = await bulkAssign({
           apartadoIds: selectedApartadoList.map((a) => a.id),
           companyIds: selectedCompanyList.map((c) => c.id),
-          supervisorsByApartado,
+          supervisorsByApartado: effectiveSupervisorsByApartado,
           sendEmailByApartado,
           optionalApartadoIds: selectedApartadoList
             .filter((a) => optionalApartados[a.id])
@@ -668,7 +718,7 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
               {selectedApartadosByBlock.map(({ block, apartados }) => {
                 const isOpen = !!expandedBlocks[block.id];
                 const withSupervisor = apartados.filter(
-                  (a) => (supervisorsByApartado[a.id]?.length ?? 0) > 0
+                  (a) => (effectiveSupervisorsByApartado[a.id]?.length ?? 0) > 0
                 ).length;
                 const missingSupervisor = apartados.length - withSupervisor;
                 return (
@@ -716,7 +766,7 @@ export default function BulkAssignWorkspace({ data, linkPrefix }: Props) {
                       <div className="divide-y divide-gray-100">
                         {apartados.map((a) => {
                           const eligibles = eligibleAdminsForApartado(a);
-                          const selected = supervisorsByApartado[a.id] ?? [];
+                          const selected = effectiveSupervisorsByApartado[a.id] ?? [];
                           return (
                             <div key={a.id} className="p-3">
                               <div className="flex items-start justify-between gap-2 mb-2">
