@@ -72,6 +72,7 @@ export default async function AppSidebarLayout({
         hasDeclaracionRenta,
         canViewClientDashboard: false,
         canCreateOnboarding: false,
+        canCreateCompany: false,
         canRequestDocumentation: false,
         companies: searchableCompanies,
         activeCompanyId: resolvedCompanyId ?? null,

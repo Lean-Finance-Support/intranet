@@ -35,6 +35,8 @@ export interface SearchContext {
   canViewClientDashboard: boolean;
   /** Admin: tiene los 3 permisos para crear un onboarding nuevo. */
   canCreateOnboarding: boolean;
+  /** Admin: tiene permiso para dar de alta una empresa (`create_company`). */
+  canCreateCompany: boolean;
   /** Admin: puede asignar documentación en bulk (permiso request_client_documentation). */
   canRequestDocumentation: boolean;
   /** Empresas visibles para búsqueda. Admin = todas las que ve. Client = sus propias empresas. */

@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
   // a aprox. la mitad cuando se carga.
   experimental: {
     optimizePackageImports: ["recharts"],
+    // Las server actions reciben archivos en base64 (subida de documentación,
+    // importación de propuestas). El límite por defecto es 1 MB; lo subimos
+    // para cubrir el máximo de 25 MB por archivo + el ~33% extra de base64.
+    serverActions: {
+      bodySizeLimit: "40mb",
+    },
   },
   images: {
     formats: ["image/avif", "image/webp"],

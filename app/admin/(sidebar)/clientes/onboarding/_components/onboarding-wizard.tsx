@@ -14,6 +14,7 @@ import {
   deriveSelectedDeptIds,
   type OnboardingState,
 } from "./onboarding-state";
+import type { ProposalServiceWarnings } from "@/lib/proposal-import/types";
 import StepEmpresa from "./step-empresa";
 import StepEquipo from "./step-equipo";
 import StepResumen from "./step-resumen";
@@ -22,6 +23,23 @@ import StepFinal from "./step-final";
 interface Props {
   data: OnboardingPageData;
   linkPrefix: string;
+  /**
+   * Estado inicial parcial — usado por la importación de propuestas para
+   * prerrellenar el wizard. Sin esta prop el wizard arranca vacío (ruta
+   * `/onboarding` normal), comportamiento idéntico al de siempre.
+   */
+  initialState?: Partial<OnboardingState>;
+  /**
+   * Avisos de servicios dudosos o sin match detectados en la propuesta. Se
+   * listan en el banner del paso 1 para que el comercial los revise.
+   */
+  importWarnings?: ProposalServiceWarnings;
+  /**
+   * Callback que se ejecuta tras crear la empresa con éxito. Usado por la
+   * importación para adjuntar el PDF de la propuesta a la documentación del
+   * cliente. Si lanza, no se bloquea la pantalla de éxito.
+   */
+  onFinalized?: (companyId: string) => Promise<void> | void;
 }
 
 const STEPS = [
@@ -31,10 +49,20 @@ const STEPS = [
   { id: 4, name: "Confirmación" },
 ] as const;
 
-export default function OnboardingWizard({ data, linkPrefix }: Props) {
+export default function OnboardingWizard({
+  data,
+  linkPrefix,
+  initialState,
+  importWarnings,
+  onFinalized,
+}: Props) {
   const router = useRouter();
+  const imported = initialState !== undefined;
   const [step, setStep] = useState(1);
-  const [state, setState] = useState<OnboardingState>(initialOnboardingState);
+  const [state, setState] = useState<OnboardingState>(() => ({
+    ...initialOnboardingState,
+    ...initialState,
+  }));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{
@@ -145,6 +173,15 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
         team_by_dept: state.team_by_dept,
         apartados,
       });
+      // Hook post-creación (p.ej. adjuntar la propuesta importada). No debe
+      // tumbar el éxito del onboarding si falla.
+      if (onFinalized) {
+        try {
+          await onFinalized(result.company_id);
+        } catch (e) {
+          console.error("[onboarding] onFinalized:", e);
+        }
+      }
       setSuccess({
         company_id: result.company_id,
         apartado_count: result.apartado_count,
@@ -299,6 +336,40 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
             </div>
           )}
 
+          {step === 1 && imported && (
+            <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 px-4 py-3 space-y-2.5">
+              <p className="text-xs font-semibold text-brand-navy">
+                Datos importados de la propuesta — revísalos antes de continuar.
+              </p>
+              {importWarnings && importWarnings.low_confidence.length > 0 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-amber-900">
+                    La IA tiene dudas sobre estos servicios — confírmalos en el paso 2:
+                  </p>
+                  <ul className="mt-1 space-y-0.5 text-[11px] text-amber-800">
+                    {importWarnings.low_confidence.map((w, i) => (
+                      <li key={i}>
+                        «{w.raw_text}» → posiblemente <span className="font-medium">{w.service_name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {importWarnings && importWarnings.unmatched.length > 0 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-amber-900">
+                    Estas líneas de la propuesta no corresponden a ningún servicio
+                    de la plataforma:
+                  </p>
+                  <ul className="mt-1 list-disc list-inside text-[11px] text-amber-800">
+                    {importWarnings.unmatched.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           {step === 1 && (
             <StepEmpresa
               state={state}
