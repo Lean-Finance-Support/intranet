@@ -87,16 +87,12 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
     const initialState = proposalToOnboardingState(result.extraction, {
       canManageBankAccounts: data.canManageBankAccounts,
     });
-    const hints = result.extraction.services
-      .filter((s) => s.confidence !== "high" || !s.service_id)
-      .map((s) => s.raw_text)
-      .filter((t) => t.trim());
     return (
       <OnboardingWizard
         data={data}
         linkPrefix={linkPrefix}
         initialState={initialState}
-        importHints={hints}
+        importWarnings={result.service_warnings}
         onFinalized={async (companyId) => {
           // Al cerrar el onboarding, adjuntamos el PDF de la propuesta al
           // apartado "Propuesta comercial" de la documentación del cliente.

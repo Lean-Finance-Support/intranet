@@ -15,12 +15,39 @@ import { normalizeNif } from "@/lib/proposal-import/nif";
 import { addServiceToCompany } from "@/app/admin/clientes/actions";
 import type {
   ImportProposalResult,
+  ProposalServiceMatch,
+  ProposalServiceWarnings,
   ServiceCatalogItem,
 } from "@/lib/proposal-import/types";
 
 // Apartado del catálogo al que se adjunta automáticamente la propuesta.
 const PROPOSAL_BLOCK_SLUG = "contratos";
 const PROPOSAL_APARTADO_NAME = "Propuesta comercial";
+
+/**
+ * Construye los avisos de matching: servicios que la IA mapeó con dudas
+ * (confidence "low") y líneas que no corresponden a ningún servicio del
+ * catálogo (confidence "none").
+ */
+function buildServiceWarnings(
+  services: ProposalServiceMatch[],
+  serviceNameById: Map<string, string>
+): ProposalServiceWarnings {
+  const low_confidence: { raw_text: string; service_name: string }[] = [];
+  const unmatched: string[] = [];
+  for (const s of services) {
+    if (!s.raw_text.trim()) continue;
+    if (s.confidence === "low" && s.service_id) {
+      low_confidence.push({
+        raw_text: s.raw_text,
+        service_name: serviceNameById.get(s.service_id) ?? s.service_id,
+      });
+    } else if (s.confidence === "none") {
+      unmatched.push(s.raw_text);
+    }
+  }
+  return { low_confidence, unmatched };
+}
 
 // Los 3 permisos del onboarding — la importación es solo otra puerta de entrada
 // al mismo flujo, así que exige exactamente lo mismo.
@@ -290,9 +317,11 @@ export async function importProposal(
         .maybeSingle()
     : { data: null };
 
+  const service_warnings = buildServiceWarnings(extraction.services, serviceNameById);
+
   // Empresa nueva — sin fila para ese NIF.
   if (!company) {
-    return { mode: "new", extraction };
+    return { mode: "new", extraction, service_warnings };
   }
 
   // Empresa archivada — bloqueante, no auto-restauramos.
@@ -330,11 +359,6 @@ export async function importProposal(
     }
   }
 
-  const unmatched_raw = extraction.services
-    .filter((s) => s.confidence !== "high" || !s.service_id)
-    .map((s) => s.raw_text)
-    .filter((t) => t.trim());
-
   // La empresa ya existe → adjuntamos la propuesta a su documentación ahora
   // mismo (en la rama "nueva" se hace tras cerrar el onboarding). Un fallo aquí
   // no debe tumbar la importación: se reporta con proposal_attached=false.
@@ -363,7 +387,7 @@ export async function importProposal(
     extraction,
     new_services,
     already_contracted,
-    unmatched_raw,
+    service_warnings,
     proposal_attached,
   };
 }

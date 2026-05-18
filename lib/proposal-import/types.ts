@@ -57,10 +57,22 @@ export interface ProposalExtraction {
   client_bank_account: ProposalBankAccount | null;
 }
 
+/**
+ * Avisos sobre el matching de servicios — para que el comercial revise lo que
+ * la IA no pudo resolver con seguridad.
+ */
+export interface ProposalServiceWarnings {
+  /** La IA mapeó la línea a un servicio pero con dudas (confidence "low"). */
+  low_confidence: { raw_text: string; service_name: string }[];
+  /** Líneas que no corresponden a ningún servicio del catálogo (confidence "none"). */
+  unmatched: string[];
+}
+
 /** Empresa NUEVA: el NIF no existe en BD → wizard prerrellenado. */
 export interface ImportProposalNew {
   mode: "new";
   extraction: ProposalExtraction;
+  service_warnings: ProposalServiceWarnings;
 }
 
 /** Empresa con `deleted_at` → bloqueante, hay que restaurarla primero. */
@@ -78,8 +90,8 @@ export interface ImportProposalExisting {
   new_services: { service_id: string; name: string; raw_text: string }[];
   /** Servicios matcheados que la empresa ya tiene contratados. */
   already_contracted: { service_id: string; name: string }[];
-  /** Líneas del presupuesto sin match fiable (low/none). */
-  unmatched_raw: string[];
+  /** Avisos de servicios dudosos o sin match (low/none). */
+  service_warnings: ProposalServiceWarnings;
   /** true si el PDF se adjuntó al apartado "Propuesta comercial" del cliente. */
   proposal_attached: boolean;
 }

@@ -14,6 +14,7 @@ import {
   deriveSelectedDeptIds,
   type OnboardingState,
 } from "./onboarding-state";
+import type { ProposalServiceWarnings } from "@/lib/proposal-import/types";
 import StepEmpresa from "./step-empresa";
 import StepEquipo from "./step-equipo";
 import StepResumen from "./step-resumen";
@@ -29,10 +30,10 @@ interface Props {
    */
   initialState?: Partial<OnboardingState>;
   /**
-   * Líneas de la propuesta que NO se mapearon con seguridad a un servicio.
-   * Se listan en el banner del paso 1 para que el comercial las revise.
+   * Avisos de servicios dudosos o sin match detectados en la propuesta. Se
+   * listan en el banner del paso 1 para que el comercial los revise.
    */
-  importHints?: string[];
+  importWarnings?: ProposalServiceWarnings;
   /**
    * Callback que se ejecuta tras crear la empresa con éxito. Usado por la
    * importación para adjuntar el PDF de la propuesta a la documentación del
@@ -52,7 +53,7 @@ export default function OnboardingWizard({
   data,
   linkPrefix,
   initialState,
-  importHints,
+  importWarnings,
   onFinalized,
 }: Props) {
   const router = useRouter();
@@ -336,22 +337,36 @@ export default function OnboardingWizard({
           )}
 
           {step === 1 && imported && (
-            <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 px-4 py-3">
+            <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 px-4 py-3 space-y-2.5">
               <p className="text-xs font-semibold text-brand-navy">
                 Datos importados de la propuesta — revísalos antes de continuar.
               </p>
-              {importHints && importHints.length > 0 && (
-                <>
-                  <p className="text-[11px] text-text-muted mt-1.5">
-                    Estas líneas del presupuesto no se reconocieron con seguridad.
-                    Selecciona los servicios correspondientes a mano en el paso 2:
+              {importWarnings && importWarnings.low_confidence.length > 0 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-amber-900">
+                    La IA tiene dudas sobre estos servicios — confírmalos en el paso 2:
                   </p>
-                  <ul className="mt-1 list-disc list-inside text-[11px] text-text-body">
-                    {importHints.map((h, i) => (
-                      <li key={i}>{h}</li>
+                  <ul className="mt-1 space-y-0.5 text-[11px] text-amber-800">
+                    {importWarnings.low_confidence.map((w, i) => (
+                      <li key={i}>
+                        «{w.raw_text}» → posiblemente <span className="font-medium">{w.service_name}</span>
+                      </li>
                     ))}
                   </ul>
-                </>
+                </div>
+              )}
+              {importWarnings && importWarnings.unmatched.length > 0 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-amber-900">
+                    Estas líneas de la propuesta no corresponden a ningún servicio
+                    de la plataforma:
+                  </p>
+                  <ul className="mt-1 list-disc list-inside text-[11px] text-amber-800">
+                    {importWarnings.unmatched.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           )}

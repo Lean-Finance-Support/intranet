@@ -57,9 +57,15 @@ asigna a mano en el paso 2 del wizard.
 Cada servicio trae `confidence: "high" | "low" | "none"`:
 
 - `high` → se preselecciona en el wizard / pantalla de añadir servicios.
-- `low` / `none` → nunca se auto-selecciona; se muestra como sugerencia para
-  revisar a mano (banner del paso 1 en la rama nueva; aviso de "líneas sin
-  servicio reconocido" en la rama existente).
+- `low` → la IA mapeó la línea a un servicio pero con dudas; nunca se
+  auto-selecciona y se avisa con el servicio candidato.
+- `none` → la línea no corresponde a ningún servicio del catálogo; se avisa
+  como línea sin servicio.
+
+`importProposal` agrupa los avisos en `ProposalServiceWarnings`
+(`low_confidence` + `unmatched`). Se muestran en el banner del paso 1 (rama
+nueva, prop `importWarnings` del `OnboardingWizard`) y en la pantalla de añadir
+servicios (rama existente).
 
 ## Archivos
 

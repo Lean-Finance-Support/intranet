@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function AnadirServiciosConfirm({ result, linkPrefix, onReset }: Props) {
-  const { company, new_services, already_contracted, unmatched_raw } = result;
+  const { company, new_services, already_contracted, service_warnings } = result;
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(new_services.map((s) => s.service_id))
   );
@@ -193,18 +193,39 @@ export default function AnadirServiciosConfirm({ result, linkPrefix, onReset }: 
             </div>
           )}
 
-          {unmatched_raw.length > 0 && (
+          {service_warnings.low_confidence.length > 0 && (
             <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
               <p className="text-[11px] font-semibold text-amber-900">
-                Líneas de la propuesta sin servicio reconocido
+                La IA tiene dudas sobre estos servicios
+              </p>
+              <ul className="mt-1 space-y-0.5 text-[11px] text-amber-800">
+                {service_warnings.low_confidence.map((w, i) => (
+                  <li key={i}>
+                    «{w.raw_text}» → posiblemente{" "}
+                    <span className="font-medium">{w.service_name}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-amber-800 mt-1">
+                No se contratan automáticamente. Si corresponden, añádelos a mano
+                desde la ficha del cliente.
+              </p>
+            </div>
+          )}
+
+          {service_warnings.unmatched.length > 0 && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+              <p className="text-[11px] font-semibold text-amber-900">
+                Líneas de la propuesta sin servicio en la plataforma
               </p>
               <ul className="mt-1 list-disc list-inside text-[11px] text-amber-800">
-                {unmatched_raw.map((t, i) => (
+                {service_warnings.unmatched.map((t, i) => (
                   <li key={i}>{t}</li>
                 ))}
               </ul>
               <p className="text-[11px] text-amber-800 mt-1">
-                Revísalas y, si corresponden a un servicio, contrátalo a mano desde la ficha.
+                No corresponden a ningún servicio del catálogo. Revísalas por si
+                hay que crear el servicio o contratarlo de otra forma.
               </p>
             </div>
           )}
