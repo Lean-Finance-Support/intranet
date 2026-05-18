@@ -36,6 +36,15 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     keywords: ["empresas", "companies", "cartera"],
   },
   {
+    id: "admin:clientes-nuevo",
+    space: "admin",
+    label: "Nuevo cliente",
+    path: "/clientes?nuevo=1",
+    icon: "building",
+    keywords: ["alta", "nuevo cliente", "crear empresa", "registrar"],
+    gate: (ctx) => ctx.canCreateCompany,
+  },
+  {
     id: "admin:clientes-onboarding",
     space: "admin",
     label: "Nuevo onboarding",

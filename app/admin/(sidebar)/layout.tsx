@@ -63,6 +63,7 @@ export default async function AdminSidebarLayout({
         hasDeclaracionRenta: false,
         canViewClientDashboard: canViewDashboard,
         canCreateOnboarding,
+        canCreateCompany,
         canRequestDocumentation,
         companies: searchableCompanies,
         activeCompanyId: null,

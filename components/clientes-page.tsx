@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ClienteCompany, ClientesPageData } from "@/app/admin/clientes/actions";
 import { createCompanyAdmin } from "@/app/admin/clientes/actions";
 import dynamic from "next/dynamic";
@@ -372,7 +372,17 @@ export default function ClientesPage({
 
   const [companies, setCompanies] = useState<ClienteCompany[]>(data.companies);
   const [selectedCompany, setSelectedCompany] = useState<ClienteCompany | null>(null);
-  const [creatingCompany, setCreatingCompany] = useState(false);
+  // El buscador global (Cmd/Ctrl+K) navega a `/clientes?nuevo=1` para abrir el
+  // modal de alta: el estado inicial lo deriva del parámetro y el efecto solo
+  // limpia la URL (sin tocar estado, para no reabrir el modal al cerrarlo).
+  const searchParams = useSearchParams();
+  const openNewFromQuery = searchParams.get("nuevo") !== null;
+  const [creatingCompany, setCreatingCompany] = useState(openNewFromQuery);
+  useEffect(() => {
+    if (openNewFromQuery) {
+      router.replace(`${linkPrefix}/clientes`);
+    }
+  }, [openNewFromQuery, router, linkPrefix]);
 
   function handleSelectCompany(company: ClienteCompany) {
     if (isDesktop) {

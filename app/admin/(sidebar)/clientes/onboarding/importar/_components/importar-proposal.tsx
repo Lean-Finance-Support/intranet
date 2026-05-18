@@ -166,17 +166,27 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
   // ───── Pantalla de subida ─────
   return (
     <div className="min-h-full px-8 pb-24">
-      <div className="max-w-xl mx-auto">
-        <div className="pt-12 pb-6 text-center">
-          <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
-          <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
-            Importar propuesta
-          </h1>
-          <p className="text-sm text-text-muted mt-2">
-            Sube el PDF de una propuesta firmada y la IA extraerá los datos.
-            Si el cliente es nuevo, prerrellena su onboarding; si ya existe,
-            te permite añadir los servicios contratados.
-          </p>
+      <div className="max-w-4xl mx-auto">
+        <div className="pt-12 pb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
+              <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
+                Importar propuesta
+              </h1>
+              <p className="text-sm text-text-muted mt-1">
+                Sube el PDF de una propuesta firmada y la IA extraerá los datos.
+                Si el cliente es nuevo, prerrellena su onboarding; si ya existe,
+                te permite añadir los servicios contratados.
+              </p>
+            </div>
+            <Link
+              href={`${linkPrefix}/clientes`}
+              className="text-sm text-text-muted hover:text-text-body px-3 py-2 rounded-lg cursor-pointer shrink-0"
+            >
+              Cancelar
+            </Link>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -245,21 +255,12 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
             )}
           </label>
 
-          <p className="text-[11px] text-text-muted text-center px-4">
+          <p className="text-[11px] text-text-muted">
             La extracción la realiza un modelo de IA a partir del PDF. La propuesta
             se adjuntará automáticamente al apartado «Propuesta comercial» de la
             documentación del cliente. El equipo responsable no viene en la
             propuesta — lo asignarás después.
           </p>
-
-          <div className="text-center pt-1">
-            <Link
-              href={`${linkPrefix}/clientes`}
-              className="text-sm text-text-muted hover:text-text-body cursor-pointer"
-            >
-              Cancelar
-            </Link>
-          </div>
         </div>
       </div>
     </div>

@@ -21,4 +21,4 @@ Checklist al introducir algo nuevo:
 4. **Cambia el icono disponible** → registrar el nuevo símbolo en `components/search/icons.tsx`.
 5. **Probar Cmd/Ctrl+K** en ambos espacios tecleando uno de los `keywords` para verificar que aparece y que el destino navega bien (recordar que las rutas se prefijan vía `getLinkPrefix`, **no** hardcodear `/admin/` ni `/app/`).
 
-Acciones rápidas (botones "+ Nuevo …") y apartados de documentación **están deliberadamente fuera del buscador** — no añadirlos sin discutirlo. Solo van páginas + destinos por cliente.
+Acciones rápidas (botones "+ Nuevo …") y apartados de documentación **están deliberadamente fuera del buscador** — no añadirlos sin discutirlo. Solo van páginas + destinos por cliente. **Excepción**: "Nuevo cliente" sí está en el buscador; al ser un modal (no una ruta), su entrada apunta a `/clientes?nuevo=1` y `ClientesPage` abre el modal al detectar ese parámetro.
