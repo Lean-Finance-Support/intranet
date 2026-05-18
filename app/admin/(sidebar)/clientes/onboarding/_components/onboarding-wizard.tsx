@@ -22,6 +22,17 @@ import StepFinal from "./step-final";
 interface Props {
   data: OnboardingPageData;
   linkPrefix: string;
+  /**
+   * Estado inicial parcial — usado por la importación de propuestas para
+   * prerrellenar el wizard. Sin esta prop el wizard arranca vacío (ruta
+   * `/onboarding` normal), comportamiento idéntico al de siempre.
+   */
+  initialState?: Partial<OnboardingState>;
+  /**
+   * Líneas de la propuesta que NO se mapearon con seguridad a un servicio.
+   * Se listan en el banner del paso 1 para que el comercial las revise.
+   */
+  importHints?: string[];
 }
 
 const STEPS = [
@@ -31,10 +42,19 @@ const STEPS = [
   { id: 4, name: "Confirmación" },
 ] as const;
 
-export default function OnboardingWizard({ data, linkPrefix }: Props) {
+export default function OnboardingWizard({
+  data,
+  linkPrefix,
+  initialState,
+  importHints,
+}: Props) {
   const router = useRouter();
+  const imported = initialState !== undefined;
   const [step, setStep] = useState(1);
-  const [state, setState] = useState<OnboardingState>(initialOnboardingState);
+  const [state, setState] = useState<OnboardingState>(() => ({
+    ...initialOnboardingState,
+    ...initialState,
+  }));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{
@@ -299,6 +319,26 @@ export default function OnboardingWizard({ data, linkPrefix }: Props) {
             </div>
           )}
 
+          {step === 1 && imported && (
+            <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 px-4 py-3">
+              <p className="text-xs font-semibold text-brand-navy">
+                Datos importados de la propuesta — revísalos antes de continuar.
+              </p>
+              {importHints && importHints.length > 0 && (
+                <>
+                  <p className="text-[11px] text-text-muted mt-1.5">
+                    Estas líneas del presupuesto no se reconocieron con seguridad.
+                    Selecciona los servicios correspondientes a mano en el paso 2:
+                  </p>
+                  <ul className="mt-1 list-disc list-inside text-[11px] text-text-body">
+                    {importHints.map((h, i) => (
+                      <li key={i}>{h}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
           {step === 1 && (
             <StepEmpresa
               state={state}

@@ -372,15 +372,26 @@ export default function ClientesPage({
                   Nuevo cliente
                 </button>
                 {data.canManageClientAccounts && data.canRequestDocumentation && (
-                  <Link
-                    href={`${linkPrefix}/clientes/onboarding`}
-                    className="inline-flex items-center justify-center gap-1.5 bg-amber-300 text-brand-navy text-sm font-medium px-3.5 py-1.5 rounded-lg ring-1 ring-amber-400/40 shadow-sm hover:bg-amber-200 hover:shadow transition-all cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Nuevo onboarding
-                  </Link>
+                  <>
+                    <Link
+                      href={`${linkPrefix}/clientes/onboarding/importar`}
+                      className="inline-flex items-center justify-center gap-1.5 bg-white text-brand-navy text-sm font-medium px-3.5 py-1.5 rounded-lg ring-1 ring-gray-300 shadow-sm hover:bg-gray-50 transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                      </svg>
+                      Importar propuesta
+                    </Link>
+                    <Link
+                      href={`${linkPrefix}/clientes/onboarding`}
+                      className="inline-flex items-center justify-center gap-1.5 bg-amber-300 text-brand-navy text-sm font-medium px-3.5 py-1.5 rounded-lg ring-1 ring-amber-400/40 shadow-sm hover:bg-amber-200 hover:shadow transition-all cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      Nuevo onboarding
+                    </Link>
+                  </>
                 )}
               </div>
             )}

@@ -45,6 +45,15 @@ export const PAGE_ENTRIES: SearchPageEntry[] = [
     gate: (ctx) => ctx.canCreateOnboarding,
   },
   {
+    id: "admin:clientes-onboarding-importar",
+    space: "admin",
+    label: "Importar propuesta",
+    path: "/clientes/onboarding/importar",
+    icon: "building",
+    keywords: ["importar", "propuesta", "pdf", "presupuesto", "onboarding", "alta"],
+    gate: (ctx) => ctx.canCreateOnboarding,
+  },
+  {
     id: "admin:documentacion",
     space: "admin",
     label: "Catálogo Documentación",

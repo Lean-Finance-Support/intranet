@@ -26,6 +26,7 @@ CLAUDE.md es un mapa. El detalle por feature vive en `docs/` — léelo al tocar
 - `docs/features/permisos.md` — sistema de permisos atómicos + roles
 - `docs/features/catalogo-servicios.md` — catálogo global de servicios (`/admin/servicios`)
 - `docs/features/onboarding.md` — wizard de alta de cliente (4 pasos)
+- `docs/features/onboarding-import.md` — importar onboarding desde propuesta firmada (API de Claude)
 - `docs/features/equipo-responsable.md` — `company_team_members`, invariantes, hooks de siembra
 - `docs/features/documentacion.md` — schema `documentation`, apartados validables, kind='form'
 - `docs/features/dashboard-fiscal.md` — servicio `dashboard`, lectura de Google Sheets
@@ -122,7 +123,14 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID      # activa flujo GIS
 ENISA_ENCRYPTION_KEY              # 32 bytes base64, distinta por entorno, backup en 1Password
 WEBHOOK_SECRET                    # mismo valor en Next y en edge functions
 GOOGLE_OAUTH_CLIENT_ID / _SECRET / _REFRESH_TOKEN   # Dashboard fiscal
+ANTHROPIC_API_KEY                 # server-only, API de Claude para importar propuestas (lib/proposal-import/)
 ```
+
+## Importar onboarding desde propuesta firmada
+
+`lib/proposal-import/` (server-only) extrae datos de un PDF de propuesta de ventas
+firmada vía la API de Claude (bloque `document` nativo) y arranca el onboarding.
+Ruta `/admin/clientes/onboarding/importar`. Detalle en `docs/features/onboarding-import.md`.
 
 ## Pendiente / próximos pasos
 
