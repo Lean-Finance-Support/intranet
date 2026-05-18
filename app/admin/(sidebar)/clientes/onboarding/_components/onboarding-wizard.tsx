@@ -33,6 +33,12 @@ interface Props {
    * Se listan en el banner del paso 1 para que el comercial las revise.
    */
   importHints?: string[];
+  /**
+   * Callback que se ejecuta tras crear la empresa con éxito. Usado por la
+   * importación para adjuntar el PDF de la propuesta a la documentación del
+   * cliente. Si lanza, no se bloquea la pantalla de éxito.
+   */
+  onFinalized?: (companyId: string) => Promise<void> | void;
 }
 
 const STEPS = [
@@ -47,6 +53,7 @@ export default function OnboardingWizard({
   linkPrefix,
   initialState,
   importHints,
+  onFinalized,
 }: Props) {
   const router = useRouter();
   const imported = initialState !== undefined;
@@ -165,6 +172,15 @@ export default function OnboardingWizard({
         team_by_dept: state.team_by_dept,
         apartados,
       });
+      // Hook post-creación (p.ej. adjuntar la propuesta importada). No debe
+      // tumbar el éxito del onboarding si falla.
+      if (onFinalized) {
+        try {
+          await onFinalized(result.company_id);
+        } catch (e) {
+          console.error("[onboarding] onFinalized:", e);
+        }
+      }
       setSuccess({
         company_id: result.company_id,
         apartado_count: result.apartado_count,

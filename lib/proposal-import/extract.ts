@@ -179,7 +179,8 @@ export function parseExtractionResponse(
 
 /**
  * Extrae los datos de un PDF de propuesta firmada vía la API de Claude.
- * El PDF se procesa en memoria, no se persiste.
+ * Aquí el PDF solo se usa en memoria; el adjuntado posterior a la
+ * documentación del cliente lo hace la server action de importación.
  */
 export async function extractProposal(
   pdfBytes: Buffer,

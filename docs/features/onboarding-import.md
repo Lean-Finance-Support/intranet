@@ -9,8 +9,9 @@ onboarding (`create_company` + `manage_client_accounts` + `request_client_docume
 
 ## Flujo
 
-1. El comercial sube **un PDF** (drag/drop, máx. 25 MB). Se procesa **en memoria**,
-   nunca se persiste en Storage.
+1. El comercial sube **un PDF** (drag/drop, máx. 25 MB). Para la extracción solo
+   se usa en memoria; la copia que se conserva es la que se adjunta a la
+   documentación del cliente (paso 4).
 2. `extractProposal` lo manda a la **API de Claude** (bloque `document` nativo) con
    salida estructurada vía `tools`. Devuelve empresa, firmante, servicios y, si la
    propuesta la identifica como tal, la cuenta bancaria del cliente.
@@ -21,6 +22,21 @@ onboarding (`create_company` + `manage_client_accounts` + `request_client_docume
    - **Fila activa** → `mode:"existing"`: pantalla "añadir servicios" que solo
      contrata los servicios nuevos detectados (reutiliza `addServiceToCompany`, que
      ya hace auth por dpto y auto-asigna técnicos del equipo actual).
+4. La propuesta se **adjunta automáticamente** al apartado «Propuesta comercial»
+   (bloque «Contratos») de la documentación del cliente — ver abajo.
+
+## Adjuntado automático a la documentación
+
+`attachProposalToDocumentation` sube el PDF al apartado «Propuesta comercial»:
+
+- Si el bloque/apartado del cliente no existen, se crean (el apartado es global y
+  opcional). Re-importar añade una segunda/tercera propuesta al mismo apartado.
+- Si el apartado estaba `validado`, se **reabre** a `pendiente` (no se puede
+  adjuntar a un apartado validado).
+- **Empresa existente** → el adjuntado lo hace `importProposal` en el momento de
+  importar (campo `proposal_attached` en el resultado).
+- **Empresa nueva** → el adjuntado se ejecuta tras cerrar el onboarding, vía el
+  callback `onFinalized` del `OnboardingWizard` (la empresa no existe antes).
 
 ## Qué se extrae
 

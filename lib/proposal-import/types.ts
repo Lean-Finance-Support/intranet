@@ -80,6 +80,8 @@ export interface ImportProposalExisting {
   already_contracted: { service_id: string; name: string }[];
   /** Líneas del presupuesto sin match fiable (low/none). */
   unmatched_raw: string[];
+  /** true si el PDF se adjuntó al apartado "Propuesta comercial" del cliente. */
+  proposal_attached: boolean;
 }
 
 export type ImportProposalResult =

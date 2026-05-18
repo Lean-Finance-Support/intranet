@@ -6,7 +6,7 @@ import type { OnboardingPageData } from "../../actions";
 import OnboardingWizard from "../../_components/onboarding-wizard";
 import { proposalToOnboardingState } from "@/lib/proposal-import/to-onboarding-state";
 import type { ImportProposalResult } from "@/lib/proposal-import/types";
-import { importProposal } from "../actions";
+import { importProposal, attachProposalToDocumentation } from "../actions";
 import AnadirServiciosConfirm from "./anadir-servicios-confirm";
 
 interface Props {
@@ -15,6 +15,12 @@ interface Props {
 }
 
 const MAX_BYTES = 25 * 1024 * 1024;
+
+interface UploadedFile {
+  fileName: string;
+  mimeType: string;
+  base64: string;
+}
 
 function readAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -34,6 +40,15 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportProposalResult | null>(null);
+  // Conservamos el PDF subido para poder adjuntarlo a la documentación del
+  // cliente una vez que el onboarding crea la empresa (rama "new").
+  const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
+
+  function reset() {
+    setResult(null);
+    setUploaded(null);
+    setError(null);
+  }
 
   async function handleFile(file: File) {
     setError(null);
@@ -52,11 +67,9 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
     setLoading(true);
     try {
       const base64 = await readAsBase64(file);
-      const res = await importProposal({
-        fileName: file.name,
-        mimeType: file.type,
-        base64,
-      });
+      const file_ = { fileName: file.name, mimeType: file.type, base64 };
+      setUploaded(file_);
+      const res = await importProposal(file_);
       setResult(res);
     } catch (e) {
       setError(
@@ -84,6 +97,17 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
         linkPrefix={linkPrefix}
         initialState={initialState}
         importHints={hints}
+        onFinalized={async (companyId) => {
+          // Al cerrar el onboarding, adjuntamos el PDF de la propuesta al
+          // apartado "Propuesta comercial" de la documentación del cliente.
+          if (!uploaded) return;
+          try {
+            await attachProposalToDocumentation({ companyId, ...uploaded });
+          } catch (e) {
+            // No bloqueamos el éxito del onboarding por esto; solo lo avisamos.
+            console.error("[importar-proposal] adjuntar propuesta:", e);
+          }
+        }}
       />
     );
   }
@@ -94,7 +118,7 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
       <AnadirServiciosConfirm
         result={result}
         linkPrefix={linkPrefix}
-        onReset={() => setResult(null)}
+        onReset={reset}
       />
     );
   }
@@ -127,7 +151,7 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
               </Link>
               <button
                 type="button"
-                onClick={() => setResult(null)}
+                onClick={reset}
                 className="text-sm text-text-muted hover:text-text-body px-4 py-2 rounded-lg cursor-pointer"
               >
                 Importar otra propuesta
@@ -142,29 +166,20 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
   // ───── Pantalla de subida ─────
   return (
     <div className="min-h-full px-8 pb-24">
-      <div className="max-w-3xl">
-        <div className="pt-12 pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
-              <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
-                Importar propuesta
-              </h1>
-              <p className="text-sm text-text-muted mt-1">
-                Sube el PDF de la propuesta firmada y la plataforma prerrellenará
-                el onboarding del cliente.
-              </p>
-            </div>
-            <Link
-              href={`${linkPrefix}/clientes`}
-              className="text-sm text-text-muted hover:text-text-body px-3 py-2 rounded-lg cursor-pointer"
-            >
-              Cancelar
-            </Link>
-          </div>
+      <div className="max-w-xl mx-auto">
+        <div className="pt-12 pb-6 text-center">
+          <p className="text-brand-teal text-sm font-medium mb-2">Portal de empleados</p>
+          <h1 className="text-3xl font-bold font-heading text-brand-navy tracking-tight">
+            Importar propuesta
+          </h1>
+          <p className="text-sm text-text-muted mt-2">
+            Sube el PDF de una propuesta firmada y la IA extraerá los datos.
+            Si el cliente es nuevo, prerrellena su onboarding; si ya existe,
+            te permite añadir los servicios contratados.
+          </p>
         </div>
 
-        <div className="pt-4 space-y-4">
+        <div className="space-y-4">
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
               <p className="text-xs text-red-700">{error}</p>
@@ -210,7 +225,7 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
                   Extrayendo datos de la propuesta…
                 </p>
                 <p className="text-xs text-text-muted mt-1">
-                  Esto puede tardar unos segundos.
+                  La IA está leyendo el PDF. Esto puede tardar unos segundos.
                 </p>
               </>
             ) : (
@@ -230,10 +245,21 @@ export default function ImportarProposal({ data, linkPrefix }: Props) {
             )}
           </label>
 
-          <p className="text-[11px] text-text-muted">
-            El PDF se procesa en memoria para extraer los datos y no se almacena.
-            El equipo responsable no viene en la propuesta — lo asignarás en el wizard.
+          <p className="text-[11px] text-text-muted text-center px-4">
+            La extracción la realiza un modelo de IA a partir del PDF. La propuesta
+            se adjuntará automáticamente al apartado «Propuesta comercial» de la
+            documentación del cliente. El equipo responsable no viene en la
+            propuesta — lo asignarás después.
           </p>
+
+          <div className="text-center pt-1">
+            <Link
+              href={`${linkPrefix}/clientes`}
+              className="text-sm text-text-muted hover:text-text-body cursor-pointer"
+            >
+              Cancelar
+            </Link>
+          </div>
         </div>
       </div>
     </div>

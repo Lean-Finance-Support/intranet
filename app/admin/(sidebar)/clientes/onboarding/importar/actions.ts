@@ -1,9 +1,15 @@
 "use server";
 
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { requirePermission } from "@/lib/require-permission";
+import { getAuthUser } from "@/lib/cached-queries";
 import { createAdminClient } from "@/lib/supabase/server";
 import { validateUpload } from "@/lib/storage/upload-validation";
+import {
+  DOCUMENTATION_BUCKET,
+  buildDocumentationStoragePath,
+} from "@/lib/storage/documentation";
 import { extractProposal } from "@/lib/proposal-import/extract";
 import { normalizeNif } from "@/lib/proposal-import/nif";
 import { addServiceToCompany } from "@/app/admin/clientes/actions";
@@ -12,6 +18,10 @@ import type {
   ServiceCatalogItem,
 } from "@/lib/proposal-import/types";
 
+// Apartado del catálogo al que se adjunta automáticamente la propuesta.
+const PROPOSAL_BLOCK_SLUG = "contratos";
+const PROPOSAL_APARTADO_NAME = "Propuesta comercial";
+
 // Los 3 permisos del onboarding — la importación es solo otra puerta de entrada
 // al mismo flujo, así que exige exactamente lo mismo.
 async function requireImportAccess() {
@@ -19,6 +29,212 @@ async function requireImportAccess() {
   await requirePermission("create_company");
   await requirePermission("manage_client_accounts");
   await requirePermission("request_client_documentation");
+}
+
+interface ProposalFileInput {
+  fileName: string;
+  mimeType: string;
+  /** PDF en base64 (sin el prefijo data:). */
+  base64: string;
+}
+
+/**
+ * Adjunta el PDF de la propuesta al apartado "Propuesta comercial" de la
+ * documentación del cliente. Crea el bloque/apartado del cliente si no existen
+ * y reabre el apartado si estaba validado (no se puede adjuntar a uno validado).
+ * No re-chequea permisos — lo hacen quienes la invocan.
+ */
+async function attachProposalImpl(
+  companyId: string,
+  file: ProposalFileInput,
+  userId: string
+): Promise<void> {
+  const admin = createAdminClient();
+  const buffer = Buffer.from(file.base64, "base64");
+  validateUpload({
+    mimeType: file.mimeType,
+    fileName: file.fileName,
+    sizeBytes: buffer.byteLength,
+  });
+
+  // 1. Localizar el apartado "Propuesta comercial" del catálogo.
+  const { data: block } = await admin
+    .schema("documentation")
+    .from("blocks")
+    .select("id")
+    .eq("slug", PROPOSAL_BLOCK_SLUG)
+    .maybeSingle();
+  if (!block) {
+    throw new Error(`No existe el bloque "${PROPOSAL_BLOCK_SLUG}" en el catálogo.`);
+  }
+  const blockId = block.id as string;
+
+  const { data: apartado } = await admin
+    .schema("documentation")
+    .from("apartados")
+    .select("id")
+    .eq("block_id", blockId)
+    .eq("name", PROPOSAL_APARTADO_NAME)
+    .maybeSingle();
+  if (!apartado) {
+    throw new Error(`No existe el apartado "${PROPOSAL_APARTADO_NAME}" en el catálogo.`);
+  }
+  const apartadoId = apartado.id as string;
+
+  // 2. client_block (empresa ↔ bloque) — crear si falta.
+  let clientBlockId: string;
+  const { data: cb } = await admin
+    .schema("documentation")
+    .from("client_blocks")
+    .select("id")
+    .eq("company_id", companyId)
+    .eq("block_id", blockId)
+    .maybeSingle();
+  if (cb) {
+    clientBlockId = cb.id as string;
+  } else {
+    const { data: newCb, error } = await admin
+      .schema("documentation")
+      .from("client_blocks")
+      .insert({ company_id: companyId, block_id: blockId, added_by: userId })
+      .select("id")
+      .single();
+    if (error || !newCb) {
+      throw new Error("No se pudo asignar el bloque de documentación al cliente.");
+    }
+    clientBlockId = newCb.id as string;
+  }
+
+  // 3. client_apartado — crear si falta.
+  let clientApartadoId: string;
+  let status: string;
+  const { data: ca } = await admin
+    .schema("documentation")
+    .from("client_apartados")
+    .select("id, status")
+    .eq("client_block_id", clientBlockId)
+    .eq("apartado_id", apartadoId)
+    .maybeSingle();
+  if (ca) {
+    clientApartadoId = ca.id as string;
+    status = ca.status as string;
+  } else {
+    const { data: newCa, error } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .insert({
+        client_block_id: clientBlockId,
+        apartado_id: apartadoId,
+        added_by: userId,
+        is_optional: true,
+      })
+      .select("id, status")
+      .single();
+    if (error || !newCa) {
+      throw new Error("No se pudo crear el apartado de documentación.");
+    }
+    clientApartadoId = newCa.id as string;
+    status = newCa.status as string;
+    await admin.schema("documentation").from("apartado_status_history").insert({
+      client_apartado_id: clientApartadoId,
+      from_status: null,
+      to_status: status,
+      changed_by: userId,
+      reason: "Importación de propuesta",
+    });
+  }
+
+  // 4. Si está validado, reabrir — no se puede adjuntar a un apartado validado.
+  if (status === "validado") {
+    const { error } = await admin
+      .schema("documentation")
+      .from("client_apartados")
+      .update({
+        status: "pendiente",
+        validated_at: null,
+        validated_by: null,
+        rejected_at: null,
+        rejected_by: null,
+        last_rejection_reason: null,
+      })
+      .eq("id", clientApartadoId);
+    if (error) throw new Error("No se pudo reabrir el apartado validado.");
+    await admin.schema("documentation").from("apartado_status_history").insert({
+      client_apartado_id: clientApartadoId,
+      from_status: "validado",
+      to_status: "pendiente",
+      changed_by: userId,
+      reason: "__event:reopened__",
+    });
+    status = "pendiente";
+  }
+
+  // 5. Subir el PDF y registrar el archivo.
+  const fileId = crypto.randomUUID();
+  const storagePath = buildDocumentationStoragePath({
+    companyId,
+    clientApartadoId,
+    fileId,
+    fileName: file.fileName,
+  });
+  const { error: upErr } = await admin.storage
+    .from(DOCUMENTATION_BUCKET)
+    .upload(storagePath, buffer, { contentType: file.mimeType });
+  if (upErr) throw new Error(upErr.message);
+
+  const { error: insErr } = await admin
+    .schema("documentation")
+    .from("apartado_files")
+    .insert({
+      id: fileId,
+      client_apartado_id: clientApartadoId,
+      storage_path: storagePath,
+      file_name: file.fileName,
+      file_size: buffer.byteLength,
+      mime_type: file.mimeType,
+      uploaded_by: userId,
+    });
+  if (insErr) throw new Error(insErr.message);
+
+  await admin.schema("documentation").from("apartado_status_history").insert({
+    client_apartado_id: clientApartadoId,
+    from_status: status,
+    to_status: status,
+    changed_by: userId,
+    reason: "__event:file_uploaded__",
+  });
+
+  revalidateTag(`doc:client:${companyId}`, { expire: 0 });
+  revalidatePath(`/admin/clientes/${companyId}`);
+}
+
+export interface AttachProposalInput {
+  companyId: string;
+  fileName: string;
+  mimeType: string;
+  base64: string;
+}
+
+/**
+ * Server action: adjunta el PDF de la propuesta a la documentación del cliente.
+ * La usa la rama "empresa nueva" tras cerrar el onboarding (la empresa no existe
+ * hasta entonces). En la rama "empresa existente" el adjuntado lo hace ya
+ * `importProposal`.
+ */
+export async function attachProposalToDocumentation(
+  input: AttachProposalInput
+): Promise<void> {
+  await requireImportAccess();
+  const { user } = await getAuthUser();
+  if (!user) throw new Error("No autenticado");
+  if (input.mimeType !== "application/pdf") {
+    throw new Error("Solo se admiten archivos PDF.");
+  }
+  await attachProposalImpl(
+    input.companyId,
+    { fileName: input.fileName, mimeType: input.mimeType, base64: input.base64 },
+    user.id
+  );
 }
 
 export interface ImportProposalInput {
@@ -119,6 +335,24 @@ export async function importProposal(
     .map((s) => s.raw_text)
     .filter((t) => t.trim());
 
+  // La empresa ya existe → adjuntamos la propuesta a su documentación ahora
+  // mismo (en la rama "nueva" se hace tras cerrar el onboarding). Un fallo aquí
+  // no debe tumbar la importación: se reporta con proposal_attached=false.
+  let proposal_attached = false;
+  try {
+    const { user } = await getAuthUser();
+    if (user) {
+      await attachProposalImpl(
+        company.id as string,
+        { fileName: input.fileName, mimeType: input.mimeType, base64: input.base64 },
+        user.id
+      );
+      proposal_attached = true;
+    }
+  } catch (e) {
+    console.error("[importProposal] adjuntar propuesta a documentación:", e);
+  }
+
   return {
     mode: "existing",
     company: {
@@ -130,6 +364,7 @@ export async function importProposal(
     new_services,
     already_contracted,
     unmatched_raw,
+    proposal_attached,
   };
 }
 

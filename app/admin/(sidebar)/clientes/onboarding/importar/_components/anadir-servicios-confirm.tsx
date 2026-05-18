@@ -131,6 +131,23 @@ export default function AnadirServiciosConfirm({ result, linkPrefix, onReset }: 
             )}
           </div>
 
+          {/* Estado del adjuntado de la propuesta */}
+          {result.proposal_attached ? (
+            <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 px-4 py-2.5">
+              <p className="text-[11px] text-brand-navy">
+                ✓ La propuesta se ha adjuntado al apartado «Propuesta comercial»
+                de la documentación del cliente.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5">
+              <p className="text-[11px] text-amber-800">
+                No se pudo adjuntar la propuesta a la documentación del cliente.
+                Adjúntala a mano desde su ficha.
+              </p>
+            </div>
+          )}
+
           {nothingNew ? (
             <div className="rounded-xl bg-brand-teal/5 border border-brand-teal/20 px-4 py-3">
               <p className="text-sm font-medium text-brand-navy">
