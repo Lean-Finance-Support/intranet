@@ -82,6 +82,9 @@ El trigger solo crea perfil si el admin especifica `role` en los metadatos del u
 
 ## Modelo de datos (Supabase — schema public)
 
+> El schema completo (tablas núcleo, legacy y permisos) está documentado en `CLAUDE.md` y `docs/features/`.
+> Esta sección solo cubre las dos tablas centrales.
+
 ### `public.profiles`
 Vinculada 1:1 con `auth.users`. Se crea automáticamente vía trigger al crear un usuario.
 
@@ -91,13 +94,14 @@ Vinculada 1:1 con `auth.users`. Se crea automáticamente vía trigger al crear u
 | email | text | |
 | full_name | text | nullable |
 | role | enum(client, admin) | obligatorio |
-| department | text | nullable — solo para admins |
-| company_id | uuid | nullable — FK → companies.id, para clientes |
 | created_at | timestamptz | |
 | updated_at | timestamptz | auto-actualizado por trigger |
 
+No tiene `department_id` ni `company_id`: la pertenencia se resuelve vía tablas N:M
+(`profile_companies` para clientes; `profile_roles` / `member_of_department` para admins).
+
 ### `public.companies`
-Empresa cliente. Una empresa puede tener N usuarios (profiles) vinculados.
+Empresa cliente. Una empresa puede tener N usuarios (profiles) vinculados vía `profile_companies`.
 
 | Columna | Tipo | Notas |
 |---------|------|-------|
